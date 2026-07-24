@@ -6,24 +6,6 @@
 /** Status of a single todo item */
 export type TodoStatus = "not-started" | "in-progress" | "completed";
 
-/** High-level workflow phase shown independently from implementation todos. */
-export type WorkflowPhase = "goal" | "planning" | "implementation";
-
-export function normalizeWorkflowPhase(phase: unknown): WorkflowPhase | undefined {
-  switch (phase) {
-    case "goal":
-    case "planning":
-    case "implementation":
-      return phase;
-    case "measure":
-      return "planning";
-    case "cut":
-      return "implementation";
-    default:
-      return undefined;
-  }
-}
-
 /** A single todo item — matches manage_todo_list schema exactly */
 export interface TodoItem {
   /** Sequential identifier starting from 1 */
@@ -38,9 +20,8 @@ export interface TodoItem {
 
 /** Stored in tool result details for session persistence */
 export interface TodoDetails {
-  operation: "read" | "write" | "phase";
+  operation: "read" | "write";
   todos: TodoItem[];
-  phase: WorkflowPhase;
   error?: string;
 }
 

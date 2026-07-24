@@ -53,12 +53,11 @@ describe("session dashboard extension metadata", () => {
 	it("renders context and hints without a footer when omitted", () => {
 		const welcome = renderWelcomeText({
 			contextInfo: "~/work\n📜 AGENTS.md\n❓ `/help`",
-			tip: "⚡ Raw Pi\n⌘ Handoff: save a plan, then `/handoff [task-name]`",
+			tip: "Share your goal → explore → plan → you approve → proceed or hand off.",
 		});
 		expect(welcome.startsWith("~/work")).toBe(true);
-		expect(welcome.indexOf("❓ `/help`")).toBeLessThan(welcome.indexOf("⚡ Raw Pi"));
-		expect(welcome.indexOf("⚡ Raw Pi")).toBeLessThan(welcome.indexOf("⌘ Handoff"));
-		expect(welcome.trimEnd()).toBe("~/work\n📜 AGENTS.md\n❓ `/help`\n\n⚡ Raw Pi\n⌘ Handoff: save a plan, then `/handoff [task-name]`");
+		expect(welcome.indexOf("❓ `/help`")).toBeLessThan(welcome.indexOf("Share your goal"));
+		expect(welcome.trimEnd()).toBe("~/work\n📜 AGENTS.md\n❓ `/help`\n\nShare your goal → explore → plan → you approve → proceed or hand off.");
 		expect(welcome).not.toContain("🧩 **Extensions**");
 		expect(welcome).not.toContain("Session context");
 		expect(welcome).not.toContain("Quick reference");

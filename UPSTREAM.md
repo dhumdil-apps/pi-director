@@ -12,8 +12,8 @@ notices](#upstream-license-notices).
 - **Usage Extension** (`@tmustier/pi-usage-extension`) — npm `0.9.1`
 - **Manage Todo List** (`tintinweb/pi-manage-todo-list`) — commit `b75c449aa85ce328e9a8b632f62bf642aed40359`
 - **pi-simplify** (Matt Devy) — npm `0.2.3`. The extension itself is gone, but
-  text derived from it is now the inline simplification pass in the Implement
-  mode flow (`extensions/agent-workflow/index.ts`), so the notice still applies.
+  text derived from it is now the inline simplification guidance in the
+  workflow loop (`extensions/agent-workflow/index.ts`), so the notice still applies.
 
 ## Local compatibility changes
 
@@ -34,7 +34,7 @@ notices](#upstream-license-notices).
   vulnerable `tar` install-time exposure.
 - 2026-07-18 `pi-simplify` (the standalone extension) — its focused cleanup
   logic lived in `skills/simplify/` until 2026-07-23 and is now inline in the
-  Implement mode flow.
+  workflow loop.
 - 2026-07-19 `pi-subagents` (Nico Bailon, npm `0.35.0`) — the
   scout/planner/researcher/reviewer/worker orchestration dead-looped handoffs
   and ran flaky in parallel/async, even after a redesign to a serial

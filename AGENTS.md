@@ -7,7 +7,7 @@ Vendored Pi package repository. Active code lives under `extensions/`, declared 
 - **Single Agent**: Single-agent execution with guidance in `extensions/agent-workflow/` (see [`docs/FLOW.md`](docs/FLOW.md)).
 - **Safety**: No enforced guardrails — the bundle runs ungated; destructive-action consent is conversational, per the workflow flows.
 - **Task Start**: Read `.pi/MEMORY.md` when present in the target project before modifying code.
-- **Task Planning**: Follow [`docs/FLOW.md`](docs/FLOW.md) for conversational question batching and explicit plan approval.
+- **Task Planning**: Follow [`docs/FLOW.md`](docs/FLOW.md) — one guided loop per task (goal, explore, plan, save-then-proceed, close), with the plan saved before it is presented.
 - **Commit Discipline**: Never commit, stash, or push. Committing is the user's; leave the tree for them to review.
 - **Documentation Style**: Avoid using markdown tables in `.md` files; prefer simple lists for better readability and cleaner diffs.
 

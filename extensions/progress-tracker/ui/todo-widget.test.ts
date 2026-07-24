@@ -5,11 +5,7 @@ import { TodoStateManager } from "../state-manager.js";
 const theme = { fg: (color: string, text: string) => `[${color}]${text}` } as any;
 
 describe("phase indicator", () => {
-	it.each([
-		["goal", "plan", "accent", "› PLAN"],
-		["planning", "implement", "accent", "› IMPLEMENT"],
-		["implementation", "implement", "accent", "› IMPLEMENT"],
-	] as const)("renders the %s phase as a stable %s mode indicator", (phase, mode, color, expected) => {
+	it("renders only the idle marker when context usage is unavailable", () => {
 		let factory: any;
 		const ctx = {
 			ui: {
@@ -18,9 +14,9 @@ describe("phase indicator", () => {
 			},
 		} as any;
 
-		updatePhaseIndicator(phase, mode, ctx, false);
+		updatePhaseIndicator(ctx, false);
 
-		expect(factory({ requestRender: () => {} }, theme).render(80)).toEqual([`[${color}]${expected}`]);
+		expect(factory({ requestRender: () => {} }, theme).render(80)).toEqual(["[accent]›"]);
 	});
 
 	it.each([
@@ -54,41 +50,42 @@ describe("phase indicator", () => {
 					setWidget: (_id: string, nextFactory: unknown) => { factory = nextFactory; },
 				},
 			} as any;
-			updatePhaseIndicator("implementation", "implement", ctx, working, { tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 } as any);
+			updatePhaseIndicator(ctx, working, { tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 } as any);
 			const requestRender = vi.fn();
 			return { component: factory({ requestRender }, theme), requestRender };
 		};
 
-		it("rotates the spinner frame every 120ms and re-renders, keeping mode and context text", () => {
+		it("rotates the spinner frame every 120ms and re-renders, keeping context text", () => {
 			const { component, requestRender } = mount(true);
 
-			expect(component.render(120)[0]).toBe("[accent]⠋ IMPLEMENT · [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
+			expect(component.render(120)[0]).toBe("[accent]⠋ [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
 
 			vi.advanceTimersByTime(120);
 			expect(requestRender).toHaveBeenCalledTimes(1);
-			expect(component.render(120)[0]).toBe("[accent]⠙ IMPLEMENT · [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
+			expect(component.render(120)[0]).toBe("[accent]⠙ [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
 
 			// Ten frames wrap back to the first one.
 			vi.advanceTimersByTime(120 * 9);
 			expect(requestRender).toHaveBeenCalledTimes(10);
-			expect(component.render(120)[0]).toBe("[accent]⠋ IMPLEMENT · [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
+			expect(component.render(120)[0]).toBe("[accent]⠋ [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
 		});
 
-		it("omits activity and phase text from the working line", () => {
+		it("omits pi's transient activity and phase text from the working line", () => {
 			const line = mount(true).component.render(120)[0];
 			expect(line).not.toContain("Building…");
-			expect(line).not.toContain("IMPLEMENTATION");
+			expect(line).not.toContain("implementing");
+			expect(line).not.toContain("IMPLEMENT");
 		});
 
 		it("keeps the idle marker and starts no timer when the agent is not working", () => {
 			const { component, requestRender } = mount(false);
 
-			expect(component.render(120)[0]).toBe("[accent]› IMPLEMENT · [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
+			expect(component.render(120)[0]).toBe("[accent]› [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
 
 			vi.advanceTimersByTime(120 * 5);
 			expect(requestRender).not.toHaveBeenCalled();
 			expect(vi.getTimerCount()).toBe(0);
-			expect(component.render(120)[0]).toBe("[accent]› IMPLEMENT · [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
+			expect(component.render(120)[0]).toBe("[accent]› [accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
 		});
 
 		it("clears the spinner timer when pi disposes the widget", () => {

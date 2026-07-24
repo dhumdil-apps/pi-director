@@ -42,8 +42,8 @@ pi list
 
 ## Included Features
 
-- **agent-workflow** — Guidance-driven development across two session modes — **Plan → Implement**. Plan explores, presents a four-section plan (`save_plan` → `.pi/plan/<task>.md`), and ends in a native approval prompt: Proceed switches to Implement in place, Handoff (`/handoff`) spawns a fresh seeded session, Revise stays in Plan. Standing rule: never commit, stash, or push. See [docs/FLOW.md](docs/FLOW.md).
-- **progress-tracker** — Workflow mode, phase, and context-usage indicator plus the interactive `/todos` checklist widget.
+- **agent-workflow** — One guided loop per task, injected as narrative guidance rather than rules: goal, explore, plan, save-then-proceed, close. `save_plan` writes `.pi/plan/<task>.md` before the plan is presented and arms a native approval prompt — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing. `save_summary` closes the task out. Position in the loop is derived from hidden branch facts, so there are no session modes. See [docs/FLOW.md](docs/FLOW.md).
+- **progress-tracker** — Above-editor indicator carrying the agent's own short phase phrase and context usage, plus the interactive `/todos` checklist widget.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).
 - **terminal-keys** — Newline and submit that work in every terminal: `ctrl+j` inserts a newline where `shift+enter` never reaches Pi, and `ctrl+enter` submits.

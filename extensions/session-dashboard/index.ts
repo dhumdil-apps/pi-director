@@ -2,7 +2,6 @@ import { readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getAgentDir, loadProjectContextFiles } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import { Box, type Component, Container, Markdown, Spacer, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { renderHelp } from "./help.js";
@@ -12,9 +11,6 @@ import { COLOR_RESET, formatAxisCost, seriesColor } from "../usage-history/index
 import { USAGE_CHART_END, USAGE_CHART_START, renderWelcomeText } from "./welcome.js";
 
 const BUNDLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-
-/** One consistent separator across the whole context line. */
-const CONTEXT_SEP = " · ";
 
 const USAGE_CHART_MAX_WIDTH = 72;
 const USAGE_CHART_HEIGHT = 8;
@@ -168,28 +164,6 @@ function loadBundleResources(): BundleResources {
 	}
 }
 
-/** Context files exactly as pi core discovers them, formatted for display. */
-export function contextFileList(cwd: string): string[] {
-	try {
-		return loadProjectContextFiles({ cwd, agentDir: getAgentDir() }).map((f) => {
-			const inProject = f.path.startsWith(`${cwd}/`);
-			const displayPath = inProject ? `./${f.path.slice(cwd.length + 1)}` : tildify(f.path);
-			if (displayPath.endsWith("MEMORY.md")) {
-				try {
-					const content = readFileSync(f.path, "utf8");
-					const lines = content.split("\n").filter((line) => line.trim().length > 0).length;
-					return `${displayPath} (${lines} line${lines === 1 ? "" : "s"} · workarounds)`;
-				} catch {
-					return displayPath;
-				}
-			}
-			return displayPath;
-		});
-	} catch {
-		return [];
-	}
-}
-
 /** Flatten a custom message's content (string or content-item array) to text. */
 function messageText(content: string | { type: string; text?: string }[]): string {
 	return typeof content === "string"
@@ -317,21 +291,14 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 				usageChart = JSON.stringify(model);
 			}
 
-			// One concise markdown line at the top: working directory + loaded files
-			// (italic / de-emphasised) then `/help` as code so it pops. The usage
-			// chart, Raw Pi escape hatch, and handoff usage hint follow. The tip
-			// lines borrow the same grammar: italic label, command as bare code so
-			// the thing you actually type is the thing that stands out.
-			const chips = [`*${truncateLeft(tildify(cwd), 60)}*`];
-			const contextFiles = contextFileList(cwd);
-			if (contextFiles.length > 0) chips.push(`*📜 ${contextFiles.join(CONTEXT_SEP)}*`);
-			chips.push("❓ `/help`");
-			const contextInfo = chips.join(CONTEXT_SEP);
+			// One concise markdown line at the top: the working directory, italicized
+			// and de-emphasised. The usage chart and footer help prompt follow.
+			const contextInfo = `*${truncateLeft(tildify(cwd), 60)}*`;
 
 			const welcomeText = renderWelcomeText({
 				usageChart,
 				contextInfo,
-				tip: "*⚡ Raw Pi* `pi --no-extensions`\n*⌘ Handoff* `/handoff [task-name]` *— once a plan is saved*",
+				tip: "> ❓ `/help`",
 			});
 
 			pi.sendMessage(

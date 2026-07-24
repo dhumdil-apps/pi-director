@@ -9,11 +9,11 @@ extension.
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
 - **Terminal Keys** — Keeps newline and submit working in every terminal (ctrl+j inserts a newline, ctrl+enter submits)
-- **Agent Workflow** — Conversational workflow, plan persistence, and durable learning (`save_plan`, `/handoff`; see [FLOW.md](FLOW.md))
+- **Agent Workflow** — One guided workflow loop, plan persistence, and close-out (`save_plan`, `save_summary`, `/handoff`; see [FLOW.md](FLOW.md))
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
-- **Progress Tracker** — Global workflow route, context-usage readout, plus separate local todo widget (`manage_todo_list`, `/todos`)
+- **Progress Tracker** — Agent-authored phase readout and context usage above the editor, plus separate local todo widget (`manage_todo_list`, `/todos`)
 - **Agent Status Bridge** — Off by default; reports display-only workflow status to a configured local observer
 - **Session Dashboard** — Pi-glyph welcome, 30-day per-model spend chart, and project-context line
 
@@ -26,9 +26,9 @@ extension.
 
 The bundle runs as one agent, not an orchestrator with children: there is no
 subagent tool and no child-process delegation, and the one agent owns user
-interaction, todos, commits, and final acceptance. The Plan / Implement split
-(see [FLOW.md](FLOW.md)) does not change this — each mode is the same single
-agent in its own session, with the plan file on disk as the handoff.
+interaction, todos, commits, and final acceptance. A `/handoff` (see
+[FLOW.md](FLOW.md)) does not change this — the fresh session is the same single
+agent, with the plan file on disk as the only thing carried across.
 
 ## Extension Preferences registry
 
@@ -48,7 +48,7 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 
 ## Deliberately absent
 
-- **No skills.** The workflow guidance lives inside the injected mode flows,
+- **No skills.** The workflow guidance lives inside the injected loop block,
   so nothing depends on the model remembering to invoke anything.
 - **No permission gate.** Tool calls are never intercepted; destructive-action
   consent is conversational (see [FLOW.md](FLOW.md)).

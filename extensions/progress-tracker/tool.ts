@@ -33,15 +33,9 @@ const TodoItemSchema = Type.Object({
 });
 
 export const ManageTodoListParams = Type.Object({
-  operation: Type.Union([Type.Literal("write"), Type.Literal("read"), Type.Literal("phase")], {
-    description:
-      "write: Replace the todo list. read: Retrieve current state. phase: Update only the GOAL/PLANNING/IMPLEMENTATION workflow phase.",
+  operation: Type.Union([Type.Literal("write"), Type.Literal("read")], {
+    description: "write: Replace the todo list. read: Retrieve current state.",
   }),
-  phase: Type.Optional(
-    Type.Union([Type.Literal("goal"), Type.Literal("planning"), Type.Literal("implementation")], {
-      description: "Required for phase operation. Tracks workflow independently from implementation todos.",
-    }),
-  ),
   todoList: Type.Optional(
     Type.Array(TodoItemSchema, {
       description:
@@ -54,15 +48,7 @@ export type ManageTodoListInput = Static<typeof ManageTodoListParams>;
 
 // --- Tool Description ---
 
-export const TOOL_DESCRIPTION = `Track the high-level workflow phase and a structured local todo list.
-
-Workflow phases:
-- goal: session starting point and project overview
-- planning: discovery, questions, rubric, and plan approval
-- implementation: implementation, validation, review, documentation, and follow-up learning
-
-Use operation=phase at each transition. Phase updates never create or replace todos.
-The local todo list is independent of the workflow phase and may track discovery, planning, implementation, and validation work.
+export const TOOL_DESCRIPTION = `Track a structured local todo list.
 
 When to use this tool:
 - Complex multi-step work requiring planning and tracking
@@ -96,7 +82,7 @@ IMPORTANT: Mark todos completed as soon as they are done. Do not batch completio
 
 export function createManageTodoListTool(
   state: TodoStateManager,
-  onUpdate: (operation: Extract<ManageTodoListInput["operation"], "phase" | "write">) => void
+  onUpdate: () => void
 ) {
   return {
     name: "manage_todo_list",
@@ -117,26 +103,10 @@ export function createManageTodoListTool(
           content: [
             {
               type: "text" as const,
-              text: JSON.stringify({ phase: state.getPhase(), todos }, null, 2),
+              text: JSON.stringify({ todos }, null, 2),
             },
           ],
-          details: { operation: "read", todos, phase: state.getPhase() } as TodoDetails,
-        };
-      }
-
-      if (params.operation === "phase") {
-        if (!params.phase) {
-          return {
-            content: [{ type: "text" as const, text: "Error: phase is required for phase operation." }],
-            details: { operation: "phase", todos: state.read(), phase: state.getPhase(), error: "phase required" } as TodoDetails,
-            isError: true,
-          };
-        }
-        state.setPhase(params.phase);
-        onUpdate("phase");
-        return {
-          content: [{ type: "text" as const, text: `Workflow phase changed to ${params.phase.toUpperCase()}.` }],
-          details: { operation: "phase", todos: state.read(), phase: state.getPhase() } as TodoDetails,
+          details: { operation: "read", todos } as TodoDetails,
         };
       }
 
@@ -145,7 +115,7 @@ export function createManageTodoListTool(
       if (!todoList || !Array.isArray(todoList)) {
         return {
           content: [{ type: "text" as const, text: "Error: todoList is required for write operation." }],
-          details: { operation: "write", todos: state.read(), phase: state.getPhase(), error: "todoList required" } as TodoDetails,
+          details: { operation: "write", todos: state.read(), error: "todoList required" } as TodoDetails,
           isError: true,
         };
       }
@@ -159,13 +129,13 @@ export function createManageTodoListTool(
               text: `Validation failed:\n${validation.errors.map((e) => `  - ${e}`).join("\n")}`,
             },
           ],
-          details: { operation: "write", todos: state.read(), phase: state.getPhase(), error: validation.errors.join("; ") } as TodoDetails,
+          details: { operation: "write", todos: state.read(), error: validation.errors.join("; ") } as TodoDetails,
           isError: true,
         };
       }
 
       state.write(todoList);
-      onUpdate("write");
+      onUpdate();
 
       const stats = state.getStats();
       const todos = state.read();
@@ -183,17 +153,13 @@ export function createManageTodoListTool(
             text: message,
           },
         ],
-        details: { operation: "write", todos, phase: state.getPhase() } as TodoDetails,
+        details: { operation: "write", todos } as TodoDetails,
       };
     },
 
     renderCall(args: ManageTodoListInput, theme: Theme) {
       let text = theme.fg("toolTitle", theme.bold("manage_todo_list "));
       text += theme.fg("muted", args.operation);
-
-      if (args.operation === "phase" && args.phase) {
-        text += theme.fg("dim", ` (${args.phase.toUpperCase()})`);
-      }
 
       if (args.operation === "write" && args.todoList) {
         const count = args.todoList.length;
@@ -216,10 +182,6 @@ export function createManageTodoListTool(
 
       if (details.error) {
         return new Text(theme.fg("error", `✗ ${details.error}`), 0, 0);
-      }
-
-      if (details.operation === "phase") {
-        return new Text(theme.fg("success", `Phase set to ${details.phase.toUpperCase()}`), 0, 0);
       }
 
       const todos = details.todos;

@@ -6,7 +6,7 @@ Use this page as the navigation map for the `pi-kit` package and development rep
 
 - **[Install & Setup](../README.md#quick-start)** — Installation, setup, & verification
 - **[Extension & Resource Catalog](EXTENSIONS.md)** — Catalog of extensions, prompts, & themes
-- **[The Working Flow](FLOW.md)** — Session modes, plan approval, & handoffs
+- **[The Working Flow](FLOW.md)** — The workflow loop, plan approval, & handoffs
 - **[Commands & Tools](COMMANDS.md)** — Quick reference for commands & tools
 - **[Troubleshooting](TROUBLESHOOTING.md)** — Troubleshooting & diagnostic steps
 

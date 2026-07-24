@@ -2,19 +2,13 @@
 
 Startup banner for interactive parent sessions.
 
-The dashboard ends with its Raw Pi escape-hatch hint followed by a compact
-handoff instruction, which opens a fresh Implement session from an approved
-plan. Both tip lines use the same grammar as the context line above them — an
-italic label, then the command as bare code so the thing you actually type is
-the thing that stands out. `extensions.ts` still supplies the grouped metadata
-and descriptions for `/help`; its focused test requires an exact one-to-one
-match with the active extension manifest.
+The dashboard ends with one concise prompt: `❓ /help`. `extensions.ts` still
+supplies the grouped metadata and descriptions for `/help`; its focused test
+requires an exact one-to-one match with the active extension manifest.
 
-One concise, plain-markdown context line appears first, chips separated by ` · `:
-the working directory and loaded context files (`📜 …`, italic / de-emphasised,
-from pi core's `loadProjectContextFiles`) then `❓ /help`, rendered as code so it
-pops. Git branch/status are intentionally not repeated here — the status bar
-already shows them persistently.
+One concise, plain-markdown context line appears first: the working directory
+(italic / de-emphasised). Loaded context files and git branch/status are
+intentionally not repeated here.
 
 A "Last 30 Days · Per bucket cost · by model" usage chart follows when usage is
 available: a non-interactive braille line chart built from `usage-history`'s
@@ -25,8 +19,7 @@ cells, which on a card this small overdraws the per-model lines it summarizes; t
 legend closes with it as a dim, markerless summary row instead. `/usage` is
 unaffected: there the Total stays visible and its legend can toggle it.
 
-The Raw Pi escape-hatch hint and then the handoff instruction follow at the
-bottom.
+The sole `❓ /help` prompt follows at the bottom.
 
 `❓ /help` remains the full reference for commands, shortcuts, and every active
 extension with its complete description.
@@ -37,8 +30,8 @@ The dashboard does not duplicate the Progress Tracker phase ribbon.
 
 ## User surface
 
-Automatic on interactive session start. Shows project context, recent usage, the
-Raw Pi escape hatch, `/handoff` usage, and `/help` — a reference of the bundle's
+Automatic on interactive session start. Shows the working directory, recent
+usage, and the closing `❓ /help` prompt, which opens a reference of the bundle's
 commands, shortcuts, and extensions.
 
 ## Origin

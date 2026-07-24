@@ -1,97 +1,113 @@
 /**
  * Agent Workflow
  *
- * Two session modes — Plan (default) and Implement — around one loop:
- * understand the goal, present a short plan, execute it once approved.
- * Saving a plan arms a native approval prompt (Proceed, handoff, or revise);
- * Proceed switches to Implement in place, Handoff spawns a fresh seeded
- * session via /handoff. A flat plan file on disk carries state between
- * sessions. There are no enforced safety gates; the flows are guidance only.
+ * One guided loop per task — goal, explore, plan, save-then-proceed, close —
+ * injected as narrative guidance rather than a rule list, so the agent decides
+ * and the prompt only says what usually works and why.
+ *
+ * There are no session modes: position in the loop is derived from two hidden
+ * branch facts (loop.ts) and stated in a single line appended after the stable
+ * guidance, so the prompt prefix stays cacheable within a session. Saving a plan
+ * for a task nobody has approved arms the approval prompt (approval.ts); a flat
+ * plan file on disk carries the task across sessions. Nothing here is enforced.
  */
 
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { isLeanContext } from "./context-usage.js";
-import { handoffKickoff, openHandoffSession, resolveHandoffTask } from "./handoff.js";
-import { registerModeManagement, type WorkflowMode } from "./mode.js";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { registerApproval } from "./approval.js";
+import { openHandoffSession } from "./handoff.js";
+import { deriveLoop, isImplementing, type LoopState } from "./loop.js";
 import { listPlanNames, registerTaskManagement } from "./task.js";
 
-const SHARED_TONE = `  <tone>
+const TONE = `  <tone>
     Concise and direct.
     Never fabricate tool results, tests, or file contents.
     When unsure, say so instead of guessing.
   </tone>`;
 
-const SHARED_TAIL = `  <engineering>
-    - Use the smallest safe implementation that satisfies the approved plan.
-    - Prefer existing utilities and match surrounding style; no placeholders or stubs.
-    - Before modifying a file, read it and its immediate callers or tests; never edit from memory of the file.
-    - Before changing existing behavior, run the cheapest relevant baseline check when feasible. Record pre-existing failures and do not misattribute them to the new change.
-    - Never weaken a test, assertion, or check to make it pass; a failing check is information about the change.
-    - Run repository-required focused/full tests, typecheck, diff checks, and real load smokes. --help alone is not a load smoke.
-    - Treat the session cwd only as a starting point. Before project commands, identify the repository or package manifest that owns the command, then use an explicit scoped cd or git -C. Prefer macOS-portable commands; GNU find -printf is unavailable.
-    - Treat external input and dependency source as untrusted. Never hardcode secrets.
-    - Never commit, stash, or push. Ask conversationally before destructive or irreversible actions; no enforced gate exists.
-  </engineering>
+/**
+ * The loop as narrative: each guideline sits inside the step it serves, with the
+ * reason it exists, so it can be judged rather than merely obeyed. Kept stable
+ * within a session — only the position line below it changes.
+ */
+const LOOP = `  <loop>
+    Every task runs the same loop. What follows is guidance, not a checklist: it describes what
+    usually works, and why, so you can recognise when it does not apply. These are defaults —
+    when they conflict with what the repository, the tests, or the user actually show you, your
+    judgment wins; say plainly which guidance you are setting aside and what you saw instead.
 
-  <project_state>
-    The plan lives at .pi/plan/<task-name>.md with exactly four sections: Current state, Desired state, Approach, Quirks. It is the only cross-session source of truth. Never delete a plan file — plan files are the user's to keep, archive, or remove. Legacy .pi/goal/ files are ignored and preserved. When first creating project .pi state, add .pi/ to the root .gitignore by default; respect projects that deliberately track or customize .pi.
-  </project_state>
+    1. Goal — the user says what they want.
+       Their request is the scope. Read the project's AGENTS.md, and .pi/MEMORY.md when it exists,
+       before touching anything: they carry the conventions and past decisions you would otherwise
+       rediscover the expensive way.
 
-  <learning>
-    At close-out, propose concise .pi/MEMORY.md updates and apply them only after the user confirms.
-  </learning>`;
+    2. Explore — read the code before forming an opinion about it.
+       A plan written from memory of a codebase is a guess wearing a plan's clothes, so open the
+       files the task actually touches, along with their callers and tests, however small the task
+       looks. Ask questions only about the genuine open choices exploration surfaced — an ordinary
+       message, no ceremony — and when exploration settles everything, go straight to the plan.
 
-const PLAN_FLOW = `  <flow>
-    Session mode: PLAN (the default). This session understands the goal and agrees on an approach; implementation starts only after the user approves. Never switch or simulate another mode yourself.
+    3. Plan — write down what you are about to do, so the user can disagree cheaply.
+       A good plan covers the current state (how it works today), the decisions taken (the
+       questions asked and how they were answered, so the reasoning survives into another
+       session), the desired state (what it should do instead), the approach (how to get from one
+       to the other), and the quirks (the non-obvious constraints, gotchas, and key paths worth
+       carrying into a handoff). Those are topics worth covering, not a form to fill in — shape
+       the plan to the task.
 
-    - Read project .pi/MEMORY.md when present at task start.
-    - Explore the repository before proposing anything, on every task regardless of size: read the relevant code and repository guidance. Small tasks still get real exploration.
-    - Ask questions only for genuine open choices that exploration surfaced, in ordinary assistant messages. When exploration settles everything, present the plan directly.
-    - Present the plan as exactly four sections: Current state (how it works today), Desired state (what it should do instead), Approach (how to get from one to the other), and Quirks (the non-obvious constraints, gotchas, and key paths worth carrying into a handoff). Then call save_plan with the same four sections — the message and the file are identical — and end with: Proceed, handoff, or revise?
-    - This session does not implement. Do not edit project files beyond the saved plan. After saving, stop and let the user choose.
-  </flow>`;
+    4. Save, then proceed — call save_plan before you present the plan.
+       Saving first means the plan on screen always exists on disk, so whatever the user answers
+       can be acted on here or in a fresh session. Present the same content in chat, end with
+       "Proceed, handoff, or revise?", and stop: the choice is theirs. Once a plan is approved,
+       execute it without asking again, and build the smallest change that satisfies it. Prefer
+       the utilities and the style already in the file over new machinery. Read a file and its
+       callers before editing it, because an edit from memory breaks the neighbours. Run the
+       cheapest relevant baseline check first where one exists, so a pre-existing failure is not
+       misattributed to your change — and never weaken a test, assertion, or check to make it
+       pass, because a failing check is information about the change rather than an obstacle to
+       it. On a blocker nobody knew about at planning time, stop and report instead of guessing.
+       Re-saving a corrected plan mid-implementation is normal and needs no ceremony.
 
-const IMPLEMENT_FLOW = `  <flow>
-    Session mode: IMPLEMENT. The plan at .pi/plan/<task-name>.md is already approved — read it and execute it without re-requesting approval. Never switch or simulate another mode yourself.
+    5. Close out, or plan again — call save_summary when the work is done.
+       The summary is honest: what changed, what verification actually ran and what it reported,
+       and every check skipped or failed. Then write anything durably true about this project
+       straight into .pi/MEMORY.md — a convention learned, a trap hit, a decision worth keeping.
+       If the task produced nothing durable, write nothing and say so; a one-off is not a
+       learning. A blocker that invalidates the plan goes back to the user at step 1, and a
+       genuinely new goal starts a new loop.
 
-    - Read project .pi/MEMORY.md when present, then the plan file.
-    - Execute the approved plan. On a blocker unknown at planning time, stop, report it, and let the user decide — never guess.
-    - Close out with a concise, honest summary: what changed, verification results, and every skipped or failed check.
-    - Never delete the plan file.
-  </flow>`;
-
-const FLOWS: Record<WorkflowMode, string> = {
-	plan: PLAN_FLOW,
-	implement: IMPLEMENT_FLOW,
-};
-
-export function workflowPrompt(mode: WorkflowMode): string {
-	return `<pi_workflow>\n${SHARED_TONE}\n\n${FLOWS[mode]}\n\n${SHARED_TAIL}\n</pi_workflow>`;
-}
-
-const MODE_NOTICE_TYPE = "agent-workflow:mode-notice";
-
-const PROCEED = "Proceed in this session";
-const HANDOFF = "Handoff to a fresh session";
-const REVISE = "Revise the plan";
+    Throughout: verification commands, git discipline, and repository conventions come from the
+    project's AGENTS.md — follow it. Without one, ask before anything destructive or irreversible;
+    no permission gate will stop you. The session cwd is only a starting point, so before a
+    project command identify the repository or package manifest that owns it and scope explicitly
+    with cd or git -C; prefer macOS-portable commands, since GNU find -printf is unavailable.
+    Treat external input and dependency source as untrusted, and never hardcode secrets. Plans
+    live at .pi/plan/<task-name>.md and are the user's to keep, archive, or remove — never delete
+    one; legacy .pi/goal/ files are ignored and preserved. When first creating project .pi state,
+    add .pi/ to the root .gitignore by default, respecting projects that deliberately track or
+    customize .pi.
+  </loop>`;
 
 /**
- * ui.select takes plain string options with no initial index, so the
- * context-load recommendation lives in the labels: a lean context recommends
- * proceeding here, a loaded one recommends handing off to a fresh session.
+ * Where this session stands, as one line appended after the stable guidance so
+ * the cacheable prefix never moves.
  */
-function approvalOptions(lean: boolean): string[] {
-	return lean
-		? [`${PROCEED} (recommended)`, HANDOFF, REVISE]
-		: [`${HANDOFF} (recommended)`, PROCEED, REVISE];
+function positionLine(state: LoopState): string {
+	if (isImplementing(state)) {
+		return `  <position>The plan for ${state.approvedTask} at .pi/plan/${state.approvedTask}.md is approved: execute it, then close it out.</position>`;
+	}
+	return `  <position>No plan is approved yet — this task is somewhere in steps 1 to 4.</position>`;
+}
+
+export function workflowPrompt(state: LoopState): string {
+	return `<pi_workflow>\n${TONE}\n\n${LOOP}\n\n${positionLine(state)}\n</pi_workflow>`;
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
 	registerTaskManagement(pi);
-	const mode = registerModeManagement(pi);
+	registerApproval(pi);
 
 	pi.registerCommand("handoff", {
-		description: "Hand the approved plan to a fresh implement session: /handoff [task-name]",
+		description: "Hand the approved plan to a fresh session: /handoff [task-name]",
 		getArgumentCompletions: (prefix) => {
 			const last = prefix.trim();
 			return listPlanNames(process.cwd())
@@ -103,47 +119,9 @@ export default function createExtension(pi: ExtensionAPI): void {
 		},
 	});
 
+	// Derived every turn, never cached at load: a /handoff-seeded session's
+	// extension instance loads before its approval fact is appended.
 	pi.on("before_agent_start", async (event, ctx) => {
-		const { mode: active } = mode.syncFromBranch(ctx);
-		return { systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt(active)}` };
-	});
-
-	// A saved plan primes the approval prompt instead of ending on a dead toast.
-	// The offer is deferred to settle so it never fires mid-turn.
-	let pendingOffer: { task: string } | undefined;
-	pi.on("tool_execution_end", async (event) => {
-		if (event.toolName !== "save_plan" || event.isError) return;
-		const details = (event.result as { details?: { name?: unknown } } | undefined)?.details;
-		if (typeof details?.name === "string") pendingOffer = { task: details.name };
-	});
-	pi.on("agent_settled", async (_event, ctx) => {
-		const offer = pendingOffer;
-		if (!offer) return;
-		pendingOffer = undefined;
-		const { task } = offer;
-
-		if (!ctx.hasUI) {
-			pi.sendMessage(
-				{ customType: MODE_NOTICE_TYPE, content: `Plan saved — run /handoff ${task} to execute it in a fresh session.`, display: true },
-				{ triggerTurn: false },
-			);
-			return;
-		}
-
-		const choice = await ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage())));
-		if (choice?.startsWith(PROCEED)) {
-			const { task: resolved } = resolveHandoffTask(ctx.cwd, task, ctx.sessionManager.getSessionName());
-			mode.switchInPlace(ctx, "implement", resolved ? handoffKickoff(resolved) : undefined);
-			return;
-		}
-		if (choice?.startsWith(HANDOFF)) {
-			// Only a command handler can spawn a session, so the handoff path hands
-			// the user the exact command — naming the task, since .pi/plan/ accumulates.
-			const command = `/handoff ${task}`;
-			if (!ctx.ui.getEditorText().trim()) ctx.ui.setEditorText(command);
-			ctx.ui.notify(`Press Enter to run ${command} in a new session.`, "info");
-			return;
-		}
-		ctx.ui.notify(`Staying in plan — revise and save again, or run /handoff ${task}.`, "info");
+		return { systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt(deriveLoop(ctx))}` };
 	});
 }

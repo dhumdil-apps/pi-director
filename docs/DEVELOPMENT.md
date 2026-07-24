@@ -47,11 +47,11 @@ git diff --check
 
 `npm run typecheck` checks every vendored TypeScript extension and must exit zero.
 
-Smoke the working copy headlessly — the bundle loads and the default session is
-Plan mode:
+Smoke the working copy headlessly — the bundle loads and the loop guidance is
+injected:
 
 ```bash
-pi -p -ne -e ~/Github/pi-kit --tools '' --no-session "Reply with exactly one word: the session mode named in your workflow flow."
+pi -p -ne -e ~/Github/pi-kit --tools '' --no-session "Reply with exactly one word: the first step of the workflow loop in your instructions."
 ```
 
 Session-boundary changes need a scratch project with a seeded plan
@@ -62,8 +62,9 @@ pi -p -ne -e ~/Github/pi-kit --tools '' --session-dir ./sessions "/handoff demo-
 ```
 
 The newest file under `./sessions` must contain, in order: the `parentSession`
-link, the hidden `agent-workflow:mode` marker, a `session_info` entry naming the
-task, and the kickoff user message carrying the real plan path.
+link, the hidden `agent-workflow:approved` fact naming the task, a
+`session_info` entry naming the task, and the kickoff user message carrying the
+real plan path.
 
 Interactive checks still belong to visual or lifecycle changes: Status Bar
 rendering, the above-editor indicator, session dashboard, and workflow prompts.
@@ -98,4 +99,4 @@ Treat an upstream update as a merge, not a blind overwrite:
 5. Run the component's checks plus bundle tests and load smoke.
 6. Update its snapshot in `UPSTREAM.md`.
 
-High-risk local behavior to preserve includes explicit plan approval and the ask-first project-memory policy.
+High-risk local behavior to preserve includes explicit plan approval (save before presenting) and the auto-write project-memory policy at close-out.

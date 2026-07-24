@@ -2,21 +2,35 @@ import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promise
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { listPlanNames, normalizeTaskName, registerTaskManagement } from "./task.js";
+import { CLOSED_ENTRY_TYPE } from "./loop.js";
+import { listPlanNames, normalizeTaskName, registerTaskManagement, resolvePlanTask } from "./task.js";
 
 function makeHarness(cwd: string, name?: string) {
 	let sessionName = name;
-	let tool: any;
+	const tools = new Map<string, any>();
+	const sent: any[] = [];
 	const pi = {
 		on: vi.fn(),
-		registerTool: (registered: any) => { tool = registered; },
+		registerTool: (registered: any) => tools.set(registered.name, registered),
 		getSessionName: () => sessionName,
 		setSessionName: vi.fn((next: string) => { sessionName = next; }),
+		sendMessage: vi.fn((message: any) => sent.push(message)),
 	};
 	registerTaskManagement(pi as never);
 	const ctx = { cwd };
-	const execute = (params: any) => tool.execute("call", params, undefined, undefined, ctx);
-	return { execute, pi, getName: () => sessionName };
+	const run = (name: string, params: any) => tools.get(name)!.execute("call", params, undefined, undefined, ctx);
+	return {
+		execute: (params: any) => run("save_plan", params),
+		saveSummary: (params: any) => run("save_summary", params),
+		pi,
+		sent,
+		getName: () => sessionName,
+	};
+}
+
+async function seedPlan(cwd: string, name: string, contents = plan) {
+	await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
+	await writeFile(join(cwd, ".pi", "plan", `${name}.md`), contents);
 }
 
 const plan = "## Current state\n\nA.\n\n## Desired state\n\nB.\n\n## Approach\n\nC.\n\n## Quirks\n\nD.\n";
@@ -72,6 +86,120 @@ describe("save_plan", () => {
 		expect(saved.isError).toBeUndefined();
 		expect(saved.details.path).toBe(join(cwd, ".pi", "plan", "legacy-state.md"));
 		await expect(access(join(cwd, ".pi", "goal", "legacy-state.todo.md"))).resolves.toBeUndefined();
+	});
+});
+
+describe("save_summary", () => {
+	let cwd: string;
+	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-save-summary-")); });
+	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
+
+	const summary = "Changed two files. `npm test` green (146 tests); visual check not run.";
+
+	it("appends the summary to the session's plan and records the close-out fact", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		const harness = makeHarness(cwd, "dashboard-polish");
+		const result = await harness.saveSummary({ summary });
+
+		const path = join(cwd, ".pi", "plan", "dashboard-polish.md");
+		expect(result.details).toEqual({ name: "dashboard-polish", path });
+		expect(await readFile(path, "utf8")).toBe(`${plan.trimEnd()}\n\n## Implementation summary\n\n${summary}\n`);
+		// The plan text itself survives untouched above the appended section.
+		expect(await readFile(path, "utf8")).toContain("## Approach");
+		expect(harness.sent).toEqual([
+			expect.objectContaining({ customType: CLOSED_ENTRY_TYPE, display: false, details: { task: "dashboard-polish" } }),
+		]);
+	});
+
+	it("leaves the session name alone", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		const harness = makeHarness(cwd, "dashboard-polish");
+		await harness.saveSummary({ summary });
+		expect(harness.pi.setSessionName).not.toHaveBeenCalled();
+	});
+
+	it("replaces a previous summary instead of stacking another one", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		const harness = makeHarness(cwd, "dashboard-polish");
+		await harness.saveSummary({ summary: "First pass." });
+		const result = await harness.saveSummary({ summary: "Corrected: one test was skipped." });
+
+		const written = await readFile(result.details.path, "utf8");
+		expect(written.match(/## Implementation summary/g)).toHaveLength(1);
+		expect(written).toContain("Corrected: one test was skipped.");
+		expect(written).not.toContain("First pass.");
+	});
+
+	it("accepts an explicit task name over the session's", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		await seedPlan(cwd, "SI-7-cache-recovery");
+		const harness = makeHarness(cwd, "dashboard-polish");
+		const result = await harness.saveSummary({ summary, name: "si-7-cache-recovery" });
+		expect(result.details.name).toBe("SI-7-cache-recovery");
+		expect(await readFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), "utf8")).toBe(plan);
+	});
+
+	it("errors on an empty summary and writes nothing", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		const harness = makeHarness(cwd, "dashboard-polish");
+		const result = await harness.saveSummary({ summary: "  " });
+		expect(result.isError).toBe(true);
+		expect(result.content[0].text).toContain("summary is required");
+		expect(await readFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), "utf8")).toBe(plan);
+		expect(harness.sent).toEqual([]);
+	});
+
+	it("errors when no plan file can be resolved", async () => {
+		const harness = makeHarness(cwd);
+		const result = await harness.saveSummary({ summary });
+		expect(result.isError).toBe(true);
+		expect(result.content[0].text).toContain("plan first");
+		expect(harness.sent).toEqual([]);
+	});
+});
+
+describe("resolvePlanTask", () => {
+	let cwd: string;
+	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-plan-resolve-")); });
+	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
+
+	it("resolves the single plan when nothing is named", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		expect(resolvePlanTask(cwd, undefined, undefined).task).toEqual({
+			name: "dashboard-polish",
+			planPath: ".pi/plan/dashboard-polish.md",
+		});
+	});
+
+	it("prefers an explicitly named task and canonicalizes it", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		await seedPlan(cwd, "SI-7-cache-recovery");
+		expect(resolvePlanTask(cwd, "si-7-cache-recovery", undefined).task?.name).toBe("SI-7-cache-recovery");
+		expect(resolvePlanTask(cwd, "no-such-task", undefined).error).toContain("No plan for no-such-task");
+	});
+
+	it("rejects a name that is not a task name", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		expect(resolvePlanTask(cwd, "not a task name!", undefined).error).toContain("is not a task name");
+	});
+
+	it("falls back to the session name before the lone-file pick", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		await seedPlan(cwd, "cache-recovery");
+		expect(resolvePlanTask(cwd, undefined, "cache-recovery").task?.name).toBe("cache-recovery");
+	});
+
+	it("asks which task when several plans exist", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		await seedPlan(cwd, "cache-recovery");
+		const { task, error } = resolvePlanTask(cwd, undefined, undefined);
+		expect(task).toBeUndefined();
+		expect(error).toContain("cache-recovery, dashboard-polish");
+		expect(error).toContain("/handoff <task-name>");
+	});
+
+	it("errors when no plan exists", () => {
+		expect(resolvePlanTask(cwd, undefined, undefined).error).toContain("plan first");
 	});
 });
 

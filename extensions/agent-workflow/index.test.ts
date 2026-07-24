@@ -3,11 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import createExtension from "./index.js";
-import { MODE_ENTRY_TYPE } from "./mode.js";
+import { APPROVED_ENTRY_TYPE, CLOSED_ENTRY_TYPE } from "./loop.js";
 
-type Mode = "plan" | "implement";
-
-const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n\n## Approach\n\nC.\n\n## Quirks\n\nD.\n";
+const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
 function harness(cwd = "/pi-kit-index-test-nonexistent") {
 	const handlers = new Map<string, Array<(event?: any, ctx?: any) => any>>();
@@ -16,8 +14,6 @@ function harness(cwd = "/pi-kit-index-test-nonexistent") {
 	const branch: any[] = [];
 	const notify = vi.fn();
 	let sessionName: string | undefined;
-	const userMessages: string[] = [];
-	const messages: any[] = [];
 	const pi = {
 		on: vi.fn((name: string, handler: (event?: any, ctx?: any) => any) => {
 			handlers.set(name, [...(handlers.get(name) ?? []), handler]);
@@ -26,15 +22,8 @@ function harness(cwd = "/pi-kit-index-test-nonexistent") {
 		registerTool: vi.fn((tool: any) => tools.push(tool)),
 		getSessionName: vi.fn(() => sessionName),
 		setSessionName: vi.fn((name: string) => { sessionName = name; }),
-		// Hidden markers are what the mode is derived from, so mirror them into the
-		// branch in the shape getBranch() really returns.
-		sendMessage: vi.fn((message: any) => {
-			messages.push(message);
-			if (message.display === false) {
-				branch.push({ type: "custom_message", customType: message.customType, display: false, content: message.content, details: message.details });
-			}
-		}),
-		sendUserMessage: vi.fn((content: string) => userMessages.push(content)),
+		sendMessage: vi.fn(),
+		sendUserMessage: vi.fn(),
 		events: { emit: vi.fn(), on: vi.fn() },
 	};
 	createExtension(pi as any);
@@ -56,50 +45,26 @@ function harness(cwd = "/pi-kit-index-test-nonexistent") {
 	const inject = async (): Promise<string> => {
 		const injectors = handlers.get("before_agent_start")!;
 		const result = await injectors[injectors.length - 1]({ systemPrompt: "base" }, ctx);
-		return (result.systemPrompt as string).replace(/\s+/g, " ");
+		// Collapsed to one line: the prose wraps, so assertions must not depend on where.
+		return (result.systemPrompt as string).replace(/\s+/g, " ").trim();
 	};
 
-	/** Seed the mode the way a /handoff-spawned session does, then inject. */
-	const promptFor = async (mode: Mode): Promise<string> => {
-		branch.push({ type: "custom_message", customType: MODE_ENTRY_TYPE, display: false, content: `Workflow mode: ${mode}.`, details: { mode } });
-		return inject();
+	/** Seed a hidden loop fact the way Proceed or a /handoff-spawned session does. */
+	const seed = (customType: string, task: string) => {
+		branch.push({ type: "custom_message", customType, display: false, content: "", details: { task } });
 	};
 
-	/**
-	 * Drive the approval prompt: arm it with a save_plan result, then settle with
-	 * a ctx whose select answers `choice` (undefined = dismissed). The editor
-	 * starts empty unless `editorText` says otherwise.
-	 */
-	const offer = async (result: unknown, choice: string | undefined, options: { editorText?: string; isError?: boolean; usage?: any; hasUI?: boolean } = {}) => {
-		const setEditorText = vi.fn();
-		const offerNotify = vi.fn();
-		const select = vi.fn(async (_title: string, _options: string[]) => choice);
-		const settleCtx = {
-			...ctx,
-			hasUI: options.hasUI ?? true,
-			getContextUsage: () => options.usage,
-			ui: { notify: offerNotify, setEditorText, getEditorText: () => options.editorText ?? "", select },
-		};
-		await handlers.get("tool_execution_end")![0]({ toolName: "save_plan", isError: options.isError ?? false, result }, settleCtx);
-		await handlers.get("agent_settled")![0]({}, settleCtx);
-		return { setEditorText, notify: offerNotify, select, settleCtx };
-	};
-
-	const setSessionName = (name: string) => { sessionName = name; };
-
-	return { handlers, commands, tools, notify, userMessages, messages, promptFor, inject, ctx, offer, newSession, setSessionName };
+	return { handlers, commands, tools, notify, inject, seed, ctx, newSession };
 }
 
-const savedPlan = { details: { name: "dashboard-polish" } };
-
-describe("agent workflow lifecycle", () => {
-	it("registers only the /handoff command and the save_plan tool", () => {
+describe("workflow prompt", () => {
+	it("registers only the /handoff command and the two plan tools", () => {
 		const { commands, tools, handlers } = harness();
 		for (const gone of ["mode", "plan", "implement", "review", "flash", "retro"]) {
 			expect(commands.has(gone)).toBe(false);
 		}
 		expect(commands.has("handoff")).toBe(true);
-		expect(tools.map((tool) => tool.name)).toEqual(["save_plan"]);
+		expect(tools.map((tool) => tool.name)).toEqual(["save_plan", "save_summary"]);
 		// The only turn-time hooks are the system-prompt injector and the approval
 		// prompt (tool_execution_end arms it, agent_settled delivers it).
 		expect(handlers.has("input")).toBe(false);
@@ -107,112 +72,98 @@ describe("agent workflow lifecycle", () => {
 		expect(handlers.has("agent_settled")).toBe(true);
 	});
 
-	it("injects the plan flow by default with the four sections and the approval question", async () => {
-		const { inject } = harness();
-		const prompt = await inject();
+	it("injects one loop block, walking the five steps in order", async () => {
+		const prompt = await harness().inject();
 		expect(prompt).toContain("<pi_workflow>");
-		expect(prompt).toContain("Session mode: PLAN");
-		for (const section of ["Current state", "Desired state", "Approach", "Quirks"]) {
-			expect(prompt).toContain(section);
+		expect(prompt.match(/<loop>/g)).toHaveLength(1);
+		let cursor = -1;
+		for (const step of ["1. Goal", "2. Explore", "3. Plan", "4. Save, then proceed", "5. Close out"]) {
+			const at = prompt.indexOf(step);
+			expect(at, step).toBeGreaterThan(cursor);
+			cursor = at;
 		}
+	});
+
+	it("names the plan topics without demanding a fixed set of sections", async () => {
+		const prompt = await harness().inject();
+		for (const topic of ["current state", "decisions taken", "desired state", "approach", "quirks"]) {
+			expect(prompt).toContain(topic);
+		}
+		expect(prompt).toContain("not a form to fill in");
+		expect(prompt).not.toContain("exactly four sections");
+	});
+
+	it("teaches save-before-present and both close-out halves", async () => {
+		const prompt = await harness().inject();
+		expect(prompt).toContain("call save_plan before you present the plan");
+		expect(prompt).toContain("always exists on disk");
 		expect(prompt).toContain("Proceed, handoff, or revise?");
-		expect(prompt).not.toContain("REVIEW");
-		expect(prompt).not.toContain("slice");
+		expect(prompt).toContain("call save_summary when the work is done");
+		expect(prompt).toContain("straight into .pi/MEMORY.md");
+		expect(prompt).toContain("write nothing and say so");
+		// The retired ask-first memory policy is gone.
+		expect(prompt).not.toContain("only after the user confirms");
 	});
 
-	it("injects the implement flow for a seeded implement session", async () => {
-		const { promptFor } = harness();
-		const prompt = await promptFor("implement");
-		expect(prompt).toContain("Session mode: IMPLEMENT");
-		expect(prompt).toContain("already approved");
-		expect(prompt).toContain("stop, report it, and let the user decide");
-		expect(prompt).toContain("Never delete the plan file");
-		expect(prompt).not.toContain("Session mode: PLAN");
+	it("frames the guidance as defaults the agent may override out loud", async () => {
+		const prompt = await harness().inject();
+		expect(prompt).toContain("guidance, not a checklist");
+		expect(prompt).toContain("your judgment wins");
+		expect(prompt).toContain("say plainly which guidance you are setting aside");
 	});
 
-	it("carries the standing rules in every mode", async () => {
-		const { inject, promptFor } = harness();
-		for (const prompt of [await inject(), await promptFor("implement")]) {
-			expect(prompt).toContain("Never commit, stash, or push");
-			expect(prompt).toContain("Never weaken a test");
-			expect(prompt).toContain(".pi/plan/<task-name>.md");
-			expect(prompt).toContain("Never delete a plan file");
-			expect(prompt).toContain("Legacy .pi/goal/ files are ignored");
-			// The learning block is a single propose-then-confirm sentence.
-			expect(prompt).toContain("only after the user confirms");
-			expect(prompt).not.toContain("durable");
+	it("keeps the standing timeless guidance", async () => {
+		const prompt = await harness().inject();
+		expect(prompt).toContain("never weaken a test");
+		expect(prompt).toContain("smallest change that satisfies it");
+		expect(prompt).toContain("stop and report instead of guessing");
+		expect(prompt).toContain(".pi/plan/<task-name>.md");
+		expect(prompt).toContain("never delete one");
+		expect(prompt).toContain("legacy .pi/goal/ files are ignored");
+		expect(prompt).toContain("never hardcode secrets");
+		// Repo conventions defer to AGENTS.md, with a fallback for projects without one.
+		expect(prompt).toContain("come from the project's AGENTS.md");
+		expect(prompt).toContain("ask before anything destructive or irreversible");
+	});
+
+	it("carries no session-mode vocabulary", async () => {
+		const approved = harness();
+		approved.seed(APPROVED_ENTRY_TYPE, "dashboard-polish");
+		for (const prompt of [await harness().inject(), await approved.inject()]) {
+			expect(prompt).not.toContain("Session mode");
+			expect(prompt).not.toMatch(/\bPLAN\b/);
+			expect(prompt).not.toMatch(/\bIMPLEMENT\b/);
+			expect(prompt).not.toMatch(/\bmodes?\b/);
 		}
 	});
 });
 
-describe("approval prompt", () => {
-	let cwd: string;
-	beforeEach(async () => {
-		cwd = await mkdtemp(join(tmpdir(), "pi-index-offer-"));
-		await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
-		await writeFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), planText);
-	});
-	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
-
-	it("Proceed switches to implement in place and kicks off the approved plan", async () => {
-		const h = harness(cwd);
-		const { notify } = await h.offer(savedPlan, "Proceed in this session (recommended)");
-		expect(h.messages.some((m) => m.customType === MODE_ENTRY_TYPE && m.details?.mode === "implement")).toBe(true);
-		expect(h.userMessages[0]).toContain(".pi/plan/dashboard-polish.md");
-		expect(h.userMessages[0]).toContain("do not ask for approval again");
-		expect(notify).not.toHaveBeenCalled();
+describe("position line", () => {
+	it("reports no approved plan before approval", async () => {
+		expect(await harness().inject()).toContain("No plan is approved yet");
 	});
 
-	it("Handoff prefills /handoff with the task name only when the editor is empty", async () => {
-		const h = harness(cwd);
-		const { setEditorText, notify } = await h.offer(savedPlan, "Handoff to a fresh session");
-		expect(setEditorText).toHaveBeenCalledWith("/handoff dashboard-polish");
-		expect(notify).toHaveBeenCalledWith(expect.stringContaining("/handoff dashboard-polish"), "info");
-
-		const busy = harness(cwd);
-		const { setEditorText: untouched } = await busy.offer(savedPlan, "Handoff to a fresh session", { editorText: "half-typed thought" });
-		expect(untouched).not.toHaveBeenCalled();
+	it("names the approved task and its plan path after approval", async () => {
+		const h = harness();
+		h.seed(APPROVED_ENTRY_TYPE, "dashboard-polish");
+		const prompt = await h.inject();
+		expect(prompt).toContain("The plan for dashboard-polish at .pi/plan/dashboard-polish.md is approved");
+		expect(prompt).not.toContain("No plan is approved yet");
 	});
 
-	it("Revise and a dismissed prompt change nothing and stay in plan", async () => {
-		for (const choice of ["Revise the plan", undefined]) {
-			const h = harness(cwd);
-			const { notify, setEditorText } = await h.offer(savedPlan, choice as any);
-			expect(notify).toHaveBeenCalledWith(expect.stringContaining("Staying in plan"), "info");
-			expect(setEditorText).not.toHaveBeenCalled();
-			expect(h.messages.some((m) => m.customType === MODE_ENTRY_TYPE)).toBe(false);
-		}
+	it("returns to no-approved-plan once the task is closed out", async () => {
+		const h = harness();
+		h.seed(APPROVED_ENTRY_TYPE, "dashboard-polish");
+		h.seed(CLOSED_ENTRY_TYPE, "dashboard-polish");
+		expect(await h.inject()).toContain("No plan is approved yet");
 	});
 
-	it("recommends Proceed on a lean context and Handoff on a loaded one", async () => {
-		const lean = harness(cwd);
-		const { select: leanSelect } = await lean.offer(savedPlan, undefined);
-		expect(leanSelect.mock.calls[0]![1][0]).toBe("Proceed in this session (recommended)");
-
-		const loaded = harness(cwd);
-		const { select: loadedSelect } = await loaded.offer(savedPlan, undefined, { usage: { tokens: 150_000, contextWindow: 1_000_000, percent: 15 } });
-		expect(loadedSelect.mock.calls[0]![1][0]).toBe("Handoff to a fresh session (recommended)");
-	});
-
-	it("fires once per save and never on a failed save", async () => {
-		const h = harness(cwd);
-		const first = await h.offer(savedPlan, "Revise the plan");
-		expect(first.select).toHaveBeenCalledTimes(1);
-		// Settle again without a new save: the offer was consumed.
-		await h.handlers.get("agent_settled")![0]({}, first.settleCtx);
-		expect(first.select).toHaveBeenCalledTimes(1);
-
-		const failed = harness(cwd);
-		const { select } = await failed.offer(savedPlan, "Revise the plan", { isError: true });
-		expect(select).not.toHaveBeenCalled();
-	});
-
-	it("degrades to a displayed /handoff hint when headless", async () => {
-		const h = harness(cwd);
-		const { select } = await h.offer(savedPlan, undefined, { hasUI: false });
-		expect(select).not.toHaveBeenCalled();
-		const hint = h.messages.find((m) => m.display === true);
-		expect(hint?.content).toContain("/handoff dashboard-polish");
+	it("comes last, so the guidance prefix stays cacheable", async () => {
+		const h = harness();
+		h.seed(APPROVED_ENTRY_TYPE, "dashboard-polish");
+		const prompt = await h.inject();
+		expect(prompt.indexOf("<position>")).toBeGreaterThan(prompt.indexOf("</loop>"));
+		expect(prompt.endsWith("</position> </pi_workflow>")).toBe(true);
 	});
 });
 
@@ -221,7 +172,7 @@ describe("/handoff command", () => {
 	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-index-handoff-")); });
 	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
 
-	it("spawns the implement session for the resolved plan", async () => {
+	it("spawns the session for the resolved plan", async () => {
 		await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
 		await writeFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), planText);
 		const h = harness(cwd);

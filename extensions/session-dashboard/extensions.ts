@@ -41,12 +41,12 @@ export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
 	{
 		name: "agent-workflow",
 		group: "workflow",
-		description: "Guides the planning workflow with plan persistence and durable project memory.",
+		description: "Guides one workflow loop per task, with plan persistence, close-out, and durable project memory.",
 	},
 	{
 		name: "progress-tracker",
 		group: "workflow",
-		description: "Persists workflow phase and todos in sessions; provides `manage_todo_list` and `/todos`.",
+		description: "Persists the agent-authored loop phase and todos in sessions; provides `manage_todo_list` and `/todos`.",
 	},
 	{
 		name: "agent-status-bridge",

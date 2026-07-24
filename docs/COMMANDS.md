@@ -2,12 +2,12 @@
 
 This is the short operational reference. Some vendored extensions expose more
 advanced commands; follow their linked README when needed. The working flow is
-guidance split across two session modes, described in [FLOW.md](FLOW.md);
-there is no enforced state machine.
+one guided loop per task, described in [FLOW.md](FLOW.md); there is no
+enforced state machine and no session modes.
 
 ## Everyday commands
 
-- **`/handoff [task-name]`** — Human-only session boundary: spawns a fresh Implement session seeded with the task name and a kickoff naming the approved plan's path. Without a task name it uses the session's task, or the lone plan under `.pi/plan/`; with several it asks which one. The Plan-side approval prompt (Proceed, handoff, or revise) prefills this command on Handoff
+- **`/handoff [task-name]`** — Human-only session boundary: spawns a fresh session seeded with the approval fact, the task name, and a kickoff naming the approved plan's path. Without a task name it uses the session's task, or the lone plan under `.pi/plan/`; with several it asks which one. The approval prompt (Proceed, handoff, or revise) prefills this command on Handoff
 - **`/todos`** — Reveal workflow progress and toggle the independent local todo widget
 - **`/help`** — Full reference: commands, shortcuts, and every active extension
 - **`/extension-settings`** — Edit registered global extension settings
@@ -15,8 +15,9 @@ there is no enforced state machine.
 
 ## User-facing tools
 
-- **`manage_todo_list`** (Progress Tracker) — Read/write local todos independently of the workflow phase
-- **`save_plan`** (Agent Workflow) — Save the presented four-section plan to `.pi/plan/<task-name>.md` and name the session after it
+- **`manage_todo_list`** (Progress Tracker) — Read/write local todos; the above-editor indicator shows context usage
+- **`save_plan`** (Agent Workflow) — Save the plan to `.pi/plan/<task-name>.md` and name the session after it; called before the plan is presented
+- **`save_summary`** (Agent Workflow) — Close the task out: append the honest implementation summary to its plan file (a re-run replaces the previous one)
 
 ## Shell and keyboard reminders
 

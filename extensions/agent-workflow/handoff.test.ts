@@ -2,8 +2,8 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { openHandoffSession, resolveHandoffTask } from "./handoff.js";
-import { MODE_ENTRY_TYPE } from "./mode.js";
+import { openHandoffSession } from "./handoff.js";
+import { APPROVED_ENTRY_TYPE } from "./loop.js";
 
 const plan = "## Current state\n\nA.\n\n## Desired state\n\nB.\n\n## Approach\n\nC.\n\n## Quirks\n\nD.\n";
 
@@ -55,59 +55,19 @@ async function seedPlan(cwd: string, name: string) {
 	await writeFile(join(cwd, ".pi", "plan", `${name}.md`), plan);
 }
 
-describe("handoff task resolution", () => {
-	let cwd: string;
-	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-handoff-")); });
-	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
-
-	it("resolves the single plan when nothing is named", async () => {
-		await seedPlan(cwd, "dashboard-polish");
-		expect(resolveHandoffTask(cwd, undefined, undefined).task).toEqual({
-			name: "dashboard-polish",
-			planPath: ".pi/plan/dashboard-polish.md",
-		});
-	});
-
-	it("prefers an explicitly named task and canonicalizes it", async () => {
-		await seedPlan(cwd, "dashboard-polish");
-		await seedPlan(cwd, "SI-7-cache-recovery");
-		expect(resolveHandoffTask(cwd, "si-7-cache-recovery", undefined).task?.name).toBe("SI-7-cache-recovery");
-		expect(resolveHandoffTask(cwd, "no-such-task", undefined).error).toContain("No plan for no-such-task");
-	});
-
-	it("falls back to the session name before the lone-file pick", async () => {
-		await seedPlan(cwd, "dashboard-polish");
-		await seedPlan(cwd, "cache-recovery");
-		expect(resolveHandoffTask(cwd, undefined, "cache-recovery").task?.name).toBe("cache-recovery");
-	});
-
-	it("asks which task when several plans exist", async () => {
-		await seedPlan(cwd, "dashboard-polish");
-		await seedPlan(cwd, "cache-recovery");
-		const { task, error } = resolveHandoffTask(cwd, undefined, undefined);
-		expect(task).toBeUndefined();
-		expect(error).toContain("cache-recovery, dashboard-polish");
-		expect(error).toContain("/handoff <task-name>");
-	});
-
-	it("errors when no plan exists", () => {
-		expect(resolveHandoffTask(cwd, undefined, undefined).error).toContain("plan first");
-	});
-});
-
 describe("openHandoffSession", () => {
 	let cwd: string;
 	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-handoff-cmd-")); });
 	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
 
-	it("seeds the new session with the implement marker, task name, and an auto-approved kickoff", async () => {
+	it("seeds the new session with the approval fact, task name, and an auto-approved kickoff", async () => {
 		await seedPlan(cwd, "dashboard-polish");
 		const { open, newSession, seeded, next } = makeHarness(cwd);
 		await open();
 
 		expect(newSession).toHaveBeenCalledWith(expect.objectContaining({ parentSession: "/sessions/current.jsonl" }));
 		expect(seeded.entries).toEqual([
-			{ customType: MODE_ENTRY_TYPE, content: "Workflow mode: implement.", display: false, details: { mode: "implement" } },
+			{ customType: APPROVED_ENTRY_TYPE, content: "Plan approved: dashboard-polish.", display: false, details: { task: "dashboard-polish" } },
 		]);
 		expect(seeded.names).toEqual(["dashboard-polish"]);
 		const [kickoff] = next.sendUserMessage.mock.calls[0];

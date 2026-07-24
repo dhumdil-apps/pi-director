@@ -11,7 +11,7 @@ vi.mock("../usage-history/data.js", async (importOriginal) => ({
 	collectUsageData: usageMocks.collectUsageData,
 }));
 
-import sessionDashboardExtension, { contextFileList, tildify, UsageChartCard } from "./index.js";
+import sessionDashboardExtension, { tildify, UsageChartCard } from "./index.js";
 
 describe("tildify", () => {
 	it("tildifies a path under the home directory", () => {
@@ -118,11 +118,16 @@ describe("session dashboard startup", () => {
 		await startup;
 
 		const content = sendMessage.mock.calls[0]?.[0].content as string;
-		expect(content).toContain("⌘ Handoff* `/handoff [task-name]`");
+		expect(content).toContain("> ❓ `/help`");
+		expect(content).not.toContain("⚡ Raw Pi");
+		expect(content).not.toContain("⌘ Handoff");
 		expect(content).not.toContain("/mode");
+		expect(content).not.toContain("📜");
+		expect(content).not.toContain("AGENTS.md");
+		expect(content).toContain(`*${tildify(process.cwd())}*`);
+		expect(content.match(/❓ `\/help`/g)).toHaveLength(1);
 		expect(content).not.toContain("π Measure twice, cut once. What’s your goal?");
-		expect(content.indexOf("⚡ Raw Pi")).toBeLessThan(content.indexOf("⌘ Handoff"));
-		expect(content.endsWith("*⌘ Handoff* `/handoff [task-name]` *— once a plan is saved*")).toBe(true);
+		expect(content.endsWith("> ❓ `/help`")).toBe(true);
 		expect(setWidget).toHaveBeenLastCalledWith("session-dashboard-loading", undefined);
 	});
 
@@ -162,9 +167,8 @@ describe("session dashboard startup", () => {
 		const content = sendMessage.mock.calls[0]?.[0].content as string;
 		const json = content.match(/<!-- session-dashboard-usage-chart -->\n(.+)\n<!-- \/session-dashboard-usage-chart -->/)?.[1];
 		const graph = JSON.parse(json ?? "") as GraphModel;
-		expect(content.indexOf("❓ `/help`")).toBeLessThan(content.indexOf("<!-- session-dashboard-usage-chart -->"));
-		expect(content.indexOf("<!-- session-dashboard-usage-chart -->")).toBeLessThan(content.indexOf("⚡ Raw Pi"));
-		expect(content.indexOf("⚡ Raw Pi")).toBeLessThan(content.indexOf("⌘ Handoff"));
+		expect(content.indexOf("<!-- session-dashboard-usage-chart -->")).toBeLessThan(content.indexOf("❓ `/help`"));
+		expect(content.match(/❓ `\/help`/g)).toHaveLength(1);
 		expect(graph).toMatchObject({ domainStartMs: start, domainEndMs: now, bucketMs: day });
 		expect(graph.bucketStarts).toHaveLength(30);
 		expect(graph.series.map((series) => series.key)).toEqual([TOTAL_SERIES_KEY, "gpt-5-mini", "gpt-5"]);
@@ -172,8 +176,4 @@ describe("session dashboard startup", () => {
 		expect(graph.series.map((series) => series.hidden)).toEqual([true, false, false]);
 	});
 
-	it("formats context files cleanly", () => {
-		const files = contextFileList(process.cwd());
-		expect(Array.isArray(files)).toBe(true);
-	});
 });

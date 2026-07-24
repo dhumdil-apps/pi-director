@@ -6,7 +6,7 @@
  */
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { normalizeWorkflowPhase, type TodoItem, type TodoDetails, type ValidationResult, type TodoStats, type WorkflowPhase } from "./types.js";
+import type { TodoItem, TodoDetails, ValidationResult, TodoStats } from "./types.js";
 
 /**
  * customType of the `pi.sendMessage` marker index.ts sends when the user
@@ -16,7 +16,6 @@ export const CLEAR_ENTRY_TYPE = "progress-tracker:todos-cleared";
 
 export class TodoStateManager {
   private todos: TodoItem[] = [];
-  private phase: WorkflowPhase = "goal";
 
   /** Return the current todo list */
   read(): TodoItem[] {
@@ -37,14 +36,6 @@ export class TodoStateManager {
    */
   clear(): void {
     this.todos = [];
-  }
-
-  getPhase(): WorkflowPhase {
-    return this.phase;
-  }
-
-  setPhase(phase: WorkflowPhase): void {
-    this.phase = phase;
   }
 
   /** Get stats about the current list */
@@ -105,7 +96,6 @@ export class TodoStateManager {
    */
   loadFromSession(ctx: ExtensionContext): void {
     this.todos = [];
-    this.phase = "goal";
 
     for (const entry of ctx.sessionManager.getBranch()) {
       // getBranch() yields raw entries: a pi.sendMessage marker is a top-level
@@ -125,8 +115,6 @@ export class TodoStateManager {
       if (details?.todos) {
         this.todos = details.todos.map((t) => ({ ...t }));
       }
-      const phase = normalizeWorkflowPhase(details?.phase);
-      if (phase) this.phase = phase;
     }
   }
 }
