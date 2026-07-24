@@ -81,25 +81,22 @@ describe("workflow prompt", () => {
 
 	it("states the no-changes-before-approval guarantee, and names its one out", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("Nothing in the working tree changes until the user has approved a plan");
-		expect(prompt).toContain("if something must, say so first");
-		expect(prompt).toContain("then stop: the approval picker takes it from there");
+		expect(prompt).toContain("wait for approval before implementation");
 		// The picker owns that question; the agent is not told to type it.
 		expect(prompt).not.toContain("Proceed, handoff, or revise?");
 	});
 
 	it("makes questions cheap rather than rationed", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("surface every choice you would otherwise make on the user's behalf");
-		expect(prompt).toContain("ask even when the answer seems obvious to you");
+		expect(prompt).toContain("Surface important choices you would otherwise make on the user's behalf");
 		// The retired dampener that rationed questions to "genuine open choices".
 		expect(prompt).not.toContain("Ask questions only about");
 	});
 
 	it("routes questions through the ask tool, and says what a clashing answer costs", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("Put the questions through the ask tool");
-		expect(prompt).toContain("strive to align with more questions");
+		expect(prompt).toContain('Put the questions through the "ask" tool');
+		expect(prompt).toContain("try to align with more questions");
 	});
 
 	it("points the plan at the scaffolded format instead of listing its sections", async () => {
@@ -107,22 +104,21 @@ describe("workflow prompt", () => {
 		expect(prompt).toContain(".pi/plan/<session-name>.md");
 		expect(prompt).toContain("matching its scaffolded format");
 		// The topics themselves live in the template the step points at.
-		for (const topic of ["Current state", "Decisions", "Desired state", "Approach", "Quirks"]) {
+		for (const topic of ["Current state", "Decisions", "Desired state", "Approach", "Quirks", "Checklist"]) {
 			expect(PLAN_TEMPLATE, topic).toContain(`## ${topic}`);
 		}
 	});
 
 	it("names a tool for each step that has one, and none that was retired", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("Call save_plan to present it");
-		expect(prompt).toContain("call close_out with what changed");
-		expect(prompt).toContain("into .pi/MEMORY.md");
+		expect(prompt).toContain('Call "save_plan" tool to present it');
+		expect(prompt).toContain('Call "close_out" tool with what changed');
+		expect(prompt).toContain(".pi/MEMORY.md");
 		expect(prompt).not.toContain("save_summary");
 	});
 
-	it("keeps craft advice out beyond the one line that shapes execution", async () => {
+	it("keeps craft advice out beyond the prompt text", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("the smallest change that fits the code around it");
 		// Generic craft advice belongs in AGENTS.md, stated once, not duplicated here.
 		for (const duplicated of [
 			"never weaken a test",

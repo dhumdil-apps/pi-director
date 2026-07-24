@@ -270,6 +270,7 @@ describe("ensurePiState / movePlan", () => {
 	it("creates the plan dir and a MEMORY stub, and never overwrites an existing one", async () => {
 		await ensurePiState(cwd);
 		const memory = join(cwd, ".pi", "MEMORY.md");
+		expect(await readFile(memory, "utf8")).toBe("# Project memory\n\nWork-arounds or other quirks learned on this project.\n");
 		await writeFile(memory, "# Mine\n");
 		await ensurePiState(cwd);
 		await expect(access(join(cwd, ".pi", "plan"))).resolves.toBeUndefined();

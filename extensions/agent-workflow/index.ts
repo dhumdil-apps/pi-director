@@ -27,30 +27,29 @@ import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, regist
  * plan file is named, what replaces a previous summary — so the block stays the
  * shape of the session and nothing else.
  */
-const LOOP = `  <loop>
-    The loop: explore, ask, plan, execute, close out. The user's unpolished request is the
-    scope. Nothing in the working tree changes until the user has approved a plan — if
-    something must, say so first.
+const LOOP = `<loop>
+   1. Explore
+   - Discover what are we working with before forming an opinion about it.
 
-    1. Explore — read the code before forming an opinion about it, however small the task looks.
+   2. Ask
+   - Surface important choices you would otherwise make on the user's behalf.
+   - Put the questions through the "ask" tool.
+   - When one answer invalidates another question, say so and try to align with more questions.
 
-    2. Ask — surface every choice you would otherwise make on the user's behalf, and ask even
-       when the answer seems obvious to you; that is where the expensive misreads live. Put the
-       questions through the ask tool, and when one answer invalidates another question, say so
-       and strive to align with more questions.
+   3. Plan
+   - Keep .pi/plan/<session-name>.md current as you go, matching its scaffolded format.
+   - Call "save_plan" tool to present it, then wait for approval before implementation.
+   - A new plan extends the current one (once a <session-name> is set its immutable).
 
-    3. Plan — keep .pi/plan/<session-name>.md current as you go, matching its scaffolded
-       format; before approval it is the only file you edit. Call save_plan to present it, then
-       stop: the approval picker takes it from there.
+   4. Execute
+   - Once a plan is approved, carry the plan out.
+   - On a blocker stop and report rather than guess past it - proceed to step 3. to re-plan.
 
-    4. Execute — once approved, carry the plan out without asking again: the smallest change
-       that fits the code around it. On a blocker nobody knew about at planning time, stop and
-       report rather than guess past it.
-
-    5. Close out — call close_out with what changed, what verification ran and reported, and
-       every check skipped or failed. Then put anything durably true about this project into
-       .pi/MEMORY.md; if nothing durable came of it, say so.
-  </loop>`;
+   5. Close out
+   - Call "close_out" tool with what changed, what verification ran and reported, and every check skipped or failed.
+   - Update .pi/MEMORY.md with work-arounds or other quirks if present.
+   - On more requested changes proceed to step 3. to re-plan.
+</loop>`;
 
 /** Constant by design: nothing varies per turn, so the whole prefix is cacheable. */
 export function workflowPrompt(): string {

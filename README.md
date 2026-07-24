@@ -30,7 +30,7 @@ pi update --extensions
 
 - **Provider & Model**: Configured through Pi or in `~/.pi/agent/settings.json`.
 - **Extension Settings**: Managed via `/extension-settings` in your chat session.
-- **Project Memory**: Optionally create a `.pi/MEMORY.md` in your project for persistent agent takeaways.
+- **Project Memory**: Optionally create a `.pi/MEMORY.md` in your project for work-arounds or other quirks.
 
 ### Verification
 

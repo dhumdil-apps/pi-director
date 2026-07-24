@@ -56,9 +56,7 @@ error as a regression or compatibility issue to fix.
 
 ## Project memory is not being used
 
-- Project memory is an optional user-owned `.pi/MEMORY.md` file.
-- The workflow checks for and reads it at the start of every task when present.
-- Project memory is maintained with user confirmation during implementation close-out.
-  That step preserves manual content while deduplicating or replacing stale durable
-  lessons.
+- Project memory is an optional user-owned `.pi/MEMORY.md` file for work-arounds or other quirks.
+- The workflow checks for and reads it when present.
+- Work-arounds or other quirks are updated during close-out or implementation when discovered.
 - `.pi/` is ignored by default; projects may customize that Git policy.

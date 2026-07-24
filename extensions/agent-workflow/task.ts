@@ -38,9 +38,12 @@ export const PLAN_TEMPLATE = [
 	"## Implementation summary",
 	"<filled at close-out — what changed, what verification ran, what was skipped>",
 	"",
+	"## Checklist",
+	"- [ ] <task>",
+	"",
 ].join("\n");
 
-const MEMORY_STUB = "# Project memory\n\nDurable facts about this project — conventions learned, traps hit, decisions worth keeping.\n";
+const MEMORY_STUB = "# Project memory\n\nWork-arounds or other quirks learned on this project.\n";
 
 const HANDOFF_USAGE = "Usage: /handoff [session-name].";
 
@@ -272,7 +275,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "close_out",
 		label: "Close Out",
-		description: "Record how the task actually went in the plan file's Implementation summary. Replaces any previous summary rather than stacking another one, so re-running it after more work is fine. Durable project facts go to .pi/MEMORY.md instead — this tool does not touch it.",
+		description: "Record how the task actually went in the plan file's Implementation summary. Replaces any previous summary rather than stacking another one, so re-running it after more work is fine. Work-arounds or other quirks go to .pi/MEMORY.md instead — this tool does not touch it.",
 		parameters: CloseOutParams,
 		async execute(_toolCallId, params: CloseOutInput, _signal, _onUpdate, ctx) {
 			const { task, error } = resolvePlanTask(ctx.cwd, undefined, pi.getSessionName());
