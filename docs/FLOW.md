@@ -41,9 +41,15 @@ constant, so the whole prompt prefix stays cacheable.
    the task touches, plus their callers and tests, on every task regardless of
    size.
 3. **Ask** — Pi surfaces every choice it would otherwise make on the user's
-   behalf, in ordinary messages, naming concrete options and a recommendation
-   rather than asking open-ended questions. A question costs a sentence; a wrong
-   plan costs the whole task.
+   behalf, naming concrete options and a recommendation rather than asking
+   open-ended questions. A question costs a sentence; a wrong plan costs the
+   whole task. When the choice fits two to four options, the `ask` tool opens a
+   native picker: the question and every option — a short headline plus a
+   one-sentence description each, recommendation first — are printed in the
+   transcript, and the picker below lists the headlines alone, so answering is
+   one keypress rather than a typed reply. Anything that does not fit a short
+   list is asked in an ordinary message. Dismissing the picker answers nothing;
+   Pi then asks in prose.
 4. **Plan, then stop** — a good plan covers the **current state** (how it works
    today), the **decisions taken** (the questions asked and how they were
    answered, so the reasoning survives into another session), the **desired
@@ -63,8 +69,9 @@ constant, so the whole prompt prefix stays cacheable.
    check skipped or failed. Then anything durably true about the project goes
    into `.pi/MEMORY.md`. A blocker that invalidates the plan goes back to step 1.
 
-`save_plan` is the bundle's only workflow tool. Close-out is an ordinary edit to
-the plan file — no tool stands in for it, and nothing marks a task "closed".
+`ask` and `save_plan` are the bundle's only workflow tools, and only `save_plan`
+touches disk. Close-out is an ordinary edit to the plan file — no tool stands in
+for it, and nothing marks a task "closed".
 
 Progress Tracker shows whether a run is in flight and how loaded the context is,
 above the editor. It ships no todo tool: Pi has none on purpose ("they confuse

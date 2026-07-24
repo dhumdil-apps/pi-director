@@ -167,8 +167,7 @@ function taskFor(cwd: string, name: string): PlanResolution {
 }
 
 /**
- * Which task a plan-consuming operation (/handoff, save_summary, the approval
- * prompt) is about. .pi/plan/ accumulates — plan files are never deleted by the
+ * Which task a plan-consuming operation (/handoff, the approval prompt) is about. .pi/plan/ accumulates — plan files are never deleted by the
  * agent — so resolution never assumes a single file: the explicit name wins,
  * then the session name, and only a lone remaining file is picked implicitly.
  */
