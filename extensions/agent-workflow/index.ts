@@ -4,8 +4,9 @@
  * One loop per task — goal, explore, ask, plan, execute, close out — injected as
  * a flow contract rather than a rule list. Two guarantees carry the weight:
  * nothing in the working tree changes before an approved plan, and questions are
- * cheap. Craft advice deliberately lives in the project's AGENTS.md instead,
- * which the prompt points at, so it is stated once.
+ * cheap — cheap enough to have their own native picker (ask.ts). Craft advice
+ * deliberately lives in the project's AGENTS.md instead, which the prompt points
+ * at, so it is stated once.
  *
  * The injected block is a constant: no per-turn position, so the whole prefix
  * stays cacheable. Saving a plan for a task nobody has approved arms the
@@ -16,6 +17,7 @@
 import { writeFile } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { registerApproval } from "./approval.js";
+import { registerAsk } from "./ask.js";
 import { openHandoffSession } from "./handoff.js";
 import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, registerTaskManagement } from "./task.js";
 
@@ -29,43 +31,37 @@ const LOOP = `  <loop>
     Nothing in the working tree changes until the user has approved a plan.
 
     1. Goal — the user's request is the scope. Read the project's AGENTS.md and .pi/MEMORY.md
-       first; they carry the conventions and past decisions you would otherwise rediscover the
-       expensive way. A plan file for this task was scaffolded at .pi/plan/<task-name>.md when
-       the session opened — it is your living document, so keep it current as you go, and call
+       first: verification commands, git discipline, and repository conventions come from the
+       project's AGENTS.md — follow it. A plan file for this task was scaffolded at
+       .pi/plan/<task-name>.md when the session opened; keep it current as you go, and call
        save_plan with a meaningful name once the real subject is clear (the leading timestamp
        is kept, so files stay time-ordered).
 
-    2. Explore — read the code before forming an opinion about it. A plan written from memory
-       of a codebase is a guess wearing a plan's clothes: open the files the task touches,
+    2. Explore — read the code before forming an opinion about it: the files the task touches,
        their callers and their tests, however small the task looks.
 
-    3. Ask — surface every choice you would otherwise make on the user's behalf. Assumptions
-       are where misunderstanding starts, and a question costs a sentence while a wrong plan
-       costs the whole task. Ask in ordinary messages, and ask even when the answer seems
-       obvious to you — obvious-to-you is exactly where the expensive misreads live. Prefer
-       naming the concrete options and your recommendation over an open-ended question.
+    3. Ask — surface every choice you would otherwise make on the user's behalf, and ask even
+       when the answer seems obvious to you; that is exactly where the expensive misreads live.
+       Use the ask tool whenever the choice fits two to four concrete options, naming the
+       concrete options and your recommendation first; ask in an ordinary message when it does
+       not fit a short list.
 
     4. Plan, then stop — write the plan into the file and call save_plan to present it. A good
        plan covers the current state, the decisions taken and how each question was answered,
        the desired state, the approach, and the quirks worth carrying into a handoff; shape it
-       to the task — the scaffolded file sketches those as placeholders. save_plan echoes the
-       file back so the user decides against exactly what is on disk. Present the same content,
-       end with "Proceed, handoff, or revise?", and stop. The choice is theirs.
+       to the task. save_plan echoes the file back so the user decides against exactly what is
+       on disk. Present the same content, end with "Proceed, handoff, or revise?", and stop.
+       The choice is theirs. Plans are the user's to keep, archive, or remove — never delete
+       one; legacy .pi/goal/ files are ignored and preserved.
 
     5. Execute — once approved, carry the plan out without asking again. On a blocker nobody
        knew about at planning time, stop and report rather than guessing past it. Re-saving a
-       corrected plan mid-implementation is normal and needs no ceremony.
+       corrected plan mid-implementation is normal.
 
     6. Close out — write into the plan file's Implementation summary what changed, what
        verification actually ran and what it reported, and every check skipped or failed. Then
-       put anything durably true about this project into .pi/MEMORY.md — a convention learned,
-       a trap hit, a decision worth keeping. If nothing durable came of it, write nothing and
-       say so. A blocker that invalidates the plan goes back to step 1; a new goal starts a
-       new loop.
-
-    Verification commands, git discipline, and repository conventions come from the project's
-    AGENTS.md — follow it. Plans live at .pi/plan/ and are the user's to keep, archive, or
-    remove — never delete one; legacy .pi/goal/ files are ignored and preserved.
+       put anything durably true about this project into .pi/MEMORY.md. If nothing durable came
+       of it, write nothing and say so. A blocker that invalidates the plan goes back to step 1.
   </loop>`;
 
 /** Constant by design: nothing varies per turn, so the whole prefix is cacheable. */
@@ -75,6 +71,7 @@ export function workflowPrompt(): string {
 
 export default function createExtension(pi: ExtensionAPI): void {
 	registerTaskManagement(pi);
+	registerAsk(pi);
 	registerApproval(pi);
 
 	pi.registerCommand("handoff", {

@@ -58,7 +58,7 @@ describe("workflow prompt", () => {
 			expect(commands.has(gone)).toBe(false);
 		}
 		expect(commands.has("handoff")).toBe(true);
-		expect(tools.map((tool) => tool.name)).toEqual(["save_plan"]);
+		expect(tools.map((tool) => tool.name)).toEqual(["save_plan", "ask"]);
 		// The only turn-time hooks are the system-prompt injector and the approval
 		// prompt (tool_execution_end arms it, agent_settled delivers it).
 		expect(handlers.has("input")).toBe(false);
@@ -92,6 +92,12 @@ describe("workflow prompt", () => {
 		expect(prompt).toContain("naming the concrete options and your recommendation");
 		// The retired dampener that rationed questions to "genuine open choices".
 		expect(prompt).not.toContain("Ask questions only about");
+	});
+
+	it("routes short-list questions to the ask tool and the rest to prose", async () => {
+		const prompt = await harness().inject();
+		expect(prompt).toContain("Use the ask tool whenever the choice fits two to four concrete options");
+		expect(prompt).toContain("ask in an ordinary message when it does not fit a short list");
 	});
 
 	it("names the plan topics without demanding a fixed set of sections", async () => {
