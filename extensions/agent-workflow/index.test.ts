@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import createExtension, { workflowPrompt } from "./index.js";
+import { PLAN_TEMPLATE } from "./task.js";
 
 const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
@@ -52,13 +53,13 @@ function harness(cwd = "/pi-kit-index-test-nonexistent") {
 }
 
 describe("workflow prompt", () => {
-	it("registers only the /handoff command and the single plan tool", () => {
+	it("registers only the /handoff command and the loop's three tools", () => {
 		const { commands, tools, handlers } = harness();
 		for (const gone of ["mode", "plan", "implement", "review", "flash", "retro", "todos"]) {
 			expect(commands.has(gone)).toBe(false);
 		}
 		expect(commands.has("handoff")).toBe(true);
-		expect(tools.map((tool) => tool.name)).toEqual(["save_plan", "ask"]);
+		expect(tools.map((tool) => tool.name)).toEqual(["save_plan", "close_out", "ask"]);
 		// The only turn-time hooks are the system-prompt injector and the approval
 		// prompt (tool_execution_end arms it, agent_settled delivers it).
 		expect(handlers.has("input")).toBe(false);
@@ -66,70 +67,65 @@ describe("workflow prompt", () => {
 		expect(handlers.has("agent_settled")).toBe(true);
 	});
 
-	it("injects one loop block, walking the six steps in order", async () => {
+	it("injects one loop block, walking the five steps in order", async () => {
 		const prompt = await harness().inject();
 		expect(prompt).toContain("<pi_workflow>");
 		expect(prompt.match(/<loop>/g)).toHaveLength(1);
 		let cursor = -1;
-		for (const step of ["1. Goal", "2. Explore", "3. Ask", "4. Plan, then stop", "5. Execute", "6. Close out"]) {
+		for (const step of ["1. Explore", "2. Ask", "3. Plan", "4. Execute", "5. Close out"]) {
 			const at = prompt.indexOf(step);
 			expect(at, step).toBeGreaterThan(cursor);
 			cursor = at;
 		}
 	});
 
-	it("states the no-changes-before-approval guarantee outright", async () => {
+	it("states the no-changes-before-approval guarantee, and names its one out", async () => {
 		const prompt = await harness().inject();
 		expect(prompt).toContain("Nothing in the working tree changes until the user has approved a plan");
-		expect(prompt).toContain("Proceed, handoff, or revise?");
-		expect(prompt).toContain("and stop. The choice is theirs");
+		expect(prompt).toContain("if something must, say so first");
+		expect(prompt).toContain("then stop: the approval picker takes it from there");
+		// The picker owns that question; the agent is not told to type it.
+		expect(prompt).not.toContain("Proceed, handoff, or revise?");
 	});
 
 	it("makes questions cheap rather than rationed", async () => {
 		const prompt = await harness().inject();
 		expect(prompt).toContain("surface every choice you would otherwise make on the user's behalf");
 		expect(prompt).toContain("ask even when the answer seems obvious to you");
-		expect(prompt).toContain("naming the concrete options and your recommendation");
 		// The retired dampener that rationed questions to "genuine open choices".
 		expect(prompt).not.toContain("Ask questions only about");
 	});
 
-	it("routes short-list questions to the ask tool and the rest to prose", async () => {
+	it("routes questions through the ask tool, and says what a clashing answer costs", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("Use the ask tool whenever the choice fits two to four concrete options");
-		expect(prompt).toContain("ask in an ordinary message when it does not fit a short list");
+		expect(prompt).toContain("Put the questions through the ask tool");
+		expect(prompt).toContain("strive to align with more questions");
 	});
 
-	it("names the plan topics without demanding a fixed set of sections", async () => {
+	it("points the plan at the scaffolded format instead of listing its sections", async () => {
 		const prompt = await harness().inject();
-		for (const topic of ["current state", "decisions taken", "desired state", "approach", "quirks"]) {
-			expect(prompt).toContain(topic);
+		expect(prompt).toContain(".pi/plan/<session-name>.md");
+		expect(prompt).toContain("matching its scaffolded format");
+		// The topics themselves live in the template the step points at.
+		for (const topic of ["Current state", "Decisions", "Desired state", "Approach", "Quirks"]) {
+			expect(PLAN_TEMPLATE, topic).toContain(`## ${topic}`);
 		}
-		expect(prompt).toContain("shape it to the task");
 	});
 
-	it("teaches save-before-present and both close-out halves", async () => {
+	it("names a tool for each step that has one, and none that was retired", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("call save_plan to present it");
-		expect(prompt).toContain("save_plan echoes the file back");
-		expect(prompt).toContain("A plan file for this task was scaffolded");
-		expect(prompt).toContain("the leading timestamp is kept");
-		expect(prompt).toContain("plan file's Implementation summary");
+		expect(prompt).toContain("Call save_plan to present it");
+		expect(prompt).toContain("call close_out with what changed");
 		expect(prompt).toContain("into .pi/MEMORY.md");
-		expect(prompt).toContain("write nothing and say so");
-		// Close-out is an ordinary file edit now; no tool call stands in for it.
 		expect(prompt).not.toContain("save_summary");
 	});
 
-	it("defers craft and repo conventions to the project's AGENTS.md", async () => {
+	it("keeps craft advice out beyond the one line that shapes execution", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("come from the project's AGENTS.md");
-		expect(prompt).toContain("never delete one");
-		expect(prompt).toContain("legacy .pi/goal/ files are ignored");
+		expect(prompt).toContain("the smallest change that fits the code around it");
 		// Generic craft advice belongs in AGENTS.md, stated once, not duplicated here.
 		for (const duplicated of [
 			"never weaken a test",
-			"smallest change",
 			"never hardcode secrets",
 			"macOS-portable",
 			"cheapest relevant baseline check",

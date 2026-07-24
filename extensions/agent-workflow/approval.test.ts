@@ -31,7 +31,7 @@ function harness(cwd: string, sessionName?: string) {
 	const offer = async (
 		task: string,
 		choice: string | undefined,
-		options: { editorText?: string; isError?: boolean; usage?: any; hasUI?: boolean } = {},
+		options: { editorText?: string; isError?: boolean; usage?: any; hasUI?: boolean; toolName?: string } = {},
 	) => {
 		const setEditorText = vi.fn();
 		const notify = vi.fn();
@@ -43,7 +43,7 @@ function harness(cwd: string, sessionName?: string) {
 			ui: { notify, setEditorText, getEditorText: () => options.editorText ?? "", select },
 			sessionManager: { getBranch: () => branch, getSessionName: () => sessionName },
 		};
-		await handlers.get("tool_execution_end")![0]({ toolName: "save_plan", isError: options.isError ?? false, result: { details: { name: task } } }, ctx);
+		await handlers.get("tool_execution_end")![0]({ toolName: options.toolName ?? "save_plan", isError: options.isError ?? false, result: { details: { name: task } } }, ctx);
 		await handlers.get("agent_settled")![0]({}, ctx);
 		return { setEditorText, notify, select, ctx };
 	};
@@ -73,6 +73,12 @@ describe("approval prompt", () => {
 		// Settle again without a new save: the offer was consumed.
 		await h.handlers.get("agent_settled")![0]({}, first.ctx);
 		expect(first.select).toHaveBeenCalledTimes(1);
+	});
+
+	it("stays silent for close_out — only save_plan asks for a decision", async () => {
+		const h = harness(cwd);
+		const { select } = await h.offer("dashboard-polish", "Revise the plan", { toolName: "close_out" });
+		expect(select).not.toHaveBeenCalled();
 	});
 
 	it("Proceed kicks off the approved plan by its concrete path", async () => {

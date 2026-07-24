@@ -9,7 +9,7 @@ extension.
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
 - **Terminal Keys** — Keeps newline and submit working in every terminal (ctrl+j inserts a newline, ctrl+enter submits)
-- **Agent Workflow** — One loop per task, plan persistence, and the approval prompt (`save_plan`, `/handoff`; see [FLOW.md](FLOW.md))
+- **Agent Workflow** — One loop per task, plan persistence, and the approval prompt (`save_plan`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
@@ -27,7 +27,7 @@ extension.
 The bundle runs as one agent, not an orchestrator with children: there is no
 subagent tool and no child-process delegation, and the one agent owns user
 interaction, commits, and final acceptance. A `/handoff` (see
-[FLOW.md](FLOW.md)) does not change this — the fresh session is the same single
+[the agent-workflow README](../extensions/agent-workflow/README.md)) does not change this — the fresh session is the same single
 agent, with the plan file on disk as the only thing carried across.
 
 ## Extension Preferences registry
@@ -51,7 +51,7 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 - **No skills.** The workflow guidance lives inside the injected loop block,
   so nothing depends on the model remembering to invoke anything.
 - **No permission gate.** Tool calls are never intercepted; destructive-action
-  consent is conversational (see [FLOW.md](FLOW.md)).
+  consent is conversational (see [the agent-workflow README](../extensions/agent-workflow/README.md)).
 - **No managed autonomous mode.** To run Pi unsupervised, start raw Pi with
   `pi --no-extensions` — which drops all bundle guidance.
 - **No subagents and no state machine.** Single-agent by policy, guidance over

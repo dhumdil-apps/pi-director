@@ -10,7 +10,7 @@
 
 ## The agent edits before we agreed on a direction
 
-The local-first flow is guidance, not enforcement (see [FLOW.md](FLOW.md)).
+The local-first flow is guidance, not enforcement (see [the agent-workflow README](../extensions/agent-workflow/README.md)).
 Say so in chat — "we haven't agreed on an approach yet" — and the agent should
 return to exploration. There are no hard gates — the bundle ships no permission
 gate, so nothing intercepts a tool call.

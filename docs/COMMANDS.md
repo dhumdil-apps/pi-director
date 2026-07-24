@@ -2,22 +2,23 @@
 
 This is the short operational reference. Some vendored extensions expose more
 advanced commands; follow their linked README when needed. The working flow is
-one loop per task, described in [FLOW.md](FLOW.md); there is no enforced state
+one loop per task, described in [the agent-workflow README](../extensions/agent-workflow/README.md); there is no enforced state
 machine and no session modes.
 
 ## Everyday commands
 
-- **`/handoff [task-name]`** — Human-only session boundary: spawns a fresh session seeded with the task name and a kickoff naming the approved plan's path. Without a task name it uses the session's task, or the lone plan under `.pi/plan/`; with several it asks which one. The approval prompt (Proceed, handoff, or revise) prefills this command on Handoff
+- **`/handoff [session-name]`** — Human-only session boundary: spawns a fresh session seeded with the name and a kickoff naming the approved plan's path. Without a name it uses the current session's, or the lone plan under `.pi/plan/`; with several it asks which one. The approval picker (Proceed, handoff, or revise) prefills this command on Handoff
 - **`/help`** — Full reference: commands, shortcuts, and every active extension
 - **`/extension-settings`** — Edit registered global extension settings
 - **`/usage`** — Show historical token/cost usage (`/usage-refresh` forces a quota fetch)
 
 ## User-facing tools
 
-- **`save_plan`** (Agent Workflow) — Present the task's plan file for the user's decision and rename it to a meaningful name (the leading timestamp is kept). Pass the plan to (over)write `.pi/plan/<task-name>.md`, or omit it to present what the agent already wrote there; either way the file's content is echoed inline
+- **`ask`** (Agent Workflow) — Put a choice to the user as a native picker: two to four options, each a headline plus a one-sentence description, recommendation first. The full question and descriptions print in the transcript; the picker lists the headlines, so answering is one keypress
+- **`save_plan`** (Agent Workflow) — Present the plan file for the user's decision and rename the session to a meaningful name (the leading timestamp is kept). Pass the plan to (over)write `.pi/plan/<session-name>.md`, or omit it to present what the agent already wrote there; either way the file's content is echoed inline
+- **`close_out`** (Agent Workflow) — Record how the task went in the plan file's `## Implementation summary`, replacing any previous summary rather than stacking. Durable project facts go to `.pi/MEMORY.md`, which the agent writes directly
 
-`save_plan` is the bundle's only workflow tool. Close-out is an ordinary edit to
-the plan file's `## Implementation summary` section — no tool stands in for it.
+These three are the bundle's only workflow tools.
 
 ## Shell and keyboard reminders
 

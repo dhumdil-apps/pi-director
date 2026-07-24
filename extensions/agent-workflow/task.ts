@@ -6,7 +6,7 @@ import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-ag
 import { Type, type Static } from "@sinclair/typebox";
 
 /**
- * A task name is `[timestamp-][TICKET-N-]slug`. The timestamp segment is read
+ * A session name is `[timestamp-][TICKET-N-]slug`. The timestamp segment is read
  * first and on its own: without it, `2026-07-24-13-05-01-…` parses as the ticket
  * ID `2026-07` and the rest as the slug.
  */
@@ -18,7 +18,7 @@ const PLAN_FILE = /^(.+)\.md$/;
 
 /** Scaffolded at session start; the topics mirror the plan step of the loop. */
 export const PLAN_TEMPLATE = [
-	"# <task-name>",
+	"# <session-name>",
 	"",
 	"## Current state",
 	"<how it works today>",
@@ -42,15 +42,23 @@ export const PLAN_TEMPLATE = [
 
 const MEMORY_STUB = "# Project memory\n\nDurable facts about this project — conventions learned, traps hit, decisions worth keeping.\n";
 
-const HANDOFF_USAGE = "Usage: /handoff [task-name].";
+const HANDOFF_USAGE = "Usage: /handoff [session-name].";
 
 const STOP_WORDS = new Set([
 	"a", "an", "and", "are", "as", "be", "can", "could", "for", "i", "is", "it", "need",
 	"of", "or", "please", "should", "that", "the", "this", "to", "want", "we", "with", "would",
 ]);
 
+const SUMMARY_HEADING = "## Implementation summary";
+
+const CloseOutParams = Type.Object({
+	summary: Type.String({ description: "What changed, what verification actually ran and what it reported, and every check skipped or failed." }),
+});
+
+type CloseOutInput = Static<typeof CloseOutParams>;
+
 const SavePlanParams = Type.Object({
-	name: Type.String({ description: "A concise 2–4 meaningful-word task summary, optionally prefixed with a ticket ID (e.g. TEST-1234)." }),
+	name: Type.String({ description: "The new session name: a concise 2–4 meaningful-word summary of the work, optionally prefixed with a ticket ID (e.g. TEST-1234)." }),
 	plan: Type.Optional(Type.String({ description: "The complete plan as Markdown, shaped to the task — usually current state, decisions taken, desired state, approach, and quirks. Omit to present the plan file as you have already written it." })),
 });
 
@@ -126,7 +134,7 @@ export function planPath(cwd: string, name: string): string {
 	return join(cwd, CONFIG_DIR_NAME, "plan", `${name}.md`);
 }
 
-/** Unique canonical task names that own a plan file under .pi/plan/. */
+/** Unique canonical session names that own a plan file under .pi/plan/. */
 export function listPlanNames(cwd: string): string[] {
 	let files: string[];
 	try {
@@ -167,25 +175,44 @@ function taskFor(cwd: string, name: string): PlanResolution {
 }
 
 /**
- * Which task a plan-consuming operation (/handoff, the approval prompt) is about. .pi/plan/ accumulates — plan files are never deleted by the
- * agent — so resolution never assumes a single file: the explicit name wins,
- * then the session name, and only a lone remaining file is picked implicitly.
+ * Which plan a plan-consuming operation (/handoff, the approval prompt) is
+ * about. .pi/plan/ accumulates — plan files are never deleted by the agent — so
+ * resolution never assumes a single file: the explicit name wins, then the
+ * session name, and only a lone remaining file is picked implicitly.
  */
 export function resolvePlanTask(cwd: string, requested: string | undefined, sessionName: string | undefined): PlanResolution {
 	if (requested) {
 		const name = canonicalTaskName(requested);
-		if (!name) return { error: `"${requested}" is not a task name. ${HANDOFF_USAGE}` };
+		if (!name) return { error: `"${requested}" is not a session name. ${HANDOFF_USAGE}` };
 		return taskFor(cwd, name);
 	}
 
-	// The session name is the task name once save_plan named it.
+	// The session name is the plan file's name once save_plan named it.
 	const current = canonicalTaskName(sessionName);
 	if (current && existsSync(planPath(cwd, current))) return taskFor(cwd, current);
 
 	const names = listPlanNames(cwd);
 	if (names.length === 1) return taskFor(cwd, names[0]);
-	if (names.length > 1) return { error: `Several plans under ${CONFIG_DIR_NAME}/plan/: ${names.join(", ")} — run /handoff <task-name>.` };
+	if (names.length > 1) return { error: `Several plans under ${CONFIG_DIR_NAME}/plan/: ${names.join(", ")} — run /handoff <session-name>.` };
 	return { error: `No plan under ${CONFIG_DIR_NAME}/plan/ — plan first.` };
+}
+
+/**
+ * Put the summary under `## Implementation summary`, replacing whatever was
+ * there — the scaffolded placeholder, or an earlier close-out. The section runs
+ * to the next `##` heading, so a plan that keeps sections after it survives, and
+ * re-running close_out never stacks a second summary.
+ */
+export function withSummary(plan: string, summary: string): string {
+	const body = `${SUMMARY_HEADING}\n\n${summary.trim()}\n`;
+	const at = plan.indexOf(`${SUMMARY_HEADING}\n`);
+	if (at < 0) {
+		const separator = plan.endsWith("\n\n") ? "" : plan.endsWith("\n") ? "\n" : "\n\n";
+		return `${plan}${separator}${body}`;
+	}
+	const rest = plan.slice(at + SUMMARY_HEADING.length);
+	const nextHeading = rest.indexOf("\n## ");
+	return nextHeading < 0 ? `${plan.slice(0, at)}${body}` : `${plan.slice(0, at)}${body}\n${rest.slice(nextHeading + 1)}`;
 }
 
 async function writeAtomically(path: string, contents: string): Promise<void> {
@@ -203,7 +230,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "save_plan",
 		label: "Save Plan",
-		description: "Present the plan at .pi/plan/<task-name>.md for the user's decision, renaming the session's task to a meaningful name. Pass plan to (over)write the file, or omit it to present what you already wrote there.",
+		description: "Present the plan at .pi/plan/<session-name>.md for the user's decision, renaming the session to a meaningful name — the leading timestamp is kept, so plans stay time-ordered. Pass plan to (over)write the file, or omit it to present what you already wrote there. Plan files are the user's: never delete one.",
 		parameters: SavePlanParams,
 		async execute(_toolCallId, params: SavePlanInput, _signal, _onUpdate, ctx) {
 			// The session is auto-named at start, so a rename swaps the slug and keeps
@@ -238,6 +265,30 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 				// Echoed inline so the decision is made against exactly what is on disk.
 					content: [{ type: "text" as const, text: `Plan at ${path}:\n\n${contents.trim() || "(empty)"}` }],
 				details: { name, path },
+			};
+		},
+	});
+
+	pi.registerTool({
+		name: "close_out",
+		label: "Close Out",
+		description: "Record how the task actually went in the plan file's Implementation summary. Replaces any previous summary rather than stacking another one, so re-running it after more work is fine. Durable project facts go to .pi/MEMORY.md instead — this tool does not touch it.",
+		parameters: CloseOutParams,
+		async execute(_toolCallId, params: CloseOutInput, _signal, _onUpdate, ctx) {
+			const { task, error } = resolvePlanTask(ctx.cwd, undefined, pi.getSessionName());
+			if (!task) {
+				return { content: [{ type: "text" as const, text: `Error: ${error}` }], details: { error }, isError: true };
+			}
+			const path = planPath(ctx.cwd, task.name);
+			try {
+				await writeAtomically(path, withSummary(await readFile(path, "utf8"), params.summary));
+			} catch (writeError) {
+				const message = (writeError as Error).message;
+				return { content: [{ type: "text" as const, text: `Error: could not write the summary: ${message}.` }], details: { name: task.name, error: message }, isError: true };
+			}
+			return {
+				content: [{ type: "text" as const, text: `${SUMMARY_HEADING} written to ${path}:\n\n${params.summary.trim()}` }],
+				details: { name: task.name, path },
 			};
 		},
 	});

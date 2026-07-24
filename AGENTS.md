@@ -2,7 +2,7 @@
 
 - Ask before destructive or irreversible actions.
 - Avoid using markdown tables in `.md` files; prefer simple lists for better readability and cleaner diffs.
-- **Workflow**: execution with guidance in `extensions/agent-workflow/` (see [`docs/FLOW.md`](docs/FLOW.md)) - goal, explore, ask, plan, execute, close out.
+- **Workflow**: execution with guidance in [`extensions/agent-workflow/`](extensions/agent-workflow/README.md) - explore, ask, plan, execute, close out. The injected block in its `index.ts` is the contract.
 - **User options**: prefer native Pi dialogs (`ctx.ui.select`) over custom `ui.custom` overlays.
 
 ## Verification

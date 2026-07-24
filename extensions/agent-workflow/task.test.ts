@@ -2,7 +2,7 @@ import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { autoSlug, canonicalTaskName, ensurePiState, listPlanNames, movePlan, normalizeTaskName, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
+import { autoSlug, canonicalTaskName, ensurePiState, listPlanNames, movePlan, normalizeTaskName, PLAN_TEMPLATE, registerTaskManagement, resolvePlanTask, timestampPrefix, withSummary } from "./task.js";
 
 function makeHarness(cwd: string, name?: string) {
 	let sessionName = name;
@@ -20,6 +20,7 @@ function makeHarness(cwd: string, name?: string) {
 	const run = (name: string, params: any) => tools.get(name)!.execute("call", params, undefined, undefined, ctx);
 	return {
 		execute: (params: any) => run("save_plan", params),
+		closeOut: (params: any) => run("close_out", params),
 		pi,
 		sent,
 		getName: () => sessionName,
@@ -137,9 +138,9 @@ describe("resolvePlanTask", () => {
 		expect(resolvePlanTask(cwd, "no-such-task", undefined).error).toContain("No plan for no-such-task");
 	});
 
-	it("rejects a name that is not a task name", async () => {
+	it("rejects a name that is not a session name", async () => {
 		await seedPlan(cwd, "dashboard-polish");
-		expect(resolvePlanTask(cwd, "not a task name!", undefined).error).toContain("is not a task name");
+		expect(resolvePlanTask(cwd, "not a task name!", undefined).error).toContain("is not a session name");
 	});
 
 	it("falls back to the session name before the lone-file pick", async () => {
@@ -154,7 +155,7 @@ describe("resolvePlanTask", () => {
 		const { task, error } = resolvePlanTask(cwd, undefined, undefined);
 		expect(task).toBeUndefined();
 		expect(error).toContain("cache-recovery, dashboard-polish");
-		expect(error).toContain("/handoff <task-name>");
+		expect(error).toContain("/handoff <session-name>");
 	});
 
 	it("errors when no plan exists", () => {
@@ -198,6 +199,66 @@ describe("auto-scaffold naming", () => {
 		expect(canonicalTaskName(name)).toBe(name);
 		expect(timestampPrefix(name)).toBe("2026-07-24-13-05-01");
 		expect(timestampPrefix("dashboard-polish")).toBeUndefined();
+	});
+});
+
+describe("close_out", () => {
+	let cwd: string;
+	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-close-out-")); });
+	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
+
+	const planFile = (name: string) => readFile(join(cwd, ".pi", "plan", `${name}.md`), "utf8");
+
+	it("fills the scaffolded placeholder in the session's plan", async () => {
+		await seedPlan(cwd, "cache-recovery", PLAN_TEMPLATE.replace("<session-name>", "cache-recovery"));
+		const h = makeHarness(cwd, "cache-recovery");
+		const result = await h.closeOut({ summary: "Rewrote the resolver. 12 tests green." });
+		expect(result.isError).toBeFalsy();
+		const written = await planFile("cache-recovery");
+		expect(written).toContain("## Implementation summary\n\nRewrote the resolver. 12 tests green.\n");
+		expect(written).not.toContain("<filled at close-out");
+		// Earlier sections are untouched.
+		expect(written).toContain("## Approach");
+	});
+
+	it("replaces a previous summary instead of stacking another", async () => {
+		await seedPlan(cwd, "cache-recovery", PLAN_TEMPLATE.replace("<session-name>", "cache-recovery"));
+		const h = makeHarness(cwd, "cache-recovery");
+		await h.closeOut({ summary: "First pass." });
+		await h.closeOut({ summary: "Second pass, after review." });
+		const written = await planFile("cache-recovery");
+		expect(written.match(/## Implementation summary/g)).toHaveLength(1);
+		expect(written).toContain("Second pass, after review.");
+		expect(written).not.toContain("First pass.");
+	});
+
+	it("errors, without writing, when no plan resolves", async () => {
+		const h = makeHarness(cwd, "cache-recovery");
+		const result = await h.closeOut({ summary: "Nowhere to put this." });
+		expect(result.isError).toBe(true);
+		expect(result.content[0].text).toContain("No plan");
+	});
+
+	it("never renames the session — close-out is not a rename", async () => {
+		await seedPlan(cwd, "cache-recovery", PLAN_TEMPLATE);
+		const h = makeHarness(cwd, "cache-recovery");
+		await h.closeOut({ summary: "Done." });
+		expect(h.pi.setSessionName).not.toHaveBeenCalled();
+		expect(h.getName()).toBe("cache-recovery");
+	});
+});
+
+describe("withSummary", () => {
+	it("appends the section when the plan has none", () => {
+		expect(withSummary("# Task\n\n## Approach\n\nDo it.\n", "Did it.")).toBe(
+			"# Task\n\n## Approach\n\nDo it.\n\n## Implementation summary\n\nDid it.\n",
+		);
+	});
+
+	it("keeps the sections that follow the summary", () => {
+		const plan = "## Implementation summary\n\nold\n\n## Quirks\n\nkeep me\n";
+		const written = withSummary(plan, "new");
+		expect(written).toBe("## Implementation summary\n\nnew\n\n## Quirks\n\nkeep me\n");
 	});
 });
 

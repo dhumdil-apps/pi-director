@@ -42,7 +42,7 @@ pi list
 
 ## Included Features
 
-- **agent-workflow** — One loop per task: goal, explore, ask, plan, execute, close out. Two guarantees carry it — nothing in the working tree changes before an approved plan, and questions are cheap. Every session scaffolds `.pi/plan/<timestamp-slug>.md` on its first message as the agent's living document; `save_plan` presents it (renaming it to a meaningful name, timestamp kept) and arms a native approval prompt — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing. Close-out is an edit to the plan file. The injected block is a constant, so the prompt prefix stays cacheable. See [docs/FLOW.md](docs/FLOW.md).
+- **agent-workflow** — One loop per task: explore, ask, plan, execute, close out. Two guarantees carry it — nothing in the working tree changes before an approved plan, and questions are cheap. Every session scaffolds `.pi/plan/<timestamp-slug>.md` on its first message as the agent's living document; `ask` puts choices in a native picker, `save_plan` presents the plan (renaming the session, timestamp kept) and arms the approval picker — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing — and `close_out` records how it went. The injected block is a constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
 - **progress-tracker** — Above-editor activity and context-usage indicator. No tool, no command: it observes.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).
@@ -52,7 +52,7 @@ pi list
 ## Documentation
 
 - [Extension and resource catalog](docs/EXTENSIONS.md)
-- [The working flow](docs/FLOW.md)
+- [The working flow](extensions/agent-workflow/README.md)
 - [Commands and tools](docs/COMMANDS.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Vendored upstream inventory](UPSTREAM.md)
