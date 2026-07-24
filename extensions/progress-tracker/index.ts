@@ -1,61 +1,62 @@
 /**
- * pi-todo-list — A pi extension that replicates GitHub Copilot's manage_todo_list.
+ * Progress Tracker — an always-visible activity and context indicator above the
+ * editor, plus the agent-status event other tools observe.
  *
- * Provides:
- * - A single `manage_todo_list` tool with read/write operations
- * - An always-visible context/activity indicator
- * - A read-only widget showing local todo progress
- * - /todos command to toggle widget
- * - /todos clear command to clear the list
- * - Session persistence via tool result details
+ * It deliberately ships no todo tool: pi has none on purpose ("they confuse
+ * models"), and a structured list the agent must keep in sync is ceremony, not
+ * progress. What the agent is doing shows in the transcript; what this adds is
+ * the one thing the transcript cannot show — whether a run is in flight and how
+ * much context is left.
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { CLEAR_ENTRY_TYPE, TodoStateManager } from "./state-manager.js";
-import { createManageTodoListTool } from "./tool.js";
-import { clearPhaseIndicator, updatePhaseIndicator, updateTodoWidget } from "./ui/todo-widget.js";
+import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
+import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
 
 export default function (pi: ExtensionAPI) {
-  const state = new TodoStateManager();
-
   let currentCtx: ExtensionContext | undefined;
-  let todosVisible = false;
   let working = false;
+  // Baseline for the growth delta. Only turn_end advances it, so the readout
+  // means "since the last turn" rather than "since the last repaint".
+  let previousTokens: number | undefined;
 
   const refreshStatus = () => {
     if (!currentCtx) return;
     // Context usage only moves at turn boundaries, which is exactly when
     // refreshStatus runs, so reading it here keeps the render pure.
-    updatePhaseIndicator(currentCtx, working, currentCtx.getContextUsage());
-    updateTodoWidget(state, currentCtx, todosVisible);
     const usage = currentCtx.getContextUsage();
+    // Provider-reported cache figures for the last completed request. Reading
+    // the branch is cheap and this runs at turn boundaries only.
+    let lastUsage: ReturnType<typeof getLastAssistantUsage>;
+    try {
+      lastUsage = getLastAssistantUsage(currentCtx.sessionManager.getBranch());
+    } catch {
+      lastUsage = undefined;
+    }
+    updatePhaseIndicator(currentCtx, working, usage, { lastUsage, previousTokens });
+    const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
-      todos: state.read(),
-      currentTodoId: state.read().find((todo) => todo.status === "in-progress")?.id,
       contextUsed: usage?.tokens ?? undefined,
       contextMax: usage?.contextWindow ?? undefined,
+      cacheRead: lastUsage?.cacheRead,
+      cacheWrite: lastUsage?.cacheWrite,
+      cacheHitRate: prompt > 0 ? lastUsage!.cacheRead / prompt : undefined,
       cwd: currentCtx.cwd,
     });
   };
 
-  // --- Reconstruct state from session on load/switch/fork/tree ---
-
-  const reconstructState = (ctx: ExtensionContext) => {
+  const adopt = (ctx: ExtensionContext) => {
     currentCtx = ctx;
-    state.loadFromSession(ctx);
-    todosVisible = state.read().length > 0;
     working = !ctx.isIdle();
+    // A session start or tree move discards the old baseline: the delta would
+    // otherwise report a branch switch as this turn's growth.
+    previousTokens = undefined;
     refreshStatus();
   };
 
-  const onTodoUpdate = () => {
-    todosVisible = state.read().length > 0;
-    refreshStatus();
-  };
-
-  pi.on("session_start", async (_event, ctx) => reconstructState(ctx));
-  pi.on("session_tree", async (_event, ctx) => reconstructState(ctx));
+  pi.on("session_start", async (_event, ctx) => adopt(ctx));
+  pi.on("session_tree", async (_event, ctx) => adopt(ctx));
 
   // Keep ctx reference fresh on every turn
   pi.on("input", async (_event, ctx) => {
@@ -82,53 +83,14 @@ export default function (pi: ExtensionAPI) {
   pi.on("turn_end", async (_event, ctx) => {
     currentCtx = ctx;
     refreshStatus();
+    // Advance the baseline only after the turn's readout has been rendered, so
+    // the delta shown for this turn is the growth the turn caused.
+    previousTokens = ctx.getContextUsage()?.tokens ?? undefined;
   });
 
   pi.on("session_shutdown", async (_event, ctx) => {
     clearPhaseIndicator(ctx);
     currentCtx = undefined;
     working = false;
-  });
-
-  // --- Register the manage_todo_list tool ---
-
-  const tool = createManageTodoListTool(state, onTodoUpdate);
-  pi.registerTool(tool);
-
-  // --- Register commands ---
-
-  pi.registerCommand("todos", {
-    description: "Toggle todo list widget or clear todos (/todos clear)",
-    handler: async (args, ctx) => {
-      currentCtx = ctx;
-
-      if (args?.trim().toLowerCase() === "clear") {
-        state.clear();
-        // Persist the clear as a hidden marker so a later reload/`/tree`
-        // navigation (which replays manage_todo_list results from the
-        // branch) doesn't resurrect the list that preceded this clear.
-        pi.sendMessage({ customType: CLEAR_ENTRY_TYPE, content: "", display: false }, { triggerTurn: false });
-        todosVisible = false;
-        refreshStatus();
-        ctx.ui.notify("Todo list cleared.", "info");
-        return;
-      }
-
-      const todos = state.read();
-      if (todos.length === 0) {
-        refreshStatus();
-        ctx.ui.notify("No local todos. Context usage is shown above the editor.", "info");
-        return;
-      }
-
-      todosVisible = !todosVisible;
-      refreshStatus();
-      ctx.ui.notify(
-        todosVisible
-          ? `${state.getStats().completed}/${state.getStats().total} todos completed.`
-          : "Todo list hidden.",
-        "info"
-      );
-    },
   });
 }

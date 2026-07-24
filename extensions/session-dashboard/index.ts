@@ -4,6 +4,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import { Box, type Component, Container, Markdown, Spacer, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { buildContextBreakdown } from "./context-breakdown.js";
 import { renderHelp } from "./help.js";
 import { collectUsageData } from "../usage-history/data.js";
 import { buildGraphModel, type GraphModel, renderChart, TOTAL_SERIES_KEY } from "../usage-history/graph.js";
@@ -255,6 +256,39 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 			const bundle = loadBundleResources();
 			pi.sendMessage(
 				{ customType: "session-dashboard-help", content: renderHelp(bundle.extensions), display: true },
+				{ triggerTurn: false },
+			);
+		},
+	});
+
+	// /context reuses the help renderer's themed markdown box.
+	pi.registerMessageRenderer("session-dashboard-context", (message, _options, theme) => {
+		const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
+		box.addChild(themedMarkdown(theme, messageText(message.content)));
+		return box;
+	});
+
+	pi.registerCommand("context", {
+		description: "Break the context window down by source: prompt, context files, skills, tools, conversation",
+		handler: async (_args, ctx) => {
+			const usage = ctx.getContextUsage();
+			// getSystemPromptOptions is command-only, and it hands back exactly the
+			// context files and skills the host used — no loader config to re-guess.
+			const options = ctx.getSystemPromptOptions();
+			const content = buildContextBreakdown({
+				systemPrompt: ctx.getSystemPrompt(),
+				contextFiles: options.contextFiles ?? [],
+				tools: pi.getAllTools(),
+				totalTokens: usage?.tokens,
+				contextWindow: usage?.contextWindow,
+				home: homedir(),
+			});
+			pi.sendMessage(
+				{
+					customType: "session-dashboard-context",
+					content: content || "*No context measured yet.*",
+					display: true,
+				},
 				{ triggerTurn: false },
 			);
 		},

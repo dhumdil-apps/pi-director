@@ -2,14 +2,13 @@
  * openHandoffSession — the /handoff command's implementation.
  *
  * The approval prompt's Proceed choice keeps the running session; a handoff is
- * the session boundary: it spawns a new session, seeds the approval fact and the
- * task name before the first turn, and sends a kickoff carrying the concrete
- * plan path, so implementation starts with a lean context and nothing to retype.
+ * the session boundary: it spawns a new session, seeds the task name before the
+ * first turn, and sends a kickoff carrying the concrete plan path, so
+ * implementation starts with a lean context and nothing to retype.
  * Only a command handler can spawn a session, so /handoff owns this entry point.
  */
 
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { APPROVED_ENTRY_TYPE } from "./loop.js";
 import { type PlanTask, resolvePlanTask } from "./task.js";
 
 const HANDOFF_NOTICE_TYPE = "agent-workflow:handoff-notice";
@@ -45,10 +44,9 @@ export async function openHandoffSession(
 	await ctx.waitForIdle();
 	await ctx.newSession({
 		parentSession: ctx.sessionManager.getSessionFile(),
-		// session_start fires before this, so the seeded fact is what the new
-		// session's extension instance derives its loop position from.
+		// The kickoff message carries the approval; the new session only needs to
+		// know which task it is, so save_plan renames the right plan file.
 		setup: async (sessionManager) => {
-			sessionManager.appendCustomMessageEntry(APPROVED_ENTRY_TYPE, `Plan approved: ${task.name}.`, false, { task: task.name });
 			sessionManager.appendSessionInfo(task.name);
 		},
 		withSession: async (next) => {

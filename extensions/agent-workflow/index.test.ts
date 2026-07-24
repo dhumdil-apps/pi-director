@@ -2,8 +2,7 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import createExtension from "./index.js";
-import { APPROVED_ENTRY_TYPE, CLOSED_ENTRY_TYPE } from "./loop.js";
+import createExtension, { workflowPrompt } from "./index.js";
 
 const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
@@ -49,22 +48,17 @@ function harness(cwd = "/pi-kit-index-test-nonexistent") {
 		return (result.systemPrompt as string).replace(/\s+/g, " ").trim();
 	};
 
-	/** Seed a hidden loop fact the way Proceed or a /handoff-spawned session does. */
-	const seed = (customType: string, task: string) => {
-		branch.push({ type: "custom_message", customType, display: false, content: "", details: { task } });
-	};
-
-	return { handlers, commands, tools, notify, inject, seed, ctx, newSession, pi };
+	return { handlers, commands, tools, notify, inject, ctx, newSession, pi };
 }
 
 describe("workflow prompt", () => {
-	it("registers only the /handoff command and the two plan tools", () => {
+	it("registers only the /handoff command and the single plan tool", () => {
 		const { commands, tools, handlers } = harness();
-		for (const gone of ["mode", "plan", "implement", "review", "flash", "retro"]) {
+		for (const gone of ["mode", "plan", "implement", "review", "flash", "retro", "todos"]) {
 			expect(commands.has(gone)).toBe(false);
 		}
 		expect(commands.has("handoff")).toBe(true);
-		expect(tools.map((tool) => tool.name)).toEqual(["save_plan", "save_summary"]);
+		expect(tools.map((tool) => tool.name)).toEqual(["save_plan"]);
 		// The only turn-time hooks are the system-prompt injector and the approval
 		// prompt (tool_execution_end arms it, agent_settled delivers it).
 		expect(handlers.has("input")).toBe(false);
@@ -72,16 +66,32 @@ describe("workflow prompt", () => {
 		expect(handlers.has("agent_settled")).toBe(true);
 	});
 
-	it("injects one loop block, walking the five steps in order", async () => {
+	it("injects one loop block, walking the six steps in order", async () => {
 		const prompt = await harness().inject();
 		expect(prompt).toContain("<pi_workflow>");
 		expect(prompt.match(/<loop>/g)).toHaveLength(1);
 		let cursor = -1;
-		for (const step of ["1. Goal", "2. Explore", "3. Plan", "4. Save, then proceed", "5. Close out"]) {
+		for (const step of ["1. Goal", "2. Explore", "3. Ask", "4. Plan, then stop", "5. Execute", "6. Close out"]) {
 			const at = prompt.indexOf(step);
 			expect(at, step).toBeGreaterThan(cursor);
 			cursor = at;
 		}
+	});
+
+	it("states the no-changes-before-approval guarantee outright", async () => {
+		const prompt = await harness().inject();
+		expect(prompt).toContain("Nothing in the working tree changes until the user has approved a plan");
+		expect(prompt).toContain("Proceed, handoff, or revise?");
+		expect(prompt).toContain("and stop. The choice is theirs");
+	});
+
+	it("makes questions cheap rather than rationed", async () => {
+		const prompt = await harness().inject();
+		expect(prompt).toContain("surface every choice you would otherwise make on the user's behalf");
+		expect(prompt).toContain("ask even when the answer seems obvious to you");
+		expect(prompt).toContain("naming the concrete options and your recommendation");
+		// The retired dampener that rationed questions to "genuine open choices".
+		expect(prompt).not.toContain("Ask questions only about");
 	});
 
 	it("names the plan topics without demanding a fixed set of sections", async () => {
@@ -89,83 +99,54 @@ describe("workflow prompt", () => {
 		for (const topic of ["current state", "decisions taken", "desired state", "approach", "quirks"]) {
 			expect(prompt).toContain(topic);
 		}
-		expect(prompt).toContain("not a form to fill in");
-		expect(prompt).not.toContain("exactly four sections");
+		expect(prompt).toContain("shape it to the task");
 	});
 
 	it("teaches save-before-present and both close-out halves", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("call save_plan before you present the plan");
-		expect(prompt).toContain("it echoes the file back");
-		expect(prompt).toContain("A plan file already exists for this task");
+		expect(prompt).toContain("call save_plan to present it");
+		expect(prompt).toContain("save_plan echoes the file back");
+		expect(prompt).toContain("A plan file for this task was scaffolded");
 		expect(prompt).toContain("the leading timestamp is kept");
-		expect(prompt).toContain("Proceed, handoff, or revise?");
-		expect(prompt).toContain("write the close-out into the plan file, then call save_summary");
-		expect(prompt).toContain("straight into .pi/MEMORY.md");
+		expect(prompt).toContain("plan file's Implementation summary");
+		expect(prompt).toContain("into .pi/MEMORY.md");
 		expect(prompt).toContain("write nothing and say so");
-		// The retired ask-first memory policy is gone.
-		expect(prompt).not.toContain("only after the user confirms");
+		// Close-out is an ordinary file edit now; no tool call stands in for it.
+		expect(prompt).not.toContain("save_summary");
 	});
 
-	it("frames the guidance as defaults the agent may override out loud", async () => {
+	it("defers craft and repo conventions to the project's AGENTS.md", async () => {
 		const prompt = await harness().inject();
-		expect(prompt).toContain("guidance, not a checklist");
-		expect(prompt).toContain("your judgment wins");
-		expect(prompt).toContain("say plainly which guidance you are setting aside");
-	});
-
-	it("keeps the standing timeless guidance", async () => {
-		const prompt = await harness().inject();
-		expect(prompt).toContain("never weaken a test");
-		expect(prompt).toContain("smallest change that satisfies it");
-		expect(prompt).toContain("stop and report instead of guessing");
-		expect(prompt).toContain(".pi/plan/<task-name>.md");
+		expect(prompt).toContain("come from the project's AGENTS.md");
 		expect(prompt).toContain("never delete one");
 		expect(prompt).toContain("legacy .pi/goal/ files are ignored");
-		expect(prompt).toContain("never hardcode secrets");
-		// Repo conventions defer to AGENTS.md, with a fallback for projects without one.
-		expect(prompt).toContain("come from the project's AGENTS.md");
-		expect(prompt).toContain("ask before anything destructive or irreversible");
-	});
-
-	it("carries no session-mode vocabulary", async () => {
-		const approved = harness();
-		approved.seed(APPROVED_ENTRY_TYPE, "dashboard-polish");
-		for (const prompt of [await harness().inject(), await approved.inject()]) {
-			expect(prompt).not.toContain("Session mode");
-			expect(prompt).not.toMatch(/\bPLAN\b/);
-			expect(prompt).not.toMatch(/\bIMPLEMENT\b/);
-			expect(prompt).not.toMatch(/\bmodes?\b/);
+		// Generic craft advice belongs in AGENTS.md, stated once, not duplicated here.
+		for (const duplicated of [
+			"never weaken a test",
+			"smallest change",
+			"never hardcode secrets",
+			"macOS-portable",
+			"cheapest relevant baseline check",
+		]) {
+			expect(prompt, duplicated).not.toContain(duplicated);
 		}
 	});
-});
 
-describe("position line", () => {
-	it("reports no approved plan before approval", async () => {
-		expect(await harness().inject()).toContain("No plan is approved yet");
+	it("carries no session-mode or position vocabulary", async () => {
+		const prompt = await harness().inject();
+		expect(prompt).not.toContain("<position>");
+		expect(prompt).not.toContain("Session mode");
+		expect(prompt).not.toMatch(/\bPLAN\b/);
+		expect(prompt).not.toMatch(/\bIMPLEMENT\b/);
+		expect(prompt).not.toMatch(/\bmodes?\b/);
 	});
 
-	it("names the approved task and its plan path after approval", async () => {
-		const h = harness();
-		h.seed(APPROVED_ENTRY_TYPE, "dashboard-polish");
-		const prompt = await h.inject();
-		expect(prompt).toContain("The plan for dashboard-polish at .pi/plan/dashboard-polish.md is approved");
-		expect(prompt).not.toContain("No plan is approved yet");
-	});
-
-	it("returns to no-approved-plan once the task is closed out", async () => {
-		const h = harness();
-		h.seed(APPROVED_ENTRY_TYPE, "dashboard-polish");
-		h.seed(CLOSED_ENTRY_TYPE, "dashboard-polish");
-		expect(await h.inject()).toContain("No plan is approved yet");
-	});
-
-	it("comes last, so the guidance prefix stays cacheable", async () => {
-		const h = harness();
-		h.seed(APPROVED_ENTRY_TYPE, "dashboard-polish");
-		const prompt = await h.inject();
-		expect(prompt.indexOf("<position>")).toBeGreaterThan(prompt.indexOf("</loop>"));
-		expect(prompt.endsWith("</position> </pi_workflow>")).toBe(true);
+	it("is a constant, so the whole prefix stays cacheable", async () => {
+		// No argument to vary, and nothing derived per turn: byte-identical every call.
+		expect(workflowPrompt()).toBe(workflowPrompt());
+		const first = await harness().inject("one thing");
+		const second = await harness().inject("a completely different thing");
+		expect(first.slice(first.indexOf("<pi_workflow>"))).toBe(second.slice(second.indexOf("<pi_workflow>")));
 	});
 });
 
@@ -217,10 +198,6 @@ describe("plan scaffolding", () => {
 		await h.inject("second prompt, same session");
 		expect(h.pi.setSessionName).toHaveBeenCalledTimes(1);
 		expect(await planFiles()).toEqual([`${name}.md`]);
-	});
-
-	it("scaffolds nothing approved, so the position line still says so", async () => {
-		expect(await harness(cwd).inject("start something")).toContain("No plan is approved yet");
 	});
 
 	it("survives an unwritable cwd without failing the turn", async () => {

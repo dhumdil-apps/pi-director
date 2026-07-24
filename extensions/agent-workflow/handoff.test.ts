@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { openHandoffSession } from "./handoff.js";
-import { APPROVED_ENTRY_TYPE } from "./loop.js";
 
 const plan = "## Current state\n\nA.\n\n## Desired state\n\nB.\n\n## Approach\n\nC.\n\n## Quirks\n\nD.\n";
 
@@ -60,20 +59,18 @@ describe("openHandoffSession", () => {
 	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-handoff-cmd-")); });
 	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
 
-	it("seeds the new session with the approval fact, task name, and an auto-approved kickoff", async () => {
+	it("seeds the new session with the task name and a kickoff naming the plan", async () => {
 		await seedPlan(cwd, "dashboard-polish");
 		const { open, newSession, seeded, next } = makeHarness(cwd);
 		await open();
 
 		expect(newSession).toHaveBeenCalledWith(expect.objectContaining({ parentSession: "/sessions/current.jsonl" }));
-		expect(seeded.entries).toEqual([
-			{ customType: APPROVED_ENTRY_TYPE, content: "Plan approved: dashboard-polish.", display: false, details: { task: "dashboard-polish" } },
-		]);
+		// No hidden fact is seeded: the kickoff message alone carries the approval.
+		expect(seeded.entries).toEqual([]);
 		expect(seeded.names).toEqual(["dashboard-polish"]);
 		const [kickoff] = next.sendUserMessage.mock.calls[0];
 		expect(kickoff).toContain(".pi/plan/dashboard-polish.md");
-		expect(kickoff).toContain("do not ask for approval again");
-		expect(kickoff).toContain("stop and report");
+		expect(kickoff).toContain("approved");
 	});
 
 	it("waits for the kickoff turn only when the new session has no UI", async () => {

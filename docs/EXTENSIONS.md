@@ -9,11 +9,11 @@ extension.
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
 - **Terminal Keys** — Keeps newline and submit working in every terminal (ctrl+j inserts a newline, ctrl+enter submits)
-- **Agent Workflow** — One guided workflow loop, plan persistence, and close-out (`save_plan`, `save_summary`, `/handoff`; see [FLOW.md](FLOW.md))
+- **Agent Workflow** — One loop per task, plan persistence, and the approval prompt (`save_plan`, `/handoff`; see [FLOW.md](FLOW.md))
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
-- **Progress Tracker** — Agent-authored phase readout and context usage above the editor, plus separate local todo widget (`manage_todo_list`, `/todos`)
+- **Progress Tracker** — Activity and context-usage indicator above the editor. No tool, no command: it observes.
 - **Agent Status Bridge** — Off by default; reports display-only workflow status to a configured local observer
 - **Session Dashboard** — Pi-glyph welcome, 30-day per-model spend chart, and project-context line
 
@@ -26,7 +26,7 @@ extension.
 
 The bundle runs as one agent, not an orchestrator with children: there is no
 subagent tool and no child-process delegation, and the one agent owns user
-interaction, todos, commits, and final acceptance. A `/handoff` (see
+interaction, commits, and final acceptance. A `/handoff` (see
 [FLOW.md](FLOW.md)) does not change this — the fresh session is the same single
 agent, with the plan file on disk as the only thing carried across.
 
@@ -58,6 +58,12 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
   rules; `/handoff` is a human-only session boundary, not a phase machine.
 - **No context segment in the status bar.** Context usage lives in the Progress
   Tracker indicator above the editor, with token counts spelled out.
+- **No todo tool.** Pi ships none on purpose ("they confuse models"), and a
+  structured list the agent must keep in sync is ceremony rather than progress.
+  What the agent is doing is visible in the transcript.
+- **No derived loop position.** The injected block is a constant, so the whole
+  prompt prefix stays cacheable; where the session stands is visible in the
+  transcript rather than restated every turn.
 
 [UPSTREAM.md](../UPSTREAM.md) records what was vendored, what was removed and
 when, plus versions and licenses.

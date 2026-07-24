@@ -4,7 +4,6 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
-import { markClosed } from "./loop.js";
 
 /**
  * A task name is `[timestamp-][TICKET-N-]slug`. The timestamp segment is read
@@ -43,8 +42,6 @@ export const PLAN_TEMPLATE = [
 
 const MEMORY_STUB = "# Project memory\n\nDurable facts about this project — conventions learned, traps hit, decisions worth keeping.\n";
 
-/** Heading save_summary appends under; a re-run replaces the section instead of stacking. */
-const SUMMARY_HEADING = "## Implementation summary";
 const HANDOFF_USAGE = "Usage: /handoff [task-name].";
 
 const STOP_WORDS = new Set([
@@ -58,13 +55,6 @@ const SavePlanParams = Type.Object({
 });
 
 type SavePlanInput = Static<typeof SavePlanParams>;
-
-const SaveSummaryParams = Type.Object({
-	summary: Type.String({ description: "The close-out as Markdown: what changed, what verification ran and what it reported, and every check skipped or failed." }),
-	name: Type.Optional(Type.String({ description: "Task whose plan file receives the summary. Defaults to this session's task." })),
-});
-
-type SaveSummaryInput = Static<typeof SaveSummaryParams>;
 
 export function normalizeTaskName(summary: string, currentName?: string): string {
 	const suppliedTicket = summary.match(TICKET_ID)?.[1]?.toUpperCase();
@@ -252,55 +242,4 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 			};
 		},
 	});
-
-	pi.registerTool({
-		name: "save_summary",
-		label: "Save Summary",
-		description: "Close the task out: append an honest implementation summary to its plan file at .pi/plan/<task-name>.md. Re-running replaces the previous summary rather than stacking another one.",
-		parameters: SaveSummaryParams,
-		async execute(_toolCallId, params: SaveSummaryInput, _signal, _onUpdate, ctx) {
-			if (!params.summary.trim()) {
-				return {
-					content: [{ type: "text" as const, text: "Error: summary is required." }],
-					details: { error: "summary is required" },
-					isError: true,
-				};
-			}
-
-			const { task, error } = resolvePlanTask(ctx.cwd, params.name?.trim() || undefined, pi.getSessionName());
-			if (error || !task) {
-				return {
-					content: [{ type: "text" as const, text: `Error: ${error ?? HANDOFF_USAGE}` }],
-					details: { error: error ?? HANDOFF_USAGE },
-					isError: true,
-				};
-			}
-
-			const path = planPath(ctx.cwd, task.name);
-			try {
-				const existing = await readFile(path, "utf8");
-				await writeAtomically(path, `${withoutSummary(existing)}\n\n${SUMMARY_HEADING}\n\n${params.summary.trim()}\n`);
-			} catch (caught) {
-				return {
-					content: [{ type: "text" as const, text: `Error: could not save summary: ${(caught as Error).message}.` }],
-					details: { name: task.name, error: (caught as Error).message },
-					isError: true,
-				};
-			}
-
-			// The plan file is written first: the close-out fact should only exist
-			// once the summary it refers to is actually on disk.
-			markClosed(pi, task.name);
-			return {
-				content: [{ type: "text" as const, text: `Summary appended to ${path}:\n\n${params.summary.trim()}` }],
-				details: { name: task.name, path },
-			};
-		},
-	});
-}
-
-/** Drop a previous summary section so a re-run replaces it instead of stacking. */
-function withoutSummary(plan: string): string {
-	const index = plan.startsWith(SUMMARY_HEADING) ? 0 : plan.lastIndexOf(`\n${SUMMARY_HEADING}`);
-	return (index === -1 ? plan : plan.slice(0, index)).trimEnd();
 }

@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { registerApproval } from "./approval.js";
-import { APPROVED_ENTRY_TYPE } from "./loop.js";
 
 const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
@@ -19,14 +18,7 @@ function harness(cwd: string, sessionName?: string) {
 		on: vi.fn((name: string, handler: (event: any, ctx: any) => any) => {
 			handlers.set(name, [...(handlers.get(name) ?? []), handler]);
 		}),
-		// Hidden facts are what the loop is derived from, so mirror them into the
-		// branch in the shape getBranch() really returns.
-		sendMessage: vi.fn((message: any) => {
-			messages.push(message);
-			if (message.display === false) {
-				branch.push({ type: "custom_message", customType: message.customType, display: false, content: message.content, details: message.details });
-			}
-		}),
+		sendMessage: vi.fn((message: any) => messages.push(message)),
 		sendUserMessage: vi.fn((content: string) => userMessages.push(content)),
 	};
 	registerApproval(pi as never);
@@ -56,7 +48,11 @@ function harness(cwd: string, sessionName?: string) {
 		return { setEditorText, notify, select, ctx };
 	};
 
-	const approvedTasks = () => messages.filter((m) => m.customType === APPROVED_ENTRY_TYPE).map((m) => m.details?.task);
+	/**
+	 * Approval leaves no durable trace — the kickoff message it sends IS the
+	 * record, so the tasks kicked off are the tasks approved.
+	 */
+	const approvedTasks = () => userMessages.map((content) => content.match(/plan\/(.+)\.md/)?.[1]);
 
 	return { handlers, offer, messages, userMessages, approvedTasks, branch };
 }
@@ -79,12 +75,13 @@ describe("approval prompt", () => {
 		expect(first.select).toHaveBeenCalledTimes(1);
 	});
 
-	it("Proceed records the approval and kicks off the approved plan", async () => {
+	it("Proceed kicks off the approved plan by its concrete path", async () => {
 		const h = harness(cwd);
 		const { notify } = await h.offer("dashboard-polish", PROCEED);
 		expect(h.approvedTasks()).toEqual(["dashboard-polish"]);
-		expect(h.userMessages[0]).toContain(".pi/plan/dashboard-polish.md");
-		expect(h.userMessages[0]).toContain("do not ask for approval again");
+		expect(h.userMessages[0]).toBe("Execute the approved plan at .pi/plan/dashboard-polish.md.");
+		// Approval leaves nothing behind in the session: no hidden fact, no notice.
+		expect(h.messages).toEqual([]);
 		expect(notify).not.toHaveBeenCalled();
 	});
 

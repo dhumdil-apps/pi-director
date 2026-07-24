@@ -64,4 +64,8 @@ describe("progress tracker indicator", () => {
   it("subscribes to no workflow-mode event", () => {
     expect(harness().listeners.size).toBe(0);
   });
+
+  it("registers no tool: the indicator observes, it does not ask the agent for input", () => {
+    expect(harness().tools).toEqual([]);
+  });
 });

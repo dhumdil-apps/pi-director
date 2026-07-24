@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { contextUsageText, updatePhaseIndicator, updateTodoWidget } from "./todo-widget.js";
-import { TodoStateManager } from "../state-manager.js";
+import { contextUsageText, updatePhaseIndicator } from "./activity-indicator.js";
 
 const theme = { fg: (color: string, text: string) => `[${color}]${text}` } as any;
 
@@ -98,31 +97,5 @@ describe("phase indicator", () => {
 			vi.advanceTimersByTime(120 * 5);
 			expect(requestRender).not.toHaveBeenCalled();
 		});
-	});
-});
-
-describe("todo widget", () => {
-	it("clears the local widget when it is hidden", () => {
-		const state = new TodoStateManager();
-		const calls: Array<[string, unknown]> = [];
-		const ctx = { ui: { setWidget: (id: string, widget: unknown) => calls.push([id, widget]) } } as any;
-
-		updateTodoWidget(state, ctx, false);
-
-		expect(calls).toEqual([["todo-list", undefined]]);
-	});
-
-	it("renders todo rows without a duplicated progress header", () => {
-		const state = new TodoStateManager();
-		state.write([{ id: 1, title: "Remove header", description: "Keep the row", status: "in-progress" }]);
-		let factory: any;
-		const ctx = { ui: { setWidget: (_id: string, widget: unknown) => { factory = widget; } } } as any;
-
-		updateTodoWidget(state, ctx, true);
-
-		const lines = factory({}, theme).render();
-		expect(lines).toEqual(["[accent]▍ [warning]› [accent]1. [warning]Remove header"]);
-		expect(lines.join("\n")).not.toContain("Todo List");
-		expect(lines.join("\n")).not.toContain("1/1");
 	});
 });

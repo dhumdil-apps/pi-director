@@ -14,7 +14,6 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { isLeanContext } from "./context-usage.js";
 import { handoffKickoff } from "./handoff.js";
-import { deriveLoop, markApproved } from "./loop.js";
 import { resolvePlanTask } from "./task.js";
 
 const APPROVAL_NOTICE_TYPE = "agent-workflow:approval-notice";
@@ -38,13 +37,17 @@ export function registerApproval(pi: ExtensionAPI): void {
 	// Ephemeral by design: a pending offer belongs to the turn that armed it and
 	// is never persisted, so a reload never resurrects a stale prompt.
 	let pendingOffer: { task: string } | undefined;
+	// Which task the user approved in this session. Deliberately in-memory: it
+	// only suppresses a duplicate prompt, so a reload costing one extra prompt is
+	// cheaper than a durable fact and the derivation that reads it back.
+	let approvedTask: string | undefined;
 
-	pi.on("tool_execution_end", async (event, ctx) => {
+	pi.on("tool_execution_end", async (event) => {
 		if (event.toolName !== "save_plan" || event.isError) return;
 		const details = (event.result as { details?: { name?: unknown } } | undefined)?.details;
 		if (typeof details?.name !== "string") return;
 		// An approved task re-saving its plan is a correction, not a new decision.
-		if (details.name === deriveLoop(ctx).approvedTask) return;
+		if (details.name === approvedTask) return;
 		pendingOffer = { task: details.name };
 	});
 
@@ -64,6 +67,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 
 		const choice = await ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage())));
 		if (choice?.startsWith(PROCEED)) {
+			approvedTask = task;
 			proceed(pi, ctx, task);
 			return;
 		}
@@ -79,8 +83,8 @@ export function registerApproval(pi: ExtensionAPI): void {
 	});
 }
 
-/** Record the approval and start execution here, naming the concrete plan path. */
+/** Start execution here, naming the concrete plan path so the turn opens on it. */
 function proceed(pi: ExtensionAPI, ctx: ExtensionContext, task: string): void {
 	const { task: resolved } = resolvePlanTask(ctx.cwd, task, ctx.sessionManager.getSessionName());
-	markApproved(pi, task, resolved ? handoffKickoff(resolved) : undefined);
+	if (resolved) pi.sendUserMessage(handoffKickoff(resolved));
 }

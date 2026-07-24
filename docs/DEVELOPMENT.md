@@ -31,8 +31,8 @@ dogfood a change from inside another project. `-ne` disables extension discovery
 to avoid collision warnings.
 
 Do **not** `pi install <local path>` while the published package is installed:
-both copies register `save_plan` and `manage_todo_list`, so the managed
-extensions fail to load with a tool-conflict error on every start. `-ne -np --no-themes -e` is
+both copies register `save_plan`, so the managed extensions fail to load with a
+tool-conflict error on every start. `-ne -np --no-themes -e` is
 the conflict-free way to run unpublished code.
 
 ## Verification

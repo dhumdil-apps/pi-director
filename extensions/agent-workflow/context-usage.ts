@@ -8,6 +8,7 @@
  */
 
 import type { ContextUsage, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
+import type { Usage } from "@earendil-works/pi-ai";
 
 // Four blocks regardless of context-window size, so the readout stays stable across models.
 // Bars use Block Elements (█ ░) rather than Geometric Shapes (▰ ▱): terminals draw these
@@ -62,4 +63,56 @@ export function contextUsageText(usage: ContextUsage | undefined, theme: Theme):
   const bar = theme.fg(color, "█".repeat(filled)) + theme.fg("dim", "░".repeat(CONTEXT_BAR_SEGMENTS - filled));
   const readout = `${formatTokens(usage.tokens)} / ${formatTokens(usage.contextWindow)}`;
   return `${theme.fg(color, "ctx")} ${bar} ${theme.fg(color, readout)}`;
+}
+
+// Below half the prompt served from cache, the readout is a cost warning rather than
+// reassurance, so it drops to dim instead of claiming the accent color.
+const CACHE_HEALTHY_PERCENT = 50;
+
+/**
+ * Share of the last request's prompt that was served from cache — `⚡ 92%`.
+ * Undefined when no assistant turn has completed or the provider reported no
+ * prompt tokens at all (nothing to have hit).
+ */
+export function cacheHitText(usage: Usage | undefined, theme: Theme): string | undefined {
+  if (!usage) return undefined;
+  const prompt = (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheWrite ?? 0);
+  if (prompt <= 0) return undefined;
+  const percent = Math.round(((usage.cacheRead ?? 0) / prompt) * 100);
+  return theme.fg(percent >= CACHE_HEALTHY_PERCENT ? "accent" : "dim", `⚡ ${percent}%`);
+}
+
+/**
+ * Growth since the previous turn — `+3.2k`. Undefined on the first turn (no
+ * baseline) and when nothing moved, so a steady context adds no noise.
+ */
+export function contextDeltaText(
+  current: number | null | undefined,
+  previous: number | undefined,
+  theme: Theme,
+): string | undefined {
+  if (current == null || previous == null) return undefined;
+  const delta = current - previous;
+  if (delta === 0) return undefined;
+  return theme.fg("dim", `${delta > 0 ? "+" : "−"}${formatTokens(Math.abs(delta))}`);
+}
+
+/**
+ * The full indicator readout: context bar, cache hit rate, turn delta — joined
+ * with the powerbar's separator, with missing fragments dropped rather than
+ * leaving a dangling divider. Undefined when even the bar is unknown.
+ */
+export function contextIndicatorText(
+  usage: ContextUsage | undefined,
+  theme: Theme,
+  extras?: { lastUsage?: Usage; previousTokens?: number },
+): string | undefined {
+  const context = contextUsageText(usage, theme);
+  if (!context) return undefined;
+  const fragments = [
+    context,
+    cacheHitText(extras?.lastUsage, theme),
+    contextDeltaText(usage?.tokens, extras?.previousTokens, theme),
+  ].filter((fragment): fragment is string => fragment !== undefined);
+  return fragments.join(theme.fg("dim", " · "));
 }
