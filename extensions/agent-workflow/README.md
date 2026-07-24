@@ -15,15 +15,24 @@ or irreversible) for projects without one.
 
 ## User surface
 
-- `save_plan` (`task.ts`) — called *before* the plan is presented, so the plan on
-  screen always exists on disk. Normalizes the task name, names the session, and
-  writes `.pi/plan/<task-name>.md`. Any Markdown is accepted: the plan's shape is
-  recommended (current state, decisions taken, desired state, approach, quirks),
-  not a contract. Re-saving after a revision overwrites the same file. The agent
-  never deletes plan files; legacy `.pi/goal/` files are ignored and preserved.
+- **Auto-scaffold** (`index.ts`, `task.ts`) — an unnamed session's first turn
+  creates `.pi/plan/<timestamp>-<first-prompt-words>.md` from `PLAN_TEMPLATE`
+  and a `.pi/MEMORY.md` stub, then names the session after it. Best-effort: an
+  unwritable cwd is ignored rather than failing the turn, and a resumed or
+  `/handoff`-seeded session already has a name and is skipped.
+- `save_plan` (`task.ts`) — called *before* the plan is presented. Renames the
+  task to a meaningful name, keeping the leading timestamp so plan files stay
+  time-ordered, and moves the file with it. The `plan` body is optional: passed,
+  it overwrites the file; omitted, the file the agent has been editing is used
+  as-is. Either way the content is echoed in the tool result, so the user's
+  decision is made against exactly what is on disk. Any Markdown is accepted:
+  the plan's shape is recommended (current state, decisions taken, desired
+  state, approach, quirks), not a contract. The agent never deletes plan files;
+  legacy `.pi/goal/` files are ignored and preserved.
 - `save_summary` (`task.ts`) — the close-out. Appends `## Implementation summary`
   to the task's plan file, replacing a previous summary rather than stacking
-  another one, and records the close-out fact. It never renames the session.
+  another one, echoes it inline, and records the close-out fact. It never
+  renames the session.
   Durable project takeaways are written by the agent straight into
   `.pi/MEMORY.md` — no proposal round-trip.
 - **The approval prompt** (`approval.ts`) — a successful `save_plan` for a task

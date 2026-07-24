@@ -24,7 +24,10 @@ switches.
 
 1. **Goal** — the user says what they want. The request is the scope. Pi reads
    the project's `AGENTS.md`, and `.pi/MEMORY.md` when it exists, before
-   touching anything.
+   touching anything. The first message of a fresh session also scaffolds
+   `.pi/plan/<timestamp>-<first-prompt-words>.md` from a placeholder template
+   (and a `.pi/MEMORY.md` stub when absent), so the task has a living document
+   from the start rather than one that appears at step 4.
 2. **Explore** — Pi reads the code before forming an opinion about it: the files
    the task touches, plus their callers and tests, on every task regardless of
    size. Questions are asked only for the genuine open choices exploration
@@ -36,14 +39,20 @@ switches.
    should do instead), the **approach** (how to get from one to the other), and
    the **quirks** (non-obvious constraints, gotchas, and key paths worth
    carrying into a handoff). Those are topics worth covering, not a form to fill
-   in: the plan is shaped to the task, and `save_plan` accepts any Markdown.
-4. **Save, then proceed** — Pi calls `save_plan` *before* presenting the plan, so
-   the plan on screen always exists on disk. It presents the same content, ends
-   with **Proceed, handoff, or revise?**, and stops. Once a plan is approved,
+   in: the plan is shaped to the task, and `save_plan` accepts any Markdown. Pi
+   keeps the scaffolded file current by editing it directly as it works.
+4. **Save, then proceed** — `save_plan` is the single "ready to decide" action.
+   It renames the task to something meaningful once the subject is clear —
+   keeping the leading timestamp, so `.pi/plan/` stays time-ordered — writes the
+   plan when one is passed (omitting it presents the file as the agent already
+   wrote it), and **echoes the file's content inline** so the decision is made
+   against exactly what is on disk. Pi presents the same content, ends with
+   **Proceed, handoff, or revise?**, and stops. Once a plan is approved,
    execution needs no further approval.
-5. **Close out, or plan again** — `save_summary` appends the honest close-out to
-   the plan file, and durable takeaways go straight into `.pi/MEMORY.md`. A
-   blocker that invalidates the plan goes back to the user at step 1.
+5. **Close out, or plan again** — Pi writes the close-out into the plan file and
+   `save_summary` appends it under `## Implementation summary`, echoing it
+   inline, and durable takeaways go straight into `.pi/MEMORY.md`. A blocker
+   that invalidates the plan goes back to the user at step 1.
 
 Progress Tracker shows where the work is above the editor, as the agent's own
 short phrase, next to context usage. The loop text is stable within a session
@@ -86,8 +95,10 @@ mid-implementation correction: it overwrites the file silently and no prompt
 appears. A `save_plan` for a *different* task does prompt again — that is a new
 loop. There is deliberately no implement-to-plan transition to undo.
 
-Plan files are **never deleted by the agent** — not at close-out, not on
-success. `.pi/plan/` is the user's to keep, archive, or prune; because it
+Because every session scaffolds a file, `.pi/plan/` accumulates skeletons for
+sessions that went nowhere; nothing is auto-pruned, and the chronological names
+make manual pruning easy. Plan files are **never deleted by the agent** — not at
+close-out, not on success. `.pi/plan/` is the user's to keep, archive, or prune; because it
 accumulates, resolution never assumes a single file: the explicit name wins,
 then the session name, and only a lone remaining file is picked implicitly —
 otherwise it asks which. Legacy `.pi/goal/` files are ignored and preserved.

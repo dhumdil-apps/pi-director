@@ -42,7 +42,7 @@ pi list
 
 ## Included Features
 
-- **agent-workflow** — One guided loop per task, injected as narrative guidance rather than rules: goal, explore, plan, save-then-proceed, close. `save_plan` writes `.pi/plan/<task>.md` before the plan is presented and arms a native approval prompt — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing. `save_summary` closes the task out. Position in the loop is derived from hidden branch facts, so there are no session modes. See [docs/FLOW.md](docs/FLOW.md).
+- **agent-workflow** — One guided loop per task, injected as narrative guidance rather than rules: goal, explore, plan, save-then-proceed, close. Every session scaffolds `.pi/plan/<timestamp-slug>.md` on its first message as the agent's living document; `save_plan` presents it (renaming it to a meaningful name, timestamp kept) and arms a native approval prompt — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing. `save_summary` closes the task out. Position in the loop is derived from hidden branch facts, so there are no session modes. See [docs/FLOW.md](docs/FLOW.md).
 - **progress-tracker** — Above-editor indicator carrying the agent's own short phase phrase and context usage, plus the interactive `/todos` checklist widget.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).

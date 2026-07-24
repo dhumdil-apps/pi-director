@@ -16,8 +16,8 @@ enforced state machine and no session modes.
 ## User-facing tools
 
 - **`manage_todo_list`** (Progress Tracker) — Read/write local todos; the above-editor indicator shows context usage
-- **`save_plan`** (Agent Workflow) — Save the plan to `.pi/plan/<task-name>.md` and name the session after it; called before the plan is presented
-- **`save_summary`** (Agent Workflow) — Close the task out: append the honest implementation summary to its plan file (a re-run replaces the previous one)
+- **`save_plan`** (Agent Workflow) — Present the task's plan file for the user's decision and rename it to a meaningful name (the leading timestamp is kept). Pass the plan to (over)write `.pi/plan/<task-name>.md`, or omit it to present what the agent already wrote there; either way the file's content is echoed inline
+- **`save_summary`** (Agent Workflow) — Close the task out: append the honest implementation summary to its plan file, echoed inline (a re-run replaces the previous one)
 
 ## Shell and keyboard reminders
 

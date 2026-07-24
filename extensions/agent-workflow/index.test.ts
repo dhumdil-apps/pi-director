@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -42,9 +42,9 @@ function harness(cwd = "/pi-kit-index-test-nonexistent") {
 		},
 	};
 
-	const inject = async (): Promise<string> => {
+	const inject = async (prompt = "do the thing"): Promise<string> => {
 		const injectors = handlers.get("before_agent_start")!;
-		const result = await injectors[injectors.length - 1]({ systemPrompt: "base" }, ctx);
+		const result = await injectors[injectors.length - 1]({ systemPrompt: "base", prompt }, ctx);
 		// Collapsed to one line: the prose wraps, so assertions must not depend on where.
 		return (result.systemPrompt as string).replace(/\s+/g, " ").trim();
 	};
@@ -54,7 +54,7 @@ function harness(cwd = "/pi-kit-index-test-nonexistent") {
 		branch.push({ type: "custom_message", customType, display: false, content: "", details: { task } });
 	};
 
-	return { handlers, commands, tools, notify, inject, seed, ctx, newSession };
+	return { handlers, commands, tools, notify, inject, seed, ctx, newSession, pi };
 }
 
 describe("workflow prompt", () => {
@@ -96,9 +96,11 @@ describe("workflow prompt", () => {
 	it("teaches save-before-present and both close-out halves", async () => {
 		const prompt = await harness().inject();
 		expect(prompt).toContain("call save_plan before you present the plan");
-		expect(prompt).toContain("always exists on disk");
+		expect(prompt).toContain("it echoes the file back");
+		expect(prompt).toContain("A plan file already exists for this task");
+		expect(prompt).toContain("the leading timestamp is kept");
 		expect(prompt).toContain("Proceed, handoff, or revise?");
-		expect(prompt).toContain("call save_summary when the work is done");
+		expect(prompt).toContain("write the close-out into the plan file, then call save_summary");
 		expect(prompt).toContain("straight into .pi/MEMORY.md");
 		expect(prompt).toContain("write nothing and say so");
 		// The retired ask-first memory policy is gone.
@@ -185,5 +187,45 @@ describe("/handoff command", () => {
 		await h.commands.get("handoff")!.handler("", h.ctx);
 		expect(h.notify).toHaveBeenCalledWith(expect.stringContaining("plan first"), "warning");
 		expect(h.newSession).not.toHaveBeenCalled();
+	});
+});
+
+describe("plan scaffolding", () => {
+	let cwd: string;
+	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-index-scaffold-")); });
+	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
+
+	const planFiles = async () => (await readdir(join(cwd, ".pi", "plan"))).sort();
+
+	it("names and scaffolds an unnamed session on its first turn", async () => {
+		const h = harness(cwd);
+		await h.inject("please fix the flaky login test");
+		const name = h.pi.setSessionName.mock.calls[0][0] as string;
+		expect(name).toMatch(/^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-fix-flaky-login-test$/);
+		expect(await planFiles()).toEqual([`${name}.md`]);
+		const written = await readFile(join(cwd, ".pi", "plan", `${name}.md`), "utf8");
+		expect(written).toContain(`# ${name}`);
+		expect(written).toContain("## Implementation summary");
+		// The MEMORY stub is part of the same bootstrap.
+		await expect(readFile(join(cwd, ".pi", "MEMORY.md"), "utf8")).resolves.toContain("#");
+	});
+
+	it("scaffolds once, leaving a named or resumed session untouched", async () => {
+		const h = harness(cwd);
+		await h.inject("first prompt about caching");
+		const name = h.pi.setSessionName.mock.calls[0][0] as string;
+		await h.inject("second prompt, same session");
+		expect(h.pi.setSessionName).toHaveBeenCalledTimes(1);
+		expect(await planFiles()).toEqual([`${name}.md`]);
+	});
+
+	it("scaffolds nothing approved, so the position line still says so", async () => {
+		expect(await harness(cwd).inject("start something")).toContain("No plan is approved yet");
+	});
+
+	it("survives an unwritable cwd without failing the turn", async () => {
+		const h = harness("/pi-kit-index-test-nonexistent");
+		expect(await h.inject("start something")).toContain("<pi_workflow>");
+		expect(h.pi.setSessionName).not.toHaveBeenCalled();
 	});
 });

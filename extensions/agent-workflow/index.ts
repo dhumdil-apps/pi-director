@@ -12,11 +12,12 @@
  * plan file on disk carries the task across sessions. Nothing here is enforced.
  */
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { writeFile } from "node:fs/promises";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { registerApproval } from "./approval.js";
 import { openHandoffSession } from "./handoff.js";
 import { deriveLoop, isImplementing, type LoopState } from "./loop.js";
-import { listPlanNames, registerTaskManagement } from "./task.js";
+import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, registerTaskManagement } from "./task.js";
 
 const TONE = `  <tone>
     Concise and direct.
@@ -38,7 +39,10 @@ const LOOP = `  <loop>
     1. Goal — the user says what they want.
        Their request is the scope. Read the project's AGENTS.md, and .pi/MEMORY.md when it exists,
        before touching anything: they carry the conventions and past decisions you would otherwise
-       rediscover the expensive way.
+       rediscover the expensive way. A plan file already exists for this task at .pi/plan/<task-name>.md,
+       scaffolded when the session opened — it is your living document, so keep it current as you
+       go by editing it directly, and rename it by calling save_plan with a meaningful name once
+       the real subject is clear (the leading timestamp is kept, so files stay time-ordered).
 
     2. Explore — read the code before forming an opinion about it.
        A plan written from memory of a codebase is a guess wearing a plan's clothes, so open the
@@ -52,11 +56,12 @@ const LOOP = `  <loop>
        session), the desired state (what it should do instead), the approach (how to get from one
        to the other), and the quirks (the non-obvious constraints, gotchas, and key paths worth
        carrying into a handoff). Those are topics worth covering, not a form to fill in — shape
-       the plan to the task.
+       the plan to the task; the scaffolded file already sketches them as placeholders.
 
     4. Save, then proceed — call save_plan before you present the plan.
-       Saving first means the plan on screen always exists on disk, so whatever the user answers
-       can be acted on here or in a fresh session. Present the same content in chat, end with
+       save_plan is the one "ready to decide" action: pass the plan to write it, or omit it when the
+       file already says what you mean, and either way it echoes the file back so the user decides
+       against exactly what is on disk. Present the same content in chat, end with
        "Proceed, handoff, or revise?", and stop: the choice is theirs. Once a plan is approved,
        execute it without asking again, and build the smallest change that satisfies it. Prefer
        the utilities and the style already in the file over new machinery. Read a file and its
@@ -67,10 +72,11 @@ const LOOP = `  <loop>
        it. On a blocker nobody knew about at planning time, stop and report instead of guessing.
        Re-saving a corrected plan mid-implementation is normal and needs no ceremony.
 
-    5. Close out, or plan again — call save_summary when the work is done.
+    5. Close out, or plan again — write the close-out into the plan file, then call save_summary.
        The summary is honest: what changed, what verification actually ran and what it reported,
-       and every check skipped or failed. Then write anything durably true about this project
-       straight into .pi/MEMORY.md — a convention learned, a trap hit, a decision worth keeping.
+       and every check skipped or failed; save_summary shows it and marks the task closed. Then
+       write anything durably true about this project straight into .pi/MEMORY.md — a convention
+       learned, a trap hit, a decision worth keeping.
        If the task produced nothing durable, write nothing and say so; a one-off is not a
        learning. A blocker that invalidates the plan goes back to the user at step 1, and a
        genuinely new goal starts a new loop.
@@ -122,6 +128,26 @@ export default function createExtension(pi: ExtensionAPI): void {
 	// Derived every turn, never cached at load: a /handoff-seeded session's
 	// extension instance loads before its approval fact is appended.
 	pi.on("before_agent_start", async (event, ctx) => {
+		await scaffoldPlan(pi, ctx, event.prompt ?? "");
 		return { systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt(deriveLoop(ctx))}` };
 	});
+}
+
+/**
+ * Give the task a plan file from its very first message, so the agent has a
+ * living document to keep current instead of one that appears at step 4. Only a
+ * fresh, unnamed session is scaffolded: a resumed or /handoff-seeded session
+ * already carries its task name. Best-effort — an unwritable cwd must not stop
+ * the turn.
+ */
+async function scaffoldPlan(pi: ExtensionAPI, ctx: ExtensionContext, prompt: string): Promise<void> {
+	if (pi.getSessionName()) return;
+	const name = autoSlug(prompt, new Date());
+	try {
+		await ensurePiState(ctx.cwd);
+		await writeFile(planPath(ctx.cwd, name), PLAN_TEMPLATE.replace("<task-name>", name), { encoding: "utf8", flag: "wx" });
+	} catch {
+		return;
+	}
+	pi.setSessionName(name);
 }

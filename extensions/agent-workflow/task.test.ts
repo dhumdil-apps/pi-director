@@ -1,9 +1,9 @@
-import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CLOSED_ENTRY_TYPE } from "./loop.js";
-import { listPlanNames, normalizeTaskName, registerTaskManagement, resolvePlanTask } from "./task.js";
+import { autoSlug, canonicalTaskName, ensurePiState, listPlanNames, movePlan, normalizeTaskName, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
 
 function makeHarness(cwd: string, name?: string) {
 	let sessionName = name;
@@ -70,12 +70,42 @@ describe("save_plan", () => {
 		expect(await readFile(result.details.path, "utf8")).toBe(revised);
 	});
 
-	it("rejects an empty plan without touching the session name", async () => {
+	it("presents the on-disk plan when no body is passed, instead of clobbering it", async () => {
+		await seedPlan(cwd, "existing-name", "Edited by the agent.\n");
 		const harness = makeHarness(cwd, "existing-name");
-		const result = await harness.execute({ name: "empty plan", plan: "   " });
-		expect(result.isError).toBe(true);
-		expect(result.content[0].text).toContain("plan is required");
-		expect(harness.getName()).toBe("existing-name");
+		const result = await harness.execute({ name: "existing name" });
+		expect(result.isError).toBeUndefined();
+		expect(result.content[0].text).toContain("Edited by the agent.");
+		expect(await readFile(join(cwd, ".pi", "plan", "existing-name.md"), "utf8")).toBe("Edited by the agent.\n");
+	});
+
+	it("echoes the saved plan so the decision is made against the file", async () => {
+		const harness = makeHarness(cwd);
+		const result = await harness.execute({ name: "dashboard polish", plan });
+		expect(result.content[0].text).toContain("## Approach");
+	});
+
+	it("says the plan is empty rather than pretending there is one", async () => {
+		const harness = makeHarness(cwd);
+		const result = await harness.execute({ name: "nothing written yet" });
+		expect(result.isError).toBeUndefined();
+		expect(result.content[0].text).toContain("(empty)");
+	});
+
+	it("keeps the timestamp prefix and moves the file when the slug changes", async () => {
+		const auto = "2026-07-24-13-05-01-do-the-thing";
+		await seedPlan(cwd, auto);
+		const harness = makeHarness(cwd, auto);
+		const result = await harness.execute({ name: "dashboard polish", plan });
+		expect(result.details.name).toBe("2026-07-24-13-05-01-dashboard-polish");
+		expect(harness.getName()).toBe("2026-07-24-13-05-01-dashboard-polish");
+		expect(await readdir(join(cwd, ".pi", "plan"))).toEqual(["2026-07-24-13-05-01-dashboard-polish.md"]);
+	});
+
+	it("does not mistake a timestamp for an inherited ticket ID", async () => {
+		const harness = makeHarness(cwd, "2026-07-24-13-05-01-do-the-thing");
+		const result = await harness.execute({ name: "cache recovery", plan });
+		expect(result.details.name).toBe("2026-07-24-13-05-01-cache-recovery");
 	});
 
 	it("ignores and preserves legacy .pi/goal files", async () => {
@@ -216,5 +246,51 @@ describe("listPlanNames", () => {
 		await writeFile(join(plans, "SI-1-alpha-task.md"), plan);
 		await writeFile(join(plans, "not a plan.txt"), "x");
 		expect(listPlanNames(cwd)).toEqual(["SI-1-alpha-task", "zeta-task"]);
+	});
+});
+
+describe("auto-scaffold naming", () => {
+	const at = (iso: string) => new Date(iso);
+
+	it("prefixes the first prompt's words with a sortable local timestamp", () => {
+		const name = autoSlug("please fix the flaky login test", at("2026-07-24T13:05:01"));
+		expect(name).toBe("2026-07-24-13-05-01-fix-flaky-login-test");
+	});
+
+	it("orders lexically by start time", () => {
+		const first = autoSlug("alpha work", at("2026-07-24T09:00:00"));
+		const second = autoSlug("beta work", at("2026-07-24T13:05:01"));
+		expect([second, first].sort()).toEqual([first, second]);
+	});
+
+	it("round-trips a timestamped name and reads its prefix back", () => {
+		const name = autoSlug("SI-7 cache recovery", at("2026-07-24T13:05:01"));
+		expect(name).toBe("2026-07-24-13-05-01-SI-7-cache-recovery");
+		expect(canonicalTaskName(name)).toBe(name);
+		expect(timestampPrefix(name)).toBe("2026-07-24-13-05-01");
+		expect(timestampPrefix("dashboard-polish")).toBeUndefined();
+	});
+});
+
+describe("ensurePiState / movePlan", () => {
+	let cwd: string;
+	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-ensure-state-")); });
+	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
+
+	it("creates the plan dir and a MEMORY stub, and never overwrites an existing one", async () => {
+		await ensurePiState(cwd);
+		const memory = join(cwd, ".pi", "MEMORY.md");
+		await writeFile(memory, "# Mine\n");
+		await ensurePiState(cwd);
+		await expect(access(join(cwd, ".pi", "plan"))).resolves.toBeUndefined();
+		expect(await readFile(memory, "utf8")).toBe("# Mine\n");
+	});
+
+	it("renames a plan file, and is a no-op without a source", async () => {
+		await seedPlan(cwd, "old-name");
+		await movePlan(cwd, "old-name", "new-name");
+		expect(await readdir(join(cwd, ".pi", "plan"))).toEqual(["new-name.md"]);
+		await movePlan(cwd, "absent-name", "other-name");
+		expect(await readdir(join(cwd, ".pi", "plan"))).toEqual(["new-name.md"]);
 	});
 });
