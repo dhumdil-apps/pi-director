@@ -13,12 +13,13 @@ mechanics live in the tool that performs it. Nothing is enforced.
 ## Tools
 
 - `ask` (`ask.ts`) — a question and two to four options, each a short headline
-  plus a one-sentence description, recommendation first. The full Q&A is printed
-  in the transcript by `renderCall`; the dialog below is a plain `ctx.ui.select`
-  over the headlines alone, so answering is one keypress. Headlines must be
-  distinct — `ui.select` returns the label, not an index. Dismissing is not an
-  error; headless is refused before the dialog, since a non-TUI `select()`
-  resolves `undefined` and would look the same.
+  plus a one-sentence description, recommendation first. A final "Write custom answer..."
+  option is appended to the picker so the user can close the picker and type an answer directly
+  without triggering a new model call. The full Q&A is printed in the transcript by `renderCall`;
+  the dialog below is a plain `ctx.ui.select` over the headlines alone, so answering is one keypress.
+  Headlines must be distinct — `ui.select` returns the label, not an index. Dismissing is not an
+  error; headless is refused before the dialog, since a non-TUI `select()` resolves `undefined` and
+  would look the same.
 - `save_plan` (`task.ts`) — presents the plan and renames the session, keeping
   the leading timestamp so `.pi/plan/` stays time-ordered. Pass `plan` to
   overwrite the file, or omit it to present what the agent already wrote there;

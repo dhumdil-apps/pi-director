@@ -46,6 +46,8 @@ function result(text: string, details: AskDetails, isError = false) {
 	return { content: [{ type: "text" as const, text }], details, isError };
 }
 
+export const WRITE_CUSTOM_OPTION = "Write custom answer...";
+
 export function registerAsk(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "ask",
@@ -67,8 +69,22 @@ export function registerAsk(pi: ExtensionAPI): void {
 				return result("Error: option headlines must be distinct — the picker returns the headline, not an index.", base, true);
 			}
 
-			const choice = await ctx.ui.select(params.question, headlines);
-			const index = choice === undefined ? -1 : headlines.indexOf(choice);
+			const pickerHeadlines = [...headlines, WRITE_CUSTOM_OPTION];
+			const choice = await ctx.ui.select(params.question, pickerHeadlines);
+
+			if (choice === undefined) {
+				return result("User dismissed the question without answering — ask in an ordinary message, or say which option you would take and why.", base);
+			}
+
+			if (choice === WRITE_CUSTOM_OPTION) {
+				ctx.abort();
+				return result(
+					`User selected: ${pickerHeadlines.length}. ${WRITE_CUSTOM_OPTION}`,
+					{ ...base, answer: WRITE_CUSTOM_OPTION, index: pickerHeadlines.length },
+				);
+			}
+
+			const index = headlines.indexOf(choice);
 			if (index < 0) {
 				return result("User dismissed the question without answering — ask in an ordinary message, or say which option you would take and why.", base);
 			}
@@ -88,6 +104,7 @@ export function registerAsk(pi: ExtensionAPI): void {
 				lines.push(theme.fg("accent", `  ${at + 1}. ${option.headline}`));
 				if (option.description) lines.push(theme.fg("muted", `     ${option.description}`));
 			}
+			lines.push(theme.fg("accent", `  ${options.length + 1}. ${WRITE_CUSTOM_OPTION}`));
 			return new Text(lines.join("\n"), 0, 0);
 		},
 
