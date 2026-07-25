@@ -46,7 +46,6 @@ pi list
 - **progress-tracker** — Above-editor activity and context-usage indicator. No tool, no command: it observes.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).
-- **terminal-keys** — Newline and submit that work in every terminal: `ctrl+j` inserts a newline where `shift+enter` never reaches Pi, and `ctrl+enter` submits.
 - **bundled themes** — `dark` and `github-dark`.
 
 ## Documentation

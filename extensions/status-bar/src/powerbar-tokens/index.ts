@@ -71,8 +71,8 @@ function resetSessionStats(pi: ExtensionAPI): void {
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
-	pi.events.emit("powerbar:register-segment", { id: "tokens", label: "Tokens" });
-	pi.events.emit("powerbar:register-segment", { id: "agent-stats", label: "Agent Stats" });
+	pi.events.emit("powerbar:register-segment", { id: "tokens", label: "Tokens", row: 2 });
+	pi.events.emit("powerbar:register-segment", { id: "agent-stats", label: "Agent Stats", row: 2 });
 
 	pi.on("session_start", async (_event, ctx) => {
 		resetSessionStats(pi);

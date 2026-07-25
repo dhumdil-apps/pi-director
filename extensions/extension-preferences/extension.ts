@@ -3,8 +3,8 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { getSettingsListTheme } from "@earendil-works/pi-coding-agent";
-import { Container, Text } from "@earendil-works/pi-tui";
+import { DynamicBorder, getSettingsListTheme } from "@earendil-works/pi-coding-agent";
+import { Container, Spacer, Text, truncateToWidth } from "@earendil-works/pi-tui";
 import { OrderedMultiSelect } from "./components/ordered-multi-select.js";
 import { type SettingItem, SettingsList } from "./components/settings-list.js";
 import { getSetting, setSetting } from "./settings/storage.js";
@@ -13,6 +13,13 @@ import type { SettingDefinition } from "./settings/types.js";
 interface RegistrationPayload {
 	name: string;
 	settings: SettingDefinition[];
+}
+
+/** Above this many rows the list is worth searching; below it the input is just noise. */
+const SEARCH_THRESHOLD = 8;
+
+function clampLines(lines: string[], width: number): string[] {
+	return lines.map((line) => truncateToWidth(line, Math.max(width, 0)));
 }
 
 export default function piLibExtension(pi: ExtensionAPI) {
@@ -46,21 +53,30 @@ export default function piLibExtension(pi: ExtensionAPI) {
 			await ctx.ui.custom((tui, theme, _kb, done) => {
 				const container = new Container();
 
-				// Title
+				// Framed like /usage and the dashboard, so every full-screen overlay in
+				// the bundle opens the same way.
+				container.addChild(new Spacer(1));
+				container.addChild(new DynamicBorder((s: string) => theme.fg("border", s)));
 				container.addChild(new Text(theme.fg("accent", theme.bold("Extension Settings")), 1, 1));
 
-				// Build items grouped by extension
+				// Build items grouped by extension. With a single registrant the group
+				// header and its indent are ceremony — the title already names the screen —
+				// so they appear only once there is something to tell apart.
+				const grouped = sortedExtensions.length > 1;
+				const indent = grouped ? "  " : "";
 				const items: SettingItem[] = [];
 
 				for (const [extName, settings] of sortedExtensions) {
-					// Add extension header as a non-interactive item
-					items.push({
-						id: `__header__${extName}`,
-						label: theme.bold(extName),
-						currentValue: "",
-						values: undefined, // No cycling - acts as header
-						editable: false,
-					});
+					if (grouped) {
+						// Add extension header as a non-interactive item
+						items.push({
+							id: `__header__${extName}`,
+							label: theme.bold(extName),
+							currentValue: "",
+							values: undefined, // No cycling - acts as header
+							editable: false,
+						});
+					}
 
 					// Add each setting
 					for (const setting of settings) {
@@ -70,7 +86,7 @@ export default function piLibExtension(pi: ExtensionAPI) {
 							// Ordered multi-select: opens a submenu
 							items.push({
 								id: `${extName}::${setting.id}`,
-								label: `  ${setting.label}`,
+								label: `${indent}${setting.label}`,
 								description: setting.description,
 								currentValue,
 								submenu: (val, submenuDone) => {
@@ -80,7 +96,7 @@ export default function piLibExtension(pi: ExtensionAPI) {
 						} else {
 							items.push({
 								id: `${extName}::${setting.id}`,
-								label: `  ${setting.label}`,
+								label: `${indent}${setting.label}`,
 								description: setting.description,
 								currentValue,
 								values: setting.values,
@@ -106,14 +122,15 @@ export default function piLibExtension(pi: ExtensionAPI) {
 					() => {
 						done(undefined);
 					},
-					{ enableSearch: true },
+					{ enableSearch: items.length > SEARCH_THRESHOLD },
 				);
 
 				container.addChild(settingsList);
 
 				return {
 					render(width: number) {
-						return container.render(width);
+						const bottomBorder = theme.fg("border", "─".repeat(width));
+						return clampLines([...container.render(width), "", bottomBorder], width);
 					},
 					invalidate() {
 						container.invalidate();

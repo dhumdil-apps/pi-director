@@ -9,7 +9,7 @@ import type { ExtensionAPI, ExtensionUIContext, Theme } from "@earendil-works/pi
 import type { Component, TUI } from "@earendil-works/pi-tui";
 import type { OrderedListOption } from "../../../extension-preferences/index.js";
 import { renderBar, type Segment } from "./render.js";
-import { loadSettings, type PowerbarSettings, registerSettings } from "./settings.js";
+import { type LineNumber, loadSettings, MAX_LINES, PLACEMENT, type PowerbarSettings, registerSettings } from "./settings.js";
 
 interface PowerbarUpdatePayload {
 	id: string;
@@ -19,13 +19,28 @@ interface PowerbarUpdatePayload {
 	color?: string;
 	bar?: number;
 	barSegments?: number;
-	row?: 1 | 2 | 3;
+	row?: 1 | 2 | 3 | 4;
 	transient?: boolean;
 }
 
 interface SegmentRegistration {
 	id: string;
 	label: string;
+	/** Line this segment defaults to, shown in the picker so the layout is legible there. */
+	row?: number;
+}
+
+function clampLine(row: number | undefined): LineNumber {
+	const line = Math.trunc(row ?? 1);
+	return (line >= 1 && line <= MAX_LINES ? line : 1) as LineNumber;
+}
+
+/** Picker order: by default line, then registration order within the line. */
+function orderedOptions(catalog: Map<string, { option: OrderedListOption; row: LineNumber }>): OrderedListOption[] {
+	return Array.from(catalog.values())
+		.map((entry, index) => ({ ...entry, index }))
+		.sort((a, b) => a.row - b.row || a.index - b.index)
+		.map((entry) => entry.option);
 }
 
 function segmentEquals(left: Segment | undefined, right: Segment): boolean {
@@ -43,7 +58,7 @@ function segmentEquals(left: Segment | undefined, right: Segment): boolean {
 
 export default function createExtension(pi: ExtensionAPI): void {
 	const segments: Map<string, Segment> = new Map();
-	const segmentCatalog: Map<string, OrderedListOption> = new Map();
+	const segmentCatalog: Map<string, { option: OrderedListOption; row: LineNumber }> = new Map();
 	let settings: PowerbarSettings;
 	let currentCtx: { ui: { setWidget: (...args: any[]) => void }; hasUI: boolean } | undefined;
 
@@ -52,10 +67,13 @@ export default function createExtension(pi: ExtensionAPI): void {
 
 	// Listen for segment registrations from producer extensions
 	pi.events.on("powerbar:register-segment", (data: unknown) => {
-		const { id, label } = data as SegmentRegistration;
-		segmentCatalog.set(id, { id, label });
+		const { id, label, row } = data as SegmentRegistration;
+		const line = clampLine(row);
+		// The default line rides in the label: the picker is a flat list, and
+		// without it there is no way to tell where an unplaced segment lands.
+		segmentCatalog.set(id, { option: { id, label: `${label} (line ${line})` }, row: line });
 		// Re-register settings with updated segment options
-		registerSettings(pi, Array.from(segmentCatalog.values()));
+		registerSettings(pi, orderedOptions(segmentCatalog));
 	});
 
 	function refresh(): void {
@@ -73,7 +91,7 @@ export default function createExtension(pi: ExtensionAPI): void {
 					},
 				};
 			},
-			{ placement: settings.placement },
+			{ placement: PLACEMENT },
 		);
 	}
 

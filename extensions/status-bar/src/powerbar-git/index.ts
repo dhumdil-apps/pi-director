@@ -83,7 +83,7 @@ async function emitBranch(pi: ExtensionAPI, ctx: ExtensionContext): Promise<void
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
-	pi.events.emit("powerbar:register-segment", { id: "git-branch", label: "Git Branch" });
+	pi.events.emit("powerbar:register-segment", { id: "git-branch", label: "Git Branch", row: 1 });
 
 	pi.on("session_start", async (_event, ctx) => {
 		await emitBranch(pi, ctx);

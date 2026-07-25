@@ -11,6 +11,18 @@ notices](#upstream-license-notices).
 - **Pi Usage** (Powerbar dependency, `@juanibiapina/pi-usage`) — npm `0.1.0`
 - **Usage Extension** (`@tmustier/pi-usage-extension`) — npm `0.9.1`
 
+## Local divergence
+
+- **Extension Settings** — the `/extension-settings` overlay is framed like the
+  bundle's other full-screen overlays (spacer + dynamic border, closing rule),
+  hides the fuzzy-search input for short lists, and drops the per-extension
+  header row and label indent while only one extension is registered
+  (2026-07-25). The settings registry, storage format, and list/multi-select
+  components are unmodified.
+- **Powerbar** — settings are eight per-line segment pickers instead of
+  `left`/`right`, and separator, bar style, bar width, and placement are fixed
+  constants rather than settings (2026-07-25).
+
 ## Upstream license notices
 
 Every vendored component is MIT-licensed. The copyright notices below are

@@ -10,7 +10,7 @@
 import type { ContextUsage, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
 import type { Usage } from "@earendil-works/pi-ai";
 import { renderPercentageBar } from "../status-bar/src/powerbar/render.js";
-import { loadSettings as loadPowerbarSettings } from "../status-bar/src/powerbar/settings.js";
+import { SEPARATOR } from "../status-bar/src/powerbar/settings.js";
 
 // Severity reacts to the absolute token count as well as the fill ratio: on a 1M-window
 // model 200k of context is only 20% full, yet output quality has already degraded. Whichever
@@ -47,16 +47,19 @@ export function isLeanContext(usage: ContextUsage | undefined): boolean {
   return (contextSeverity(usage) ?? "accent") === "accent";
 }
 
+// Wider than any powerbar meter on purpose: this is the one readout worth reading
+// precisely, and it renders on its own line above the editor.
+const CONTEXT_BAR_WIDTH = 10;
+
 /**
- * Context readout using the powerbar's configured percentage meter.
+ * Context readout using the powerbar's percentage meter.
  * Returns undefined while the token count is unknown (e.g. right after compaction).
  */
 export function contextUsageText(usage: ContextUsage | undefined, theme: Theme): string | undefined {
   const color = contextSeverity(usage);
   if (!color || !usage || usage.tokens == null) return undefined;
-  const settings = loadPowerbarSettings();
   const percent = (usage.tokens / usage.contextWindow) * 100;
-  const bar = renderPercentageBar(percent, settings.barWidth, settings.barStyle, theme, color);
+  const bar = renderPercentageBar(percent, CONTEXT_BAR_WIDTH, theme, color);
   const readout = `${formatTokens(usage.tokens)} / ${formatTokens(usage.contextWindow)}`;
   return `${theme.fg(color, "ctx")} ${bar} ${theme.fg(color, readout)}`;
 }
@@ -110,5 +113,5 @@ export function contextIndicatorText(
     cacheHitText(extras?.lastUsage, theme),
     contextDeltaText(usage?.tokens, extras?.previousTokens, theme),
   ].filter((fragment): fragment is string => fragment !== undefined);
-  return fragments.join(theme.fg("dim", " · "));
+  return fragments.join(theme.fg("dim", SEPARATOR));
 }

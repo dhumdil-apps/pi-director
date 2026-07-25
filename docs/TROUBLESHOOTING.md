@@ -29,11 +29,9 @@ protocol. VS Code's terminal supports neither Kitty nor Pi's `modifyOtherKeys`
 fallback, so shift+enter arrives as a bare `\r` and ctrl+j as a bare `\n`, and
 Pi reads a bare `\n` as Enter — both collapse onto submit.
 
-Use **ctrl+j**: the `terminal-keys` extension rewrites it into a newline, with
-no configuration. **ctrl+enter** submits.
-
-To get the literal shift+enter key back in VS Code, make it send a sequence Pi
-already parses — add this to VS Code's `keybindings.json`:
+Fix it in the editor, which is the only layer that sees the key: make
+shift+enter send a sequence Pi already parses. Add this to VS Code's
+`keybindings.json` (Antigravity and other VS Code forks take the same entry):
 
 ```json
 {
@@ -44,10 +42,10 @@ already parses — add this to VS Code's `keybindings.json`:
 }
 ```
 
-If your terminal sends a line feed for plain Enter, the ctrl+j rewrite would
-make submitting impossible; it is gated for that reason. Set `newline-on-ctrl-j`
-to `off` (or `always` for a terminal you have verified) under
-`/extension-settings`.
+The bundle used to ship a `terminal-keys` extension that rewrote a bare ctrl+j
+into a newline. It was removed on 2026-07-25: ctrl+j never reaches Pi in the
+VS Code family of terminals, so none of its settings changed anything there,
+and the keybinding above solves the actual key people press.
 
 ## Full typecheck fails
 

@@ -1,15 +1,14 @@
 /**
  * Rendering logic for the powerbar.
  *
- * Builds independently aligned semantic rows, joined by themed separators.
- * Supports two progress bar styles:
- * continuous (█ + partial-width glyphs ▏▎▍▌▋▊▉) and blocks
- * (discrete partial-height glyphs ▁▂▃▄▅▆▇█ with dim background).
+ * Builds one independently aligned line per configured line, joined by themed
+ * separators. Progress bars are discrete blocks (partial-height glyphs
+ * ▁▂▃▄▅▆▇█ over a dim background track).
  */
 
 import type { Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import type { PowerbarSettings } from "./settings.js";
+import { BAR_WIDTH, type PowerbarSettings, SEPARATOR } from "./settings.js";
 
 export interface Segment {
 	id: string;
@@ -21,43 +20,12 @@ export interface Segment {
 	color?: string;
 	/** If set, renders a progress bar. Value is 0–100. */
 	bar?: number;
-	/** Hint for how many discrete blocks to use in blocks mode. Falls back to barWidth setting. */
+	/** How many discrete blocks to use. Falls back to BAR_WIDTH. */
 	barSegments?: number;
-	/** Fixed semantic row: identity (1), session/context (2), or system/quota (3). */
-	row?: 1 | 2 | 3;
+	/** Line a transient segment falls back to when it appears in no line setting. */
+	row?: 1 | 2 | 3 | 4;
 	/** Render on the right while active even when absent from saved settings. */
 	transient?: boolean;
-}
-
-/**
- * Render a continuous progress bar using full-width block characters.
- *
- * █ for filled columns, ▏▎▍▌▋▊▉ for the partial column, space for empty.
- */
-function renderContinuousBar(percent: number, width: number, theme: Theme, color: string): string {
-	const clamped = Math.max(0, Math.min(100, percent));
-	const filledFloat = (clamped / 100) * width;
-	const filledFull = Math.floor(filledFloat);
-	const remainder = filledFloat - filledFull;
-
-	// Partial block levels: ▏(1/8) ▎(2/8) ▍(3/8) ▌(4/8) ▋(5/8) ▊(6/8) ▉(7/8)
-	const levels = ["▏", "▎", "▍", "▌", "▋", "▊", "▉"];
-
-	const themeColor = color as ThemeColor;
-	const filledStr = "█".repeat(filledFull);
-
-	let partial = "";
-	let emptyCount = width - filledFull;
-
-	if (remainder >= 0.0625 && filledFull < width) {
-		const levelIndex = Math.max(0, Math.min(levels.length - 1, Math.round(remainder * 8) - 1));
-		partial = levels[levelIndex];
-		emptyCount = Math.max(0, emptyCount - 1);
-	}
-
-	const emptyStr = " ".repeat(emptyCount);
-
-	return theme.fg(themeColor, filledStr + partial) + emptyStr;
 }
 
 /** Convert a foreground ANSI escape to background by replacing SGR 38 with 48. */
@@ -92,17 +60,9 @@ function renderBlocksBar(percent: number, segments: number, theme: Theme, color:
 	return result.join(" ");
 }
 
-/** Render a percentage with the same configurable meter used by powerbar segments. */
-export function renderPercentageBar(
-	percent: number,
-	width: number,
-	style: PowerbarSettings["barStyle"],
-	theme: Theme,
-	color: string,
-): string {
-	return style === "blocks"
-		? renderBlocksBar(percent, width, theme, color)
-		: renderContinuousBar(percent, width, theme, color);
+/** Render a percentage with the same meter powerbar segments use. */
+export function renderPercentageBar(percent: number, width: number, theme: Theme, color: string): string {
+	return renderBlocksBar(percent, width, theme, color);
 }
 
 /**
@@ -110,7 +70,7 @@ export function renderPercentageBar(
  *
  * Layout: [icon] [text] [bar] [suffix]
  */
-function renderSegmentText(segment: Segment, settings: PowerbarSettings, theme: Theme): string {
+function renderSegmentText(segment: Segment, theme: Theme): string {
 	const parts: string[] = [];
 	const themeColor = (segment.color || "muted") as ThemeColor;
 
@@ -124,10 +84,7 @@ function renderSegmentText(segment: Segment, settings: PowerbarSettings, theme: 
 
 	if (segment.bar !== undefined) {
 		const color = segment.color || "muted";
-		const width = settings.barStyle === "blocks"
-			? segment.barSegments ?? settings.barWidth
-			: settings.barWidth;
-		parts.push(renderPercentageBar(segment.bar, width, settings.barStyle, theme, color));
+		parts.push(renderPercentageBar(segment.bar, segment.barSegments ?? BAR_WIDTH, theme, color));
 	}
 
 	if (segment.suffix) {
@@ -142,17 +99,12 @@ interface RenderedSegment {
 	width: number;
 }
 
-function renderSideSegments(
-	ids: string[],
-	segments: Map<string, Segment>,
-	settings: PowerbarSettings,
-	theme: Theme,
-): RenderedSegment[] {
+function renderSideSegments(ids: string[], segments: Map<string, Segment>, theme: Theme): RenderedSegment[] {
 	const rendered: RenderedSegment[] = [];
 	for (const id of ids) {
 		const seg = segments.get(id);
 		if (!seg || (!seg.text && !seg.suffix && seg.bar === undefined)) continue;
-		const text = renderSegmentText(seg, settings, theme);
+		const text = renderSegmentText(seg, theme);
 		rendered.push({ text, width: visibleWidth(text) });
 	}
 	return rendered;
@@ -191,14 +143,13 @@ function renderAlignedLine(
 	leftIds: string[],
 	rightIds: string[],
 	segments: Map<string, Segment>,
-	settings: PowerbarSettings,
 	theme: Theme,
 	width: number,
 ): string {
-	const separator = theme.fg("dim", settings.separator);
+	const separator = theme.fg("dim", SEPARATOR);
 	const separatorWidth = visibleWidth(separator);
-	const leftSegs = renderSideSegments(leftIds, segments, settings, theme);
-	const rightSegs = renderSideSegments(rightIds, segments, settings, theme);
+	const leftSegs = renderSideSegments(leftIds, segments, theme);
+	const rightSegs = renderSideSegments(rightIds, segments, theme);
 	const allSegs = [...leftSegs, ...rightSegs];
 
 	const leftSepCount = Math.max(0, leftSegs.length - 1);
@@ -219,30 +170,42 @@ function renderAlignedLine(
 	return truncateToWidth(`${left.text}${" ".repeat(padding)}${right.text}`, width, "…");
 }
 
-/** Render identity, session/context, and system/quota segments on independent rows. */
+/**
+ * Render one aligned line per configured line.
+ *
+ * A line that ends up empty still takes a row when a later line has content, so
+ * leaving one blank is how a deliberate gap is configured. Trailing empty lines
+ * are dropped instead — an unused line 4 must not eat a row.
+ */
 export function renderBar(
 	segments: Map<string, Segment>,
 	settings: PowerbarSettings,
 	theme: Theme,
 	width: number,
 ): string[] {
-	const configured = new Set([...settings.left, ...settings.right]);
-	const transient = [...segments.values()]
-		.filter((segment) => segment.transient && !configured.has(segment.id))
-		.map((segment) => segment.id);
-	const right = [...settings.right, ...transient];
-	const rowFor = (id: string): 1 | 2 | 3 => segments.get(id)?.row ?? 1;
+	const configured = new Set(settings.lines.flatMap((line) => [...line.left, ...line.right]));
 	const hasContent = (id: string): boolean => {
 		const segment = segments.get(id);
 		return !!segment && (!!segment.text || !!segment.suffix || segment.bar !== undefined);
 	};
 
-	const lines: string[] = [];
-	for (const row of [1, 2, 3] as const) {
-		const leftIds = settings.left.filter((id) => rowFor(id) === row && hasContent(id));
-		const rightIds = right.filter((id) => rowFor(id) === row && hasContent(id));
-		if (leftIds.length === 0 && rightIds.length === 0) continue;
-		lines.push(renderAlignedLine(leftIds, rightIds, segments, settings, theme, width));
+	// A transient segment nobody placed rides along on the right of its declared line.
+	const transientByLine = new Map<number, string[]>();
+	for (const segment of segments.values()) {
+		if (!segment.transient || configured.has(segment.id)) continue;
+		const index = Math.min(settings.lines.length, segment.row ?? 1) - 1;
+		transientByLine.set(index, [...(transientByLine.get(index) ?? []), segment.id]);
 	}
-	return lines.length > 0 ? lines : [" ".repeat(width)];
+
+	const lines: (string | undefined)[] = settings.lines.map((line, index) => {
+		const leftIds = line.left.filter(hasContent);
+		const rightIds = [...line.right, ...(transientByLine.get(index) ?? [])].filter(hasContent);
+		if (leftIds.length === 0 && rightIds.length === 0) return undefined;
+		return renderAlignedLine(leftIds, rightIds, segments, theme, width);
+	});
+
+	let last = lines.length - 1;
+	while (last >= 0 && lines[last] === undefined) last--;
+	if (last < 0) return [" ".repeat(width)];
+	return lines.slice(0, last + 1).map((line) => line ?? " ".repeat(width));
 }

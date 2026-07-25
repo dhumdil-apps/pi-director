@@ -51,17 +51,12 @@ export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
 	{
 		name: "agent-status-bridge",
 		group: "workflow",
-		description: "Optionally reports display-only workflow status to a configured local observer.",
+		description: "Reports display-only workflow status whenever a local observer is discoverable.",
 	},
 	{
 		name: "interrupt-confirmation",
 		group: "guardrails",
 		description: "Confirms an interrupt before it stops a running agent.",
-	},
-	{
-		name: "terminal-keys",
-		group: "config",
-		description: "Keeps newline and submit working in every terminal: ctrl+j inserts a newline, ctrl+enter submits.",
 	},
 	{
 		name: "extension-preferences",

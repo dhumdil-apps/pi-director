@@ -8,13 +8,12 @@ extension.
 
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
-- **Terminal Keys** — Keeps newline and submit working in every terminal (ctrl+j inserts a newline, ctrl+enter submits)
 - **Agent Workflow** — One loop per task, plan persistence, durable project memory, and the approval prompt (`save_plan`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
 - **Progress Tracker** — Activity and context-usage indicator above the editor. No tool, no command: it observes.
-- **Agent Status Bridge** — Off by default; reports display-only workflow status to a configured local observer
+- **Agent Status Bridge** — Reports display-only workflow status whenever a local observer is discoverable
 - **Session Dashboard** — Pi-glyph welcome, 30-day per-model spend chart, and project-context line
 
 ## Supporting resources
@@ -32,17 +31,18 @@ agent, with the plan file on disk as the only thing carried across.
 
 ## Extension Preferences registry
 
-These are the settings currently exposed through `/extension-settings`:
+Status Bar is the only registrant, and everything it exposes is layout:
+`line1-left`, `line1-right` … `line4-right`, eight ordered segment pickers. The
+visual style is fixed on purpose — separator, bar style, bar width, and
+placement were configurable, and were either inert or actively misleading.
 
-- **Status Bar** — `left`, `right`, `separator`, `placement`, `bar-style`, `bar-width`
-- **Terminal Keys** — `newline-on-ctrl-j` (`auto` / `always` / `off`)
-- **Agent Status Bridge** — `enabled` (`false` by default)
-
-Status Bar defaults place
-`git-branch,session-name,agent-stats,tokens,cpu,ram,disk,net` on
-the left and `provider,model,sub-hourly,sub-weekly` on the right. Context usage
-lives in the Progress Tracker indicator above the editor, not in the powerbar. Unnamed
-sessions receive `<short-desc>` (or `<ticket>-<short-desc>` when a ticket is supplied). Global extension values are configured via `/extension-settings`.
+Defaults reproduce the previous fixed rows: `git-branch,session-name` /
+`provider,model` on line 1, `agent-stats,tokens` on line 2,
+`cpu,ram,disk,net` / `sub-hourly,sub-weekly` on line 3, line 4 empty. A line
+left empty between two used lines renders as a blank line; trailing empty lines
+take no space. Context usage lives in the Progress Tracker indicator above the
+editor, not in the powerbar. Unnamed sessions receive `<short-desc>` (or
+`<ticket>-<short-desc>` when a ticket is supplied).
 
 Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 

@@ -137,10 +137,10 @@ async function netTotals(): Promise<NetTotals | undefined> {
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
-	pi.events.emit("powerbar:register-segment", { id: "cpu", label: "CPU" });
-	pi.events.emit("powerbar:register-segment", { id: "ram", label: "RAM" });
-	pi.events.emit("powerbar:register-segment", { id: "disk", label: "Disk (SSD)" });
-	pi.events.emit("powerbar:register-segment", { id: "net", label: "Network" });
+	pi.events.emit("powerbar:register-segment", { id: "cpu", label: "CPU", row: 3 });
+	pi.events.emit("powerbar:register-segment", { id: "ram", label: "RAM", row: 3 });
+	pi.events.emit("powerbar:register-segment", { id: "disk", label: "Disk (SSD)", row: 3 });
+	pi.events.emit("powerbar:register-segment", { id: "net", label: "Network", row: 3 });
 
 	let timer: ReturnType<typeof setInterval> | undefined;
 	let prevCpu: CpuSample | undefined;

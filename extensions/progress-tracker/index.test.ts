@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("../extension-preferences/index.js", () => ({
-  getSetting: (_extension: string, id: string, fallback: string) =>
-    id === "bar-style" ? "continuous" : id === "bar-width" ? "10" : fallback,
-}));
-
 import createExtension from "./index.js";
 
 const theme = { fg: (color: string, text: string) => `[${color}]${text}`, getFgAnsi: () => "" };
+
+/** The blocks meter emits SGR resets around every glyph; assertions read the glyphs. */
+const strip = (text: string) => text.replace(/\x1b\[[0-9;]*m/g, "");
+/** Ten block levels, rendered space-separated. */
+const bar = (glyphs: string) => [...glyphs].join(" ");
 
 function harness() {
   const handlers = new Map<string, Array<(event: unknown, ctx: unknown) => Promise<void>>>();
@@ -55,7 +55,7 @@ describe("progress tracker indicator", () => {
     const { handlers } = harness();
     const widgets: Array<[string, any]> = [];
     await handlers.get("session_start")![0]({}, ctxWith(widgets));
-    expect(indicator(widgets)).toBe("[accent]› [accent]ctx [accent]▉          [accent]84.0k / 1.0M");
+    expect(strip(indicator(widgets))).toBe(`[accent]› [accent]ctx ${bar("▇         ")} [accent]84.0k / 1.0M`);
   });
 
   it("reports the context readout to observers", async () => {

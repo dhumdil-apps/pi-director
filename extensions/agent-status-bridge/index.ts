@@ -3,27 +3,18 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { getSetting } from "../extension-preferences/index.js";
 
 type Endpoint = { url: string; token: string };
 type StatusUpdate = Record<string, unknown> & { cwd?: string };
-const EXTENSION = "agent-status-bridge";
 const TIMEOUT_MS = 750;
 
+/**
+ * Reporting is entirely fire-and-forget, so endpoint discovery is the only gate
+ * it needs: with no observer to discover, nothing is ever sent. There used to be
+ * an `enabled` setting in front of that, which only meant one more thing to turn
+ * on before Wingman could see a session.
+ */
 export default function agentStatusBridge(pi: ExtensionAPI) {
-  pi.events.emit("pi-extension-settings:register", {
-    name: EXTENSION,
-    settings: [{
-      id: "enabled",
-      label: "Report display-only agent status",
-      description: "Off by default. Reports workflow progress to a configured local observer.",
-      defaultValue: "false",
-      values: ["false", "true"],
-    }],
-  });
-
-  if (getSetting(EXTENSION, "enabled", "false") !== "true") return;
-
   const sessionId = randomUUID();
   let endpoint: Endpoint | undefined;
   let latest: StatusUpdate = {};
@@ -71,8 +62,11 @@ export default function agentStatusBridge(pi: ExtensionAPI) {
   });
   pi.on("session_shutdown", async (_event, ctx) => {
     if (heartbeat) clearInterval(heartbeat);
-    await send("/agent/status", { ...latest, sessionId, pid: process.pid, cwd: ctx.cwd, label: labelFor(ctx.cwd), ts: Date.now(), connected: false });
-    await send("/agent/status/release", { sessionId });
+    // Not awaited: the observer releases an owner whose pid is gone and ages a
+    // session out by heartbeat TTL, so a goodbye that never lands costs nothing
+    // — while awaiting two round trips would delay every quit by up to 1.5s.
+    void send("/agent/status", { ...latest, sessionId, pid: process.pid, cwd: ctx.cwd, label: labelFor(ctx.cwd), ts: Date.now(), connected: false });
+    void send("/agent/status/release", { sessionId });
   });
 }
 
