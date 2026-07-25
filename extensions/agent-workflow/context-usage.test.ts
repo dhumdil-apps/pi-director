@@ -14,15 +14,15 @@ const usage = (over: Record<string, number> = {}) =>
 
 describe("cacheHitText", () => {
   it("reports the share of the prompt served from cache", () => {
-    expect(cacheHitText(usage({ input: 100, cacheRead: 900 }), theme)).toBe("[accent]⚡ 90%");
+    expect(cacheHitText(usage({ input: 100, cacheRead: 900 }), theme)).toBe("[accent]⚡ cache 90%");
   });
 
   it("dims a hit rate below half", () => {
-    expect(cacheHitText(usage({ input: 900, cacheRead: 100 }), theme)).toBe("[dim]⚡ 10%");
+    expect(cacheHitText(usage({ input: 900, cacheRead: 100 }), theme)).toBe("[dim]⚡ cache 10%");
   });
 
   it("counts cache writes as prompt tokens that did not hit", () => {
-    expect(cacheHitText(usage({ cacheRead: 500, cacheWrite: 500 }), theme)).toBe("[accent]⚡ 50%");
+    expect(cacheHitText(usage({ cacheRead: 500, cacheWrite: 500 }), theme)).toBe("[accent]⚡ cache 50%");
   });
 
   it("is undefined without usage or prompt tokens", () => {
@@ -55,7 +55,7 @@ describe("contextIndicatorText", () => {
       lastUsage: usage({ input: 100, cacheRead: 900 }),
       previousTokens: 80_800,
     });
-    expect(strip(line!)).toBe(`[accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M[dim] · [accent]⚡ 90%[dim] · [dim]+3.2k`);
+    expect(strip(line!)).toBe(`[accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M[dim] · [accent]⚡ cache 90%[dim] · [dim]+3.2k`);
   });
 
   it("drops missing fragments without leaving a dangling separator", () => {

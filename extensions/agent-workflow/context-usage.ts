@@ -69,7 +69,7 @@ export function contextUsageText(usage: ContextUsage | undefined, theme: Theme):
 const CACHE_HEALTHY_PERCENT = 50;
 
 /**
- * Share of the last request's prompt that was served from cache — `⚡ 92%`.
+ * Share of the last request's prompt that was served from cache — `⚡ cache 92%`.
  * Undefined when no assistant turn has completed or the provider reported no
  * prompt tokens at all (nothing to have hit).
  */
@@ -78,7 +78,7 @@ export function cacheHitText(usage: Usage | undefined, theme: Theme): string | u
   const prompt = (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheWrite ?? 0);
   if (prompt <= 0) return undefined;
   const percent = Math.round(((usage.cacheRead ?? 0) / prompt) * 100);
-  return theme.fg(percent >= CACHE_HEALTHY_PERCENT ? "accent" : "dim", `⚡ ${percent}%`);
+  return theme.fg(percent >= CACHE_HEALTHY_PERCENT ? "accent" : "dim", `⚡ cache ${percent}%`);
 }
 
 /**
