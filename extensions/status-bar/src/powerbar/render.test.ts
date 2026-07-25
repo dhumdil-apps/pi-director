@@ -18,7 +18,7 @@ const settings = layout({ left: ["branch"], right: ["model"] });
 describe("shared percentage bar", () => {
 	it("renders block meters with the requested segment count", () => {
 		const rendered = renderPercentageBar(25, 4, theme, "accent");
-		expect(rendered.replace(/\x1b\[[0-9;]*m/g, "")).toBe("█      ");
+		expect(rendered.replace(/\x1b\[[0-9;]*m/g, "")).toBe("▇ ▁ ▁ ▁");
 	});
 });
 

@@ -55,11 +55,11 @@ describe("contextIndicatorText", () => {
       lastUsage: usage({ input: 100, cacheRead: 900 }),
       previousTokens: 80_800,
     });
-    expect(strip(line!)).toBe(`[accent]ctx ${bar("▇         ")} [accent]84.0k / 1.0M[dim] · [accent]⚡ 90%[dim] · [dim]+3.2k`);
+    expect(strip(line!)).toBe(`[accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M[dim] · [accent]⚡ 90%[dim] · [dim]+3.2k`);
   });
 
   it("drops missing fragments without leaving a dangling separator", () => {
-    expect(strip(contextIndicatorText(ctxUsage, theme)!)).toBe(`[accent]ctx ${bar("▇         ")} [accent]84.0k / 1.0M`);
+    expect(strip(contextIndicatorText(ctxUsage, theme)!)).toBe(`[accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`);
   });
 
   it("is undefined when the context total itself is unknown", () => {

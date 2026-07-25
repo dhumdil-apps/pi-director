@@ -2,8 +2,9 @@
  * Rendering logic for the powerbar.
  *
  * Builds one independently aligned line per configured line, joined by themed
- * separators. Progress bars are discrete blocks (partial-height glyphs
- * ▁▂▃▄▅▆▇█ over a dim background track).
+ * separators. Progress bars are discrete bottom-anchored blocks (partial-height
+ * glyphs ▁▂▃▄▅▆▇ over a dim ▁ baseline track). Nothing paints the top of a cell,
+ * so bars on adjacent powerbar lines stay visually separate rows.
  */
 
 import type { Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
@@ -28,22 +29,17 @@ export interface Segment {
 	transient?: boolean;
 }
 
-/** Convert a foreground ANSI escape to background by replacing SGR 38 with 48. */
-function fgToBgAnsi(fgAnsi: string): string {
-	return fgAnsi.replace("\x1b[38;", "\x1b[48;");
-}
-
 /**
- * Render a bar of discrete block characters with a dim background track.
+ * Render a bar of discrete bottom-anchored block characters.
  *
  * Splits the 0–100 percent range evenly across `segments` blocks and
- * computes a fill level (0–8) per block. The dim theme color provides
- * the background "track"; partial block glyphs fill from the bottom
- * in the segment color.
+ * computes a fill level (0–7) per block, so a full block renders as ▇
+ * rather than █. Empty blocks render a dim ▁ baseline instead of a
+ * full-cell background, keeping the top of every cell unpainted.
  */
 function renderBlocksBar(percent: number, segments: number, theme: Theme, color: string): string {
-	const glyphs = [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
-	const dimBg = fgToBgAnsi(theme.getFgAnsi("dim"));
+	const glyphs = ["▁", "▁", "▂", "▃", "▄", "▅", "▆", "▇"];
+	const dimColor = theme.getFgAnsi("dim");
 	const fgColor = theme.getFgAnsi((color || "muted") as ThemeColor);
 	const reset = "\x1b[39m\x1b[49m";
 	const clamped = Math.max(0, Math.min(100, percent));
@@ -52,9 +48,9 @@ function renderBlocksBar(percent: number, segments: number, theme: Theme, color:
 	const result: string[] = [];
 	for (let i = 0; i < segments; i++) {
 		const blockFill = Math.max(0, Math.min(1, filledFloat - i));
-		const level = Math.round(blockFill * 8);
+		const level = Math.round(blockFill * 7);
 		const glyph = glyphs[level];
-		result.push(level > 0 ? `${dimBg}${fgColor}${glyph}${reset}` : `${dimBg}${glyph}${reset}`);
+		result.push(level > 0 ? `${fgColor}${glyph}${reset}` : `${dimColor}${glyph}${reset}`);
 	}
 
 	return result.join(" ");

@@ -55,7 +55,7 @@ describe("progress tracker indicator", () => {
     const { handlers } = harness();
     const widgets: Array<[string, any]> = [];
     await handlers.get("session_start")![0]({}, ctxWith(widgets));
-    expect(strip(indicator(widgets))).toBe(`[accent]› [accent]ctx ${bar("▇         ")} [accent]84.0k / 1.0M`);
+    expect(strip(indicator(widgets))).toBe(`[accent]› [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`);
   });
 
   it("reports the context readout to observers", async () => {
