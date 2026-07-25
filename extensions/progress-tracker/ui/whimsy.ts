@@ -15,11 +15,11 @@ import type { WorkflowPhase } from "../../agent-workflow/phase.js";
 /** Slow enough to read, quick enough to notice: a word lasts a few spinner cycles. */
 export const WORD_INTERVAL_MS = 4000;
 
-const NEUTRAL_WORDS = ["Spaghetti poking", "Peeking inside", "Sniffing around", "Consulting ghosts", "Gazing into the abyss"];
+const NEUTRAL_WORDS = ["Peeking inside", "Sniffing around", "Consulting ghosts"];
 
-const PLAN_WORDS = ["Scheming", "Sketching", "Plotting", "Drafting", "Orchestrating"];
+const PLAN_WORDS = ["Scheming", "Sketching", "Plotting"];
 
-const EXECUTE_WORDS = ["Bringing alive", "Stitching together", "Aggressively gluing", "Beating into submission", "Bending spacetime", "Threatening the hardware", "Forcing it to work"];
+const EXECUTE_WORDS = ["Aggressively stitching together", "Beating into submission", "Threatening the hardware"];
 
 /** The pool for a phase; the neutral pool stands in until a plan is in play. */
 export function wordPool(phase: WorkflowPhase | undefined): string[] {
