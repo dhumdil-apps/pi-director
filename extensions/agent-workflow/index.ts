@@ -31,7 +31,7 @@ const LOOP = `<loop>
   Every task runs all five steps. Size changes how long the plan is, never whether there is one.
 
   1. Explore
-  - Start from .pi/MEMORY.md - leads to verify, not facts.
+  - Start from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not facts.
   - Discover what are we working with before forming an opinion about it.
 
   2. Ask
@@ -52,7 +52,7 @@ const LOOP = `<loop>
 
   5. Close out
   - Report what changed, what verification ran and reported, and every check skipped or failed.
-  - Update .pi/MEMORY.md with durable orientation and quirks/work-arounds that accelerate future discovery.
+  - Revise project memory: orientation and quirks that accelerate future discovery, replacing what they supersede - never a task log.
   - On more requested changes proceed to step 3. to re-plan.
 </loop>`;
 

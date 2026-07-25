@@ -29,12 +29,15 @@ Nothing is enforced.
   exactly what is on disk.
 
 Close-out has no tool. The outcome is reported in the turn and durable orientation
-and quirks land in `.pi/MEMORY.md`, which the agent writes directly — the plan
-file stays focused on the task.
+and quirks land in project memory, which the agent writes directly — the plan
+file stays focused on the task. Close-out says *revise*, not *update*: a new fact
+replaces the entry it supersedes, so memory stays a map instead of growing into a
+changelog that git already keeps.
 
 ## Starting from what is already known
 
-Explore opens on `.pi/MEMORY.md` — orientation and quirks — so discovery begins
+Explore opens on project memory — `.pi/MEMORY.md`, or wherever the project's
+`AGENTS.md` says it lives — orientation and quirks, so discovery begins
 with a map rather than from zero. It is framed as *leads to verify, not
 facts*: there is no staleness marker, because one keyed on a commit would read
 stale on commits nowhere near the mapped area, and a marker that rots is worse

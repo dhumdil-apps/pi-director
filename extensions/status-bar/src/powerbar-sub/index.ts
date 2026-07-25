@@ -26,13 +26,47 @@ interface UsageCoreState {
 	};
 }
 
+/** Fallback width for windows whose label carries no duration. */
+const DEFAULT_SEGMENTS = 10;
+const MIN_SEGMENTS = 3;
+const MAX_SEGMENTS = 12;
+
+function clamp(n: number): number {
+	return Math.min(MAX_SEGMENTS, Math.max(MIN_SEGMENTS, n));
+}
+
+/**
+ * Bars mirror the window's cadence: 5h → 5 bars, Week → 7, 3d → 3.
+ * Labels without a duration (Credits, Tokens, Pro, Extra …) keep the default width.
+ */
+export function segmentsForLabel(label: string | undefined): number {
+	const text = (label ?? "").trim();
+	if (!text) return DEFAULT_SEGMENTS;
+
+	const hours = text.match(/^(\d+)\s*h$/i);
+	if (hours) {
+		const n = Number(hours[1]);
+		if (n <= 12) return clamp(n);
+		return clamp(Math.round(n / 24));
+	}
+
+	const days = text.match(/^(\d+)\s*d$/i);
+	if (days) return clamp(Number(days[1]));
+
+	if (/^week$/i.test(text)) return 7;
+	if (/^day$/i.test(text)) return 12;
+	if (/^month(ly)?$/i.test(text)) return DEFAULT_SEGMENTS;
+
+	return DEFAULT_SEGMENTS;
+}
+
 function getColor(pct: number): string {
 	if (pct > 80) return "error";
 	if (pct > 60) return "warning";
 	return "accent";
 }
 
-function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow | undefined, barSegments: number): void {
+function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow | undefined): void {
 	if (!window) {
 		pi.events.emit("powerbar:update", { id: segmentId, text: undefined });
 		return;
@@ -51,7 +85,7 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow | un
 		text: textParts.join(" "),
 		suffix: `${pct}%`,
 		bar: pct,
-		barSegments,
+		barSegments: segmentsForLabel(label),
 		color: getColor(pct),
 		row: 3,
 	});
@@ -74,8 +108,8 @@ function emitUsage(pi: ExtensionAPI, state: UsageCoreState | undefined): void {
 		return;
 	}
 
-	emitWindow(pi, "sub-hourly", usage.windows[0], 7);
-	emitWindow(pi, "sub-weekly", usage.windows[1], 7);
+	emitWindow(pi, "sub-hourly", usage.windows[0]);
+	emitWindow(pi, "sub-weekly", usage.windows[1]);
 }
 
 export default function createExtension(pi: ExtensionAPI): void {

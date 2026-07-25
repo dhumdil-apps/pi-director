@@ -16,7 +16,7 @@ machine and no session modes.
 
 - **`ask`** (Agent Workflow) — Put a choice to the user as a native picker: two to four options, each a headline plus a one-sentence description, recommendation first. The full question and descriptions print in the transcript; the picker lists the headlines, so answering is one keypress
 - **`save_plan`** (Agent Workflow) — Present the plan file for the user's decision and rename the session to a meaningful name (the leading timestamp is kept). Pass the plan to (over)write `.pi/plan/<session-name>.md`, or omit it to present what the agent already wrote there; either way the file's content is echoed inline
-These two are the bundle's only workflow tools. Close-out has none: the outcome is reported in the turn, and durable orientation, work-arounds, or other quirks go to `.pi/MEMORY.md`, which the agent writes directly.
+These two are the bundle's only workflow tools. Close-out has none: the outcome is reported in the turn, and durable orientation, work-arounds, or other quirks are revised into project memory (`.pi/MEMORY.md` by default), which the agent writes directly.
 
 ## Shell and keyboard reminders
 

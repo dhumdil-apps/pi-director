@@ -30,7 +30,7 @@ pi update --extensions
 
 - **Provider & Model**: Configured through Pi or in `~/.pi/agent/settings.json`.
 - **Extension Settings**: Managed via `/extension-settings` in your chat session.
-- **Project Memory**: `.pi/MEMORY.md` is scaffolded in your project with orientation (what it is and where behavior lives) and quirks (non-obvious constraints and work-arounds). Explore starts there so a session does not re-derive durable project knowledge; close-out keeps it current.
+- **Project Memory**: `.pi/MEMORY.md` is scaffolded in your project with orientation (what it is and where behavior lives) and quirks (non-obvious constraints and work-arounds); a project whose `AGENTS.md` names a different memory file wins. Explore starts there so a session does not re-derive durable project knowledge; close-out revises it in place, replacing superseded entries rather than appending a task log.
 
 ### Verification
 
