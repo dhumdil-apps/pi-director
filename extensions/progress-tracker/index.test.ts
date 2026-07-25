@@ -45,32 +45,36 @@ function ctxWith(widgets: Array<[string, any]>, branch: any[] = []) {
   };
 }
 
-function indicator(widgets: Array<[string, any]>): string {
+function indicator(widgets: Array<[string, any]>): string[] {
   const [, factory] = widgets.findLast(([id]) => id === "workflow-phase")!;
-  return factory({ requestRender: () => {} }, theme).render(80)[0];
+  return factory({ requestRender: () => {} }, theme).render(80);
 }
 
 describe("progress tracker indicator", () => {
-  it("renders only the context readout", async () => {
+  it("renders the plan badge and the context readout on its own line", async () => {
     const { handlers } = harness();
     const widgets: Array<[string, any]> = [];
     await handlers.get("session_start")![0]({}, ctxWith(widgets));
-    expect(strip(indicator(widgets))).toBe(`[accent]› [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`);
+    expect(indicator(widgets).map(strip)).toEqual([
+      "[accent]› [dim]plan",
+      `  [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`,
+    ]);
   });
 
-  it("badges the phase before the context readout once a plan is in play", async () => {
+  it("badges the mode above the context readout once a plan is in play", async () => {
     const { handlers, listeners } = harness();
     const widgets: Array<[string, any]> = [];
     const ctx = ctxWith(widgets);
     await handlers.get("session_start")![0]({}, ctx);
 
     listeners.get("agent-workflow:phase")![0]({ phase: "plan" });
-    expect(strip(indicator(widgets))).toBe(
-      `[accent]› [dim]plan[dim] · [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`,
-    );
+    expect(indicator(widgets).map(strip)).toEqual([
+      "[accent]› [dim]plan",
+      `  [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`,
+    ]);
 
     listeners.get("agent-workflow:phase")![0]({ phase: "execute" });
-    expect(strip(indicator(widgets))).toContain("[accent]exec");
+    expect(strip(indicator(widgets)[0])).toContain("[accent]auto");
   });
 
   it("derives execute from a handoff-seeded branch, where no transition is ever emitted", async () => {
@@ -80,7 +84,7 @@ describe("progress tracker indicator", () => {
       { type: "message", message: { role: "user", content: "Execute the approved plan at .pi/plan/x.md." } },
     ];
     await handlers.get("session_start")![0]({}, ctxWith(widgets, branch));
-    expect(strip(indicator(widgets))).toContain("[accent]exec");
+    expect(strip(indicator(widgets)[0])).toContain("[accent]auto");
   });
 
   it("reports the context readout to observers", async () => {

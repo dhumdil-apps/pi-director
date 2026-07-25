@@ -10,7 +10,6 @@ import type { Usage } from "@earendil-works/pi-ai";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { contextIndicatorText } from "../../agent-workflow/context-usage.js";
 import type { WorkflowPhase } from "../../agent-workflow/phase.js";
-import { SEPARATOR } from "../../status-bar/src/powerbar/settings.js";
 import { pickWord, WORD_INTERVAL_MS, wordPool } from "./whimsy.js";
 
 // Re-exported so existing importers (and the widget's own test) keep a single entry point.
@@ -38,12 +37,16 @@ export interface IndicatorExtras {
 
 // Short enough to cost nothing next to the context bar, and unambiguous: the
 // gate has two sides and the badge names the one you are on.
-const PHASE_LABELS: Record<WorkflowPhase, string> = { plan: "plan", execute: "exec" };
+const PHASE_LABELS: Record<WorkflowPhase, string> = { plan: "plan", execute: "auto" };
 
-/** Dim while planning, accent once approved: the badge brightens when work may start. */
-function phaseText(phase: WorkflowPhase | undefined, theme: Theme): string | undefined {
-  if (!phase) return undefined;
-  return theme.fg(phase === "execute" ? "accent" : "dim", PHASE_LABELS[phase]);
+/**
+ * Dim while planning, accent once approved: the badge brightens when work may
+ * start. A session with no plan yet IS planning, so it reads `plan` too — the
+ * badge names the mode you are in and is therefore never absent.
+ */
+function phaseText(phase: WorkflowPhase | undefined, theme: Theme): string {
+  const resolved: WorkflowPhase = phase ?? "plan";
+  return theme.fg(resolved === "execute" ? "accent" : "dim", PHASE_LABELS[resolved]);
 }
 
 /**
@@ -56,7 +59,7 @@ function statusText(
   working: boolean,
   word: string,
   theme: Theme,
-): string | undefined {
+): string {
   if (!working) return phaseText(phase, theme);
   return theme.fg(phase === "execute" ? "accent" : "dim", `${word}…`);
 }
@@ -98,13 +101,12 @@ export function updatePhaseIndicator(
         render: (width: number) => {
           const marker = working ? SPINNER_FRAMES[tick % SPINNER_FRAMES.length] : IDLE_MARKER;
           const context = contextIndicatorText(usage, theme, extras);
-          const readout = [statusText(extras?.phase, working, word, theme), context]
-            .filter((fragment): fragment is string => fragment !== undefined)
-            .join(theme.fg("dim", SEPARATOR));
-          const line = readout
-            ? `${theme.fg("accent", `${marker} `)}${readout}`
-            : theme.fg("accent", marker);
-          return [truncateToWidth(line, width)];
+          // Two lines on purpose: the status word changes width every few
+          // seconds, and a same-line context readout would slide with it.
+          const status = `${theme.fg("accent", `${marker} `)}${statusText(extras?.phase, working, word, theme)}`;
+          const lines = [truncateToWidth(status, width)];
+          if (context !== undefined) lines.push(truncateToWidth(`  ${context}`, width));
+          return lines;
         },
         invalidate: () => {},
         dispose: () => {

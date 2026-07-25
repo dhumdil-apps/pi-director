@@ -27,17 +27,16 @@ import { openHandoffSession } from "./handoff.js";
 import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, registerTaskManagement } from "./task.js";
 
 /**
- * The loop as flow contract: five named actions, and only what the tools cannot
+ * The workflow steps as flow contract: five named actions, and only what the tools cannot
  * say for themselves. Mechanics belong to the tool that performs them — how the
  * plan file is named, how the session is renamed — so the block stays the shape
  * of the session and nothing else.
  */
-const LOOP = `<loop>
-  Every task runs all five steps. Size changes how long the plan is, never whether there is one.
+const WORKFLOW_STEPS = `Every workflow runs all five steps (or resumes at step 4 when starting from a /handoff). Scope changes how detailed the plan is, never whether there is one.
 
   1. Explore
-  - Start from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not facts.
-  - Discover what are we working with before forming an opinion about it.
+  - Start from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not durable facts.
+  - Discover what we are working with before forming an opinion about it.
 
   2. Ask
   - Surface important choices you would otherwise make on the user's behalf.
@@ -45,27 +44,28 @@ const LOOP = `<loop>
   - When one answer invalidates another question, say so and try to align with more questions.
 
   3. Plan
-  - Keep .pi/plan/<session-name>.md current as you go, under the headings it was scaffolded with.
+  - Keep .pi/plan/<session-name>.md current under the scaffolded headings (Current state, Decisions, Desired state, Approach, Quirks, Checklist).
   - Call "save_plan" tool to present it, then end your turn: the approval prompt is delivered once the turn settles, so a turn that keeps going never reaches it.
   - Messages arriving after "save_plan" - corrections, added requirements, agreement with the plan - are revisions. Re-save; only the approval prompt approves.
-  - Every task gets a plan - a one-line change is a one-line plan, not an exception.
-  - The session keeps one plan file (the <session-name> is immutable) and it only ever grows: a revision is appended, so write what changed, not the whole document again.
+  - The session keeps one plan file (the <session-name> is immutable): passing text to "save_plan" automatically appends a dated revision, so write what changed, not the whole document.
 
   4. Execute
-  - Approval arrives as a message naming the plan path ("Execute the approved plan at ..."). You are executing when, and only when, you have received it.
-  - Until then the working tree stays untouched - no edits, writes, or mutating commands.
+  - Approval arrives as automated message naming the plan path ("Execute the approved plan at ..."), or as clear user agreement (e.g., "proceed", "go ahead", "approved").
+  - Keep working tree untouched until approved — no edits, writes, or mutating commands (including bash).
   - Once approved, carry the plan out.
+  - Keep the plan file current while working: tick checklist boxes (- [x]) using edit tools. Call "save_plan" only when scope changes or re-planning is needed.
   - On a blocker stop and report rather than guess past it - proceed to step 3. to re-plan.
 
   5. Close out
+  - Start from the plan file: every checklist box is ticked, or marked skipped or failed, and says the same thing your report says.
+  - The next session reads the plan file - must be up to date and ready for handoff (via /handoff command).
   - Report what changed, what verification ran and reported, and every check skipped or failed.
   - Revise project memory: orientation and quirks that accelerate future discovery, replacing what they supersede - never a task log.
-  - On more requested changes proceed to step 3. to re-plan.
-</loop>`;
+  - On more requested changes proceed to step 3. to re-plan.`;
 
 /** Constant by design: nothing varies per turn, so the whole prefix is cacheable. */
 export function workflowPrompt(): string {
-	return `<pi_workflow>\n${LOOP}\n</pi_workflow>`;
+	return `<pi_workflow>\n${WORKFLOW_STEPS}\n</pi_workflow>`;
 }
 
 export default function createExtension(pi: ExtensionAPI): void {

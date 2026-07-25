@@ -6,19 +6,28 @@ transcript cannot show.
 
 ## User surface
 
-- Persistent context indicator — shows `› ctx <bar> 84.0k / 1.0M` while idle and
-  swaps the marker for a braille spinner while the agent works. The bar is the
+- Two-line indicator — line 1 is the marker plus the mode badge or working word,
+  line 2 is the indented context readout:
+
+  ```
+  › plan
+    ctx ▆▁▁▁▁▁▁▁▁▁ 84.0k / 1.0M
+  ```
+
+  The context readout owns its own line so it never slides sideways as the word
+  above it changes width. The marker swaps for a braille spinner while the agent
+  works, and line 2 is omitted entirely while the token count is unknown. The bar is the
   powerbar's blocks meter, ten blocks wide. The spinner
   advances every 120 ms only during active work and is cleared when Pi disposes
   the widget. The context readout refreshes at turn boundaries and is colored
   accent / warning / error: warning past 100k tokens or 40% full, error past
   200k or 80%, whichever trips first. The bar carries the proportion, so the
   percentage is not printed. Pi's own transient activity row stays hidden.
-- Approval-gate badge — `plan` (dim) or `exec` (accent) before the context
-  readout, e.g. `› exec · ctx <bar> 84.0k / 1.0M`. Absent while idle until a
-  plan is in play, so an ordinary session looks unchanged. It is **display
-  only**: Agent Workflow emits `agent-workflow:phase` on save (`plan`) and on
-  approval (`exec`), a `/handoff`-seeded or reloaded session re-derives `exec`
+- Mode badge — `plan` (dim) or `auto` (accent) on line 1. It is never absent: a
+  session with no plan in play yet is still planning, so it reads `plan`, and
+  the badge brightens to `auto` once approval means work may start. It is
+  **display only**: Agent Workflow emits `agent-workflow:phase` on save (`plan`)
+  and on approval (`execute`), a `/handoff`-seeded or reloaded session re-derives it
   from the kickoff message on the branch, and nothing is written to the session
   or shown to the model. This is not the retired session-mode state machine —
   the injected loop is one constant and never varies with the badge.

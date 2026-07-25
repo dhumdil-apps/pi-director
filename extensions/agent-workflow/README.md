@@ -12,6 +12,12 @@ one-line change gets a one-line plan, so "too small to plan" is not an exit.
 Each step names an action; the mechanics live in the tool that performs it.
 Nothing is enforced.
 
+Execute keeps the plan file current rather than only the transcript: checklist
+boxes are ticked as they land and deviations are written into the plan, because
+the plan file is the only thing a `/handoff` or a later session carries. Close-out
+starts from that file — every box ticked, or marked skipped or failed, saying the
+same thing the report says.
+
 ## Tools
 
 - `ask` (`ask.ts`) — a question and two to four options, each a short headline

@@ -52,11 +52,11 @@ function harness(cwd = "/pi-kit-index-test-nonexistent") {
 }
 
 describe("workflow prompt", () => {
-	it("appends one loop block to the base prompt, and registers only /handoff", async () => {
+	it("appends one workflow block to the base prompt, and registers only /handoff", async () => {
 		const h = harness();
 		const prompt = await h.inject();
 		expect(prompt.startsWith("base")).toBe(true);
-		expect(prompt.match(/<loop>/g)).toHaveLength(1);
+		expect(prompt.match(/<pi_workflow>/g)).toHaveLength(1);
 		expect([...h.commands.keys()]).toEqual(["handoff"]);
 		// The only turn-time hooks are the system-prompt injector and the approval
 		// prompt (tool_execution_end arms it, agent_settled delivers it).
@@ -67,7 +67,7 @@ describe("workflow prompt", () => {
 
 	it("names only tools that are actually registered", async () => {
 		// Derived from the prompt rather than copied from it, so renaming or
-		// retiring a tool without updating the loop fails here.
+		// retiring a tool without updating the workflow prompt fails here.
 		const h = harness();
 		const named = [...(await h.inject()).matchAll(/"([a-z_]+)" tool/g)].map((match) => match[1]);
 		expect(named.length).toBeGreaterThan(0);
