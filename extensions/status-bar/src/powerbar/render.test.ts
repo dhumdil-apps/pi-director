@@ -1,6 +1,6 @@
 import { visibleWidth } from "@earendil-works/pi-tui";
 import { describe, expect, it } from "vitest";
-import { renderBar, type Segment } from "./render.js";
+import { renderBar, renderPercentageBar, type Segment } from "./render.js";
 
 const theme = {
 	fg: (_color: string, text: string) => text,
@@ -15,6 +15,17 @@ const settings = {
 	barWidth: 6,
 	barStyle: "blocks" as const,
 };
+
+describe("shared percentage bar", () => {
+	it("renders continuous bars at the requested width", () => {
+		expect(renderPercentageBar(37.5, 4, "continuous", theme, "accent")).toBe("█▌  ");
+	});
+
+	it("renders block meters with the requested segment count", () => {
+		const rendered = renderPercentageBar(25, 4, "blocks", theme, "accent");
+		expect(rendered.replace(/\x1b\[[0-9;]*m/g, "")).toBe("█      ");
+	});
+});
 
 describe("status bar transient segments", () => {
 	it("shows active transient segments without adding them to saved settings", () => {

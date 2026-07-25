@@ -34,7 +34,7 @@ export interface Segment {
  *
  * █ for filled columns, ▏▎▍▌▋▊▉ for the partial column, space for empty.
  */
-function renderProgressBar(percent: number, width: number, theme: Theme, color: string): string {
+function renderContinuousBar(percent: number, width: number, theme: Theme, color: string): string {
 	const clamped = Math.max(0, Math.min(100, percent));
 	const filledFloat = (clamped / 100) * width;
 	const filledFull = Math.floor(filledFloat);
@@ -92,6 +92,19 @@ function renderBlocksBar(percent: number, segments: number, theme: Theme, color:
 	return result.join(" ");
 }
 
+/** Render a percentage with the same configurable meter used by powerbar segments. */
+export function renderPercentageBar(
+	percent: number,
+	width: number,
+	style: PowerbarSettings["barStyle"],
+	theme: Theme,
+	color: string,
+): string {
+	return style === "blocks"
+		? renderBlocksBar(percent, width, theme, color)
+		: renderContinuousBar(percent, width, theme, color);
+}
+
 /**
  * Render a single segment.
  *
@@ -111,12 +124,10 @@ function renderSegmentText(segment: Segment, settings: PowerbarSettings, theme: 
 
 	if (segment.bar !== undefined) {
 		const color = segment.color || "muted";
-		if (settings.barStyle === "blocks") {
-			const blockCount = segment.barSegments ?? settings.barWidth;
-			parts.push(renderBlocksBar(segment.bar, blockCount, theme, color));
-		} else {
-			parts.push(renderProgressBar(segment.bar, settings.barWidth, theme, color));
-		}
+		const width = settings.barStyle === "blocks"
+			? segment.barSegments ?? settings.barWidth
+			: settings.barWidth;
+		parts.push(renderPercentageBar(segment.bar, width, settings.barStyle, theme, color));
 	}
 
 	if (segment.suffix) {

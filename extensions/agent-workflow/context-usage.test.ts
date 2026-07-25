@@ -1,7 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../extension-preferences/index.js", () => ({
+  getSetting: (_extension: string, id: string, fallback: string) =>
+    id === "bar-style" ? "continuous" : id === "bar-width" ? "10" : fallback,
+}));
+
 import { cacheHitText, contextDeltaText, contextIndicatorText } from "./context-usage.js";
 
-const theme = { fg: (color: string, text: string) => `[${color}]${text}` } as any;
+const theme = { fg: (color: string, text: string) => `[${color}]${text}`, getFgAnsi: () => "" } as any;
 
 const usage = (over: Record<string, number> = {}) =>
   ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, ...over }) as any;
@@ -49,11 +55,11 @@ describe("contextIndicatorText", () => {
       lastUsage: usage({ input: 100, cacheRead: 900 }),
       previousTokens: 80_800,
     });
-    expect(line).toBe("[accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M[dim] · [accent]⚡ 90%[dim] · [dim]+3.2k");
+    expect(line).toBe("[accent]ctx [accent]▉          [accent]84.0k / 1.0M[dim] · [accent]⚡ 90%[dim] · [dim]+3.2k");
   });
 
   it("drops missing fragments without leaving a dangling separator", () => {
-    expect(contextIndicatorText(ctxUsage, theme)).toBe("[accent]ctx [accent]█[dim]░░░ [accent]84.0k / 1.0M");
+    expect(contextIndicatorText(ctxUsage, theme)).toBe("[accent]ctx [accent]▉          [accent]84.0k / 1.0M");
   });
 
   it("is undefined when the context total itself is unknown", () => {

@@ -6,8 +6,9 @@ transcript cannot show.
 
 ## User surface
 
-- Persistent context indicator — shows `› ctx █░░░ 84.0k / 1.0M` while idle and
-  swaps the marker for a braille spinner while the agent works. The spinner
+- Persistent context indicator — shows `› ctx <bar> 84.0k / 1.0M` while idle and
+  swaps the marker for a braille spinner while the agent works. The bar reuses
+  the powerbar's configured continuous/blocks style and width. The spinner
   advances every 120 ms only during active work and is cleared when Pi disposes
   the widget. The context readout refreshes at turn boundaries and is colored
   accent / warning / error: warning past 100k tokens or 40% full, error past

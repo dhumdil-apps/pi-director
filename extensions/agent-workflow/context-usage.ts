@@ -2,18 +2,15 @@
  * Context-usage readout shared across the workflow UI.
  *
  * Lives in agent-workflow (not progress-tracker) so the approval prompt can
- * lean on the same thresholds the phase indicator's `ctx █░░░ 84.0k / 1.0M`
+ * lean on the same thresholds the phase indicator's configurable `ctx <bar>`
  * readout uses, without a circular import: progress-tracker already depends
  * on agent-workflow.
  */
 
 import type { ContextUsage, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
 import type { Usage } from "@earendil-works/pi-ai";
-
-// Four blocks regardless of context-window size, so the readout stays stable across models.
-// Bars use Block Elements (█ ░) rather than Geometric Shapes (▰ ▱): terminals draw these
-// themselves, so the bar never falls back to a foreign font face that breaks the cell rhythm.
-export const CONTEXT_BAR_SEGMENTS = 4;
+import { renderPercentageBar } from "../status-bar/src/powerbar/render.js";
+import { loadSettings as loadPowerbarSettings } from "../status-bar/src/powerbar/settings.js";
 
 // Severity reacts to the absolute token count as well as the fill ratio: on a 1M-window
 // model 200k of context is only 20% full, yet output quality has already degraded. Whichever
@@ -51,16 +48,15 @@ export function isLeanContext(usage: ContextUsage | undefined): boolean {
 }
 
 /**
- * Context readout in the powerbar idiom — `ctx █░░░ 84.0k / 1.0M`.
- * The bar carries the proportion, so the load survives only as the readout color.
+ * Context readout using the powerbar's configured percentage meter.
  * Returns undefined while the token count is unknown (e.g. right after compaction).
  */
 export function contextUsageText(usage: ContextUsage | undefined, theme: Theme): string | undefined {
   const color = contextSeverity(usage);
   if (!color || !usage || usage.tokens == null) return undefined;
-  // Ceil, so any context in use shows at least one block rather than an empty track.
-  const filled = Math.min(CONTEXT_BAR_SEGMENTS, Math.max(0, Math.ceil((usage.tokens / usage.contextWindow) * CONTEXT_BAR_SEGMENTS)));
-  const bar = theme.fg(color, "█".repeat(filled)) + theme.fg("dim", "░".repeat(CONTEXT_BAR_SEGMENTS - filled));
+  const settings = loadPowerbarSettings();
+  const percent = (usage.tokens / usage.contextWindow) * 100;
+  const bar = renderPercentageBar(percent, settings.barWidth, settings.barStyle, theme, color);
   const readout = `${formatTokens(usage.tokens)} / ${formatTokens(usage.contextWindow)}`;
   return `${theme.fg(color, "ctx")} ${bar} ${theme.fg(color, readout)}`;
 }
