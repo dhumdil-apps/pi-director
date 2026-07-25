@@ -35,15 +35,25 @@ export const PLAN_TEMPLATE = [
 	"## Quirks",
 	"<non-obvious constraints, gotchas, key paths>",
 	"",
-	"## Implementation summary",
-	"<filled at close-out — what changed, what verification ran, what was skipped>",
-	"",
 	"## Checklist",
 	"- [ ] <task>",
 	"",
 ].join("\n");
 
-const MEMORY_STUB = "# Project memory\n\nWork-arounds or other quirks learned on this project.\n";
+/**
+ * Scaffolded alongside the first plan. Sectioned so the explore step has somewhere
+ * to start from: orientation is the map worth reusing, current stage.
+ */
+export const MEMORY_STUB = [
+	"# Project memory",
+	"",
+	"## Orientation",
+	"",
+	"## Quirks",
+	"",
+	"## Summary",
+	"",
+].join("\n");
 
 const HANDOFF_USAGE = "Usage: /handoff [session-name].";
 
@@ -51,14 +61,6 @@ const STOP_WORDS = new Set([
 	"a", "an", "and", "are", "as", "be", "can", "could", "for", "i", "is", "it", "need",
 	"of", "or", "please", "should", "that", "the", "this", "to", "want", "we", "with", "would",
 ]);
-
-const SUMMARY_HEADING = "## Implementation summary";
-
-const CloseOutParams = Type.Object({
-	summary: Type.String({ description: "What changed, what verification actually ran and what it reported, and every check skipped or failed." }),
-});
-
-type CloseOutInput = Static<typeof CloseOutParams>;
 
 const SavePlanParams = Type.Object({
 	name: Type.String({ description: "The new session name: a concise 2–4 meaningful-word summary of the work, optionally prefixed with a ticket ID (e.g. TEST-1234)." }),
@@ -200,24 +202,6 @@ export function resolvePlanTask(cwd: string, requested: string | undefined, sess
 	return { error: `No plan under ${CONFIG_DIR_NAME}/plan/ — plan first.` };
 }
 
-/**
- * Put the summary under `## Implementation summary`, replacing whatever was
- * there — the scaffolded placeholder, or an earlier close-out. The section runs
- * to the next `##` heading, so a plan that keeps sections after it survives, and
- * re-running close_out never stacks a second summary.
- */
-export function withSummary(plan: string, summary: string): string {
-	const body = `${SUMMARY_HEADING}\n\n${summary.trim()}\n`;
-	const at = plan.indexOf(`${SUMMARY_HEADING}\n`);
-	if (at < 0) {
-		const separator = plan.endsWith("\n\n") ? "" : plan.endsWith("\n") ? "\n" : "\n\n";
-		return `${plan}${separator}${body}`;
-	}
-	const rest = plan.slice(at + SUMMARY_HEADING.length);
-	const nextHeading = rest.indexOf("\n## ");
-	return nextHeading < 0 ? `${plan.slice(0, at)}${body}` : `${plan.slice(0, at)}${body}\n${rest.slice(nextHeading + 1)}`;
-}
-
 async function writeAtomically(path: string, contents: string): Promise<void> {
 	const temporaryPath = `${path}.${randomUUID()}.tmp`;
 	try {
@@ -268,30 +252,6 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 				// Echoed inline so the decision is made against exactly what is on disk.
 					content: [{ type: "text" as const, text: `Plan at ${path}:\n\n${contents.trim() || "(empty)"}` }],
 				details: { name, path },
-			};
-		},
-	});
-
-	pi.registerTool({
-		name: "close_out",
-		label: "Close Out",
-		description: "Record how the task actually went in the plan file's Implementation summary. Replaces any previous summary rather than stacking another one, so re-running it after more work is fine. Work-arounds or other quirks go to .pi/MEMORY.md instead — this tool does not touch it.",
-		parameters: CloseOutParams,
-		async execute(_toolCallId, params: CloseOutInput, _signal, _onUpdate, ctx) {
-			const { task, error } = resolvePlanTask(ctx.cwd, undefined, pi.getSessionName());
-			if (!task) {
-				return { content: [{ type: "text" as const, text: `Error: ${error}` }], details: { error }, isError: true };
-			}
-			const path = planPath(ctx.cwd, task.name);
-			try {
-				await writeAtomically(path, withSummary(await readFile(path, "utf8"), params.summary));
-			} catch (writeError) {
-				const message = (writeError as Error).message;
-				return { content: [{ type: "text" as const, text: `Error: could not write the summary: ${message}.` }], details: { name: task.name, error: message }, isError: true };
-			}
-			return {
-				content: [{ type: "text" as const, text: `${SUMMARY_HEADING} written to ${path}:\n\n${params.summary.trim()}` }],
-				details: { name: task.name, path },
 			};
 		},
 	});

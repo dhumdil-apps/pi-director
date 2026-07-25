@@ -30,7 +30,7 @@ pi update --extensions
 
 - **Provider & Model**: Configured through Pi or in `~/.pi/agent/settings.json`.
 - **Extension Settings**: Managed via `/extension-settings` in your chat session.
-- **Project Memory**: Optionally create a `.pi/MEMORY.md` in your project for work-arounds or other quirks.
+- **Project Memory**: `.pi/MEMORY.md` is scaffolded in your project with three sections — orientation (where things live), quirks (work-arounds), and summary. Explore starts there so a session does not re-derive what the last one already learned; close-out keeps it current.
 
 ### Verification
 
@@ -42,7 +42,7 @@ pi list
 
 ## Included Features
 
-- **agent-workflow** — One loop per task: explore, ask, plan, execute, close out. Two guarantees carry it — nothing in the working tree changes before an approved plan, and questions are cheap. Every session scaffolds `.pi/plan/<timestamp-slug>.md` on its first message as the agent's living document; `ask` puts choices in a native picker, `save_plan` presents the plan (renaming the session, timestamp kept) and arms the approval picker — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing — and `close_out` records how it went. The injected block is a constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
+- **agent-workflow** — One loop per task: explore, ask, plan, execute, close out. Two guarantees carry it — nothing in the working tree changes before an approved plan, and questions are cheap. Every session scaffolds `.pi/plan/<timestamp-slug>.md` on its first message as the agent's living document; `ask` puts choices in a native picker, `save_plan` presents the plan (renaming the session, timestamp kept) and arms the approval picker — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing. The injected block is a constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
 - **progress-tracker** — Above-editor activity and context-usage indicator. No tool, no command: it observes.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).

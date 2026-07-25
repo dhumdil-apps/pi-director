@@ -24,31 +24,32 @@ import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, regist
 /**
  * The loop as flow contract: five named actions, and only what the tools cannot
  * say for themselves. Mechanics belong to the tool that performs them — how the
- * plan file is named, what replaces a previous summary — so the block stays the
- * shape of the session and nothing else.
+ * plan file is named, how the session is renamed — so the block stays the shape
+ * of the session and nothing else.
  */
 const LOOP = `<loop>
-   1. Explore
-   - Discover what are we working with before forming an opinion about it.
+  1. Explore
+  - Start from .pi/MEMORY.md - leads to verify, not facts.
+  - Discover what are we working with before forming an opinion about it.
 
-   2. Ask
-   - Surface important choices you would otherwise make on the user's behalf.
-   - Put the questions through the "ask" tool.
-   - When one answer invalidates another question, say so and try to align with more questions.
+  2. Ask
+  - Surface important choices you would otherwise make on the user's behalf.
+  - Put the questions through the "ask" tool.
+  - When one answer invalidates another question, say so and try to align with more questions.
 
-   3. Plan
-   - Keep .pi/plan/<session-name>.md current as you go, matching its scaffolded format.
-   - Call "save_plan" tool to present it, then wait for approval before implementation.
-   - A new plan extends the current one (once a <session-name> is set its immutable).
+  3. Plan
+  - Keep .pi/plan/<session-name>.md current as you go, matching its scaffolded format.
+  - Call "save_plan" tool to present it, then wait for approval before implementation.
+  - A new plan extends the current one (once a <session-name> is set its immutable).
 
-   4. Execute
-   - Once a plan is approved, carry the plan out.
-   - On a blocker stop and report rather than guess past it - proceed to step 3. to re-plan.
+  4. Execute
+  - Once a plan is approved, carry the plan out.
+  - On a blocker stop and report rather than guess past it - proceed to step 3. to re-plan.
 
-   5. Close out
-   - Call "close_out" tool with what changed, what verification ran and reported, and every check skipped or failed.
-   - Update .pi/MEMORY.md with work-arounds or other quirks if present.
-   - On more requested changes proceed to step 3. to re-plan.
+  5. Close out
+  - Report what changed, what verification ran and reported, and every check skipped or failed.
+  - Update .pi/MEMORY.md with durable quirks/work-arounds, orientation and summary that may accelarate future discovery.
+  - On more requested changes proceed to step 3. to re-plan.
 </loop>`;
 
 /** Constant by design: nothing varies per turn, so the whole prefix is cacheable. */

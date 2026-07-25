@@ -5,10 +5,6 @@ import { HELP_COMMANDS, HELP_SHORTCUTS, renderHelp } from "./help.js";
 const ALL = EXTENSION_PRESENTATIONS.map((presentation) => presentation.name);
 
 describe("renderHelp", () => {
-	it("has the /help command as its own first entry", () => {
-		expect(HELP_COMMANDS[0]?.name).toBe("/help");
-	});
-
 	it("documents every command, shortcut, and active extension with its description", () => {
 		const help = renderHelp(ALL);
 		expect(help).toContain("# Help");

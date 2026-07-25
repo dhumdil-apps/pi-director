@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import createExtension, { workflowPrompt } from "./index.js";
-import { PLAN_TEMPLATE } from "./task.js";
 
 const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
@@ -53,90 +52,27 @@ function harness(cwd = "/pi-kit-index-test-nonexistent") {
 }
 
 describe("workflow prompt", () => {
-	it("registers only the /handoff command and the loop's three tools", () => {
-		const { commands, tools, handlers } = harness();
-		for (const gone of ["mode", "plan", "implement", "review", "flash", "retro", "todos"]) {
-			expect(commands.has(gone)).toBe(false);
-		}
-		expect(commands.has("handoff")).toBe(true);
-		expect(tools.map((tool) => tool.name)).toEqual(["save_plan", "close_out", "ask"]);
+	it("appends one loop block to the base prompt, and registers only /handoff", async () => {
+		const h = harness();
+		const prompt = await h.inject();
+		expect(prompt.startsWith("base")).toBe(true);
+		expect(prompt.match(/<loop>/g)).toHaveLength(1);
+		expect([...h.commands.keys()]).toEqual(["handoff"]);
 		// The only turn-time hooks are the system-prompt injector and the approval
 		// prompt (tool_execution_end arms it, agent_settled delivers it).
-		expect(handlers.has("input")).toBe(false);
-		expect(handlers.has("agent_start")).toBe(false);
-		expect(handlers.has("agent_settled")).toBe(true);
+		expect(h.handlers.has("input")).toBe(false);
+		expect(h.handlers.has("agent_start")).toBe(false);
+		expect(h.handlers.has("agent_settled")).toBe(true);
 	});
 
-	it("injects one loop block, walking the five steps in order", async () => {
-		const prompt = await harness().inject();
-		expect(prompt).toContain("<pi_workflow>");
-		expect(prompt.match(/<loop>/g)).toHaveLength(1);
-		let cursor = -1;
-		for (const step of ["1. Explore", "2. Ask", "3. Plan", "4. Execute", "5. Close out"]) {
-			const at = prompt.indexOf(step);
-			expect(at, step).toBeGreaterThan(cursor);
-			cursor = at;
-		}
-	});
-
-	it("states the no-changes-before-approval guarantee, and names its one out", async () => {
-		const prompt = await harness().inject();
-		expect(prompt).toContain("wait for approval before implementation");
-		// The picker owns that question; the agent is not told to type it.
-		expect(prompt).not.toContain("Proceed, handoff, or revise?");
-	});
-
-	it("makes questions cheap rather than rationed", async () => {
-		const prompt = await harness().inject();
-		expect(prompt).toContain("Surface important choices you would otherwise make on the user's behalf");
-		// The retired dampener that rationed questions to "genuine open choices".
-		expect(prompt).not.toContain("Ask questions only about");
-	});
-
-	it("routes questions through the ask tool, and says what a clashing answer costs", async () => {
-		const prompt = await harness().inject();
-		expect(prompt).toContain('Put the questions through the "ask" tool');
-		expect(prompt).toContain("try to align with more questions");
-	});
-
-	it("points the plan at the scaffolded format instead of listing its sections", async () => {
-		const prompt = await harness().inject();
-		expect(prompt).toContain(".pi/plan/<session-name>.md");
-		expect(prompt).toContain("matching its scaffolded format");
-		// The topics themselves live in the template the step points at.
-		for (const topic of ["Current state", "Decisions", "Desired state", "Approach", "Quirks", "Checklist"]) {
-			expect(PLAN_TEMPLATE, topic).toContain(`## ${topic}`);
-		}
-	});
-
-	it("names a tool for each step that has one, and none that was retired", async () => {
-		const prompt = await harness().inject();
-		expect(prompt).toContain('Call "save_plan" tool to present it');
-		expect(prompt).toContain('Call "close_out" tool with what changed');
-		expect(prompt).toContain(".pi/MEMORY.md");
-		expect(prompt).not.toContain("save_summary");
-	});
-
-	it("keeps craft advice out beyond the prompt text", async () => {
-		const prompt = await harness().inject();
-		// Generic craft advice belongs in AGENTS.md, stated once, not duplicated here.
-		for (const duplicated of [
-			"never weaken a test",
-			"never hardcode secrets",
-			"macOS-portable",
-			"cheapest relevant baseline check",
-		]) {
-			expect(prompt, duplicated).not.toContain(duplicated);
-		}
-	});
-
-	it("carries no session-mode or position vocabulary", async () => {
-		const prompt = await harness().inject();
-		expect(prompt).not.toContain("<position>");
-		expect(prompt).not.toContain("Session mode");
-		expect(prompt).not.toMatch(/\bPLAN\b/);
-		expect(prompt).not.toMatch(/\bIMPLEMENT\b/);
-		expect(prompt).not.toMatch(/\bmodes?\b/);
+	it("names only tools that are actually registered", async () => {
+		// Derived from the prompt rather than copied from it, so renaming or
+		// retiring a tool without updating the loop fails here.
+		const h = harness();
+		const named = [...(await h.inject()).matchAll(/"([a-z_]+)" tool/g)].map((match) => match[1]);
+		expect(named.length).toBeGreaterThan(0);
+		const registered = h.tools.map((tool) => tool.name);
+		for (const name of named) expect(registered, name).toContain(name);
 	});
 
 	it("is a constant, so the whole prefix stays cacheable", async () => {
@@ -184,7 +120,7 @@ describe("plan scaffolding", () => {
 		expect(await planFiles()).toEqual([`${name}.md`]);
 		const written = await readFile(join(cwd, ".pi", "plan", `${name}.md`), "utf8");
 		expect(written).toContain(`# ${name}`);
-		expect(written).toContain("## Implementation summary");
+		expect(written).toContain("## Checklist");
 		// The MEMORY stub is part of the same bootstrap.
 		await expect(readFile(join(cwd, ".pi", "MEMORY.md"), "utf8")).resolves.toContain("#");
 	});

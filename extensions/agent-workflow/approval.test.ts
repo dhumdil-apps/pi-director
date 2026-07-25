@@ -75,12 +75,6 @@ describe("approval prompt", () => {
 		expect(first.select).toHaveBeenCalledTimes(1);
 	});
 
-	it("stays silent for close_out — only save_plan asks for a decision", async () => {
-		const h = harness(cwd);
-		const { select } = await h.offer("dashboard-polish", "Revise the plan", { toolName: "close_out" });
-		expect(select).not.toHaveBeenCalled();
-	});
-
 	it("Proceed kicks off the approved plan by its concrete path", async () => {
 		const h = harness(cwd);
 		const { notify } = await h.offer("dashboard-polish", PROCEED);

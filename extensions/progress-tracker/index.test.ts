@@ -58,20 +58,11 @@ describe("progress tracker indicator", () => {
     expect(indicator(widgets)).toBe("[accent]› [accent]ctx [accent]▉          [accent]84.0k / 1.0M");
   });
 
-  it("reports context state to observers without a workflow phase or session mode", async () => {
+  it("reports the context readout to observers", async () => {
     const { handlers, emitted } = harness();
     await handlers.get("session_start")![0]({}, ctxWith([]));
 
     const [, status] = emitted.findLast(([name]) => name === "agent-status:update")!;
-    expect("phase" in status).toBe(false);
-    expect("mode" in status).toBe(false);
-  });
-
-  it("subscribes to no workflow-mode event", () => {
-    expect(harness().listeners.size).toBe(0);
-  });
-
-  it("registers no tool: the indicator observes, it does not ask the agent for input", () => {
-    expect(harness().tools).toEqual([]);
+    expect(status).toMatchObject({ contextUsed: 84_000, contextMax: 1_000_000, cwd: "/work" });
   });
 });

@@ -25,16 +25,28 @@ mechanics live in the tool that performs it. Nothing is enforced.
   overwrite the file, or omit it to present what the agent already wrote there;
   either way the content is echoed inline, so the decision is made against
   exactly what is on disk.
-- `close_out` (`task.ts`) — writes the plan file's `## Implementation summary`,
-  replacing any previous one rather than stacking. `.pi/MEMORY.md` is the
-  agent's to write directly; no tool touches it.
+
+Close-out has no tool. The outcome is reported in the turn and the durable part
+lands in `.pi/MEMORY.md`, which the agent writes directly — the plan file stays a
+plan, so there is only ever one summary.
+
+## Starting from what is already known
+
+Explore opens on `.pi/MEMORY.md` — orientation, quirks, summary — so discovery
+begins with a map rather than from zero. It is framed as *leads to verify, not
+facts*: there is no staleness marker, because one keyed on a commit would read
+stale on commits nowhere near the mapped area, and a marker that rots is worse
+than none. Close-out is the other half — it leaves behind exactly what the next
+explore step reads.
 
 ## Surfaces
 
 - **Auto-scaffold** (`index.ts`) — an unnamed session's first turn creates
   `.pi/plan/<timestamp>-<first-prompt-words>.md` from `PLAN_TEMPLATE` and a
-  `.pi/MEMORY.md` stub, then names the session after it. Best-effort: an
-  unwritable cwd is ignored rather than failing the turn.
+  `.pi/MEMORY.md` stub — orientation, quirks, current stage — then names the
+  session after it. The stub is written only when the file is absent, so an
+  existing memory is never reshaped. Best-effort: an unwritable cwd is ignored
+  rather than failing the turn.
 - **The approval picker** (`approval.ts`) — a successful `save_plan` for a task
   nobody has approved arms it; it opens when the turn settles: *Proceed,
   handoff, or revise?* Context load picks the recommendation (lean → Proceed,
