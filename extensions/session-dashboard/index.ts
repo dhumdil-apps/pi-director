@@ -332,7 +332,7 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 			const welcomeText = renderWelcomeText({
 				usageChart,
 				contextInfo,
-				tip: "> ❓ `/help`",
+				tip: "> ❓ `/help` · ⚙️ `/extension-settings` · 📊 `/usage`",
 			});
 
 			pi.sendMessage(

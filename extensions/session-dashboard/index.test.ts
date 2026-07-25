@@ -118,7 +118,7 @@ describe("session dashboard startup", () => {
 		await startup;
 
 		const content = sendMessage.mock.calls[0]?.[0].content as string;
-		expect(content).toContain("> ❓ `/help`");
+		expect(content).toContain("> ❓ `/help` · ⚙️ `/extension-settings` · 📊 `/usage`");
 		expect(content).not.toContain("⚡ Raw Pi");
 		expect(content).not.toContain("⌘ Handoff");
 		expect(content).not.toContain("/mode");
@@ -126,8 +126,10 @@ describe("session dashboard startup", () => {
 		expect(content).not.toContain("AGENTS.md");
 		expect(content).toContain(`*${tildify(process.cwd())}*`);
 		expect(content.match(/❓ `\/help`/g)).toHaveLength(1);
+		expect(content.match(/⚙️ `\/extension-settings`/g)).toHaveLength(1);
+		expect(content.match(/📊 `\/usage`/g)).toHaveLength(1);
 		expect(content).not.toContain("π Measure twice, cut once. What’s your goal?");
-		expect(content.endsWith("> ❓ `/help`")).toBe(true);
+		expect(content.endsWith("> ❓ `/help` · ⚙️ `/extension-settings` · 📊 `/usage`")).toBe(true);
 		expect(setWidget).toHaveBeenLastCalledWith("session-dashboard-loading", undefined);
 	});
 
