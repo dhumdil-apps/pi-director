@@ -15,8 +15,10 @@ transcript cannot show.
   200k or 80%, whichever trips first. The bar carries the proportion, so the
   percentage is not printed. It carries no workflow phase, session mode, or
   transient activity text.
-- `agent-status:update` event — `working`, `contextUsed`, `contextMax`, `cwd`,
-  for observers such as Agent Status Bridge.
+- `agent-status:update` event — `working`, `contextUsed`, `contextMax`,
+  `cacheRead`, `cacheWrite`, `cacheHitRate`, `cwd`, for observers such as Agent
+  Status Bridge. This list is the whole contract: Wingman's status strip accepts
+  exactly these fields, and nothing carries workflow phase, mode, or todos.
 
 ## No todo tool
 

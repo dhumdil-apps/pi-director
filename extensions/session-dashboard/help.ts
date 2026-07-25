@@ -15,7 +15,6 @@ export const HELP_COMMANDS: HelpEntry[] = [
 	{ name: "/help", description: "Show this overview of extensions, commands, and shortcuts." },
 	{ name: "/usage", description: "Open the token & spend dashboard — Graphs, Table, Insights." },
 	{ name: "/usage-refresh", description: "Refresh subscription-quota usage from the provider." },
-	{ name: "/todos", description: "Toggle the todo widget (`/todos clear` resets it)." },
 	{ name: "/extension-settings", description: "Configure any extension's settings." },
 	{ name: "/init", description: "Analyze the repo and create or improve its AGENTS.md." },
 ];

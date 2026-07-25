@@ -46,7 +46,7 @@ export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
 	{
 		name: "progress-tracker",
 		group: "workflow",
-		description: "Persists the agent-authored loop phase and todos in sessions; provides `manage_todo_list` and `/todos`.",
+		description: "Always-visible activity and context indicator above the editor; emits `agent-status:update` for observers.",
 	},
 	{
 		name: "agent-status-bridge",
