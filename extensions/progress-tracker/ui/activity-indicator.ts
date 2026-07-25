@@ -11,6 +11,7 @@ import { truncateToWidth } from "@earendil-works/pi-tui";
 import { contextIndicatorText } from "../../agent-workflow/context-usage.js";
 import type { WorkflowPhase } from "../../agent-workflow/phase.js";
 import { SEPARATOR } from "../../status-bar/src/powerbar/settings.js";
+import { pickWord, WORD_INTERVAL_MS, wordPool } from "./whimsy.js";
 
 // Re-exported so existing importers (and the widget's own test) keep a single entry point.
 export { contextUsageText } from "../../agent-workflow/context-usage.js";
@@ -31,6 +32,8 @@ export interface IndicatorExtras {
    * in play, so a session that never planned looks exactly as it did before.
    */
   phase?: WorkflowPhase;
+  /** Injectable randomness for the working word, so its rotation is testable. */
+  random?: () => number;
 }
 
 // Short enough to cost nothing next to the context bar, and unambiguous: the
@@ -41,6 +44,21 @@ const PHASE_LABELS: Record<WorkflowPhase, string> = { plan: "plan", execute: "ex
 function phaseText(phase: WorkflowPhase | undefined, theme: Theme): string | undefined {
   if (!phase) return undefined;
   return theme.fg(phase === "execute" ? "accent" : "dim", PHASE_LABELS[phase]);
+}
+
+/**
+ * While a run is in flight the badge gives way to a word from the phase's pool:
+ * the gate still reads (planning words vs execution words), but the line moves.
+ * Idle keeps the plain badge, and still renders nothing before a plan exists.
+ */
+function statusText(
+  phase: WorkflowPhase | undefined,
+  working: boolean,
+  word: string,
+  theme: Theme,
+): string | undefined {
+  if (!working) return phaseText(phase, theme);
+  return theme.fg(phase === "execute" ? "accent" : "dim", `${word}…`);
 }
 
 /** Replace pi's transient working row with a persistent context indicator. */
@@ -64,11 +82,23 @@ export function updatePhaseIndicator(
         : undefined;
       spinnerTimer?.unref?.();
 
+      // The word outlives several spinner cycles, so it gets its own timer
+      // rather than a modulo of the frame count.
+      const pool = wordPool(extras?.phase);
+      let word = pickWord(pool, undefined, extras?.random);
+      const wordTimer = working
+        ? setInterval(() => {
+            word = pickWord(pool, word, extras?.random);
+            tui.requestRender();
+          }, WORD_INTERVAL_MS)
+        : undefined;
+      wordTimer?.unref?.();
+
       return {
         render: (width: number) => {
           const marker = working ? SPINNER_FRAMES[tick % SPINNER_FRAMES.length] : IDLE_MARKER;
           const context = contextIndicatorText(usage, theme, extras);
-          const readout = [phaseText(extras?.phase, theme), context]
+          const readout = [statusText(extras?.phase, working, word, theme), context]
             .filter((fragment): fragment is string => fragment !== undefined)
             .join(theme.fg("dim", SEPARATOR));
           const line = readout
@@ -79,6 +109,7 @@ export function updatePhaseIndicator(
         invalidate: () => {},
         dispose: () => {
           if (spinnerTimer) clearInterval(spinnerTimer);
+          if (wordTimer) clearInterval(wordTimer);
         },
       };
     },

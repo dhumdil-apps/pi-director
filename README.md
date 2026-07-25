@@ -43,7 +43,7 @@ pi list
 ## Included Features
 
 - **agent-workflow** — One loop per task: explore, ask, plan, execute, close out. Two guarantees carry it — nothing in the working tree changes before an approved plan, and questions are cheap. Every session scaffolds `.pi/plan/<timestamp-slug>.md` on its first message as the agent's living document; `ask` puts choices in a native picker, `save_plan` presents the plan (renaming the session, timestamp kept) and arms the approval picker — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing. The injected block is a constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
-- **progress-tracker** — Above-editor activity, approval-gate (`plan`/`exec`) and context-usage indicator. No tool, no command: it observes.
+- **progress-tracker** — Above-editor activity, approval-gate (`plan`/`exec`, worded while working) and context-usage indicator. No tool, no command: it observes.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).
 - **bundled themes** — `dark` and `github-dark`.

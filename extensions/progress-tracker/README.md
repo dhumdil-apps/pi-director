@@ -13,15 +13,22 @@ transcript cannot show.
   the widget. The context readout refreshes at turn boundaries and is colored
   accent / warning / error: warning past 100k tokens or 40% full, error past
   200k or 80%, whichever trips first. The bar carries the proportion, so the
-  percentage is not printed. It carries no transient activity text.
+  percentage is not printed. Pi's own transient activity row stays hidden.
 - Approval-gate badge — `plan` (dim) or `exec` (accent) before the context
-  readout, e.g. `› exec · ctx <bar> 84.0k / 1.0M`. Absent entirely until a plan
-  is in play, so an ordinary session looks unchanged. It is **display only**:
-  Agent Workflow emits `agent-workflow:phase` on save (`plan`) and on approval
-  (`exec`), a `/handoff`-seeded or reloaded session re-derives `exec` from the
-  kickoff message on the branch, and nothing is written to the session or shown
-  to the model. This is not the retired session-mode state machine — the
-  injected loop is one constant and never varies with the badge.
+  readout, e.g. `› exec · ctx <bar> 84.0k / 1.0M`. Absent while idle until a
+  plan is in play, so an ordinary session looks unchanged. It is **display
+  only**: Agent Workflow emits `agent-workflow:phase` on save (`plan`) and on
+  approval (`exec`), a `/handoff`-seeded or reloaded session re-derives `exec`
+  from the kickoff message on the branch, and nothing is written to the session
+  or shown to the model. This is not the retired session-mode state machine —
+  the injected loop is one constant and never varies with the badge.
+- Working words — while a run is in flight the badge gives way to a word from
+  the phase's pool, swapped every 4 s for a different one at random:
+  `Pondering…`/`Scheming…` while planning, `Forging…`/`Wrangling…` once
+  approved, and `Rummaging…`/`Spelunking…` while exploring before any plan
+  exists. The pools do not overlap, so the gate stays readable while the line
+  moves; the colour follows the badge. Pools and the pick live in `ui/whimsy.ts`
+  (`pickWord` takes its randomness as an argument so the rotation is testable).
 - `agent-status:update` event — `working`, `contextUsed`, `contextMax`,
   `cacheRead`, `cacheWrite`, `cacheHitRate`, `cwd`, for observers such as Agent
   Status Bridge. This list is the whole contract: Wingman's status strip accepts

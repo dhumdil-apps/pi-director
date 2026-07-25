@@ -47,7 +47,7 @@ describe("phase indicator", () => {
 		beforeEach(() => vi.useFakeTimers());
 		afterEach(() => vi.useRealTimers());
 
-		const mount = (working: boolean) => {
+		const mount = (working: boolean, extras?: any) => {
 			let factory: any;
 			const ctx = {
 				ui: {
@@ -55,31 +55,57 @@ describe("phase indicator", () => {
 					setWidget: (_id: string, nextFactory: unknown) => { factory = nextFactory; },
 				},
 			} as any;
-			updatePhaseIndicator(ctx, working, { tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 } as any);
+			updatePhaseIndicator(ctx, working, { tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 } as any, extras);
 			const requestRender = vi.fn();
 			return { component: factory({ requestRender }, theme), requestRender };
 		};
 
-		it("rotates the spinner frame every 120ms and re-renders, keeping context text", () => {
-			const { component, requestRender } = mount(true);
+		/** Everything before the context readout — the working word or the idle badge. */
+		const status = (line: string) => strip(line).split("[accent]ctx")[0];
 
-			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`);
+		it("rotates the spinner frame every 120ms and re-renders, keeping context text", () => {
+			// A fixed word keeps this case about the spinner alone.
+			const { component, requestRender } = mount(true, { phase: "execute", random: () => 0 });
+			const tail = `[accent]Forging…[dim] · [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`;
+
+			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${tail}`);
 
 			vi.advanceTimersByTime(120);
 			expect(requestRender).toHaveBeenCalledTimes(1);
-			expect(strip(component.render(120)[0])).toBe(`[accent]⠙ [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`);
+			expect(strip(component.render(120)[0])).toBe(`[accent]⠙ ${tail}`);
 
 			// Ten frames wrap back to the first one.
 			vi.advanceTimersByTime(120 * 9);
 			expect(requestRender).toHaveBeenCalledTimes(10);
-			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`);
+			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${tail}`);
 		});
 
-		it("omits pi's transient activity and phase text from the working line", () => {
-			const line = mount(true).component.render(120)[0];
-			expect(line).not.toContain("Building…");
+		it("swaps the working word every 4s, from the pool the phase flavours", () => {
+			const draws = [0, 0.99];
+			let draw = 0;
+			const { component, requestRender } = mount(true, {
+				phase: "plan",
+				random: () => draws[Math.min(draw++, draws.length - 1)],
+			});
+
+			expect(status(component.render(120)[0])).toContain("Pondering…");
+
+			vi.advanceTimersByTime(4000);
+			// 33 spinner ticks in 4s, plus this word tick.
+			expect(requestRender).toHaveBeenCalledTimes(Math.floor(4000 / 120) + 1);
+			expect(status(component.render(120)[0])).toContain("Plotting…");
+		});
+
+		it("words the pre-plan explore state too, and never names a session mode", () => {
+			const line = mount(true, { random: () => 0 }).component.render(120)[0];
+			expect(status(line)).toContain("Rummaging…");
 			expect(line).not.toContain("implementing");
 			expect(line).not.toContain("IMPLEMENT");
+		});
+
+		it("shows the plain badge, not a word, once the run settles", () => {
+			const line = mount(false, { phase: "execute", random: () => 0 }).component.render(120)[0];
+			expect(status(line)).toBe("[accent]› [accent]exec[dim] · ");
 		});
 
 		it("keeps the idle marker and starts no timer when the agent is not working", () => {
@@ -96,7 +122,8 @@ describe("phase indicator", () => {
 		it("clears the spinner timer when pi disposes the widget", () => {
 			const { component, requestRender } = mount(true);
 
-			expect(vi.getTimerCount()).toBe(1);
+			// Spinner and word rotation each own a timer.
+			expect(vi.getTimerCount()).toBe(2);
 			component.dispose();
 
 			expect(vi.getTimerCount()).toBe(0);
