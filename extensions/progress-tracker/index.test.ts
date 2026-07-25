@@ -57,7 +57,7 @@ describe("progress tracker indicator", () => {
     await handlers.get("session_start")![0]({}, ctxWith(widgets));
     expect(indicator(widgets).map(strip)).toEqual([
       "[accent]› [dim]plan",
-      `  [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`,
+      `  [accent]LLM Attention Span (ctx) ${bar("▃▁▁▁▁")} [accent]84.0k / 1.0M`,
     ]);
   });
 
@@ -70,7 +70,7 @@ describe("progress tracker indicator", () => {
     listeners.get("agent-workflow:phase")![0]({ phase: "plan" });
     expect(indicator(widgets).map(strip)).toEqual([
       "[accent]› [dim]plan",
-      `  [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`,
+      `  [accent]LLM Attention Span (ctx) ${bar("▃▁▁▁▁")} [accent]84.0k / 1.0M`,
     ]);
 
     listeners.get("agent-workflow:phase")![0]({ phase: "execute" });

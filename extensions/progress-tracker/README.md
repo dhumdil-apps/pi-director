@@ -11,7 +11,7 @@ transcript cannot show.
 
   ```
   › plan
-    ctx ▆▁▁▁▁▁▁▁▁▁ 84.0k / 1.0M
+    LLM Attention Span (ctx) ▃▁▁▁▁ 84.0k / 1.0M
   ```
 
   The context readout owns its own line so it never slides sideways as the word

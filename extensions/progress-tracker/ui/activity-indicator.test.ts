@@ -25,14 +25,14 @@ describe("phase indicator", () => {
 	});
 
 	it.each([
-		[{ tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 }, `[accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`],
-		[{ tokens: 940, contextWindow: 200_000, percent: 0.47 }, `[accent]ctx ${bar("▁▁▁▁▁▁▁▁▁▁")} [accent]940 / 200.0k`],
-		[{ tokens: 0, contextWindow: 200_000, percent: 0 }, `[accent]ctx ${bar("▁▁▁▁▁▁▁▁▁▁")} [accent]0 / 200.0k`],
-		[{ tokens: 140_000, contextWindow: 200_000, percent: 70 }, `[warning]ctx ${bar("▇▇▇▇▇▇▇▁▁▁")} [warning]140.0k / 200.0k`],
-		[{ tokens: 180_000, contextWindow: 200_000, percent: 90 }, `[error]ctx ${bar("▇▇▇▇▇▇▇▇▇▁")} [error]180.0k / 200.0k`],
+		[{ tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 }, `[accent]LLM Attention Span (ctx) ${bar("▃▁▁▁▁")} [accent]84.0k / 1.0M`],
+		[{ tokens: 940, contextWindow: 200_000, percent: 0.47 }, `[accent]LLM Attention Span (ctx) ${bar("▁▁▁▁▁")} [accent]940 / 200.0k`],
+		[{ tokens: 0, contextWindow: 200_000, percent: 0 }, `[accent]LLM Attention Span (ctx) ${bar("▁▁▁▁▁")} [accent]0 / 200.0k`],
+		[{ tokens: 140_000, contextWindow: 200_000, percent: 70 }, `[warning]LLM Attention Span (ctx) ${bar("▇▇▇▄▁")} [warning]140.0k / 200.0k`],
+		[{ tokens: 180_000, contextWindow: 200_000, percent: 90 }, `[error]LLM Attention Span (ctx) ${bar("▇▇▇▇▄")} [error]180.0k / 200.0k`],
 		// Absolute thresholds trip on a wide window long before the fill ratio does.
-		[{ tokens: 120_000, contextWindow: 1_000_000, percent: 12 }, `[warning]ctx ${bar("▇▁▁▁▁▁▁▁▁▁")} [warning]120.0k / 1.0M`],
-		[{ tokens: 250_000, contextWindow: 1_000_000, percent: 25 }, `[error]ctx ${bar("▇▇▄▁▁▁▁▁▁▁")} [error]250.0k / 1.0M`],
+		[{ tokens: 120_000, contextWindow: 1_000_000, percent: 12 }, `[warning]LLM Attention Span (ctx) ${bar("▄▁▁▁▁")} [warning]120.0k / 1.0M`],
+		[{ tokens: 250_000, contextWindow: 1_000_000, percent: 25 }, `[error]LLM Attention Span (ctx) ${bar("▇▂▁▁▁")} [error]250.0k / 1.0M`],
 	])("renders the context readout with a usage-colored bar (%o)", (usage, expected) => {
 		expect(strip(contextUsageText(usage as any, theme)!)).toBe(expected);
 	});
@@ -62,7 +62,7 @@ describe("phase indicator", () => {
 
 		/** Line 1 is the marker plus the working word or the idle badge; the context readout is line 2. */
 		const status = (lines: string[]) => strip(lines[0]);
-		const contextLine = `  [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`;
+		const contextLine = `  [accent]LLM Attention Span (ctx) ${bar("▃▁▁▁▁")} [accent]84.0k / 1.0M`;
 
 		it("rotates the spinner frame every 120ms and re-renders, keeping context text", () => {
 			// A fixed word keeps this case about the spinner alone.

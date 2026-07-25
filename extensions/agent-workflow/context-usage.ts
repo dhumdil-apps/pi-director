@@ -2,7 +2,7 @@
  * Context-usage readout shared across the workflow UI.
  *
  * Lives in agent-workflow (not progress-tracker) so the approval prompt can
- * lean on the same thresholds the phase indicator's configurable `ctx <bar>`
+ * lean on the same thresholds the phase indicator's `LLM Attention Span (ctx) <bar>`
  * readout uses, without a circular import: progress-tracker already depends
  * on agent-workflow.
  */
@@ -47,9 +47,9 @@ export function isLeanContext(usage: ContextUsage | undefined): boolean {
   return (contextSeverity(usage) ?? "accent") === "accent";
 }
 
-// Wider than any powerbar meter on purpose: this is the one readout worth reading
-// precisely, and it renders on its own line above the editor.
-const CONTEXT_BAR_WIDTH = 10;
+// Compact five-block meter: enough to show context pressure while leaving room for
+// the descriptive label and token readout on its own line above the editor.
+const CONTEXT_BAR_WIDTH = 5;
 
 /**
  * Context readout using the powerbar's percentage meter.
@@ -61,7 +61,7 @@ export function contextUsageText(usage: ContextUsage | undefined, theme: Theme):
   const percent = (usage.tokens / usage.contextWindow) * 100;
   const bar = renderPercentageBar(percent, CONTEXT_BAR_WIDTH, theme, color);
   const readout = `${formatTokens(usage.tokens)} / ${formatTokens(usage.contextWindow)}`;
-  return `${theme.fg(color, "ctx")} ${bar} ${theme.fg(color, readout)}`;
+  return `${theme.fg(color, "LLM Attention Span (ctx)")} ${bar} ${theme.fg(color, readout)}`;
 }
 
 // Below half the prompt served from cache, the readout is a cost warning rather than
