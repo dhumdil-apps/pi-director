@@ -13,7 +13,7 @@
 import type { WorkflowPhase } from "../../agent-workflow/phase.js";
 
 /** Slow enough to read, quick enough to notice: a word lasts a few spinner cycles. */
-export const WORD_INTERVAL_MS = 4000;
+export const WORD_INTERVAL_MS = 8000;
 
 const NEUTRAL_WORDS = ["Peeking inside", "Sniffing around", "Consulting ghosts"];
 
