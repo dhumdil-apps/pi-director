@@ -11,6 +11,7 @@
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
+import { derivePhaseFromBranch, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
 import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
 
 export default function (pi: ExtensionAPI) {
@@ -19,6 +20,16 @@ export default function (pi: ExtensionAPI) {
   // Baseline for the growth delta. Only turn_end advances it, so the readout
   // means "since the last turn" rather than "since the last repaint".
   let previousTokens: number | undefined;
+  // Display only (see phase.ts). Live transitions win; the branch fallback covers
+  // the sessions no transition ever reaches — /handoff-seeded ones and reloads.
+  let phase: WorkflowPhase | undefined;
+
+  pi.events.on?.(PHASE_EVENT, (payload: unknown) => {
+    const next = (payload as PhaseEvent | undefined)?.phase;
+    if (next !== "plan" && next !== "execute") return;
+    phase = next;
+    refreshStatus();
+  });
 
   const refreshStatus = () => {
     if (!currentCtx) return;
@@ -33,7 +44,7 @@ export default function (pi: ExtensionAPI) {
     } catch {
       lastUsage = undefined;
     }
-    updatePhaseIndicator(currentCtx, working, usage, { lastUsage, previousTokens });
+    updatePhaseIndicator(currentCtx, working, usage, { lastUsage, previousTokens, phase });
     const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
@@ -52,6 +63,13 @@ export default function (pi: ExtensionAPI) {
     // A session start or tree move discards the old baseline: the delta would
     // otherwise report a branch switch as this turn's growth.
     previousTokens = undefined;
+    // Extensions re-instantiate on newSession(), so the closure is empty here even
+    // for a session that was approved: re-derive rather than trust the reset.
+    try {
+      phase = derivePhaseFromBranch(ctx.sessionManager.getBranch()) ?? phase;
+    } catch {
+      // A branch that cannot be read is not worth a missing indicator.
+    }
     refreshStatus();
   };
 

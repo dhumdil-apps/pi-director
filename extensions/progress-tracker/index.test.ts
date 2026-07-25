@@ -32,12 +32,12 @@ function harness() {
   return { handlers, listeners, emitted, tools };
 }
 
-function ctxWith(widgets: Array<[string, any]>) {
+function ctxWith(widgets: Array<[string, any]>, branch: any[] = []) {
   return {
     cwd: "/work",
     isIdle: () => true,
     getContextUsage: () => ({ tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 }),
-    sessionManager: { getBranch: () => [] },
+    sessionManager: { getBranch: () => branch },
     ui: {
       setWorkingVisible: () => {},
       setWidget: (id: string, factory: unknown) => widgets.push([id, factory]),
@@ -56,6 +56,31 @@ describe("progress tracker indicator", () => {
     const widgets: Array<[string, any]> = [];
     await handlers.get("session_start")![0]({}, ctxWith(widgets));
     expect(strip(indicator(widgets))).toBe(`[accent]› [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`);
+  });
+
+  it("badges the phase before the context readout once a plan is in play", async () => {
+    const { handlers, listeners } = harness();
+    const widgets: Array<[string, any]> = [];
+    const ctx = ctxWith(widgets);
+    await handlers.get("session_start")![0]({}, ctx);
+
+    listeners.get("agent-workflow:phase")![0]({ phase: "plan" });
+    expect(strip(indicator(widgets))).toBe(
+      `[accent]› [dim]plan[dim] · [accent]ctx ${bar("▆▁▁▁▁▁▁▁▁▁")} [accent]84.0k / 1.0M`,
+    );
+
+    listeners.get("agent-workflow:phase")![0]({ phase: "execute" });
+    expect(strip(indicator(widgets))).toContain("[accent]exec");
+  });
+
+  it("derives execute from a handoff-seeded branch, where no transition is ever emitted", async () => {
+    const { handlers } = harness();
+    const widgets: Array<[string, any]> = [];
+    const branch = [
+      { type: "message", message: { role: "user", content: "Execute the approved plan at .pi/plan/x.md." } },
+    ];
+    await handlers.get("session_start")![0]({}, ctxWith(widgets, branch));
+    expect(strip(indicator(widgets))).toContain("[accent]exec");
   });
 
   it("reports the context readout to observers", async () => {

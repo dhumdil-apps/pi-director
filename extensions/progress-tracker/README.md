@@ -13,12 +13,19 @@ transcript cannot show.
   the widget. The context readout refreshes at turn boundaries and is colored
   accent / warning / error: warning past 100k tokens or 40% full, error past
   200k or 80%, whichever trips first. The bar carries the proportion, so the
-  percentage is not printed. It carries no workflow phase, session mode, or
-  transient activity text.
+  percentage is not printed. It carries no transient activity text.
+- Approval-gate badge — `plan` (dim) or `exec` (accent) before the context
+  readout, e.g. `› exec · ctx <bar> 84.0k / 1.0M`. Absent entirely until a plan
+  is in play, so an ordinary session looks unchanged. It is **display only**:
+  Agent Workflow emits `agent-workflow:phase` on save (`plan`) and on approval
+  (`exec`), a `/handoff`-seeded or reloaded session re-derives `exec` from the
+  kickoff message on the branch, and nothing is written to the session or shown
+  to the model. This is not the retired session-mode state machine — the
+  injected loop is one constant and never varies with the badge.
 - `agent-status:update` event — `working`, `contextUsed`, `contextMax`,
   `cacheRead`, `cacheWrite`, `cacheHitRate`, `cwd`, for observers such as Agent
   Status Bridge. This list is the whole contract: Wingman's status strip accepts
-  exactly these fields, and nothing carries workflow phase, mode, or todos.
+  exactly these fields, and nothing carries mode or todos.
 
 ## No todo tool
 

@@ -14,10 +14,12 @@ function harness(cwd: string, sessionName?: string) {
 	const branch: any[] = [];
 	const messages: any[] = [];
 	const userMessages: string[] = [];
+	const emitted: Array<[string, any]> = [];
 	const pi = {
 		on: vi.fn((name: string, handler: (event: any, ctx: any) => any) => {
 			handlers.set(name, [...(handlers.get(name) ?? []), handler]);
 		}),
+		events: { emit: vi.fn((name: string, value: any) => emitted.push([name, value])) },
 		sendMessage: vi.fn((message: any) => messages.push(message)),
 		sendUserMessage: vi.fn((content: string) => userMessages.push(content)),
 	};
@@ -54,7 +56,9 @@ function harness(cwd: string, sessionName?: string) {
 	 */
 	const approvedTasks = () => userMessages.map((content) => content.match(/plan\/(.+)\.md/)?.[1]);
 
-	return { handlers, offer, messages, userMessages, approvedTasks, branch };
+	const phases = () => emitted.filter(([name]) => name === "agent-workflow:phase").map(([, value]) => value.phase);
+
+	return { handlers, offer, messages, userMessages, approvedTasks, branch, phases };
 }
 
 describe("approval prompt", () => {
@@ -158,6 +162,17 @@ describe("approval prompt", () => {
 		const { ctx: approvedCtx, notify: quiet } = await approved.offer("dashboard-polish", PROCEED);
 		await approved.handlers.get("tool_execution_start")![0]({ toolName: "edit", args: {} }, approvedCtx);
 		expect(quiet).not.toHaveBeenCalled();
+	});
+
+	it("emits plan on save and execute on approval, for the indicator only", async () => {
+		const h = harness(cwd);
+		await h.offer("dashboard-polish", PROCEED);
+		expect(h.phases()).toEqual(["plan", "execute"]);
+
+		// Revising stays in plan: nothing was approved.
+		const revised = harness(cwd);
+		await revised.offer("dashboard-polish", "Revise the plan");
+		expect(revised.phases()).toEqual(["plan"]);
 	});
 
 	it("never arms on a failed save", async () => {

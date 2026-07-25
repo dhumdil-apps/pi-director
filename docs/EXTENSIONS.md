@@ -12,7 +12,7 @@ extension.
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
-- **Progress Tracker** — Activity and context-usage indicator above the editor. No tool, no command: it observes.
+- **Progress Tracker** — Activity, approval-gate (`plan`/`exec`) and context-usage indicator above the editor. No tool, no command: it observes.
 - **Agent Status Bridge** — Reports display-only workflow status whenever a local observer is discoverable
 - **Session Dashboard** — Pi-glyph welcome, 30-day per-model spend chart, and project-context line
 
@@ -61,9 +61,11 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 - **No todo tool.** Pi ships none on purpose ("they confuse models"), and a
   structured list the agent must keep in sync is ceremony rather than progress.
   What the agent is doing is visible in the transcript.
-- **No derived loop position.** The injected block is a constant, so the whole
-  prompt prefix stays cacheable; where the session stands is visible in the
-  transcript rather than restated every turn.
+- **No derived loop position in the prompt.** The injected block is a constant,
+  so the whole prompt prefix stays cacheable; where the session stands is never
+  restated to the model. The `plan`/`exec` badge in the Progress Tracker
+  indicator is a readout for the user only — it never enters the context and
+  never varies the injected loop.
 
 [UPSTREAM.md](../UPSTREAM.md) records what was vendored, what was removed and
 when, plus versions and licenses.

@@ -5,10 +5,12 @@
  * It replaces pi's transient working row, so it owns setWorkingVisible.
  */
 
-import type { ContextUsage, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ContextUsage, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import type { Usage } from "@earendil-works/pi-ai";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { contextIndicatorText } from "../../agent-workflow/context-usage.js";
+import type { WorkflowPhase } from "../../agent-workflow/phase.js";
+import { SEPARATOR } from "../../status-bar/src/powerbar/settings.js";
 
 // Re-exported so existing importers (and the widget's own test) keep a single entry point.
 export { contextUsageText } from "../../agent-workflow/context-usage.js";
@@ -24,6 +26,21 @@ export interface IndicatorExtras {
   lastUsage?: Usage;
   /** Context total at the end of the previous turn, for the growth delta. */
   previousTokens?: number;
+  /**
+   * Which side of the approval gate the session is on. Undefined until a plan is
+   * in play, so a session that never planned looks exactly as it did before.
+   */
+  phase?: WorkflowPhase;
+}
+
+// Short enough to cost nothing next to the context bar, and unambiguous: the
+// gate has two sides and the badge names the one you are on.
+const PHASE_LABELS: Record<WorkflowPhase, string> = { plan: "plan", execute: "exec" };
+
+/** Dim while planning, accent once approved: the badge brightens when work may start. */
+function phaseText(phase: WorkflowPhase | undefined, theme: Theme): string | undefined {
+  if (!phase) return undefined;
+  return theme.fg(phase === "execute" ? "accent" : "dim", PHASE_LABELS[phase]);
 }
 
 /** Replace pi's transient working row with a persistent context indicator. */
@@ -51,8 +68,11 @@ export function updatePhaseIndicator(
         render: (width: number) => {
           const marker = working ? SPINNER_FRAMES[tick % SPINNER_FRAMES.length] : IDLE_MARKER;
           const context = contextIndicatorText(usage, theme, extras);
-          const line = context
-            ? `${theme.fg("accent", `${marker} `)}${context}`
+          const readout = [phaseText(extras?.phase, theme), context]
+            .filter((fragment): fragment is string => fragment !== undefined)
+            .join(theme.fg("dim", SEPARATOR));
+          const line = readout
+            ? `${theme.fg("accent", `${marker} `)}${readout}`
             : theme.fg("accent", marker);
           return [truncateToWidth(line, width)];
         },

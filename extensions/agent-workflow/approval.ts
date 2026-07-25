@@ -19,6 +19,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { isLeanContext } from "./context-usage.js";
 import { handoffKickoff } from "./handoff.js";
+import { PHASE_EVENT, type WorkflowPhase } from "./phase.js";
 import { resolvePlanTask } from "./task.js";
 
 const APPROVAL_NOTICE_TYPE = "agent-workflow:approval-notice";
@@ -65,6 +66,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 		if (details.name === approvedTask) return;
 		pendingOffer = { task: details.name };
 		unapprovedTask = details.name;
+		emitPhase(pi, "plan");
 	});
 
 	// Soft back-stop: notify, never reject. Silence here is the failure mode worth
@@ -94,6 +96,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 		if (choice?.startsWith(PROCEED)) {
 			approvedTask = task;
 			unapprovedTask = undefined;
+			emitPhase(pi, "execute");
 			proceed(pi, ctx, task);
 			return;
 		}
@@ -107,6 +110,11 @@ export function registerApproval(pi: ExtensionAPI): void {
 		}
 		ctx.ui.notify(`Plan not approved — revise and save again, or run /handoff ${task}.`, "info");
 	});
+}
+
+/** Display only: the indicator listens, the model never sees it (phase.ts). */
+function emitPhase(pi: ExtensionAPI, phase: WorkflowPhase): void {
+	pi.events.emit?.(PHASE_EVENT, { phase });
 }
 
 /** Start execution here, naming the concrete plan path so the turn opens on it. */
