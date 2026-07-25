@@ -5,10 +5,11 @@
  * toast. It is armed by the tool result and delivered when the turn settles, so
  * it never fires mid-turn.
  *
- * Arming keys on the *task*, not on the tool: a save_plan for a task the user
- * has already approved is a mid-implementation correction and must stay silent,
- * while a save_plan for a different task — a second loop in the same session —
- * gets its own prompt.
+ * Arming keys on the plan's *contents*, not on the tool or the task name: a
+ * save_plan that re-presents the approved plan byte for byte is a
+ * mid-implementation correction and stays silent, while any changed plan — a
+ * second task, or a re-plan of the same immutable session name — gets its own
+ * prompt. Keying on the name alone would offer exactly one decision per session.
  *
  * Because the prompt only lands when the turn settles, an agent that keeps
  * working through save_plan skips the gate silently. The mutating-tool warning
@@ -16,11 +17,20 @@
  * not a lock, and a wrong turn the user can see is one they can stop.
  */
 
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { isLeanContext } from "./context-usage.js";
+import { planPath } from "./task.js";
 import { handoffKickoff } from "./handoff.js";
 import { PHASE_EVENT, type WorkflowPhase } from "./phase.js";
 import { resolvePlanTask } from "./task.js";
+
+/** Content identity of a plan file; a missing file hashes as empty, never throws. */
+async function planDigest(cwd: string, task: string): Promise<string> {
+	const contents = await readFile(planPath(cwd, task), "utf8").catch(() => "");
+	return createHash("sha256").update(contents).digest("hex");
+}
 
 const APPROVAL_NOTICE_TYPE = "agent-workflow:approval-notice";
 
@@ -51,19 +61,19 @@ export function registerApproval(pi: ExtensionAPI): void {
 	// Which task the user approved in this session. Deliberately in-memory: it
 	// only suppresses a duplicate prompt, so a reload costing one extra prompt is
 	// cheaper than a durable fact and the derivation that reads it back.
-	let approvedTask: string | undefined;
+	let approved: { task: string; digest: string } | undefined;
 	// The task whose plan is on the table but unapproved, and whether its warning
 	// has already been spent: one warning per task, so a session that chose to keep
 	// going is told once instead of nagged on every edit.
 	let unapprovedTask: string | undefined;
 	let warnedTask: string | undefined;
 
-	pi.on("tool_execution_end", async (event) => {
+	pi.on("tool_execution_end", async (event, ctx) => {
 		if (event.toolName !== "save_plan" || event.isError) return;
 		const details = (event.result as { details?: { name?: unknown } } | undefined)?.details;
 		if (typeof details?.name !== "string") return;
-		// An approved task re-saving its plan is a correction, not a new decision.
-		if (details.name === approvedTask) return;
+		// Re-presenting the approved plan unchanged is a correction, not a new decision.
+		if (details.name === approved?.task && (await planDigest(ctx.cwd, details.name)) === approved.digest) return;
 		pendingOffer = { task: details.name };
 		unapprovedTask = details.name;
 		emitPhase(pi, "plan");
@@ -73,7 +83,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 	// fixing — the gate was missed the one time nothing said so.
 	pi.on("tool_execution_start", async (event, ctx) => {
 		if (!MUTATING_TOOLS.has(event.toolName)) return;
-		if (!unapprovedTask || unapprovedTask === approvedTask || unapprovedTask === warnedTask) return;
+		if (!unapprovedTask || unapprovedTask === approved?.task || unapprovedTask === warnedTask) return;
 		warnedTask = unapprovedTask;
 		if (ctx.hasUI) ctx.ui.notify(`Working tree changed before "${unapprovedTask}" was approved.`, "warning");
 	});
@@ -94,7 +104,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 
 		const choice = await ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage())));
 		if (choice?.startsWith(PROCEED)) {
-			approvedTask = task;
+			approved = { task, digest: await planDigest(ctx.cwd, task) };
 			unapprovedTask = undefined;
 			emitPhase(pi, "execute");
 			proceed(pi, ctx, task);

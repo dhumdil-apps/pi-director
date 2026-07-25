@@ -45,11 +45,11 @@ const LOOP = `<loop>
   - When one answer invalidates another question, say so and try to align with more questions.
 
   3. Plan
-  - Keep .pi/plan/<session-name>.md current as you go, matching its scaffolded format.
+  - Keep .pi/plan/<session-name>.md current as you go, under the headings it was scaffolded with.
   - Call "save_plan" tool to present it, then end your turn: the approval prompt is delivered once the turn settles, so a turn that keeps going never reaches it.
   - Messages arriving after "save_plan" - corrections, added requirements, agreement with the plan - are revisions. Re-save; only the approval prompt approves.
   - Every task gets a plan - a one-line change is a one-line plan, not an exception.
-  - A new plan extends the current one (once a <session-name> is set its immutable).
+  - The session keeps one plan file (the <session-name> is immutable) and it only ever grows: a revision is appended, so write what changed, not the whole document again.
 
   4. Execute
   - Approval arrives as a message naming the plan path ("Execute the approved plan at ..."). You are executing when, and only when, you have received it.

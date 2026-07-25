@@ -23,10 +23,14 @@ Nothing is enforced.
   error; headless is refused before the dialog, since a non-TUI `select()` resolves `undefined` and
   would look the same.
 - `save_plan` (`task.ts`) — presents the plan and renames the session, keeping
-  the leading timestamp so `.pi/plan/` stays time-ordered. Pass `plan` to
-  overwrite the file, or omit it to present what the agent already wrote there;
-  either way the content is echoed inline, so the decision is made against
-  exactly what is on disk.
+  the leading timestamp so `.pi/plan/` stays time-ordered. A passed `plan` is
+  appended under `## Revision <n> — <date>` once the file holds more than the
+  untouched scaffold (`composePlan`), so a re-plan never destroys the earlier
+  one and the file reads as the task's history; an empty file or a pristine
+  scaffold takes the body outright, and a body that is already the tail of the
+  file changes nothing. Omit `plan` to present what the agent wrote there with
+  `edit`; either way the content is echoed inline, so the decision is made
+  against exactly what is on disk.
 
 Close-out has no tool. The outcome is reported in the turn and durable orientation
 and quirks land in project memory, which the agent writes directly — the plan
@@ -52,13 +56,17 @@ explore step reads.
   it. The stub is written only when the file is absent, so an
   existing memory is never reshaped. Best-effort: an unwritable cwd is ignored
   rather than failing the turn.
-- **The approval picker** (`approval.ts`) — a successful `save_plan` for a task
-  nobody has approved arms it; it opens when the turn settles: *Proceed,
+- **The approval picker** (`approval.ts`) — a successful `save_plan` whose plan
+  file differs from the last approved contents arms it (a SHA-256 digest, since
+  the session name is immutable and keying on it would allow only one decision
+  per session; an unchanged re-save is a mid-implementation correction and stays
+  silent); it opens when the turn settles: *Proceed,
   handoff, or revise?* Context load picks the recommendation (lean → Proceed,
   loaded → Handoff). Proceed kicks off execution; Handoff prefills
   `/handoff <session-name>`; Revise or dismissing approves nothing. Headless
   sessions get a displayed message naming the command instead. Which task was
-  approved is held in memory only, so a reload costs one extra prompt.
+  approved — and the digest of what was approved — is held in memory only, so a
+  reload costs one extra prompt.
 - `/handoff [session-name]` (`handoff.ts`) — spawns a fresh session seeded with
   the name and a kickoff naming the plan path. Resolution: explicit name, then
   session name, then a lone remaining plan — several mean it asks which.

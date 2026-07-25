@@ -89,13 +89,22 @@ describe("approval prompt", () => {
 		expect(notify).not.toHaveBeenCalled();
 	});
 
-	it("stays silent when an already-approved task re-saves its plan", async () => {
+	it("stays silent when an already-approved plan is re-saved unchanged", async () => {
 		const h = harness(cwd);
 		await h.offer("dashboard-polish", PROCEED);
-		// Mid-implementation correction: same task, plan re-saved.
+		// Mid-implementation correction: same task, same plan contents.
 		const again = await h.offer("dashboard-polish", PROCEED);
 		expect(again.select).not.toHaveBeenCalled();
 		expect(h.approvedTasks()).toEqual(["dashboard-polish"]);
+	});
+
+	it("arms again when the approved task's plan gains a revision", async () => {
+		const h = harness(cwd);
+		await h.offer("dashboard-polish", PROCEED);
+		await writeFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), `${planText}\n## Revision 2 — later\n\nMore.\n`);
+		const replan = await h.offer("dashboard-polish", PROCEED);
+		expect(replan.select).toHaveBeenCalledTimes(1);
+		expect(h.approvedTasks()).toEqual(["dashboard-polish", "dashboard-polish"]);
 	});
 
 	it("arms again for a second task in the same session", async () => {

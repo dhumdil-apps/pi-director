@@ -62,8 +62,37 @@ const STOP_WORDS = new Set([
 
 const SavePlanParams = Type.Object({
 	name: Type.String({ description: "The new session name: a concise 2–4 meaningful-word summary of the work, optionally prefixed with a ticket ID (e.g. TEST-1234)." }),
-	plan: Type.Optional(Type.String({ description: "The complete plan as Markdown, shaped to the task — usually current state, decisions taken, desired state, approach, and quirks. Omit to present the plan file as you have already written it." })),
+	plan: Type.Optional(Type.String({ description: "The plan as Markdown, under the headings the plan file was scaffolded with: Current state, Decisions, Desired state, Approach, Quirks, Checklist. On a plan that already has content this is appended as a new revision, never a replacement — write only what changed. Omit it to present the file as you have kept it current with the edit tool." })),
 });
+
+const REVISION_HEADING = /^## Revision (\d+)\b/gm;
+
+function revisionStamp(now: Date): string {
+	const pad = (value: number) => String(value).padStart(2, "0");
+	return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+/** True while the file still holds nothing but the scaffold the session started with. */
+export function isScaffold(existing: string): boolean {
+	const body = existing.replace(/^# .*$/m, "").replace(/<[^>\n]+>/g, "").replace(/- \[ \]/g, "");
+	return !body.replace(/^#+ .*$/gm, "").trim();
+}
+
+/**
+ * Plan files are the user's record of what was worked on, so a save never drops
+ * what is already there: an empty or untouched-scaffold file takes the body
+ * outright, anything else keeps its content and gains a dated revision section.
+ */
+export function composePlan(existing: string, body: string, now: Date): string {
+	const next = body.trim();
+	const previous = existing.trim();
+	if (!next) return `${previous}\n`;
+	if (!previous || isScaffold(previous)) return `${next}\n`;
+	// Already the tail of the file: a re-presentation, not a revision.
+	if (previous.endsWith(next)) return `${previous}\n`;
+	const count = previous.match(REVISION_HEADING)?.length ?? 0;
+	return `${previous}\n\n---\n\n## Revision ${count + 2} — ${revisionStamp(now)}\n\n${next}\n`;
+}
 
 type SavePlanInput = Static<typeof SavePlanParams>;
 
@@ -214,7 +243,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "save_plan",
 		label: "Save Plan",
-		description: "Present the plan at .pi/plan/<session-name>.md for the user's decision, renaming the session to a meaningful name — the leading timestamp is kept, so plans stay time-ordered. Pass plan to (over)write the file, or omit it to present what you already wrote there. Plan files are the user's: never delete one.",
+		description: "Present the plan at .pi/plan/<session-name>.md for the user's decision, renaming the session to a meaningful name — the leading timestamp is kept, so plans stay time-ordered. A passed plan is appended as a dated revision once the file has content, so earlier plans are never lost; omit it to present what you already wrote there. Plan files are the user's: never delete one.",
 		parameters: SavePlanParams,
 		async execute(_toolCallId, params: SavePlanInput, _signal, _onUpdate, ctx) {
 			// The session is auto-named at start, so a rename swaps the slug and keeps
@@ -231,7 +260,8 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 				await ensurePiState(ctx.cwd);
 				if (current) await movePlan(ctx.cwd, current, name);
 				if (params.plan?.trim()) {
-					contents = `${params.plan.trim()}\n`;
+					const existing = await readFile(path, "utf8").catch(() => "");
+					contents = composePlan(existing, params.plan, new Date());
 					await writeAtomically(path, contents);
 				} else {
 					// Omitted body: present the file the agent has been keeping current.

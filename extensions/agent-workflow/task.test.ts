@@ -2,7 +2,7 @@ import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { autoSlug, canonicalTaskName, ensurePiState, listPlanNames, MEMORY_STUB, movePlan, normalizeTaskName, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
+import { autoSlug, canonicalTaskName, composePlan, ensurePiState, isScaffold, listPlanNames, MEMORY_STUB, movePlan, normalizeTaskName, PLAN_TEMPLATE, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
 
 function makeHarness(cwd: string, name?: string) {
 	let sessionName = name;
@@ -59,13 +59,22 @@ describe("save_plan", () => {
 		expect(harness.getName()).toBe("SI-7-dashboard-polish");
 	});
 
-	it("overwrites the same file on a re-save after a revision", async () => {
+	it("appends a re-save as a revision instead of losing the earlier plan", async () => {
 		const harness = makeHarness(cwd);
 		await harness.execute({ name: "revised approach", plan });
-		const revised = `${plan}\nRevised.\n`;
-		const result = await harness.execute({ name: "revised approach", plan: revised });
+		const result = await harness.execute({ name: "revised approach", plan: "## Approach\n\nD instead.\n" });
 		expect(result.isError).toBeUndefined();
-		expect(await readFile(result.details.path, "utf8")).toBe(revised);
+		const contents = await readFile(result.details.path, "utf8");
+		expect(contents).toContain("A.");
+		expect(contents).toContain("D instead.");
+		expect(contents).toMatch(/## Revision 2 — \d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+	});
+
+	it("replaces the untouched scaffold rather than revising it", async () => {
+		await seedPlan(cwd, "scaffolded-task", PLAN_TEMPLATE.replace("<session-name>", "scaffolded-task"));
+		const harness = makeHarness(cwd, "scaffolded-task");
+		const result = await harness.execute({ name: "scaffolded task", plan });
+		expect(await readFile(result.details.path, "utf8")).toBe(plan);
 	});
 
 	it("presents the on-disk plan when no body is passed, instead of clobbering it", async () => {
@@ -114,6 +123,33 @@ describe("save_plan", () => {
 		expect(saved.isError).toBeUndefined();
 		expect(saved.details.path).toBe(join(cwd, ".pi", "plan", "legacy-state.md"));
 		await expect(access(join(cwd, ".pi", "goal", "legacy-state.todo.md"))).resolves.toBeUndefined();
+	});
+});
+
+describe("composePlan", () => {
+	const now = new Date("2026-07-25T18:53:00");
+
+	it("takes the body outright when there is nothing to keep", () => {
+		expect(composePlan("", "## Approach\n\nA.", now)).toBe("## Approach\n\nA.\n");
+		expect(composePlan(PLAN_TEMPLATE.replace("<session-name>", "x-task"), "B.", now)).toBe("B.\n");
+	});
+
+	it("numbers appended revisions from 2 and keeps counting", () => {
+		const second = composePlan("Original.", "Changed.", now);
+		expect(second).toContain("## Revision 2 — 2026-07-25 18:53");
+		expect(second.startsWith("Original.")).toBe(true);
+		expect(composePlan(second, "Changed again.", now)).toContain("## Revision 3 —");
+	});
+
+	it("does not duplicate a body that is already the tail of the file", () => {
+		const once = composePlan("Original.", "Changed.", now);
+		expect(composePlan(once, "Changed.", now)).toBe(once);
+	});
+
+	it("treats an empty body as leave-as-is, and reads the scaffold as untouched", () => {
+		expect(composePlan("Original.", "   ", now)).toBe("Original.\n");
+		expect(isScaffold(PLAN_TEMPLATE.replace("<session-name>", "x-task"))).toBe(true);
+		expect(isScaffold(plan)).toBe(false);
 	});
 });
 
