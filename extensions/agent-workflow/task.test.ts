@@ -91,19 +91,19 @@ describe("save_plan", () => {
 	});
 
 	it("keeps the timestamp prefix and moves the file when the slug changes", async () => {
-		const auto = "2026-07-24-13-05-01-do-the-thing";
+		const auto = "2026-07-24--13-05-01-do-the-thing";
 		await seedPlan(cwd, auto);
 		const harness = makeHarness(cwd, auto);
 		const result = await harness.execute({ name: "dashboard polish", plan });
-		expect(result.details.name).toBe("2026-07-24-13-05-01-dashboard-polish");
-		expect(harness.getName()).toBe("2026-07-24-13-05-01-dashboard-polish");
-		expect(await readdir(join(cwd, ".pi", "plan"))).toEqual(["2026-07-24-13-05-01-dashboard-polish.md"]);
+		expect(result.details.name).toBe("2026-07-24--13-05-01-dashboard-polish");
+		expect(harness.getName()).toBe("2026-07-24--13-05-01-dashboard-polish");
+		expect(await readdir(join(cwd, ".pi", "plan"))).toEqual(["2026-07-24--13-05-01-dashboard-polish.md"]);
 	});
 
 	it("does not mistake a timestamp for an inherited ticket ID", async () => {
-		const harness = makeHarness(cwd, "2026-07-24-13-05-01-do-the-thing");
+		const harness = makeHarness(cwd, "2026-07-24--13-05-01-do-the-thing");
 		const result = await harness.execute({ name: "cache recovery", plan });
-		expect(result.details.name).toBe("2026-07-24-13-05-01-cache-recovery");
+		expect(result.details.name).toBe("2026-07-24--13-05-01-cache-recovery");
 	});
 
 	it("ignores and preserves legacy .pi/goal files", async () => {
@@ -183,7 +183,7 @@ describe("auto-scaffold naming", () => {
 
 	it("prefixes the first prompt's words with a sortable local timestamp", () => {
 		const name = autoSlug("please fix the flaky login test", at("2026-07-24T13:05:01"));
-		expect(name).toBe("2026-07-24-13-05-01-fix-flaky-login-test");
+		expect(name).toBe("2026-07-24--13-05-01-fix-flaky-login-test");
 	});
 
 	it("orders lexically by start time", () => {
@@ -194,9 +194,10 @@ describe("auto-scaffold naming", () => {
 
 	it("round-trips a timestamped name and reads its prefix back", () => {
 		const name = autoSlug("SI-7 cache recovery", at("2026-07-24T13:05:01"));
-		expect(name).toBe("2026-07-24-13-05-01-SI-7-cache-recovery");
+		expect(name).toBe("2026-07-24--13-05-01-SI-7-cache-recovery");
 		expect(canonicalTaskName(name)).toBe(name);
-		expect(timestampPrefix(name)).toBe("2026-07-24-13-05-01");
+		expect(timestampPrefix(name)).toBe("2026-07-24--13-05-01");
+		expect(timestampPrefix("2026-07-24-13-05-01-dashboard-polish")).toBeUndefined();
 		expect(timestampPrefix("dashboard-polish")).toBeUndefined();
 	});
 });
@@ -210,6 +211,9 @@ describe("ensurePiState / movePlan", () => {
 		await ensurePiState(cwd);
 		const memory = join(cwd, ".pi", "MEMORY.md");
 		expect(await readFile(memory, "utf8")).toBe(MEMORY_STUB);
+		expect(MEMORY_STUB).toContain("## Orientation");
+		expect(MEMORY_STUB).toContain("## Quirks");
+		expect(MEMORY_STUB).not.toContain("## Summary");
 		await writeFile(memory, "# Mine\n");
 		await ensurePiState(cwd);
 		await expect(access(join(cwd, ".pi", "plan"))).resolves.toBeUndefined();

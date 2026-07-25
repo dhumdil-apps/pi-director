@@ -116,7 +116,7 @@ describe("plan scaffolding", () => {
 		const h = harness(cwd);
 		await h.inject("please fix the flaky login test");
 		const name = h.pi.setSessionName.mock.calls[0][0] as string;
-		expect(name).toMatch(/^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-fix-flaky-login-test$/);
+		expect(name).toMatch(/^\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2}-fix-flaky-login-test$/);
 		expect(await planFiles()).toEqual([`${name}.md`]);
 		const written = await readFile(join(cwd, ".pi", "plan", `${name}.md`), "utf8");
 		expect(written).toContain(`# ${name}`);

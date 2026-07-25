@@ -56,7 +56,7 @@ error as a regression or compatibility issue to fix.
 
 ## Project memory is not being used
 
-- Project memory is a user-owned `.pi/MEMORY.md` file holding orientation (where things live), quirks or work-arounds, and a summary of where the project stands. A sectioned stub is scaffolded when absent; an existing file is never reshaped.
-- The explore step opens on it, as leads to verify against the code rather than facts to trust — so nothing goes stale in a way that misleads.
-- All three sections are updated during close-out, or during implementation when discovered. No tool writes the file; the agent edits it directly.
+- Project memory is a user-owned `.pi/MEMORY.md` file holding orientation (what the project is and where behavior lives) and quirks or work-arounds (non-obvious constraints). A sectioned stub is scaffolded when absent; an existing file is never reshaped.
+- The explore step treats it as a set of leads to verify against the code rather than facts to trust — so nothing goes stale in a way that misleads.
+- Both sections are updated during close-out, or during implementation when discoveries are durable. No tool writes the file; the agent edits it directly.
 - `.pi/` is ignored by default; projects may customize that Git policy.

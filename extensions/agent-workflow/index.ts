@@ -48,7 +48,7 @@ const LOOP = `<loop>
 
   5. Close out
   - Report what changed, what verification ran and reported, and every check skipped or failed.
-  - Update .pi/MEMORY.md with durable quirks/work-arounds, orientation and summary that may accelarate future discovery.
+  - Update .pi/MEMORY.md with durable orientation and quirks/work-arounds that accelerate future discovery.
   - On more requested changes proceed to step 3. to re-plan.
 </loop>`;
 

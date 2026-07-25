@@ -7,11 +7,11 @@ import { Type, type Static } from "@sinclair/typebox";
 
 /**
  * A session name is `[timestamp-][TICKET-N-]slug`. The timestamp segment is read
- * first and on its own: without it, `2026-07-24-13-05-01-…` parses as the ticket
+ * first and on its own: without it, `2026-07-24--13-05-01-…` parses as the ticket
  * ID `2026-07` and the rest as the slug.
  */
-const TIMESTAMP = /^(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})(?:-|$)/;
-const SESSION_NAME = /^(?:(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})-)?(?:([a-z0-9]+-\d+)-)?([a-z0-9]+(?:-[a-z0-9]+)*)$/i;
+const TIMESTAMP = /^(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:-|$)/;
+const SESSION_NAME = /^(?:(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})-)?(?:([a-z0-9]+-\d+)-)?([a-z0-9]+(?:-[a-z0-9]+)*)$/i;
 const TICKET_ID = /\b([a-z0-9]+-\d+)\b/i;
 const MAX_SLUG_WORDS = 4;
 const PLAN_FILE = /^(.+)\.md$/;
@@ -41,8 +41,8 @@ export const PLAN_TEMPLATE = [
 ].join("\n");
 
 /**
- * Scaffolded alongside the first plan. Sectioned so the explore step has somewhere
- * to start from: orientation is the map worth reusing, current stage.
+ * Scaffolded alongside the first plan. Orientation maps the project; quirks record
+ * the non-obvious constraints worth reusing during exploration.
  */
 export const MEMORY_STUB = [
 	"# Project memory",
@@ -50,8 +50,6 @@ export const MEMORY_STUB = [
 	"## Orientation",
 	"",
 	"## Quirks",
-	"",
-	"## Summary",
 	"",
 ].join("\n");
 
@@ -96,17 +94,16 @@ export function canonicalTaskName(name: string | undefined): string | undefined 
 	return parts.filter(Boolean).join("-");
 }
 
-/** The leading `YYYY-MM-DD-HH-MM-SS` segment of an auto-scaffolded name, if any. */
+/** The leading `YYYY-MM-DD--HH-MM-SS` segment of an auto-scaffolded name, if any. */
 export function timestampPrefix(name: string | undefined): string | undefined {
 	return name?.trim().match(TIMESTAMP)?.[1];
 }
 
 function stamp(now: Date): string {
 	const pad = (value: number) => String(value).padStart(2, "0");
-	return [
-		now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate()),
-		pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds()),
-	].join("-");
+	const date = [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join("-");
+	const time = [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join("-");
+	return `${date}--${time}`;
 }
 
 /**
