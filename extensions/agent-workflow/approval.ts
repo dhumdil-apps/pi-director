@@ -9,6 +9,11 @@
  * has already approved is a mid-implementation correction and must stay silent,
  * while a save_plan for a different task — a second loop in the same session —
  * gets its own prompt.
+ *
+ * Because the prompt only lands when the turn settles, an agent that keeps
+ * working through save_plan skips the gate silently. The mutating-tool warning
+ * below makes that visible without refusing the call: the loop is a contract,
+ * not a lock, and a wrong turn the user can see is one they can stop.
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -17,6 +22,11 @@ import { handoffKickoff } from "./handoff.js";
 import { resolvePlanTask } from "./task.js";
 
 const APPROVAL_NOTICE_TYPE = "agent-workflow:approval-notice";
+
+// Enough to catch the ways the working tree actually changes; a shell command is
+// included wholesale rather than guessed at, since a read-only command warns at
+// worst and a destructive one is exactly what this exists to surface.
+const MUTATING_TOOLS = new Set(["edit", "write", "bash"]);
 
 const PROCEED = "Proceed in this session";
 const HANDOFF = "Handoff to a fresh session";
@@ -41,6 +51,11 @@ export function registerApproval(pi: ExtensionAPI): void {
 	// only suppresses a duplicate prompt, so a reload costing one extra prompt is
 	// cheaper than a durable fact and the derivation that reads it back.
 	let approvedTask: string | undefined;
+	// The task whose plan is on the table but unapproved, and whether its warning
+	// has already been spent: one warning per task, so a session that chose to keep
+	// going is told once instead of nagged on every edit.
+	let unapprovedTask: string | undefined;
+	let warnedTask: string | undefined;
 
 	pi.on("tool_execution_end", async (event) => {
 		if (event.toolName !== "save_plan" || event.isError) return;
@@ -49,6 +64,16 @@ export function registerApproval(pi: ExtensionAPI): void {
 		// An approved task re-saving its plan is a correction, not a new decision.
 		if (details.name === approvedTask) return;
 		pendingOffer = { task: details.name };
+		unapprovedTask = details.name;
+	});
+
+	// Soft back-stop: notify, never reject. Silence here is the failure mode worth
+	// fixing — the gate was missed the one time nothing said so.
+	pi.on("tool_execution_start", async (event, ctx) => {
+		if (!MUTATING_TOOLS.has(event.toolName)) return;
+		if (!unapprovedTask || unapprovedTask === approvedTask || unapprovedTask === warnedTask) return;
+		warnedTask = unapprovedTask;
+		if (ctx.hasUI) ctx.ui.notify(`Working tree changed before "${unapprovedTask}" was approved.`, "warning");
 	});
 
 	pi.on("agent_settled", async (_event, ctx) => {
@@ -68,6 +93,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 		const choice = await ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage())));
 		if (choice?.startsWith(PROCEED)) {
 			approvedTask = task;
+			unapprovedTask = undefined;
 			proceed(pi, ctx, task);
 			return;
 		}

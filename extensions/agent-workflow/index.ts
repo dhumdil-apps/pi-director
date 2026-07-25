@@ -12,6 +12,11 @@
  * stays cacheable. Saving a plan for a task nobody has approved arms the
  * approval prompt (approval.ts); a flat plan file on disk carries the task
  * across sessions. Nothing here is enforced.
+ *
+ * The gate is delivered on agent_settled, so it only works if the agent yields
+ * the turn after save_plan. That mechanism is stated in the loop rather than
+ * implied by a prohibition, restated on the save_plan result itself (task.ts),
+ * and — when it is missed anyway — surfaced as a warning rather than a refusal.
  */
 
 import { writeFile } from "node:fs/promises";
@@ -41,13 +46,15 @@ const LOOP = `<loop>
 
   3. Plan
   - Keep .pi/plan/<session-name>.md current as you go, matching its scaffolded format.
-  - Call "save_plan" tool to present it, then wait for approval before implementation.
+  - Call "save_plan" tool to present it, then end your turn: the approval prompt is delivered once the turn settles, so a turn that keeps going never reaches it.
+  - Messages arriving after "save_plan" - corrections, added requirements, agreement with the plan - are revisions. Re-save; only the approval prompt approves.
   - Every task gets a plan - a one-line change is a one-line plan, not an exception.
   - A new plan extends the current one (once a <session-name> is set its immutable).
 
   4. Execute
-  - Nothing in the working tree changes until the plan is approved - no edits, writes, or mutating commands.
-  - Once a plan is approved, carry the plan out.
+  - Approval arrives as a message naming the plan path ("Execute the approved plan at ..."). You are executing when, and only when, you have received it.
+  - Until then the working tree stays untouched - no edits, writes, or mutating commands.
+  - Once approved, carry the plan out.
   - On a blocker stop and report rather than guess past it - proceed to step 3. to re-plan.
 
   5. Close out

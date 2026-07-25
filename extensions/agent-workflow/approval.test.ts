@@ -137,6 +137,29 @@ describe("approval prompt", () => {
 		expect(loadedSelect.mock.calls[0]![1][0]).toBe("Handoff to a fresh session (recommended)");
 	});
 
+	it("warns once when the working tree changes before approval, and not after it", async () => {
+		const h = harness(cwd);
+		const { ctx, notify } = await h.offer("dashboard-polish", "Revise the plan");
+		const mutate = async (toolName: string) => {
+			await h.handlers.get("tool_execution_start")![0]({ toolName, args: {} }, ctx);
+		};
+
+		await mutate("read");
+		expect(notify).not.toHaveBeenCalledWith(expect.stringContaining("before"), "warning");
+
+		await mutate("edit");
+		await mutate("write");
+		const warnings = notify.mock.calls.filter(([, level]: any[]) => level === "warning");
+		expect(warnings).toHaveLength(1);
+		expect(warnings[0]![0]).toContain("dashboard-polish");
+
+		// Approving the task retires the back-stop for every later edit.
+		const approved = harness(cwd);
+		const { ctx: approvedCtx, notify: quiet } = await approved.offer("dashboard-polish", PROCEED);
+		await approved.handlers.get("tool_execution_start")![0]({ toolName: "edit", args: {} }, approvedCtx);
+		expect(quiet).not.toHaveBeenCalled();
+	});
+
 	it("never arms on a failed save", async () => {
 		const h = harness(cwd);
 		const { select } = await h.offer("dashboard-polish", "Revise the plan", { isError: true });

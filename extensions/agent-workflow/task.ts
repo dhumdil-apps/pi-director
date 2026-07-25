@@ -246,8 +246,15 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 			}
 			pi.setSessionName(name);
 			return {
-				// Echoed inline so the decision is made against exactly what is on disk.
-					content: [{ type: "text" as const, text: `Plan at ${path}:\n\n${contents.trim() || "(empty)"}` }],
+				// Echoed inline so the decision is made against exactly what is on disk,
+				// and closed with the one instruction that only lands at this exact point:
+				// the approval prompt fires when the turn settles, so the turn must end here.
+				content: [
+					{
+						type: "text" as const,
+						text: `Plan at ${path}:\n\n${contents.trim() || "(empty)"}\n\nPlan presented — end your turn now and await the user's decision. Approval arrives as a message naming this plan path.`,
+					},
+				],
 				details: { name, path },
 			};
 		},
