@@ -61,7 +61,8 @@ export function contextUsageText(usage: ContextUsage | undefined, theme: Theme):
   const percent = (usage.tokens / usage.contextWindow) * 100;
   const bar = renderPercentageBar(percent, CONTEXT_BAR_WIDTH, theme, color);
   const readout = `${formatTokens(usage.tokens)} / ${formatTokens(usage.contextWindow)}`;
-  return `${theme.fg(color, "LLM Attention Span (ctx)")} ${bar} ${theme.fg(color, readout)}`;
+  // The `none` bar style renders nothing — don't leave a double space behind it.
+  return [theme.fg(color, "LLM Attention Span (ctx)"), bar, theme.fg(color, readout)].filter(Boolean).join(" ");
 }
 
 // Below half the prompt served from cache, the readout is a cost warning rather than
