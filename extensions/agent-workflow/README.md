@@ -7,8 +7,10 @@ only describes it; where they disagree, the block wins.
 
 Injected into every turn: **explore, ask, plan, execute, close out**. Two
 guarantees carry it — nothing in the working tree changes until the user has
-approved a plan, and questions are cheap. Each step names an action; the
-mechanics live in the tool that performs it. Nothing is enforced.
+approved a plan, and questions are cheap. The loop is scale-invariant: a
+one-line change gets a one-line plan, so "too small to plan" is not an exit.
+Each step names an action; the mechanics live in the tool that performs it.
+Nothing is enforced.
 
 ## Tools
 

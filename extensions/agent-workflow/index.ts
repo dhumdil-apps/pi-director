@@ -28,6 +28,8 @@ import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, regist
  * of the session and nothing else.
  */
 const LOOP = `<loop>
+  Every task runs all five steps. Size changes how long the plan is, never whether there is one.
+
   1. Explore
   - Start from .pi/MEMORY.md - leads to verify, not facts.
   - Discover what are we working with before forming an opinion about it.
@@ -40,9 +42,11 @@ const LOOP = `<loop>
   3. Plan
   - Keep .pi/plan/<session-name>.md current as you go, matching its scaffolded format.
   - Call "save_plan" tool to present it, then wait for approval before implementation.
+  - Every task gets a plan - a one-line change is a one-line plan, not an exception.
   - A new plan extends the current one (once a <session-name> is set its immutable).
 
   4. Execute
+  - Nothing in the working tree changes until the plan is approved - no edits, writes, or mutating commands.
   - Once a plan is approved, carry the plan out.
   - On a blocker stop and report rather than guess past it - proceed to step 3. to re-plan.
 
