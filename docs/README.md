@@ -1,6 +1,6 @@
 # Documentation Index
 
-Use this page as the navigation map for the `pi-kit` package and development repository.
+Use this page as the navigation map for the `pi-director` package and development repository.
 
 ## Consumer & User Guides
 

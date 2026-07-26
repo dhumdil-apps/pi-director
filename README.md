@@ -1,9 +1,11 @@
-# pi-kit
+# Pi Director
 
 > π Measure twice, cut once.
 
-A single, vendored [Pi](https://pi.dev) package maintained by `dhumdil-apps`.
-It bundles productivity extensions, workflow guidance, status indicators, prompts, and themes into one cohesive toolkit for your Pi coding sessions.
+A [Pi](https://pi.dev) package that directs deliberate coding sessions: explore,
+ask, plan, execute, and close out with approvals, durable memory, handoffs, and
+visible status. When a human-authorized Pi Inspector session is available,
+Director can verify browser behavior through shared semantic state and flows.
 
 ## Quick Start
 
@@ -17,7 +19,7 @@ It bundles productivity extensions, workflow guidance, status indicators, prompt
 Install the package directly into Pi:
 
 ```bash
-pi install https://github.com/dhumdil-apps/pi-kit
+pi install https://github.com/dhumdil-apps/pi-director
 ```
 
 Pi manages the package installation automatically. To update to the latest release at any time, run:
@@ -45,6 +47,7 @@ pi list
 - **agent-workflow** — One loop per task: explore, ask, plan, execute, close out. Two guarantees carry it — nothing in the working tree changes before an approved plan, and questions are cheap. Every session scaffolds `.pi/plan/<timestamp-slug>.md` on its first message as the agent's living document; `ask` puts choices in a native picker, `save_plan` presents the plan (renaming the session, timestamp kept) and arms the approval picker — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing. The injected block is a constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
 - **project-memory** — Read-only startup check for the hidden `memory-review` marker. It stays silent when current and suggests manual `/memory` maintenance when memory is missing, dirty, stale, or unverifiable; it never writes or triggers a turn.
 - **progress-tracker** — Above-editor activity, mode badge (`plan`/`auto`, worded while working) and context-usage indicator on its own line. No tool, no command: it observes.
+- **pi-inspector skill & bridge** — Detects an authorized Pi Inspector session for browser debugging and verification, while reporting Director phase and session context back to Inspector over its display-only channel.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).
 - **bundled themes** — `dark` and `github-dark`.
@@ -59,4 +62,4 @@ pi list
 
 ## Contributing & Maintenance
 
-If you want to modify, test, or contribute to `pi-kit` locally, see the [Development & Maintenance Guide](docs/DEVELOPMENT.md).
+If you want to modify, test, or contribute to `pi-director` locally, see the [Development & Maintenance Guide](docs/DEVELOPMENT.md).

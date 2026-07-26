@@ -14,13 +14,14 @@ extension.
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
 - **Progress Tracker** — Activity, mode badge (`plan`/`auto`) and context-usage indicator above the editor. No tool, no command: it observes.
-- **Agent Status Bridge** — Reports display-only workflow status whenever a local observer is discoverable
+- **Pi Inspector Bridge** — Reports display-only Director phase and session status whenever a local Inspector is discoverable
 - **Session Dashboard** — Pi-glyph welcome, 30-day per-model spend chart, and project-context line
 
 ## Supporting resources
 
 - **Init prompt** (`prompts/init.md`) — Analyze a project and propose an `AGENTS.md`
 - **Memory prompt** (`prompts/memory.md`) — Bootstrap, incrementally refresh, or fully audit selective project memory
+- **Pi Inspector skill** (`skills/pi-inspector/SKILL.md`) — Evidence-first local app debugging through a human-authorized Inspector session
 - **Bundled themes** (`themes/dark.json`, `themes/github-dark.json`) — Portable bundled themes (`"theme": "github-dark"`)
 
 ## Single-agent policy
@@ -50,8 +51,9 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 
 ## Deliberately absent
 
-- **No skills.** The workflow guidance lives inside the injected loop block,
-  so nothing depends on the model remembering to invoke anything.
+- **No workflow skill.** The five-step workflow remains a constant injected
+  contract. The optional Pi Inspector skill activates only for applicable local
+  browser debugging and verification.
 - **No permission gate.** Tool calls are never intercepted; destructive-action
   consent is conversational (see [the agent-workflow README](../extensions/agent-workflow/README.md)).
 - **No managed autonomous mode.** To run Pi unsupervised, start raw Pi with

@@ -27,6 +27,7 @@ function harness() {
     registerTool: vi.fn((tool: any) => tools.push(tool)),
     registerCommand: vi.fn(),
     sendMessage: vi.fn(),
+    getSessionName: vi.fn(() => "debug-login"),
   };
   createExtension(pi as any);
   return { handlers, listeners, emitted, tools };
@@ -92,6 +93,6 @@ describe("progress tracker indicator", () => {
     await handlers.get("session_start")![0]({}, ctxWith([]));
 
     const [, status] = emitted.findLast(([name]) => name === "agent-status:update")!;
-    expect(status).toMatchObject({ contextUsed: 84_000, contextMax: 1_000_000, cwd: "/work" });
+    expect(status).toMatchObject({ contextUsed: 84_000, contextMax: 1_000_000, cwd: "/work", phase: undefined, sessionName: "debug-login" });
   });
 });

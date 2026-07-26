@@ -1,8 +1,8 @@
 {
-  "name": "@dhumdil-apps/pi-kit",
-  "version": "0.1.0",
+  "name": "@dhumdil-apps/pi-director",
+  "version": "0.2.0-beta.1",
   "private": true,
-  "description": "Vendored Pi extensions and skills maintained by dhumdil-apps.",
+  "description": "Pi-native orchestration for deliberate, evidence-backed coding sessions.",
   "keywords": [
     "pi-package"
   ],
@@ -34,11 +34,14 @@
       "./extensions/usage-monitor/index.ts",
       "./extensions/usage-history/index.ts",
       "./extensions/progress-tracker/index.ts",
-      "./extensions/agent-status-bridge/index.ts",
+      "./extensions/pi-inspector-bridge/index.ts",
       "./extensions/session-dashboard/index.ts"
     ],
     "prompts": [
       "./prompts"
+    ],
+    "skills": [
+      "./skills"
     ],
     "themes": [
       "./themes"

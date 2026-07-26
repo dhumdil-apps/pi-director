@@ -3,7 +3,7 @@
 ## Pi does not show the bundle
 
 1. Check `packages` in `~/.pi/agent/settings.json` contains
-   `https://github.com/dhumdil-apps/pi-kit`.
+   `https://github.com/dhumdil-apps/pi-director`.
 2. Run `pi list`.
 3. Run `pi update --extensions`, then restart Pi.
 4. Run the headless smoke from [DEVELOPMENT.md](DEVELOPMENT.md).

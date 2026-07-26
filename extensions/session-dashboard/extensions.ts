@@ -54,7 +54,7 @@ export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
 		description: "Always-visible activity and context indicator above the editor; emits `agent-status:update` for observers.",
 	},
 	{
-		name: "agent-status-bridge",
+		name: "pi-inspector-bridge",
 		group: "workflow",
 		description: "Reports display-only workflow status whenever a local observer is discoverable.",
 	},

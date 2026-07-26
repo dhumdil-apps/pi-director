@@ -12,9 +12,9 @@ const TIMEOUT_MS = 750;
  * Reporting is entirely fire-and-forget, so endpoint discovery is the only gate
  * it needs: with no observer to discover, nothing is ever sent. There used to be
  * an `enabled` setting in front of that, which only meant one more thing to turn
- * on before Wingman could see a session.
+ * on before Pi Inspector could see a session.
  */
-export default function agentStatusBridge(pi: ExtensionAPI) {
+export default function piInspectorBridge(pi: ExtensionAPI) {
   const sessionId = randomUUID();
   let endpoint: Endpoint | undefined;
   let latest: StatusUpdate = {};
@@ -73,7 +73,7 @@ export default function agentStatusBridge(pi: ExtensionAPI) {
 function resolveEndpoint(env: NodeJS.ProcessEnv = process.env, discoveryPath?: string): Endpoint | undefined {
   if (env.AGENT_STATUS_URL && env.AGENT_STATUS_TOKEN) return { url: env.AGENT_STATUS_URL, token: env.AGENT_STATUS_TOKEN };
   try {
-    const path = discoveryPath || env.AGENT_STATUS_DISCOVERY || join(homedir(), ".wingman", "status.json");
+    const path = discoveryPath || env.AGENT_STATUS_DISCOVERY || join(homedir(), ".pi-inspector", "status.json");
     const parsed = JSON.parse(readFileSync(path, "utf8")) as { url?: string; statusToken?: string };
     if (parsed.url && parsed.statusToken) return { url: parsed.url, token: parsed.statusToken };
   } catch {}

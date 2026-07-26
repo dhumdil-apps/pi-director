@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { testing } from "./index.js";
 
-describe("agent status bridge", () => {
+describe("Pi Inspector bridge", () => {
   it("has no endpoint when no environment or discovery file exists", () => {
     expect(testing.resolveEndpoint({}, "/definitely-missing")).toBeUndefined();
   });

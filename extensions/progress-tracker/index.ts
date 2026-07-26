@@ -48,6 +48,8 @@ export default function (pi: ExtensionAPI) {
     const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
+      phase,
+      sessionName: pi.getSessionName?.(),
       contextUsed: usage?.tokens ?? undefined,
       contextMax: usage?.contextWindow ?? undefined,
       cacheRead: lastUsage?.cacheRead,

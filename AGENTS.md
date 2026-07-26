@@ -1,4 +1,4 @@
-# AGENTS.md — pi-kit
+# AGENTS.md — Pi Director
 
 - Ask before destructive or irreversible actions.
 - Avoid using markdown tables in `.md` files; prefer simple lists for better readability and cleaner diffs.

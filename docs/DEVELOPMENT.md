@@ -1,27 +1,27 @@
 # Development and maintenance
 
-Guide for maintainers developing, testing, and updating `pi-kit`.
+Guide for maintainers developing, testing, and updating `pi-director`.
 
 ## Maintainer Setup
 
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/dhumdil-apps/pi-kit.git
-cd pi-kit
+git clone https://github.com/dhumdil-apps/pi-director.git
+cd pi-director
 npm install
 ```
 
 ## Working Model
 
-Consumers install `pi-kit` via `pi install` and run the managed copy in `~/.pi/agent/git/`.
+Consumers install `pi-director` via `pi install` and run the managed copy in `~/.pi/agent/git/`.
 Maintainers work from an editable clone of this repository.
 
 Run the working copy — extensions, prompts, and themes, no push required — with discovery
 off so the managed copy cannot load alongside it:
 
 ```bash
-pi -ne -np --no-themes -e ~/Github/pi-kit
+pi -ne -np --no-themes -e ~/Github/pi-director
 ```
 
 `-e` accepts the package directory and reads its `package.json` manifest; `.`
@@ -51,14 +51,14 @@ Smoke the working copy headlessly — the bundle loads and the loop guidance is
 injected:
 
 ```bash
-pi -p -ne -e ~/Github/pi-kit --tools '' --no-session "Reply with exactly one word: the first step of the workflow loop in your instructions."
+pi -p -ne -e ~/Github/pi-director --tools '' --no-session "Reply with exactly one word: the first step of the workflow loop in your instructions."
 ```
 
 Session-boundary changes need a scratch project with a seeded plan
 (`.pi/plan/demo-task.md`) and a session directory to inspect afterwards:
 
 ```bash
-pi -p -ne -e ~/Github/pi-kit --tools '' --session-dir ./sessions "/handoff demo-task"
+pi -p -ne -e ~/Github/pi-director --tools '' --session-dir ./sessions "/handoff demo-task"
 ```
 
 The newest file under `./sessions` must contain, in order: the `parentSession`
@@ -74,7 +74,7 @@ rendering, the above-editor indicator, session dashboard, and workflow prompts.
 Push, then refresh and smoke the managed copy consumers actually run:
 
 ```bash
-pi update --extension https://github.com/dhumdil-apps/pi-kit && pi list
+pi update --extension https://github.com/dhumdil-apps/pi-director && pi list
 ```
 
 ## Change checklist

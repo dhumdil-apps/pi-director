@@ -38,10 +38,10 @@ transcript cannot show.
   exists. The pools do not overlap, so the gate stays readable while the line
   moves; the colour follows the badge. Pools and the pick live in `ui/whimsy.ts`
   (`pickWord` takes its randomness as an argument so the rotation is testable).
-- `agent-status:update` event — `working`, `contextUsed`, `contextMax`,
-  `cacheRead`, `cacheWrite`, `cacheHitRate`, `cwd`, for observers such as Agent
-  Status Bridge. This list is the whole contract: Wingman's status strip accepts
-  exactly these fields, and nothing carries mode or todos.
+- `agent-status:update` event — `working`, `phase`, `sessionName`, `contextUsed`,
+  `contextMax`, `cacheRead`, `cacheWrite`, `cacheHitRate`, `cwd`, for observers
+  such as Pi Inspector Bridge. Inspector displays phase/session context but
+  receives no control credentials, mode, or todo state.
 
 ## No todo tool
 

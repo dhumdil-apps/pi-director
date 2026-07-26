@@ -25,7 +25,7 @@ describe("session dashboard extension metadata", () => {
 	});
 
 	// The catalog is hand-written prose, so nothing kept it in step with the
-	// manifest — it silently missed agent-status-bridge and terminal-keys until
+	// manifest — it silently missed the Inspector bridge and terminal-keys until
 	// an audit caught them. Names only: descriptions stay editorial.
 	it("lists every active extension in the docs catalog", () => {
 		const catalog = readFileSync(join(BUNDLE_ROOT, "docs", "EXTENSIONS.md"), "utf8");

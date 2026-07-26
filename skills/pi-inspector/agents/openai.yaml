@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pi Inspector"
+  short_description: "Debug local apps through shared evidence"
+  default_prompt: "Use $pi-inspector to inspect and verify this local app through the human-authorized Pi Inspector session."

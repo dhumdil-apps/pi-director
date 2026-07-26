@@ -6,7 +6,7 @@ import createExtension, { workflowPrompt } from "./index.js";
 
 const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
-function harness(cwd = "/pi-kit-index-test-nonexistent") {
+function harness(cwd = "/pi-director-index-test-nonexistent") {
 	const handlers = new Map<string, Array<(event?: any, ctx?: any) => any>>();
 	const commands = new Map<string, { handler: (args: string, ctx: any) => Promise<void> }>();
 	const tools: any[] = [];
@@ -135,7 +135,7 @@ describe("plan scaffolding", () => {
 	});
 
 	it("survives an unwritable cwd without failing the turn", async () => {
-		const h = harness("/pi-kit-index-test-nonexistent");
+		const h = harness("/pi-director-index-test-nonexistent");
 		expect(await h.inject("start something")).toContain("<pi_workflow>");
 		expect(h.pi.setSessionName).not.toHaveBeenCalled();
 	});
