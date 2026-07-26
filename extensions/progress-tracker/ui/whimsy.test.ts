@@ -3,11 +3,14 @@ import { pickWord, wordPool } from "./whimsy.js";
 
 describe("working words", () => {
 	it("flavours the pool by phase, with a neutral pool before a plan exists", () => {
-		expect(wordPool("plan")).toContain("Pondering");
-		expect(wordPool("execute")).toContain("Forging");
-		expect(wordPool(undefined)).toContain("Rummaging");
+		const pools = [wordPool("plan"), wordPool("execute"), wordPool(undefined)];
+		expect(pools.every((pool) => pool.length > 0)).toBe(true);
 		// The pools must not overlap, or the badge's signal leaks away.
-		expect(wordPool("plan").filter((word) => wordPool("execute").includes(word))).toEqual([]);
+		for (const [index, pool] of pools.entries()) {
+			for (const other of pools.slice(index + 1)) {
+				expect(pool.filter((word) => other.includes(word))).toEqual([]);
+			}
+		}
 	});
 
 	it("never repeats the word already showing, so every tick is a visible change", () => {

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { contextUsageText, updatePhaseIndicator } from "./activity-indicator.js";
+import { WORD_INTERVAL_MS, wordPool } from "./whimsy.js";
 
 const theme = { fg: (color: string, text: string) => `[${color}]${text}`, getFgAnsi: () => "" } as any;
 
@@ -67,7 +68,7 @@ describe("phase indicator", () => {
 		it("rotates the spinner frame every 120ms and re-renders, keeping context text", () => {
 			// A fixed word keeps this case about the spinner alone.
 			const { component, requestRender } = mount(true, { phase: "execute", random: () => 0 });
-			const word = "[accent]Forging…";
+			const word = `[accent]${wordPool("execute")[0]}…`;
 
 			expect(component.render(120).map(strip)).toEqual([`[accent]⠋ ${word}`, contextLine]);
 
@@ -81,7 +82,7 @@ describe("phase indicator", () => {
 			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${word}`);
 		});
 
-		it("swaps the working word every 4s, from the pool the phase flavours", () => {
+		it("swaps the working word at the configured interval, from the pool the phase flavours", () => {
 			const draws = [0, 0.99];
 			let draw = 0;
 			const { component, requestRender } = mount(true, {
@@ -89,17 +90,16 @@ describe("phase indicator", () => {
 				random: () => draws[Math.min(draw++, draws.length - 1)],
 			});
 
-			expect(status(component.render(120))).toContain("Pondering…");
+			expect(status(component.render(120))).toContain(`${wordPool("plan")[0]}…`);
 
-			vi.advanceTimersByTime(4000);
-			// 33 spinner ticks in 4s, plus this word tick.
-			expect(requestRender).toHaveBeenCalledTimes(Math.floor(4000 / 120) + 1);
-			expect(status(component.render(120))).toContain("Plotting…");
+			vi.advanceTimersByTime(WORD_INTERVAL_MS);
+			expect(requestRender).toHaveBeenCalledTimes(Math.floor(WORD_INTERVAL_MS / 120) + 1);
+			expect(status(component.render(120))).toContain(`${wordPool("plan").at(-1)}…`);
 		});
 
 		it("words the pre-plan explore state too, and never names a session mode", () => {
 			const lines = mount(true, { random: () => 0 }).component.render(120);
-			expect(status(lines)).toContain("Rummaging…");
+			expect(status(lines)).toContain(`${wordPool(undefined)[0]}…`);
 			expect(lines[0]).not.toContain("implementing");
 			expect(lines[0]).not.toContain("IMPLEMENT");
 		});
