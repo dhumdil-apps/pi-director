@@ -30,7 +30,7 @@ pi update --extensions
 
 - **Provider & Model**: Configured through Pi or in `~/.pi/agent/settings.json`.
 - **Extension Settings**: Managed via `/extension-settings` in your chat session.
-- **Project Memory**: `.pi/MEMORY.md` is scaffolded in your project with orientation (what it is and where behavior lives) and quirks (non-obvious constraints and work-arounds); a project whose `AGENTS.md` names a different memory file wins. Explore starts there so a session does not re-derive durable project knowledge; close-out revises it in place, replacing superseded entries rather than appending a task log.
+- **Project Memory**: `.pi/MEMORY.md` is scaffolded with selective orientation and quirks; a project whose `AGENTS.md` names a different file wins. Ordinary work verifies it against code, captures costly surprises in the plan, and promotes durable facts at close-out. `/memory` bootstraps or audits it on demand and stamps the reviewed Git commit; Pi only shows a non-blocking startup notice when that review may be stale.
 
 ### Verification
 
@@ -43,6 +43,7 @@ pi list
 ## Included Features
 
 - **agent-workflow** — One loop per task: explore, ask, plan, execute, close out. Two guarantees carry it — nothing in the working tree changes before an approved plan, and questions are cheap. Every session scaffolds `.pi/plan/<timestamp-slug>.md` on its first message as the agent's living document; `ask` puts choices in a native picker, `save_plan` presents the plan (renaming the session, timestamp kept) and arms the approval picker — Proceed executes here, Handoff (`/handoff`) spawns a fresh seeded session, Revise approves nothing. The injected block is a constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
+- **project-memory** — Read-only startup check for the hidden `memory-review` marker. It stays silent when current and suggests manual `/memory` maintenance when memory is missing, dirty, stale, or unverifiable; it never writes or triggers a turn.
 - **progress-tracker** — Above-editor activity, mode badge (`plan`/`auto`, worded while working) and context-usage indicator on its own line. No tool, no command: it observes.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).

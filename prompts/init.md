@@ -12,6 +12,7 @@ Steps:
    - Architecture in a few sentences: major components and how they connect.
    - Project-specific conventions that differ from language defaults (imports, formatting, error handling, naming).
    - Any workflow rules (branch naming, commit style, files that must not be edited).
+   - The concrete project-memory path agents must read and revise; point to `/memory` for its initial population or later audit.
 4. Do NOT include generic advice ("write clean code"), file trees that will go stale, or anything obvious from a glance at the repo.
 
 Show me the proposed AGENTS.md content before writing the file.

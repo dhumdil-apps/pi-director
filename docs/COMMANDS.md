@@ -8,6 +8,7 @@ machine and no session modes.
 ## Everyday commands
 
 - **`/handoff [session-name]`** — Human-only session boundary: spawns a fresh session seeded with the name and a kickoff naming the approved plan's path. Without a name it uses the current session's, or the lone plan under `.pi/plan/`; with several it asks which one. The approval picker (Proceed, handoff, or revise) prefills this command on Handoff
+- **`/memory [full]`** — Manual project-knowledge pass. It bootstraps AGENTS.md and memory when absent, incrementally audits changes since the hidden reviewed commit by default, and performs a repository-wide audit with `full`. A clean pass advances the `memory-review` marker; ordinary close-out never does
 - **`/help`** — Full reference: commands, shortcuts, and every active extension
 - **`/extension-settings`** — Edit registered global extension settings
 - **`/usage`** — Show historical token/cost usage (`/usage-refresh` forces a quota fetch)
@@ -16,7 +17,7 @@ machine and no session modes.
 
 - **`ask`** (Agent Workflow) — Put a choice to the user as a native picker: two to four options, each a headline plus a one-sentence description, recommendation first. The full question and descriptions print in the transcript; the picker lists the headlines, so answering is one keypress
 - **`save_plan`** (Agent Workflow) — Present the plan file for the user's decision and rename the session to a meaningful name (the leading timestamp is kept). A passed plan is appended to `.pi/plan/<session-name>.md` as a dated revision once the file has content (never a replacement), or omit it to present what the agent already wrote there; either way the file's content is echoed inline
-These two are the bundle's only workflow tools. Close-out has none: the outcome is reported in the turn, and durable orientation, work-arounds, or other quirks are revised into project memory (`.pi/MEMORY.md` by default), which the agent writes directly.
+These two are the bundle's only workflow tools. Close-out has none: the outcome is reported in the turn, and durable orientation, work-arounds, or other quirks captured in the plan are promoted into project memory (`.pi/MEMORY.md` by default), which the agent writes directly. Only `/memory` advances the review marker.
 
 ## Shell and keyboard reminders
 

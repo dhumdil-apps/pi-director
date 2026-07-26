@@ -9,6 +9,7 @@ extension.
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
 - **Agent Workflow** — One loop per task, plan persistence, durable project memory, and the approval prompt (`save_plan`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
+- **Project Memory** — Read-only startup freshness check for the manual `/memory` knowledge pass
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
@@ -19,6 +20,7 @@ extension.
 ## Supporting resources
 
 - **Init prompt** (`prompts/init.md`) — Analyze a project and propose an `AGENTS.md`
+- **Memory prompt** (`prompts/memory.md`) — Bootstrap, incrementally refresh, or fully audit selective project memory
 - **Bundled themes** (`themes/dark.json`, `themes/github-dark.json`) — Portable bundled themes (`"theme": "github-dark"`)
 
 ## Single-agent policy

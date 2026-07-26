@@ -16,7 +16,8 @@ Execute keeps the plan file current rather than only the transcript: checklist
 boxes are ticked as they land and deviations are written into the plan, because
 the plan file is the only thing a `/handoff` or a later session carries. Close-out
 starts from that file — every box ticked, or marked skipped or failed, saying the
-same thing the report says.
+same thing the report says. A costly surprise goes into its `## Quirks` when it
+lands, before long context or compaction can erase it.
 
 ## Tools
 
@@ -38,21 +39,24 @@ same thing the report says.
   `edit`; either way the content is echoed inline, so the decision is made
   against exactly what is on disk.
 
-Close-out has no tool. The outcome is reported in the turn and durable orientation
-and quirks land in project memory, which the agent writes directly — the plan
-file stays focused on the task. Close-out says *revise*, not *update*: a new fact
-replaces the entry it supersedes, so memory stays a map instead of growing into a
-changelog that git already keeps.
+Close-out has no tool. It promotes durable orientation and quirks captured in the
+plan into project memory, which the agent writes directly. Close-out consolidates;
+it does not try to recall a whole session at the end. A new fact replaces the entry
+it supersedes, so memory stays a map instead of growing into a changelog. Ordinary
+close-out never advances the hidden `memory-review` marker; only `/memory` certifies
+a deliberate knowledge pass.
 
 ## Starting from what is already known
 
 Explore opens on project memory — `.pi/MEMORY.md`, or wherever the project's
 `AGENTS.md` says it lives — orientation and quirks, so discovery begins
-with a map rather than from zero. It is framed as *leads to verify, not
-facts*: there is no staleness marker, because one keyed on a commit would read
-stale on commits nowhere near the mapped area, and a marker that rots is worse
-than none. Close-out is the other half — it leaves behind exactly what the next
-explore step reads.
+with a map rather than from zero. Entries are *leads to verify, not facts* and
+carry no per-entry confidence or staleness tags that can rot. The single hidden
+review marker has a narrower role: it records only a deliberate `/memory` audit.
+The read-only project-memory extension ignores knowledge-only commits and warns
+when relevant Git state has moved. Code remains authoritative, and an entry
+disproved during ordinary work is corrected immediately rather than waiting for
+the next audit.
 
 ## Surfaces
 

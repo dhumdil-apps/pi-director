@@ -35,7 +35,7 @@ import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, regist
 const WORKFLOW_STEPS = `Every workflow runs all five steps (or resumes at step 4 when starting from a /handoff). Scope changes how detailed the plan is, never whether there is one.
 
   1. Explore
-  - Start from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not durable facts.
+  - Start from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not durable facts. When code contradicts it, code wins: correct the entry in the same turn.
   - Discover what we are working with before forming an opinion about it.
 
   2. Ask
@@ -54,13 +54,14 @@ const WORKFLOW_STEPS = `Every workflow runs all five steps (or resumes at step 4
   - Keep working tree untouched until approved — no edits, writes, or mutating commands (including bash).
   - Once approved, carry the plan out.
   - Keep the plan file current while working: tick checklist boxes (- [x]) using edit tools. Call "save_plan" only when scope changes or re-planning is needed.
+  - Write a costly surprise into the plan's Quirks when it lands; close-out consolidates what was captured, it does not recall.
   - On a blocker stop and report rather than guess past it - proceed to step 3. to re-plan.
 
   5. Close out
   - Start from the plan file: every checklist box is ticked, or marked skipped or failed, and says the same thing your report says.
   - The next session reads the plan file - must be up to date and ready for handoff (via /handoff command).
   - Report what changed, what verification ran and reported, and every check skipped or failed.
-  - Revise project memory: orientation and quirks that accelerate future discovery, replacing what they supersede - never a task log.
+  - Promote durable orientation and quirks captured in the plan into project memory, replacing what they supersede - never a task log, and never advance the /memory review marker.
   - On more requested changes proceed to step 3. to re-plan.`;
 
 /** Constant by design: nothing varies per turn, so the whole prefix is cacheable. */

@@ -99,4 +99,4 @@ Treat an upstream update as a merge, not a blind overwrite:
 5. Run the component's checks plus bundle tests and load smoke.
 6. Update its snapshot in `UPSTREAM.md`.
 
-High-risk local behavior to preserve includes explicit plan approval (save before presenting) and the auto-write project-memory policy at close-out.
+High-risk local behavior to preserve includes explicit plan approval (save before presenting), plan-backed project-memory promotion at close-out, and `/memory` remaining the only writer of review provenance.

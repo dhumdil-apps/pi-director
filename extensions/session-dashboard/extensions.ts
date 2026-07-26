@@ -44,6 +44,11 @@ export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
 		description: "Guides one workflow loop per task, with plan persistence, close-out, and durable project memory.",
 	},
 	{
+		name: "project-memory",
+		group: "workflow",
+		description: "Checks project-memory review provenance at startup and suggests the manual `/memory` audit when needed.",
+	},
+	{
 		name: "progress-tracker",
 		group: "workflow",
 		description: "Always-visible activity and context indicator above the editor; emits `agent-status:update` for observers.",

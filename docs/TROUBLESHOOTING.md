@@ -54,7 +54,9 @@ error as a regression or compatibility issue to fix.
 
 ## Project memory is not being used
 
-- Project memory is a user-owned `.pi/MEMORY.md` file holding orientation (what the project is and where behavior lives) and quirks or work-arounds (non-obvious constraints). A sectioned stub is scaffolded when absent; an existing file is never reshaped. When a project's `AGENTS.md` names a different memory file, that file wins — the loop says "project memory", not a fixed path.
-- The explore step treats it as a set of leads to verify against the code rather than facts to trust — so nothing goes stale in a way that misleads.
-- Both sections are updated during close-out, or during implementation when discoveries are durable. No tool writes the file; the agent edits it directly.
+- Project memory is a user-owned `.pi/MEMORY.md` file holding selective orientation and quirks; a concrete path in root `AGENTS.md` wins. A sectioned stub is scaffolded when absent, and `/memory` can bootstrap both files in a new project.
+- Run `/memory` for an incremental audit since the hidden reviewed commit, or `/memory full` for a repository-wide pass. Only a clean audit advances `<!-- memory-review: commit=<sha> reviewed-at=<time> -->`.
+- At interactive startup, `project-memory` stays silent when current. A warning means memory is missing, relevant committed or working-tree files moved, or Git history cannot prove freshness. The warning is advisory and never triggers a refresh.
+- Ordinary exploration treats entries as leads to verify against code. Code wins; correct a disproved entry immediately. Capture a costly surprise in the plan's `## Quirks`, then promote only durable facts at close-out without advancing the review marker.
+- Retain a fact only when rediscovering it costs more than reading it. Every entry names hidden breakage when relevant and the path, symbol, or command that re-establishes the fact.
 - `.pi/` is ignored by default; projects may customize that Git policy.
