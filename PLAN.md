@@ -38,5 +38,6 @@ local checkout.
 - [x] Add and validate the Pi Inspector skill
 - [x] Add phase and session name to display-only status
 - [x] Run unit tests, typecheck, and headless package smoke
-- [ ] Commit the verified milestone
-- [ ] Rename the local checkout and synchronize workspace consumers
+- [x] Commit the verified milestone
+- [x] Rename the local checkout
+- [ ] Synchronize workspace consumers
