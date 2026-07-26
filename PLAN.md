@@ -2,9 +2,10 @@
 
 ## Current state
 
-Pi Director is still stored in the `pi-kit` checkout. Its five-step workflow,
-memory, status, and dashboard features are green. The existing display-only
-status bridge already speaks to the debug browser's status channel.
+Pi Director is stored in the `pi-director` checkout. Its five-step workflow,
+Inspector skill/bridge, memory, status, and dashboard features are green. The
+live TUTO acceptance run confirmed that its display-only status appears in Pi
+Inspector without exposing control credentials.
 
 ## Decisions
 
@@ -40,4 +41,5 @@ local checkout.
 - [x] Run unit tests, typecheck, and headless package smoke
 - [x] Commit the verified milestone
 - [x] Rename the local checkout
-- [ ] Synchronize workspace consumers
+- [x] Synchronize workspace consumers
+- [ ] Rename the GitHub repository and update `origin` when authenticated access is available
