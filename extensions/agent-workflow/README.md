@@ -1,0 +1,89 @@
+# Agent Workflow
+
+The injected block in [`index.ts`](index.ts) is the behavior contract. This page
+only describes it; where they disagree, the block wins.
+
+## The loop
+
+Injected into every turn: **explore, ask, plan, execute, close out**. Two
+guarantees carry it — nothing in the working tree changes until the user has
+approved a plan, and questions are cheap. The loop is scale-invariant: a
+one-line change gets a one-line plan, so "too small to plan" is not an exit.
+Each step names an action; the mechanics live in the tool that performs it.
+Nothing is enforced.
+
+Execute keeps the plan file current rather than only the transcript: checklist
+boxes are ticked as they land and deviations are written into the plan, because
+the plan file is the only thing a `/handoff` or a later session carries. Close-out
+starts from that file — every box ticked, or marked skipped or failed, saying the
+same thing the report says. A costly surprise goes into its `## Quirks` when it
+lands, before long context or compaction can erase it.
+
+## Tools
+
+- `ask` (`ask.ts`) — a question and two to four options, each a short headline
+  plus a one-sentence description, recommendation first. A final "Write custom answer..."
+  option is appended to the picker so the user can close the picker and type an answer directly
+  without triggering a new model call. The full Q&A is printed in the transcript by `renderCall`;
+  the dialog below is a plain `ctx.ui.select` over the headlines alone, so answering is one keypress.
+  Headlines must be distinct — `ui.select` returns the label, not an index. Dismissing is not an
+  error; headless is refused before the dialog, since a non-TUI `select()` resolves `undefined` and
+  would look the same.
+- `save_plan` (`task.ts`) — presents the plan and renames the session, keeping
+  the leading timestamp so `.pi/plan/` stays time-ordered. A passed `plan` is
+  appended under `## Revision <n> — <date>` once the file holds more than the
+  untouched scaffold (`composePlan`), so a re-plan never destroys the earlier
+  one and the file reads as the task's history; an empty file or a pristine
+  scaffold takes the body outright, and a body that is already the tail of the
+  file changes nothing. Omit `plan` to present what the agent wrote there with
+  `edit`; either way the content is echoed inline, so the decision is made
+  against exactly what is on disk.
+
+Close-out has no tool. It promotes durable orientation and quirks captured in the
+plan into project memory, which the agent writes directly. Close-out consolidates;
+it does not try to recall a whole session at the end. A new fact replaces the entry
+it supersedes, so memory stays a map instead of growing into a changelog. Ordinary
+close-out never advances the hidden `memory-review` marker; only `/memory` certifies
+a deliberate knowledge pass.
+
+## Starting from what is already known
+
+Explore opens on project memory — `.pi/MEMORY.md`, or wherever the project's
+`AGENTS.md` says it lives — orientation and quirks, so discovery begins
+with a map rather than from zero. Entries are *leads to verify, not facts* and
+carry no per-entry confidence or staleness tags that can rot. The single hidden
+review marker has a narrower role: it records only a deliberate `/memory` audit.
+The read-only project-memory extension ignores knowledge-only commits and warns
+when relevant Git state has moved. Code remains authoritative, and an entry
+disproved during ordinary work is corrected immediately rather than waiting for
+the next audit.
+
+## Surfaces
+
+- **Auto-scaffold** (`index.ts`) — an unnamed session's first turn creates
+  `.pi/plan/<timestamp>-<first-prompt-words>.md` from `PLAN_TEMPLATE` and a
+  `.pi/MEMORY.md` stub — orientation and quirks — then names the session after
+  it. The stub is written only when the file is absent, so an
+  existing memory is never reshaped. Best-effort: an unwritable cwd is ignored
+  rather than failing the turn.
+- **The approval picker** (`approval.ts`) — a successful `save_plan` whose plan
+  file differs from the last approved contents arms it (a SHA-256 digest, since
+  the session name is immutable and keying on it would allow only one decision
+  per session; an unchanged re-save is a mid-implementation correction and stays
+  silent); it opens when the turn settles: *Proceed,
+  handoff, or revise?* Context load picks the recommendation (lean → Proceed,
+  loaded → Handoff). Proceed kicks off execution; Handoff prefills
+  `/handoff <session-name>`; Revise or dismissing approves nothing. Headless
+  sessions get a displayed message naming the command instead. Which task was
+  approved — and the digest of what was approved — is held in memory only, so a
+  reload costs one extra prompt.
+- `/handoff [session-name]` (`handoff.ts`) — spawns a fresh session seeded with
+  the name and a kickoff naming the plan path. Resolution: explicit name, then
+  session name, then a lone remaining plan — several mean it asks which.
+
+Plan files are never deleted by the agent; `.pi/plan/` is the user's to keep,
+archive, or prune, and legacy `.pi/goal/` files are ignored and preserved.
+
+## Origin
+
+Bundle-local.

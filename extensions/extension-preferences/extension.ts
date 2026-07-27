@@ -1,0 +1,146 @@
+/**
+ * Pi extension that provides /extension-settings command.
+ */
+
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { DynamicBorder, getSettingsListTheme } from "@earendil-works/pi-coding-agent";
+import { Container, Spacer, Text, truncateToWidth } from "@earendil-works/pi-tui";
+import { OrderedMultiSelect } from "./components/ordered-multi-select.js";
+import { type SettingItem, SettingsList } from "./components/settings-list.js";
+import { getSetting, setSetting } from "./settings/storage.js";
+import type { SettingDefinition } from "./settings/types.js";
+
+interface RegistrationPayload {
+	name: string;
+	settings: SettingDefinition[];
+}
+
+/** Above this many rows the list is worth searching; below it the input is just noise. */
+const SEARCH_THRESHOLD = 8;
+
+function clampLines(lines: string[], width: number): string[] {
+	return lines.map((line) => truncateToWidth(line, Math.max(width, 0)));
+}
+
+export default function piLibExtension(pi: ExtensionAPI) {
+	// Local registry - stores settings registered via events
+	const registry = new Map<string, SettingDefinition[]>();
+
+	// Listen for registration events from other extensions
+	pi.events.on("pi-extension-settings:register", (data) => {
+		const { name, settings } = (data ?? {}) as Partial<RegistrationPayload>;
+		if (typeof name !== "string" || !name || !Array.isArray(settings)) {
+			console.error("[extension-preferences] ignoring malformed registration event", data);
+			return;
+		}
+		registry.set(name, settings);
+	});
+
+	pi.registerCommand("extension-settings", {
+		description: "Configure settings for all extensions",
+		handler: async (_args, ctx) => {
+			if (registry.size === 0) {
+				ctx.ui.notify(
+					"No extensions have registered settings. Ensure pi-extension-settings is listed before consumer extensions in your packages array in ~/.pi/settings.json.",
+					"info",
+				);
+				return;
+			}
+
+			// Sort extensions by name
+			const sortedExtensions = Array.from(registry.entries()).sort(([a], [b]) => a.localeCompare(b));
+
+			await ctx.ui.custom((tui, theme, _kb, done) => {
+				const container = new Container();
+
+				// Framed like /usage and the dashboard, so every full-screen overlay in
+				// the bundle opens the same way.
+				container.addChild(new Spacer(1));
+				container.addChild(new DynamicBorder((s: string) => theme.fg("border", s)));
+				container.addChild(new Text(theme.fg("accent", theme.bold("Extension Settings")), 1, 1));
+
+				// Build items grouped by extension. With a single registrant the group
+				// header and its indent are ceremony — the title already names the screen —
+				// so they appear only once there is something to tell apart.
+				const grouped = sortedExtensions.length > 1;
+				const indent = grouped ? "  " : "";
+				const items: SettingItem[] = [];
+
+				for (const [extName, settings] of sortedExtensions) {
+					if (grouped) {
+						// Add extension header as a non-interactive item
+						items.push({
+							id: `__header__${extName}`,
+							label: theme.bold(extName),
+							currentValue: "",
+							values: undefined, // No cycling - acts as header
+							editable: false,
+						});
+					}
+
+					// Add each setting
+					for (const setting of settings) {
+						const currentValue = getSetting(extName, setting.id, setting.defaultValue) ?? setting.defaultValue ?? "";
+
+						if (setting.options && setting.options.length > 0) {
+							// Ordered multi-select: opens a submenu
+							items.push({
+								id: `${extName}::${setting.id}`,
+								label: `${indent}${setting.label}`,
+								description: setting.description,
+								currentValue,
+								submenu: (val, submenuDone) => {
+									return new OrderedMultiSelect(setting.options!, val, getSettingsListTheme(), submenuDone);
+								},
+							});
+						} else {
+							items.push({
+								id: `${extName}::${setting.id}`,
+								label: `${indent}${setting.label}`,
+								description: setting.description,
+								currentValue,
+								values: setting.values,
+							});
+						}
+					}
+				}
+
+				const settingsList = new SettingsList(
+					items,
+					Math.min(items.length + 2, 20),
+					getSettingsListTheme(),
+					(id, newValue) => {
+						// Skip headers
+						if (id.startsWith("__header__")) return;
+
+						// Parse extension::settingId
+						const [extensionName, settingId] = id.split("::");
+						if (extensionName && settingId) {
+							setSetting(extensionName, settingId, newValue);
+						}
+					},
+					() => {
+						done(undefined);
+					},
+					{ enableSearch: items.length > SEARCH_THRESHOLD },
+				);
+
+				container.addChild(settingsList);
+
+				return {
+					render(width: number) {
+						const bottomBorder = theme.fg("border", "─".repeat(width));
+						return clampLines([...container.render(width), "", bottomBorder], width);
+					},
+					invalidate() {
+						container.invalidate();
+					},
+					handleInput(data: string) {
+						settingsList.handleInput?.(data);
+						tui.requestRender();
+					},
+				};
+			});
+		},
+	});
+}

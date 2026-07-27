@@ -1,0 +1,51 @@
+{
+  "name": "@dhumdil-apps/pi-director",
+  "version": "0.2.0-beta.1",
+  "private": true,
+  "description": "Pi-native orchestration for deliberate, evidence-backed coding sessions.",
+  "keywords": [
+    "pi-package"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest run extensions --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.41"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/extension-preferences/index.ts",
+      "./extensions/interrupt-confirmation/index.ts",
+      "./extensions/agent-workflow/index.ts",
+      "./extensions/status-bar/index.ts",
+      "./extensions/usage-monitor/index.ts",
+      "./extensions/usage-history/index.ts",
+      "./extensions/progress-tracker/index.ts",
+      "./extensions/pi-inspector-bridge/index.ts",
+      "./extensions/session-dashboard/index.ts",
+      "./extensions/project-memory/index.ts"
+    ],
+    "prompts": [
+      "./prompts"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "themes": [
+      "./themes"
+    ]
+  },
+  "packageManager": "npm@11.12.1"
+}
