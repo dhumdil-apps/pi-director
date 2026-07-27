@@ -1,17 +1,38 @@
 import { homedir } from "node:os";
 import { visibleWidth } from "@earendil-works/pi-tui";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UsageData } from "../usage-history/data.js";
 import type { GraphModel } from "../usage-history/graph.js";
 import { TOTAL_SERIES_KEY } from "../usage-history/graph.js";
 
 const usageMocks = vi.hoisted(() => ({ collectUsageData: vi.fn<() => Promise<UsageData | null>>(() => Promise.resolve(null)) }));
+const contextMocks = vi.hoisted(() => ({
+	loadProjectContextFiles: vi.fn<(options: { cwd: string; agentDir: string }) => Array<{ path: string; content: string }>>(() => []),
+}));
+const memoryMocks = vi.hoisted(() => ({
+	inspectProjectMemory: vi.fn<() => Promise<{ kind: string; [key: string]: unknown }>>(() => Promise.resolve({ kind: "current" })),
+	claimProjectMemoryReminder: vi.fn<(status: { kind: string }) => Promise<boolean>>((status) => Promise.resolve(status.kind !== "current")),
+}));
+vi.mock("@earendil-works/pi-coding-agent", async (importOriginal) => ({
+	...(await importOriginal()),
+	getAgentDir: () => "/agent",
+	loadProjectContextFiles: contextMocks.loadProjectContextFiles,
+}));
 vi.mock("../usage-history/data.js", async (importOriginal) => ({
 	...(await importOriginal()),
 	collectUsageData: usageMocks.collectUsageData,
 }));
+vi.mock("../project-memory/index.js", async (importOriginal) => ({
+	...(await importOriginal()),
+	inspectProjectMemory: memoryMocks.inspectProjectMemory,
+	claimProjectMemoryReminder: memoryMocks.claimProjectMemoryReminder,
+}));
 
 import sessionDashboardExtension, { tildify, UsageChartCard } from "./index.js";
+
+beforeEach(() => {
+	vi.clearAllMocks();
+});
 
 describe("tildify", () => {
 	it("tildifies a path under the home directory", () => {
@@ -109,7 +130,17 @@ describe("session dashboard startup", () => {
 			on: (event: string, handler: (event: unknown, ctx: unknown) => Promise<void>) => handlers.set(event, handler),
 			sendMessage,
 		};
-		const ctx = { hasUI: true, cwd: process.cwd(), ui: { setWidget } };
+		const loadedContext = "Follow the repository guide.";
+		contextMocks.loadProjectContextFiles.mockReturnValueOnce([
+			{ path: "/workspace/AGENTS.md", content: loadedContext },
+			{ path: "/workspace/ignored/AGENTS.md", content: "Not in Pi's prompt." },
+		]);
+		const ctx = {
+			hasUI: true,
+			cwd: process.cwd(),
+			getSystemPrompt: () => `Pi base prompt.\n${loadedContext}`,
+			ui: { setWidget },
+		};
 		sessionDashboardExtension(pi as never);
 
 		const startup = handlers.get("session_start")?.({}, ctx);
@@ -118,19 +149,91 @@ describe("session dashboard startup", () => {
 		await startup;
 
 		const content = sendMessage.mock.calls[0]?.[0].content as string;
-		expect(content).toContain("> ❓ `/help` · ⚙️ `/extension-settings` · 📊 `/usage`");
+		expect(content).toContain("> 🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`");
 		expect(content).not.toContain("⚡ Raw Pi");
 		expect(content).not.toContain("⌘ Handoff");
 		expect(content).not.toContain("/mode");
 		expect(content).not.toContain("📜");
-		expect(content).not.toContain("AGENTS.md");
+		expect(content).toContain("**Context files**");
+		expect(content).toContain("`/workspace/AGENTS.md`");
+		expect(content).not.toContain("ignored/AGENTS.md");
 		expect(content).toContain(`*${tildify(process.cwd())}*`);
 		expect(content.match(/❓ `\/help`/g)).toHaveLength(1);
 		expect(content.match(/⚙️ `\/extension-settings`/g)).toHaveLength(1);
 		expect(content.match(/📊 `\/usage`/g)).toHaveLength(1);
+		expect(content.match(/🧠 `\/init`/g)).toHaveLength(1);
 		expect(content).not.toContain("π Measure twice, cut once. What’s your goal?");
-		expect(content.startsWith("> ❓ `/help` · ⚙️ `/extension-settings` · 📊 `/usage`")).toBe(true);
+		expect(content.startsWith(`*${tildify(process.cwd())}*`)).toBe(true);
 		expect(setWidget).toHaveBeenLastCalledWith("session-dashboard-loading", undefined);
+	});
+
+	it("waits for concurrent memory and usage checks before sending one dashboard", async () => {
+		let resolveUsage!: (value: UsageData | null) => void;
+		let resolveMemory!: (value: { kind: "current" }) => void;
+		usageMocks.collectUsageData.mockImplementationOnce(() => new Promise<UsageData | null>((resolve) => {
+			resolveUsage = resolve;
+		}));
+		memoryMocks.inspectProjectMemory.mockImplementationOnce(() => new Promise<{ kind: "current" }>((resolve) => {
+			resolveMemory = resolve;
+		}));
+
+		const handlers = new Map<string, (event: unknown, ctx: unknown) => Promise<void>>();
+		const sendMessage = vi.fn();
+		const pi = {
+			registerMessageRenderer: vi.fn(),
+			registerCommand: vi.fn(),
+			on: (event: string, handler: (event: unknown, ctx: unknown) => Promise<void>) => handlers.set(event, handler),
+			sendMessage,
+		};
+		sessionDashboardExtension(pi as never);
+
+		const startup = handlers.get("session_start")?.({}, {
+			hasUI: true,
+			cwd: process.cwd(),
+			getSystemPrompt: () => "Pi base prompt.",
+			ui: { setWidget: vi.fn() },
+		});
+		expect(usageMocks.collectUsageData).toHaveBeenCalledOnce();
+		expect(memoryMocks.inspectProjectMemory).toHaveBeenCalledWith(process.cwd());
+		expect(sendMessage).not.toHaveBeenCalled();
+
+		resolveUsage(null);
+		await Promise.resolve();
+		expect(sendMessage).not.toHaveBeenCalled();
+		resolveMemory({ kind: "current" });
+		await startup;
+		expect(sendMessage).toHaveBeenCalledOnce();
+	});
+
+	it("renders an unreviewed memory notice inside the ordered dashboard card", async () => {
+		memoryMocks.inspectProjectMemory.mockResolvedValueOnce({
+			kind: "unreviewed",
+			reason: "marker-missing",
+			location: {},
+		});
+		const handlers = new Map<string, (event: unknown, ctx: unknown) => Promise<void>>();
+		const sendMessage = vi.fn();
+		const pi = {
+			registerMessageRenderer: vi.fn(),
+			registerCommand: vi.fn(),
+			on: (event: string, handler: (event: unknown, ctx: unknown) => Promise<void>) => handlers.set(event, handler),
+			sendMessage,
+		};
+		sessionDashboardExtension(pi as never);
+
+		await handlers.get("session_start")?.({}, {
+			hasUI: true,
+			cwd: process.cwd(),
+			getSystemPrompt: () => "Pi base prompt.",
+			ui: { setWidget: vi.fn() },
+		});
+
+		const content = sendMessage.mock.calls[0]?.[0].content as string;
+		const tip = "> 🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`";
+		const notice = "> ⚠️ Project memory may be stale. Run /init to refresh it.";
+		expect(sendMessage).toHaveBeenCalledOnce();
+		expect(content).toContain(notice);
+		expect(content.indexOf(tip)).toBeLessThan(content.indexOf(notice));
 	});
 
 	it("serializes a daily per-model 30-day graph", async () => {
@@ -163,13 +266,25 @@ describe("session dashboard startup", () => {
 			sendMessage,
 		};
 		sessionDashboardExtension(pi as never);
+		const loadedContext = "Follow the repository guide.";
+		contextMocks.loadProjectContextFiles.mockReturnValueOnce([{ path: "/workspace/AGENTS.md", content: loadedContext }]);
+		memoryMocks.inspectProjectMemory.mockResolvedValueOnce({ kind: "stale", location: {} });
 
-		await handlers.get("session_start")?.({}, { hasUI: true, cwd: process.cwd(), ui: { setWidget: vi.fn() } });
+		await handlers.get("session_start")?.({}, {
+			hasUI: true,
+			cwd: process.cwd(),
+			getSystemPrompt: () => `Pi base prompt.\n${loadedContext}`,
+			ui: { setWidget: vi.fn() },
+		});
 
 		const content = sendMessage.mock.calls[0]?.[0].content as string;
 		const json = content.match(/<!-- session-dashboard-usage-chart -->\n(.+)\n<!-- \/session-dashboard-usage-chart -->/)?.[1];
 		const graph = JSON.parse(json ?? "") as GraphModel;
-		expect(content.indexOf("❓ `/help`")).toBeLessThan(content.indexOf("<!-- session-dashboard-usage-chart -->"));
+		const notice = "> ⚠️ Project memory may be stale. Run /init to refresh it.";
+		expect(content.indexOf("🧠 `/init`")).toBeLessThan(content.indexOf("<!-- session-dashboard-usage-chart -->"));
+		expect(content.indexOf("<!-- session-dashboard-usage-chart -->")).toBeLessThan(content.indexOf("**Context files**"));
+		expect(content.indexOf("**Context files**")).toBeLessThan(content.indexOf(notice));
+		expect(content.trimEnd().endsWith(notice)).toBe(true);
 		expect(content.match(/❓ `\/help`/g)).toHaveLength(1);
 		expect(graph).toMatchObject({ domainStartMs: start, domainEndMs: now, bucketMs: day });
 		expect(graph.bucketStarts).toHaveLength(30);

@@ -11,18 +11,21 @@ transcript cannot show.
 
   ```
   › What’s your goal?
-    LLM Attention Span (ctx) ▃▁▁▁▁ 84.0k / 1.0M
+    LLM Attention Span (ctx) ▃         84.0k / 1.0M · first total 84.0k
   ```
 
   The context readout owns its own line so it never slides sideways as the word
   above it changes width. The marker swaps for a braille spinner while the agent
-  works, and line 2 is omitted entirely while the token count is unknown. The bar is the
-  powerbar's blocks meter, ten blocks wide. The spinner
-  advances every 120 ms only during active work and is cleared when Pi disposes
-  the widget. The context readout refreshes at turn boundaries and is colored
-  accent / warning / error: warning past 100k tokens or 40% full, error past
-  200k or 80%, whichever trips first. The bar carries the proportion, so the
-  percentage is not printed. Pi's own transient activity row stays hidden.
+  works, and line 2 is omitted entirely while the token count is unknown. After
+  the first completed turn, it retains the provider-reported aggregate context
+  as dim `first total …`; that exact aggregate includes the initial user message,
+  so it never claims to measure instructions alone. Five partial-height blocks
+  carry the context-window percentage. The spinner advances every 120 ms only
+  during active work and is cleared when Pi disposes the widget. The context
+  readout refreshes at turn boundaries and is colored accent / warning / error:
+  warning above 20% full and error above 40% full. The bar carries the
+  proportion, so the percentage is not printed. Pi's own transient activity row
+  stays hidden.
 - Idle prompt — `What’s your goal?` (dim) before approval, or `Review, refine,
   or start fresh?` (accent) after an approved execution settles. The first
   invites the next goal; the second invites a review, a refinement, or a clean

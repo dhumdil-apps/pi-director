@@ -115,6 +115,11 @@ describe("renderBreakdown", () => {
 		expect(renderBreakdown([{ label: "base prompt", tokens: 10_000 }])).toContain("total -> ≈ 10.0k\n");
 	});
 
+	it("keeps a loaded context file visible when it was not included in the prompt", () => {
+		const block = renderBreakdown([{ label: "…/work/AGENTS.md", tokens: 0, showWhenZero: true }]);
+		expect(block).toContain("…/work/AGENTS.md -> 0");
+	});
+
 	it("is empty when nothing was measured", () => {
 		expect(renderBreakdown([{ label: "base prompt", tokens: 0 }])).toBe("");
 	});

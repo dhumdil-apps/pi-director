@@ -55,27 +55,33 @@ describe("session dashboard extension metadata", () => {
 		expect(deck.indexOf("**Workflow**")).toBeLessThan(deck.indexOf("**Config**"));
 	});
 
-	it("renders the hint before context without a footer when omitted", () => {
+	it("renders the current directory before the hint without a footer when omitted", () => {
 		const welcome = renderWelcomeText({
-			contextInfo: "~/work\n📜 AGENTS.md",
-			tip: "❓ `/help` · ⚙️ `/extension-settings` · 📊 `/usage`",
+			workingDirectory: "~/work",
+			contextFiles: "**Context files**\n- `AGENTS.md`",
+			tip: "🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`",
 		});
-		expect(welcome.startsWith("❓ `/help`")).toBe(true);
-		expect(welcome.indexOf("❓ `/help`")).toBeLessThan(welcome.indexOf("~/work"));
-		expect(welcome.trimEnd()).toBe("❓ `/help` · ⚙️ `/extension-settings` · 📊 `/usage`\n\n~/work\n📜 AGENTS.md");
+		expect(welcome.startsWith("~/work")).toBe(true);
+		expect(welcome.indexOf("~/work")).toBeLessThan(welcome.indexOf("🧠 `/init`"));
+		expect(welcome.indexOf("🧠 `/init`")).toBeLessThan(welcome.indexOf("**Context files**"));
+		expect(welcome.trimEnd()).toBe("~/work\n\n🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`\n\n**Context files**\n- `AGENTS.md`");
 		expect(welcome).not.toContain("🧩 **Extensions**");
 		expect(welcome).not.toContain("Session context");
 		expect(welcome).not.toContain("Quick reference");
 	});
 
-	it("places the hint and context before the usage chart", () => {
+	it("places the hint and chart before context, with memory notice last", () => {
 		const welcome = renderWelcomeText({
+			workingDirectory: "~/work",
 			tip: "❓ `/help`",
-			contextInfo: "~/work",
 			usageChart: '{"model":true}',
+			contextFiles: "**Context files**\n- `AGENTS.md`",
+			memoryNotice: "> ⚠️ Project memory needs review.",
 		});
-		expect(welcome.indexOf("❓ `/help`")).toBeLessThan(welcome.indexOf("~/work"));
-		expect(welcome.indexOf("~/work")).toBeLessThan(welcome.indexOf('{"model":true}'));
-		expect(welcome.trimEnd()).toBe(`❓ \`/help\`\n\n~/work\n\n${USAGE_CHART_START}\n{"model":true}\n${USAGE_CHART_END}`);
+		expect(welcome.indexOf("~/work")).toBeLessThan(welcome.indexOf("❓ `/help`"));
+		expect(welcome.indexOf("❓ `/help`")).toBeLessThan(welcome.indexOf('{"model":true}'));
+		expect(welcome.indexOf('{"model":true}')).toBeLessThan(welcome.indexOf("**Context files**"));
+		expect(welcome.indexOf("**Context files**")).toBeLessThan(welcome.indexOf("Project memory needs review"));
+		expect(welcome.trimEnd()).toBe(`~/work\n\n❓ \`/help\`\n\n${USAGE_CHART_START}\n{"model":true}\n${USAGE_CHART_END}\n\n**Context files**\n- \`AGENTS.md\`\n\n> ⚠️ Project memory needs review.`);
 	});
 });

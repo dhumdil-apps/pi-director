@@ -18,7 +18,7 @@
 
 - Record a fact only when rediscovering it would cost the next agent more than reading it costs every agent. Each entry names what breaks and the lead that re-establishes it.
 - Capture a costly surprise in the current plan's `## Quirks` when it lands. At close-out, promote only durable orientation or quirks, replacing what they supersede and deleting what stopped being true.
-- The hidden `memory-review` marker certifies a deliberate `/memory` audit. Ordinary close-out may revise visible entries but never advances that marker.
+- The hidden `memory-review` marker certifies a deliberate `/init` audit. Ordinary close-out may revise visible entries but never advances that marker.
 - Reusable cross-project environment gotchas go to `~/Github/.pi/MEMORY.md`; do not restate them here.
 
 ## Verification

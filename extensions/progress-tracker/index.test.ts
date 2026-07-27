@@ -6,7 +6,7 @@ const theme = { fg: (color: string, text: string) => `[${color}]${text}`, getFgA
 
 /** The blocks meter emits SGR resets around every glyph; assertions read the glyphs. */
 const strip = (text: string) => text.replace(/\x1b\[[0-9;]*m/g, "");
-/** Ten block levels, rendered space-separated. */
+/** Five partial-height blocks represent the context-window percentage. */
 const bar = (glyphs: string) => [...glyphs].join(" ");
 
 function harness() {
@@ -46,9 +46,9 @@ function ctxWith(widgets: Array<[string, any]>, branch: any[] = []) {
   };
 }
 
-function indicator(widgets: Array<[string, any]>): string[] {
+function indicator(widgets: Array<[string, any]>, width = 80): string[] {
   const [, factory] = widgets.findLast(([id]) => id === "workflow-phase")!;
-  return factory({ requestRender: () => {} }, theme).render(80);
+  return factory({ requestRender: () => {} }, theme).render(width);
 }
 
 describe("progress tracker indicator", () => {
@@ -75,7 +75,7 @@ describe("progress tracker indicator", () => {
     ]);
 
     listeners.get("agent-workflow:phase")![0]({ phase: "execute" });
-    expect(strip(indicator(widgets)[0])).toContain("[accent]Review, refine, or start fresh?");
+    expect(strip(indicator(widgets)[0])).toContain("[accent]What’s up next?");
   });
 
   it("derives execute from a handoff-seeded branch, where no transition is ever emitted", async () => {
@@ -85,7 +85,21 @@ describe("progress tracker indicator", () => {
       { type: "message", message: { role: "user", content: "Execute the approved plan at .pi/plan/x.md." } },
     ];
     await handlers.get("session_start")![0]({}, ctxWith(widgets, branch));
-    expect(strip(indicator(widgets)[0])).toContain("[accent]Review, refine, or start fresh?");
+    expect(strip(indicator(widgets)[0])).toContain("[accent]What’s up next?");
+  });
+
+  it("retains the provider-reported first-turn total alongside live context", async () => {
+    const { handlers } = harness();
+    const widgets: Array<[string, any]> = [];
+    const ctx = ctxWith(widgets);
+    await handlers.get("session_start")![0]({}, ctx);
+
+    await handlers.get("turn_end")![0]({}, ctx);
+    expect(indicator(widgets, 120).map(strip)[1]).toContain("[dim]first total 84.0k");
+
+    // A replacement session starts clean until its first completed turn.
+    await handlers.get("session_start")![0]({}, ctx);
+    expect(indicator(widgets).map(strip)[1]).not.toContain("first total");
   });
 
   it("reports the context readout to observers", async () => {

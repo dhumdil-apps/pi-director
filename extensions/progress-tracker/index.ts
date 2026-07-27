@@ -17,9 +17,9 @@ import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicat
 export default function (pi: ExtensionAPI) {
   let currentCtx: ExtensionContext | undefined;
   let working = false;
-  // Baseline for the growth delta. Only turn_end advances it, so the readout
-  // means "since the last turn" rather than "since the last repaint".
-  let previousTokens: number | undefined;
+  // The first completed turn's provider-reported aggregate context. It includes
+  // the initial user message, so the UI labels it as a total rather than instructions.
+  let firstTurnTokens: number | undefined;
   // Display only (see phase.ts). Live transitions win; the branch fallback covers
   // the sessions no transition ever reaches — /handoff-seeded ones and reloads.
   let phase: WorkflowPhase | undefined;
@@ -44,7 +44,7 @@ export default function (pi: ExtensionAPI) {
     } catch {
       lastUsage = undefined;
     }
-    updatePhaseIndicator(currentCtx, working, usage, { lastUsage, previousTokens, phase });
+    updatePhaseIndicator(currentCtx, working, usage, { lastUsage, firstTurnTokens, phase });
     const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
@@ -62,9 +62,6 @@ export default function (pi: ExtensionAPI) {
   const adopt = (ctx: ExtensionContext) => {
     currentCtx = ctx;
     working = !ctx.isIdle();
-    // A session start or tree move discards the old baseline: the delta would
-    // otherwise report a branch switch as this turn's growth.
-    previousTokens = undefined;
     // Extensions re-instantiate on newSession(), so the closure is empty here even
     // for a session that was approved: re-derive rather than trust the reset.
     try {
@@ -75,7 +72,10 @@ export default function (pi: ExtensionAPI) {
     refreshStatus();
   };
 
-  pi.on("session_start", async (_event, ctx) => adopt(ctx));
+  pi.on("session_start", async (_event, ctx) => {
+    firstTurnTokens = undefined;
+    adopt(ctx);
+  });
   pi.on("session_tree", async (_event, ctx) => adopt(ctx));
 
   // Keep ctx reference fresh on every turn
@@ -102,10 +102,11 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("turn_end", async (_event, ctx) => {
     currentCtx = ctx;
+    if (firstTurnTokens == null) {
+      const tokens = ctx.getContextUsage()?.tokens;
+      if (typeof tokens === "number" && Number.isFinite(tokens) && tokens >= 0) firstTurnTokens = tokens;
+    }
     refreshStatus();
-    // Advance the baseline only after the turn's readout has been rendered, so
-    // the delta shown for this turn is the growth the turn caused.
-    previousTokens = ctx.getContextUsage()?.tokens ?? undefined;
   });
 
   pi.on("session_shutdown", async (_event, ctx) => {

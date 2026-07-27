@@ -7,7 +7,7 @@ const theme = { fg: (color: string, text: string) => `[${color}]${text}`, getFgA
 
 /** The blocks meter emits SGR resets around every glyph; assertions read the glyphs. */
 const strip = (text: string) => text.replace(/\x1b\[[0-9;]*m/g, "");
-/** Ten block levels, rendered space-separated. */
+/** Five partial-height blocks represent the context-window percentage. */
 const bar = (glyphs: string) => [...glyphs].join(" ");
 
 describe("phase indicator", () => {
@@ -29,11 +29,11 @@ describe("phase indicator", () => {
 		[{ tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 }, `[accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M`],
 		[{ tokens: 940, contextWindow: 200_000, percent: 0.47 }, `[accent]LLM Attention Span (ctx) ${bar("     ")} [accent]940 / 200.0k`],
 		[{ tokens: 0, contextWindow: 200_000, percent: 0 }, `[accent]LLM Attention Span (ctx) ${bar("     ")} [accent]0 / 200.0k`],
-		[{ tokens: 140_000, contextWindow: 200_000, percent: 70 }, `[warning]LLM Attention Span (ctx) ${bar("███▄ ")} [warning]140.0k / 200.0k`],
+		[{ tokens: 140_000, contextWindow: 200_000, percent: 70 }, `[error]LLM Attention Span (ctx) ${bar("███▄ ")} [error]140.0k / 200.0k`],
 		[{ tokens: 180_000, contextWindow: 200_000, percent: 90 }, `[error]LLM Attention Span (ctx) ${bar("████▄")} [error]180.0k / 200.0k`],
-		// Absolute thresholds trip on a wide window long before the fill ratio does.
-		[{ tokens: 120_000, contextWindow: 1_000_000, percent: 12 }, `[warning]LLM Attention Span (ctx) ${bar("▅    ")} [warning]120.0k / 1.0M`],
-		[{ tokens: 250_000, contextWindow: 1_000_000, percent: 25 }, `[error]LLM Attention Span (ctx) ${bar("█▂   ")} [error]250.0k / 1.0M`],
+		// Percentage alone determines severity, regardless of the context-window size.
+		[{ tokens: 120_000, contextWindow: 1_000_000, percent: 12 }, `[accent]LLM Attention Span (ctx) ${bar("▅    ")} [accent]120.0k / 1.0M`],
+		[{ tokens: 250_000, contextWindow: 1_000_000, percent: 25 }, `[warning]LLM Attention Span (ctx) ${bar("█▂   ")} [warning]250.0k / 1.0M`],
 	])("renders the context readout with a usage-colored bar (%o)", (usage, expected) => {
 		expect(strip(contextUsageText(usage as any, theme)!)).toBe(expected);
 	});
@@ -106,7 +106,7 @@ describe("phase indicator", () => {
 
 		it("shows the post-execution prompt, not a working word, once the run settles", () => {
 			const lines = mount(false, { phase: "execute", random: () => 0 }).component.render(120);
-			expect(status(lines)).toBe("[accent]› [accent]Review, refine, or start fresh?");
+			expect(status(lines)).toBe("[accent]› [accent]What’s up next?");
 		});
 
 		it("shows the goal prompt before a plan is approved", () => {

@@ -4,6 +4,7 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
+import { hasApprovedPlan } from "./phase.js";
 
 /**
  * A session name is `[timestamp-][TICKET-N-]slug`. The timestamp segment is read
@@ -62,7 +63,7 @@ const STOP_WORDS = new Set([
 
 const SavePlanParams = Type.Object({
 	name: Type.String({ description: "The new session name: a concise 2–4 meaningful-word summary of the work, optionally prefixed with a ticket ID (e.g. TEST-1234)." }),
-	plan: Type.Optional(Type.String({ description: "The plan as Markdown, under the headings the plan file was scaffolded with: Current state, Decisions, Desired state, Approach, Quirks, Checklist. On a plan that already has content this is appended as a new revision, never a replacement — write only what changed. Omit it to present the file as you have kept it current with the edit tool." })),
+	plan: Type.Optional(Type.String({ description: "The plan as Markdown, under the headings the plan file was scaffolded with: Current state, Decisions, Desired state, Approach, Quirks, Checklist. Before approval, provide the complete current proposal and it replaces the draft; after execution begins, provide only changes and they append as a dated revision. Omit it to present what you already wrote there with the edit tool." })),
 });
 
 const REVISION_HEADING = /^## Revision (\d+)\b/gm;
@@ -79,15 +80,15 @@ export function isScaffold(existing: string): boolean {
 }
 
 /**
- * Plan files are the user's record of what was worked on, so a save never drops
- * what is already there: an empty or untouched-scaffold file takes the body
- * outright, anything else keeps its content and gains a dated revision section.
+ * Before approval, the plan is one proposal the user can read and correct, so
+ * every save replaces it. Once execution starts, a changed plan becomes a dated
+ * revision, preserving the approved proposal and the reason it changed.
  */
-export function composePlan(existing: string, body: string, now: Date): string {
+export function composePlan(existing: string, body: string, now: Date, appendRevision = false): string {
 	const next = body.trim();
 	const previous = existing.trim();
 	if (!next) return `${previous}\n`;
-	if (!previous || isScaffold(previous)) return `${next}\n`;
+	if (!previous || isScaffold(previous) || !appendRevision) return `${next}\n`;
 	// Already the tail of the file: a re-presentation, not a revision.
 	if (previous.endsWith(next)) return `${previous}\n`;
 	const count = previous.match(REVISION_HEADING)?.length ?? 0;
@@ -243,7 +244,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "save_plan",
 		label: "Save Plan",
-		description: "Present the plan at .pi/plan/<session-name>.md for the user's decision, renaming the session to a meaningful name — the leading timestamp is kept, so plans stay time-ordered. A passed plan is appended as a dated revision once the file has content, so earlier plans are never lost; omit it to present what you already wrote there. Plan files are the user's: never delete one.",
+		description: "Present the plan at .pi/plan/<session-name>.md for the user's decision, renaming the session to a meaningful name — the leading timestamp is kept, so plans stay time-ordered. Before approval, a complete plan replaces the draft; after execution begins, a passed change appends as a dated revision. Omit it to present what you already wrote there. Plan files are the user's: never delete one.",
 		parameters: SavePlanParams,
 		async execute(_toolCallId, params: SavePlanInput, _signal, _onUpdate, ctx) {
 			// The session is auto-named at start, so a rename swaps the slug and keeps
@@ -261,7 +262,8 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 				if (current) await movePlan(ctx.cwd, current, name);
 				if (params.plan?.trim()) {
 					const existing = await readFile(path, "utf8").catch(() => "");
-					contents = composePlan(existing, params.plan, new Date());
+					const approved = hasApprovedPlan(ctx.sessionManager.getBranch(), name);
+					contents = composePlan(existing, params.plan, new Date(), approved);
 					await writeAtomically(path, contents);
 				} else {
 					// Omitted body: present the file the agent has been keeping current.

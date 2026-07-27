@@ -9,18 +9,17 @@ extension.
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
 - **Agent Workflow** — One loop per task, plan persistence, durable project memory, and the approval prompt (`save_plan`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
-- **Project Memory** — Read-only startup freshness check for the manual `/memory` knowledge pass
+- **Project Memory** — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
 - **Progress Tracker** — Activity, mode badge (`plan`/`auto`) and context-usage indicator above the editor. No tool, no command: it observes.
 - **Pi Inspector Bridge** — Reports display-only Director phase and session status whenever a local Inspector is discoverable
-- **Session Dashboard** — Pi-glyph welcome, 30-day per-model spend chart, and project-context line
+- **Session Dashboard** — Pi-glyph welcome, project-memory freshness notice, 30-day per-model spend chart, and initial context-source snapshot
 
 ## Supporting resources
 
-- **Init prompt** (`prompts/init.md`) — Analyze a project and propose an `AGENTS.md`
-- **Memory prompt** (`prompts/memory.md`) — Bootstrap, incrementally refresh, or fully audit selective project memory
+- **Init prompt** (`prompts/init.md`) — Initialize or realign shared/Pi-local instruction layers and selective project memory
 - **Pi Inspector skill** (`skills/pi-inspector/SKILL.md`) — Evidence-first local app debugging through a human-authorized Inspector session
 - **Bundled themes** (`themes/dark.json`, `themes/github-dark.json`) — Portable bundled themes (`"theme": "github-dark"`)
 

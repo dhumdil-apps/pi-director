@@ -30,6 +30,8 @@ const SKILLS_BLOCK = /<skills>[\s\S]*?<\/skills>/;
 export interface Segment {
 	label: string;
 	tokens: number;
+	/** Loaded context files stay visible at zero, so discovery is never mistaken for prompt inclusion. */
+	showWhenZero?: boolean;
 }
 
 export interface ContextFile {
@@ -84,7 +86,7 @@ export function measureSystemPrompt(prompt: string, contextFiles: ContextFile[],
 		const present = file.content.length > 0 && prompt.includes(file.content);
 		const chars = present ? file.content.length : 0;
 		attributedChars += chars;
-		segments.push({ label: shortenPath(file.path, home), tokens: Math.ceil(chars / CHARS_PER_TOKEN) });
+		segments.push({ label: shortenPath(file.path, home), tokens: Math.ceil(chars / CHARS_PER_TOKEN), showWhenZero: true });
 	}
 
 	// Whatever no source claimed is pi's own prompt plus any appended prompt.
@@ -117,7 +119,7 @@ export function measureTools(tools: ToolLike[]): Segment {
  * estimate that has drifted from reality is visible rather than hidden.
  */
 export function renderBreakdown(segments: Segment[], totalTokens?: number | null, contextWindow?: number): string {
-	const shown = segments.filter((s) => s.tokens > 0).sort((a, b) => b.tokens - a.tokens);
+	const shown = segments.filter((s) => s.tokens > 0 || s.showWhenZero).sort((a, b) => b.tokens - a.tokens);
 	if (shown.length === 0) return "";
 
 	const sum = shown.reduce((total, s) => total + s.tokens, 0);

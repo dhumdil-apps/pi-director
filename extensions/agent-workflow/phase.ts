@@ -33,6 +33,12 @@ export interface PhaseEvent {
  */
 const KICKOFF_PATTERN = /^Execute the approved plan at .+\.md\./m;
 
+/** Whether this branch has crossed the approval gate for the named plan. */
+export function hasApprovedPlan(entries: SessionEntry[], task: string): boolean {
+	const kickoff = `Execute the approved plan at .pi/plan/${task}.md.`;
+	return entries.some((entry) => messageText(entry) === kickoff);
+}
+
 function messageText(entry: SessionEntry): string | undefined {
 	if (entry.type !== "message") return undefined;
 	const message = entry.message as { role?: string; content?: unknown };

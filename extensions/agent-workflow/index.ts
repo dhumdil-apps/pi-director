@@ -46,8 +46,8 @@ const WORKFLOW_STEPS = `Every workflow runs all five steps (or resumes at step 4
   3. Plan
   - Keep .pi/plan/<session-name>.md current under the scaffolded headings (Current state, Decisions, Desired state, Approach, Quirks, Checklist).
   - Call "save_plan" tool to present it, then end your turn: the approval prompt is delivered once the turn settles, so a turn that keeps going never reaches it.
-  - Messages arriving after "save_plan" - corrections, added requirements, agreement with the plan - are revisions. Re-save; only the approval prompt approves.
-  - The session keeps one plan file (the <session-name> is immutable): passing text to "save_plan" automatically appends a dated revision, so write what changed, not the whole document.
+  - Before approval, corrections and added requirements revise one complete proposal. Re-save that complete plan; only the approval prompt approves.
+  - After approval/execution, a material scope change creates a dated revision: pass only what changed, preserving the approved plan. The session keeps one plan file (the <session-name> is immutable).
 
   4. Execute
   - Approval arrives as automated message naming the plan path ("Execute the approved plan at ..."), or as clear user agreement (e.g., "proceed", "go ahead", "approved").
@@ -61,7 +61,7 @@ const WORKFLOW_STEPS = `Every workflow runs all five steps (or resumes at step 4
   - Start from the plan file: every checklist box is ticked, or marked skipped or failed, and says the same thing your report says.
   - The next session reads the plan file - must be up to date and ready for handoff (via /handoff command).
   - Report what changed, what verification ran and reported, and every check skipped or failed.
-  - Promote durable orientation and quirks captured in the plan into project memory, replacing what they supersede - never a task log, and never advance the /memory review marker.
+  - Promote durable orientation and quirks captured in the plan into project memory, replacing what they supersede - never a task log, and never advance the /init review marker.
   - On more requested changes proceed to step 3. to re-plan.`;
 
 /** Constant by design: nothing varies per turn, so the whole prefix is cacheable. */

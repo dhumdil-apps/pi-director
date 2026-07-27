@@ -20,12 +20,12 @@ const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", 
 const SPINNER_INTERVAL_MS = 120;
 const IDLE_MARKER = "›";
 
-/** Cache and growth readouts that sit beside the context bar. */
+/** Cache and first-turn-total readouts that sit beside the context bar. */
 export interface IndicatorExtras {
   /** Provider usage from the last completed assistant turn, for the cache hit rate. */
   lastUsage?: Usage;
-  /** Context total at the end of the previous turn, for the growth delta. */
-  previousTokens?: number;
+  /** Provider-reported aggregate context total from the first completed turn. */
+  firstTurnTokens?: number;
   /**
    * Which side of the approval gate the session is on. Undefined until a plan is
    * in play, so a session that never planned looks exactly as it did before.
@@ -40,7 +40,7 @@ export interface IndicatorExtras {
 // appears after approved work settles, when reviewing or starting fresh fits.
 const PHASE_LABELS: Record<WorkflowPhase, string> = {
   plan: "What’s your goal?",
-  execute: "Review, refine, or start fresh?",
+  execute: "What’s up next?",
 };
 
 /**
@@ -70,10 +70,10 @@ function statusText(
 
 /** Replace pi's transient working row with a persistent context indicator. */
 export function updatePhaseIndicator(
-	ctx: ExtensionContext,
-	working: boolean,
-	usage?: ContextUsage,
-	extras?: IndicatorExtras,
+  ctx: ExtensionContext,
+  working: boolean,
+  usage?: ContextUsage,
+  extras?: IndicatorExtras,
 ): void {
   ctx.ui.setWorkingVisible(false);
   ctx.ui.setWidget(

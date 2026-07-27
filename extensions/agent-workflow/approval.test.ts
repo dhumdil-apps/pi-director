@@ -145,7 +145,8 @@ describe("approval prompt", () => {
 
 		const loaded = harness(cwd);
 		const { select: loadedSelect } = await loaded.offer("dashboard-polish", undefined, {
-			usage: { tokens: 150_000, contextWindow: 1_000_000, percent: 15 },
+			// Percentage alone decides: past the warning threshold a fresh session is the recommendation.
+			usage: { tokens: 250_000, contextWindow: 1_000_000, percent: 25 },
 		});
 		expect(loadedSelect.mock.calls[0]![1][0]).toBe("Handoff to a fresh session (recommended)");
 	});

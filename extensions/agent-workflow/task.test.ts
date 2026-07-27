@@ -8,6 +8,7 @@ function makeHarness(cwd: string, name?: string) {
 	let sessionName = name;
 	const tools = new Map<string, any>();
 	const sent: any[] = [];
+	const branch: any[] = [];
 	const pi = {
 		on: vi.fn(),
 		registerTool: (registered: any) => tools.set(registered.name, registered),
@@ -16,13 +17,14 @@ function makeHarness(cwd: string, name?: string) {
 		sendMessage: vi.fn((message: any) => sent.push(message)),
 	};
 	registerTaskManagement(pi as never);
-	const ctx = { cwd };
+	const ctx = { cwd, sessionManager: { getBranch: () => branch } };
 	const run = (name: string, params: any) => tools.get(name)!.execute("call", params, undefined, undefined, ctx);
 	return {
 		execute: (params: any) => run("save_plan", params),
 		pi,
 		sent,
 		getName: () => sessionName,
+		branch,
 	};
 }
 
@@ -59,11 +61,20 @@ describe("save_plan", () => {
 		expect(harness.getName()).toBe("SI-7-dashboard-polish");
 	});
 
-	it("appends a re-save as a revision instead of losing the earlier plan", async () => {
+	it("replaces a pre-approval draft with the current complete proposal", async () => {
 		const harness = makeHarness(cwd);
 		await harness.execute({ name: "revised approach", plan });
-		const result = await harness.execute({ name: "revised approach", plan: "## Approach\n\nD instead.\n" });
+		const replacement = "## Current state\n\nRevised.\n\n## Desired state\n\nD instead.\n";
+		const result = await harness.execute({ name: "revised approach", plan: replacement });
 		expect(result.isError).toBeUndefined();
+		expect(await readFile(result.details.path, "utf8")).toBe(replacement);
+	});
+
+	it("appends a re-plan after the approval kickoff", async () => {
+		const harness = makeHarness(cwd);
+		await harness.execute({ name: "revised approach", plan });
+		harness.branch.push({ type: "message", message: { role: "user", content: "Execute the approved plan at .pi/plan/revised-approach.md." } });
+		const result = await harness.execute({ name: "revised approach", plan: "## Approach\n\nD instead.\n" });
 		const contents = await readFile(result.details.path, "utf8");
 		expect(contents).toContain("A.");
 		expect(contents).toContain("D instead.");
@@ -134,16 +145,17 @@ describe("composePlan", () => {
 		expect(composePlan(PLAN_TEMPLATE.replace("<session-name>", "x-task"), "B.", now)).toBe("B.\n");
 	});
 
-	it("numbers appended revisions from 2 and keeps counting", () => {
-		const second = composePlan("Original.", "Changed.", now);
+	it("replaces a draft and only appends revisions after approval", () => {
+		expect(composePlan("Original.", "Changed.", now)).toBe("Changed.\n");
+		const second = composePlan("Original.", "Changed.", now, true);
 		expect(second).toContain("## Revision 2 — 2026-07-25 18:53");
 		expect(second.startsWith("Original.")).toBe(true);
-		expect(composePlan(second, "Changed again.", now)).toContain("## Revision 3 —");
+		expect(composePlan(second, "Changed again.", now, true)).toContain("## Revision 3 —");
 	});
 
-	it("does not duplicate a body that is already the tail of the file", () => {
-		const once = composePlan("Original.", "Changed.", now);
-		expect(composePlan(once, "Changed.", now)).toBe(once);
+	it("does not duplicate a body that is already the tail of an approved plan", () => {
+		const once = composePlan("Original.", "Changed.", now, true);
+		expect(composePlan(once, "Changed.", now, true)).toBe(once);
 	});
 
 	it("treats an empty body as leave-as-is, and reads the scaffold as untouched", () => {

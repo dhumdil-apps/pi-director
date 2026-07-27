@@ -30,20 +30,20 @@ lands, before long context or compaction can erase it.
   error; headless is refused before the dialog, since a non-TUI `select()` resolves `undefined` and
   would look the same.
 - `save_plan` (`task.ts`) — presents the plan and renames the session, keeping
-  the leading timestamp so `.pi/plan/` stays time-ordered. A passed `plan` is
-  appended under `## Revision <n> — <date>` once the file holds more than the
-  untouched scaffold (`composePlan`), so a re-plan never destroys the earlier
-  one and the file reads as the task's history; an empty file or a pristine
-  scaffold takes the body outright, and a body that is already the tail of the
-  file changes nothing. Omit `plan` to present what the agent wrote there with
-  `edit`; either way the content is echoed inline, so the decision is made
-  against exactly what is on disk.
+  the leading timestamp so `.pi/plan/` stays time-ordered. Before approval, a
+  passed complete `plan` replaces the draft so the user always reviews one
+  coherent proposal. Once the approval kickoff appears on the session branch,
+  passed changes append under `## Revision <n> — <date>`, preserving the approved
+  plan and the material scope change. An empty file or pristine scaffold takes
+  the body outright, and an already-present approved revision changes nothing.
+  Omit `plan` to present what the agent wrote there with `edit`; either way the
+  content is echoed inline, so the decision is made against exactly what is on disk.
 
 Close-out has no tool. It promotes durable orientation and quirks captured in the
 plan into project memory, which the agent writes directly. Close-out consolidates;
 it does not try to recall a whole session at the end. A new fact replaces the entry
 it supersedes, so memory stays a map instead of growing into a changelog. Ordinary
-close-out never advances the hidden `memory-review` marker; only `/memory` certifies
+close-out never advances the hidden `memory-review` marker; only `/init` certifies
 a deliberate knowledge pass.
 
 ## Starting from what is already known
@@ -52,7 +52,7 @@ Explore opens on project memory — `.pi/MEMORY.md`, or wherever the project's
 `AGENTS.md` says it lives — orientation and quirks, so discovery begins
 with a map rather than from zero. Entries are *leads to verify, not facts* and
 carry no per-entry confidence or staleness tags that can rot. The single hidden
-review marker has a narrower role: it records only a deliberate `/memory` audit.
+review marker has a narrower role: it records only a deliberate `/init` audit.
 The read-only project-memory extension ignores knowledge-only commits and warns
 when relevant Git state has moved. Code remains authoritative, and an entry
 disproved during ordinary work is corrected immediately rather than waiting for

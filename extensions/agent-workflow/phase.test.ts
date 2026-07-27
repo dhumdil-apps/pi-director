@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { handoffKickoff } from "./handoff.js";
-import { derivePhaseFromBranch } from "./phase.js";
+import { derivePhaseFromBranch, hasApprovedPlan } from "./phase.js";
 
 const userMessage = (content: unknown) => ({ type: "message", message: { role: "user", content } }) as never;
 
@@ -26,5 +26,11 @@ describe("derivePhaseFromBranch", () => {
 			message: { role: "assistant", content: "Execute the approved plan at .pi/plan/x.md." },
 		} as never;
 		expect(derivePhaseFromBranch([quoted])).toBeUndefined();
+	});
+
+	it("identifies the approved task without treating another task as approved", () => {
+		const entries = [userMessage("Execute the approved plan at .pi/plan/x.md.")];
+		expect(hasApprovedPlan(entries, "x")).toBe(true);
+		expect(hasApprovedPlan(entries, "y")).toBe(false);
 	});
 });

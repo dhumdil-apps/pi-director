@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { segmentsForLabel } from "./index.js";
+import { segmentsForLabel, segmentsForWindow } from "./index.js";
 
 describe("segmentsForLabel", () => {
 	it("maps hour windows to their hour count", () => {
@@ -35,5 +35,32 @@ describe("segmentsForLabel", () => {
 		expect(segmentsForLabel("Extra [active] 1/5")).toBe(10);
 		expect(segmentsForLabel("")).toBe(10);
 		expect(segmentsForLabel(undefined)).toBe(10);
+	});
+});
+
+describe("segmentsForWindow", () => {
+	const window = (resetDescription?: string, label = "Month") => ({ label, usedPercent: 0, resetDescription });
+
+	it("rounds day countdowns up to the next daily bar", () => {
+		expect(segmentsForWindow(window("4d8h"))).toBe(5);
+		expect(segmentsForWindow(window("4d"))).toBe(4);
+		expect(segmentsForWindow(window("1d1m"))).toBe(2);
+	});
+
+	it("caps day countdowns at five bars", () => {
+		expect(segmentsForWindow(window("5d"))).toBe(5);
+		expect(segmentsForWindow(window("12d"))).toBe(5);
+	});
+
+	it("rounds hour countdowns up and caps them at five bars", () => {
+		expect(segmentsForWindow(window("2h30m"))).toBe(3);
+		expect(segmentsForWindow(window("5h"))).toBe(5);
+		expect(segmentsForWindow(window("8h"))).toBe(5);
+	});
+
+	it("falls back to the label cadence without a supported countdown", () => {
+		expect(segmentsForWindow(window(undefined, "Week"))).toBe(7);
+		expect(segmentsForWindow(window("now", "Month"))).toBe(10);
+		expect(segmentsForWindow(window("active", "3d"))).toBe(3);
 	});
 });

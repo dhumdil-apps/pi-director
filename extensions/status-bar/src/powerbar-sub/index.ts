@@ -30,6 +30,7 @@ interface UsageCoreState {
 const DEFAULT_SEGMENTS = 10;
 const MIN_SEGMENTS = 3;
 const MAX_SEGMENTS = 12;
+const MAX_COUNTDOWN_SEGMENTS = 5;
 
 function clamp(n: number): number {
 	return Math.min(MAX_SEGMENTS, Math.max(MIN_SEGMENTS, n));
@@ -60,6 +61,28 @@ export function segmentsForLabel(label: string | undefined): number {
 	return DEFAULT_SEGMENTS;
 }
 
+/**
+ * Uses the same compact countdown that is shown beside the bar so the width
+ * represents the time horizon the percentage must cover. A partial lower unit
+ * rounds up: `4d8h` needs five daily bars and `2h30m` needs three hourly bars.
+ */
+function segmentsForCountdown(resetDescription: string | undefined): number | undefined {
+	const match = resetDescription?.trim().match(/^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?$/i);
+	if (!match || (!match[1] && !match[2])) return undefined;
+
+	const days = Number(match[1] ?? 0);
+	const hours = Number(match[2] ?? 0);
+	const minutes = Number(match[3] ?? 0);
+
+	if (days > 0) return Math.min(MAX_COUNTDOWN_SEGMENTS, days + Number(hours > 0 || minutes > 0));
+	return Math.min(MAX_COUNTDOWN_SEGMENTS, hours + Number(minutes > 0));
+}
+
+/** Prefer the displayed reset countdown, falling back to the window's cadence. */
+export function segmentsForWindow(window: RateWindow): number {
+	return segmentsForCountdown(window.resetDescription) ?? segmentsForLabel(window.label);
+}
+
 function getColor(pct: number): string {
 	if (pct > 80) return "error";
 	if (pct > 60) return "warning";
@@ -85,7 +108,7 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow | un
 		text: textParts.join(" "),
 		suffix: `${pct}%`,
 		bar: pct,
-		barSegments: segmentsForLabel(label),
+		barSegments: segmentsForWindow(window),
 		color: getColor(pct),
 		row: 3,
 	});

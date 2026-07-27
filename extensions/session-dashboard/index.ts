@@ -2,13 +2,14 @@ import { readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
+import { getAgentDir, loadProjectContextFiles, type ContextUsage, type ExtensionAPI, type Theme } from "@earendil-works/pi-coding-agent";
 import { Box, type Component, Container, Markdown, Spacer, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { buildContextBreakdown } from "./context-breakdown.js";
+import { buildContextBreakdown, type ContextFile } from "./context-breakdown.js";
 import { renderHelp } from "./help.js";
 import { collectUsageData } from "../usage-history/data.js";
 import { buildGraphModel, type GraphModel, renderChart, TOTAL_SERIES_KEY } from "../usage-history/graph.js";
 import { COLOR_RESET, formatAxisCost, seriesColor } from "../usage-history/index.js";
+import { claimProjectMemoryReminder, inspectProjectMemory, memoryStatusNotice } from "../project-memory/index.js";
 import { USAGE_CHART_END, USAGE_CHART_START, renderWelcomeText } from "./welcome.js";
 
 const BUNDLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -104,6 +105,28 @@ export function tildify(path: string): string {
 
 function truncateLeft(text: string, max: number): string {
 	return text.length <= max ? text : `…${text.slice(text.length - max + 1)}`;
+}
+
+/** Keep only resolver candidates whose non-empty content Pi actually injected. */
+export function includedContextFiles(contextFiles: ContextFile[], systemPrompt: string): ContextFile[] {
+	return contextFiles.filter((file) => file.content.length > 0 && systemPrompt.includes(file.content));
+}
+
+/** Path-only welcome detail: enough to establish context without duplicating /context. */
+export function welcomeContextInfo(cwd: string, systemPrompt: string): { workingDirectory: string; contextFiles?: string } {
+	let contextFiles: ContextFile[] = [];
+	try {
+		contextFiles = loadProjectContextFiles({ cwd, agentDir: getAgentDir() });
+	} catch {
+		// A context-discovery problem should not suppress the rest of the welcome.
+	}
+
+	const loaded = includedContextFiles(contextFiles, systemPrompt);
+	const paths = loaded.map((file) => `- \`${tildify(file.path)}\``);
+	return {
+		workingDirectory: `*${truncateLeft(tildify(cwd), 60)}*`,
+		contextFiles: paths.length > 0 ? ["**Context files**", ...paths].join("\n") : undefined,
+	};
 }
 
 interface BundleResources {
@@ -268,21 +291,26 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 		return box;
 	});
 
+	function contextBreakdownContent(
+		systemPrompt: string,
+		contextFiles: ContextFile[],
+		usage: ContextUsage | undefined,
+	): string {
+		return buildContextBreakdown({
+			systemPrompt,
+			contextFiles,
+			tools: pi.getAllTools(),
+			totalTokens: usage?.tokens,
+			contextWindow: usage?.contextWindow,
+			home: homedir(),
+		});
+	}
+
 	pi.registerCommand("context", {
 		description: "Break the context window down by source: prompt, context files, skills, tools, conversation",
 		handler: async (_args, ctx) => {
-			const usage = ctx.getContextUsage();
-			// getSystemPromptOptions is command-only, and it hands back exactly the
-			// context files and skills the host used — no loader config to re-guess.
 			const options = ctx.getSystemPromptOptions();
-			const content = buildContextBreakdown({
-				systemPrompt: ctx.getSystemPrompt(),
-				contextFiles: options.contextFiles ?? [],
-				tools: pi.getAllTools(),
-				totalTokens: usage?.tokens,
-				contextWindow: usage?.contextWindow,
-				home: homedir(),
-			});
+			const content = contextBreakdownContent(ctx.getSystemPrompt(), options.contextFiles ?? [], ctx.getContextUsage());
 			pi.sendMessage(
 				{
 					customType: "session-dashboard-context",
@@ -301,9 +329,13 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 		ctx.ui.setWidget("session-dashboard-loading", ["Preparing session dashboard…"]);
 		try {
 			const cwd = ctx.cwd;
-			// Only the usage cache is needed now (branch/status live in the status
-			// bar). collectUsageData may do a cold build, so keep it off the hot path.
-			const usage = await collectUsageData().catch(() => null);
+			// The chart and memory inspection are independent. Start both at once, then
+			// render one complete card so a warning cannot race the dashboard into the
+			// transcript. Usage can still take longer on a cold cache.
+			const [usage, memoryStatus] = await Promise.all([
+				collectUsageData().catch(() => null),
+				inspectProjectMemory(cwd).catch(() => undefined),
+			]);
 
 			let usageChart: string | undefined;
 			if (usage) {
@@ -325,14 +357,19 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 				usageChart = JSON.stringify(model);
 			}
 
-			// One concise markdown line at the top: the working directory, italicized
-			// and de-emphasised. The usage chart and footer help prompt follow.
-			const contextInfo = `*${truncateLeft(tildify(cwd), 60)}*`;
+			// The standard resolver supplies only the files Pi would load; matching
+			// their content against the assembled prompt confirms what it did load.
+			const contextInfo = welcomeContextInfo(cwd, ctx.getSystemPrompt());
 
+			const showMemoryNotice = memoryStatus
+				? await claimProjectMemoryReminder(memoryStatus).catch(() => false)
+				: false;
 			const welcomeText = renderWelcomeText({
 				usageChart,
-				contextInfo,
-				tip: "> ❓ `/help` · ⚙️ `/extension-settings` · 📊 `/usage`",
+				workingDirectory: contextInfo.workingDirectory,
+				contextFiles: contextInfo.contextFiles,
+				tip: "> 🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`",
+				memoryNotice: showMemoryNotice ? `> ⚠️ ${memoryStatusNotice()}` : undefined,
 			});
 
 			pi.sendMessage(
