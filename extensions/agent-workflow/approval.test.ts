@@ -22,6 +22,7 @@ function harness(cwd: string, sessionName?: string) {
 		events: { emit: vi.fn((name: string, value: any) => emitted.push([name, value])) },
 		sendMessage: vi.fn((message: any) => messages.push(message)),
 		sendUserMessage: vi.fn((content: string) => userMessages.push(content)),
+		appendEntry: vi.fn((customType: string, data: unknown) => branch.push({ type: "custom", customType, data })),
 	};
 	registerApproval(pi as never);
 
@@ -50,10 +51,7 @@ function harness(cwd: string, sessionName?: string) {
 		return { setEditorText, notify, select, ctx };
 	};
 
-	/**
-	 * Approval leaves no durable trace — the kickoff message it sends IS the
-	 * record, so the tasks kicked off are the tasks approved.
-	 */
+	/** The kickoff still identifies which concrete task execution started. */
 	const approvedTasks = () => userMessages.map((content) => content.match(/plan\/(.+)\.md/)?.[1]);
 
 	const phases = () => emitted.filter(([name]) => name === "agent-workflow:phase").map(([, value]) => value.phase);
@@ -84,8 +82,9 @@ describe("approval prompt", () => {
 		const { notify } = await h.offer("dashboard-polish", PROCEED);
 		expect(h.approvedTasks()).toEqual(["dashboard-polish"]);
 		expect(h.userMessages[0]).toBe("Execute the approved plan at .pi/plan/dashboard-polish.md.");
-		// Approval leaves nothing behind in the session: no hidden fact, no notice.
+		// Display state is persisted as a context-free custom entry, not a notice.
 		expect(h.messages).toEqual([]);
+		expect(h.branch.at(-1)).toMatchObject({ customType: "agent-workflow:phase", data: { phase: "execute" } });
 		expect(notify).not.toHaveBeenCalled();
 	});
 
@@ -174,12 +173,27 @@ describe("approval prompt", () => {
 		expect(quiet).not.toHaveBeenCalled();
 	});
 
-	it("emits plan on save and execute on approval, for the indicator only", async () => {
+	it("records each phase again for a revision cycle", async () => {
 		const h = harness(cwd);
-		await h.offer("dashboard-polish", PROCEED);
+		const { ctx } = await h.offer("dashboard-polish", PROCEED);
 		expect(h.phases()).toEqual(["plan", "execute"]);
 
-		// Revising stays in plan: nothing was approved.
+		await h.handlers.get("input")![0]({ source: "interactive", text: "please refine it" }, ctx);
+		await writeFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), `${planText}\n## Revision 2 — later\n\nMore.\n`);
+		await h.offer("dashboard-polish", PROCEED);
+		expect(h.phases()).toEqual(["plan", "execute", "explore", "plan", "execute"]);
+	});
+
+	it("does not mistake the extension approval kickoff for a new exploration cycle", async () => {
+		const h = harness(cwd);
+		await h.handlers.get("input")![0](
+			{ source: "extension", text: "Execute the approved plan..." },
+			{ sessionManager: { getBranch: () => h.branch } },
+		);
+		expect(h.phases()).toEqual([]);
+	});
+
+	it("keeps an unapproved revision in plan", async () => {
 		const revised = harness(cwd);
 		await revised.offer("dashboard-polish", "Revise the plan");
 		expect(revised.phases()).toEqual(["plan"]);

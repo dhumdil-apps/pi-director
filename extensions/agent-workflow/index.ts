@@ -32,7 +32,7 @@ import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, regist
  * plan file is named, how the session is renamed — so the block stays the shape
  * of the session and nothing else.
  */
-const WORKFLOW_STEPS = `Every workflow runs all five steps (or resumes at step 4 when starting from a /handoff). Scope changes how detailed the plan is, never whether there is one.
+const WORKFLOW_STEPS = `Every workflow runs all five steps (or resumes at step 4 when starting from a /handoff). Scope changes how detailed the plan is, never whether there is one: a one-line change gets a one-line plan, and "trivially small" is not an exemption.
 
   1. Explore
   - Start from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not durable facts. When code contradicts it, code wins: correct the entry in the same turn.

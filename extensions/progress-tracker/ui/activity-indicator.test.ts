@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { contextUsageText, updatePhaseIndicator } from "./activity-indicator.js";
+import { contextUsageText, formatDuration, updatePhaseIndicator } from "./activity-indicator.js";
 import { WORD_INTERVAL_MS, wordPool } from "./whimsy.js";
 
 const theme = { fg: (color: string, text: string) => `[${color}]${text}`, getFgAnsi: () => "" } as any;
@@ -97,9 +97,9 @@ describe("phase indicator", () => {
 			expect(status(component.render(120))).toContain(`${wordPool("plan").at(-1)}…`);
 		});
 
-		it("words the pre-plan explore state too, and never names a session mode", () => {
-			const lines = mount(true, { random: () => 0 }).component.render(120);
-			expect(status(lines)).toContain(`${wordPool(undefined)[0]}…`);
+		it("words the explore state too, and never names a session mode", () => {
+			const lines = mount(true, { phase: "explore", random: () => 0 }).component.render(120);
+			expect(status(lines)).toContain(`${wordPool("explore")[0]}…`);
 			expect(lines[0]).not.toContain("implementing");
 			expect(lines[0]).not.toContain("IMPLEMENT");
 		});
@@ -135,5 +135,50 @@ describe("phase indicator", () => {
 			vi.advanceTimersByTime(120 * 5);
 			expect(requestRender).not.toHaveBeenCalled();
 		});
+
+		it("adds the in-flight run to prior session work, without a timer of its own", () => {
+			let now = 10_000;
+			const { component } = mount(true, {
+				phase: "execute",
+				random: () => 0,
+				runStartedAt: 5_000,
+				sessionWorkingMs: 60_000,
+				now: () => now,
+			});
+			const word = `[accent]${wordPool("execute")[0]}…`;
+
+			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${word}[dim] 1m 05s`);
+
+			// Only the spinner and word timers exist; the counter rides their re-renders.
+			expect(vi.getTimerCount()).toBe(2);
+
+			now = 28_000;
+			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${word}[dim] 1m 23s`);
+		});
+
+		it("keeps cumulative session work fixed on the idle row", () => {
+			let now = 10_000;
+			const component = mount(false, { phase: "execute", sessionWorkingMs: 107_000, now: () => now }).component;
+			expect(status(component.render(120))).toBe("[accent]› [accent]What’s up next?[dim] 1m 47s");
+
+			now = 90_000;
+			expect(status(component.render(120))).toBe("[accent]› [accent]What’s up next?[dim] 1m 47s");
+		});
+
+		it("shows no duration before the session's first run", () => {
+			expect(status(mount(false, { runStartedAt: undefined }).component.render(120))).toBe("[accent]› [dim]What’s your goal?");
+		});
+	});
+
+	it.each([
+		[0, "0s"],
+		[59_400, "59s"],
+		[60_000, "1m 00s"],
+		[3_599_000, "59m 59s"],
+		[3_600_000, "1h 00m"],
+		[3_849_000, "1h 04m"],
+		[-5, "0s"],
+	])("formats %ims as %s", (ms, expected) => {
+		expect(formatDuration(ms)).toBe(expected);
 	});
 });

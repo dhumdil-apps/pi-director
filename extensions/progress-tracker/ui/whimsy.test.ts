@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { pickWord, wordPool } from "./whimsy.js";
 
 describe("working words", () => {
-	it("flavours the pool by phase, with a neutral pool before a plan exists", () => {
-		const pools = [wordPool("plan"), wordPool("execute"), wordPool(undefined)];
+	it("flavours every phase, with the legacy missing phase treated as explore", () => {
+		const pools = [wordPool("explore"), wordPool("plan"), wordPool("execute")];
 		expect(pools.every((pool) => pool.length > 0)).toBe(true);
+		expect(wordPool(undefined)).toBe(wordPool("explore"));
 		// The pools must not overlap, or the badge's signal leaks away.
 		for (const [index, pool] of pools.entries()) {
 			for (const other of pools.slice(index + 1)) {

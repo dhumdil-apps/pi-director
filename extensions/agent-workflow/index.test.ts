@@ -23,6 +23,7 @@ function harness(cwd = "/pi-director-index-test-nonexistent") {
 		setSessionName: vi.fn((name: string) => { sessionName = name; }),
 		sendMessage: vi.fn(),
 		sendUserMessage: vi.fn(),
+		appendEntry: vi.fn(),
 		events: { emit: vi.fn(), on: vi.fn() },
 	};
 	createExtension(pi as any);
@@ -58,9 +59,9 @@ describe("workflow prompt", () => {
 		expect(prompt.startsWith("base")).toBe(true);
 		expect(prompt.match(/<pi_workflow>/g)).toHaveLength(1);
 		expect([...h.commands.keys()]).toEqual(["handoff"]);
-		// The only turn-time hooks are the system-prompt injector and the approval
-		// prompt (tool_execution_end arms it, agent_settled delivers it).
-		expect(h.handlers.has("input")).toBe(false);
+		// Input records the display-only explore phase; the approval prompt is
+		// armed by tool_execution_end and delivered by agent_settled.
+		expect(h.handlers.has("input")).toBe(true);
 		expect(h.handlers.has("agent_start")).toBe(false);
 		expect(h.handlers.has("agent_settled")).toBe(true);
 	});
@@ -81,6 +82,12 @@ describe("workflow prompt", () => {
 		const first = await harness().inject("one thing");
 		const second = await harness().inject("a completely different thing");
 		expect(first.slice(first.indexOf("<pi_workflow>"))).toBe(second.slice(second.indexOf("<pi_workflow>")));
+	});
+
+	it("closes the small-task loophole by name", () => {
+		// Stating scale-invariance abstractly was not enough: an agent read it and still
+		// carved out an exemption for a rename it judged too small to plan.
+		expect(workflowPrompt()).toContain('"trivially small" is not an exemption');
 	});
 });
 

@@ -33,6 +33,12 @@ function harness() {
   return { handlers, listeners, emitted, tools };
 }
 
+const phaseEntry = (phase: "explore" | "plan" | "execute") => ({
+  type: "custom",
+  customType: "agent-workflow:phase",
+  data: { phase },
+});
+
 function ctxWith(widgets: Array<[string, any]>, branch: any[] = []) {
   return {
     cwd: "/work",
@@ -46,9 +52,13 @@ function ctxWith(widgets: Array<[string, any]>, branch: any[] = []) {
   };
 }
 
-function indicator(widgets: Array<[string, any]>, width = 80): string[] {
+function indicatorComponent(widgets: Array<[string, any]>): any {
   const [, factory] = widgets.findLast(([id]) => id === "workflow-phase")!;
-  return factory({ requestRender: () => {} }, theme).render(width);
+  return factory({ requestRender: () => {} }, theme);
+}
+
+function indicator(widgets: Array<[string, any]>, width = 80): string[] {
+  return indicatorComponent(widgets).render(width);
 }
 
 describe("progress tracker indicator", () => {
@@ -78,14 +88,34 @@ describe("progress tracker indicator", () => {
     expect(strip(indicator(widgets)[0])).toContain("[accent]What’s up next?");
   });
 
-  it("derives execute from a handoff-seeded branch, where no transition is ever emitted", async () => {
+  it("derives execute from the phase entry seeded before a handoff session starts", async () => {
     const { handlers } = harness();
     const widgets: Array<[string, any]> = [];
-    const branch = [
-      { type: "message", message: { role: "user", content: "Execute the approved plan at .pi/plan/x.md." } },
-    ];
-    await handlers.get("session_start")![0]({}, ctxWith(widgets, branch));
+    await handlers.get("session_start")![0]({}, ctxWith(widgets, [phaseEntry("execute")]));
     expect(strip(indicator(widgets)[0])).toContain("[accent]What’s up next?");
+  });
+
+  it("reconstructs the latest revision phase on tree changes", async () => {
+    const { handlers } = harness();
+    const widgets: Array<[string, any]> = [];
+    const branch = [phaseEntry("execute")];
+    const ctx = ctxWith(widgets, branch);
+    await handlers.get("session_start")![0]({}, ctx);
+
+    branch.push(phaseEntry("explore"), phaseEntry("plan"));
+    await handlers.get("session_tree")![0]({}, ctx);
+    expect(strip(indicator(widgets)[0])).toContain("[dim]What’s your goal?");
+  });
+
+  it("does not leak the previous phase into a replacement session", async () => {
+    const { handlers, emitted } = harness();
+    const widgets: Array<[string, any]> = [];
+    await handlers.get("session_start")![0]({}, ctxWith(widgets, [phaseEntry("execute")]));
+    await handlers.get("session_start")![0]({}, ctxWith(widgets));
+
+    expect(strip(indicator(widgets)[0])).toContain("[dim]What’s your goal?");
+    const [, status] = emitted.findLast(([name]) => name === "agent-status:update")!;
+    expect(status.phase).toBeUndefined();
   });
 
   it("retains the provider-reported first-turn total alongside live context", async () => {
@@ -95,11 +125,50 @@ describe("progress tracker indicator", () => {
     await handlers.get("session_start")![0]({}, ctx);
 
     await handlers.get("turn_end")![0]({}, ctx);
-    expect(indicator(widgets, 120).map(strip)[1]).toContain("[dim]first total 84.0k");
+    expect(indicator(widgets, 120).map(strip)[1]).toContain("[dim]init tokens 84.0k");
 
     // A replacement session starts clean until its first completed turn.
     await handlers.get("session_start")![0]({}, ctx);
-    expect(indicator(widgets).map(strip)[1]).not.toContain("first total");
+    expect(indicator(widgets).map(strip)[1]).not.toContain("init tokens");
+  });
+
+  it("accumulates working intervals, pauses while idle, and resets with the session", async () => {
+    const now = vi.spyOn(Date, "now").mockReturnValue(1_000);
+    try {
+      const { handlers } = harness();
+      const widgets: Array<[string, any]> = [];
+      const ctx = ctxWith(widgets);
+      await handlers.get("session_start")![0]({}, ctx);
+
+      await handlers.get("agent_start")![0]({}, ctx);
+      now.mockReturnValue(6_000);
+      let active = indicatorComponent(widgets);
+      expect(strip(active.render(80)[0])).toContain("[dim] 5s");
+      active.dispose();
+
+      now.mockReturnValue(7_000);
+      await handlers.get("agent_settled")![0]({}, ctx);
+      expect(strip(indicator(widgets)[0])).toContain("[dim] 6s");
+
+      // Wall time while idle does not change the accumulated total.
+      now.mockReturnValue(100_000);
+      expect(strip(indicator(widgets)[0])).toContain("[dim] 6s");
+
+      await handlers.get("agent_start")![0]({}, ctx);
+      now.mockReturnValue(104_000);
+      active = indicatorComponent(widgets);
+      expect(strip(active.render(80)[0])).toContain("[dim] 10s");
+      active.dispose();
+
+      now.mockReturnValue(105_000);
+      await handlers.get("agent_settled")![0]({}, ctx);
+      expect(strip(indicator(widgets)[0])).toContain("[dim] 11s");
+
+      await handlers.get("session_start")![0]({}, ctx);
+      expect(strip(indicator(widgets)[0])).not.toContain("[dim] 11s");
+    } finally {
+      now.mockRestore();
+    }
   });
 
   it("reports the context readout to observers", async () => {

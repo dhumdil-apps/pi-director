@@ -11,7 +11,7 @@
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
-import { derivePhaseFromBranch, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
+import { derivePhaseFromBranch, isWorkflowPhase, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
 import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
 
 export default function (pi: ExtensionAPI) {
@@ -20,13 +20,17 @@ export default function (pi: ExtensionAPI) {
   // The first completed turn's provider-reported aggregate context. It includes
   // the initial user message, so the UI labels it as a total rather than instructions.
   let firstTurnTokens: number | undefined;
-  // Display only (see phase.ts). Live transitions win; the branch fallback covers
-  // the sessions no transition ever reaches — /handoff-seeded ones and reloads.
+  // Display only (see phase.ts). Live transitions update immediately; persisted
+  // custom entries reconstruct the latest cycle across handoffs and reloads.
   let phase: WorkflowPhase | undefined;
+  // Run timing. The widget re-creates its factory every refresh, so the start
+  // stamp has to live here or the counter would restart at each turn boundary.
+  let runStartedAt: number | undefined;
+  let sessionWorkingMs: number | undefined;
 
   pi.events.on?.(PHASE_EVENT, (payload: unknown) => {
     const next = (payload as PhaseEvent | undefined)?.phase;
-    if (next !== "plan" && next !== "execute") return;
+    if (!isWorkflowPhase(next)) return;
     phase = next;
     refreshStatus();
   });
@@ -44,7 +48,7 @@ export default function (pi: ExtensionAPI) {
     } catch {
       lastUsage = undefined;
     }
-    updatePhaseIndicator(currentCtx, working, usage, { lastUsage, firstTurnTokens, phase });
+    updatePhaseIndicator(currentCtx, working, usage, { lastUsage, firstTurnTokens, phase, runStartedAt, sessionWorkingMs });
     const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
@@ -65,7 +69,7 @@ export default function (pi: ExtensionAPI) {
     // Extensions re-instantiate on newSession(), so the closure is empty here even
     // for a session that was approved: re-derive rather than trust the reset.
     try {
-      phase = derivePhaseFromBranch(ctx.sessionManager.getBranch()) ?? phase;
+      phase = derivePhaseFromBranch(ctx.sessionManager.getBranch());
     } catch {
       // A branch that cannot be read is not worth a missing indicator.
     }
@@ -74,6 +78,9 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("session_start", async (_event, ctx) => {
     firstTurnTokens = undefined;
+    phase = undefined;
+    runStartedAt = undefined;
+    sessionWorkingMs = undefined;
     adopt(ctx);
   });
   pi.on("session_tree", async (_event, ctx) => adopt(ctx));
@@ -87,12 +94,16 @@ export default function (pi: ExtensionAPI) {
   pi.on("agent_start", async (_event, ctx) => {
     currentCtx = ctx;
     working = true;
+    sessionWorkingMs ??= 0;
+    runStartedAt ??= Date.now();
     refreshStatus();
   });
 
   pi.on("agent_settled", async (_event, ctx) => {
     currentCtx = ctx;
     working = false;
+    if (runStartedAt != null) sessionWorkingMs = (sessionWorkingMs ?? 0) + Math.max(0, Date.now() - runStartedAt);
+    runStartedAt = undefined;
     refreshStatus();
   });
 

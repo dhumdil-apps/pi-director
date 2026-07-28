@@ -3,8 +3,8 @@
  *
  * Flavoured by the approval gate rather than shared, so the badge's signal
  * survives the whimsy: a session that is still planning says so even while it
- * is busy. The neutral pool covers the most common working state of all —
- * exploring before any plan exists — which would otherwise render wordless.
+ * is busy. The neutral pool covers exploration, including legacy sessions
+ * where no explicit phase entry exists, which would otherwise render wordless.
  *
  * Pure and injectable: the pick takes its randomness as an argument so the
  * indicator's timers can be tested without stubbing globals.
@@ -21,7 +21,7 @@ const PLAN_WORDS = ["Scheming", "Sketching", "Plotting"];
 
 const EXECUTE_WORDS = ["Aggressively stitching together", "Beating into submission", "Threatening the hardware"];
 
-/** The pool for a phase; the neutral pool stands in until a plan is in play. */
+/** The pool for a phase; explicit or legacy exploration uses the neutral pool. */
 export function wordPool(phase: WorkflowPhase | undefined): string[] {
 	if (phase === "plan") return PLAN_WORDS;
 	if (phase === "execute") return EXECUTE_WORDS;

@@ -49,7 +49,7 @@ describe("contextIndicatorText", () => {
       lastUsage: usage({ input: 100, cacheRead: 900 }),
       firstTurnTokens: 80_800,
     });
-    expect(strip(line!)).toBe(`[accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M[dim] · [accent]⚡ cache 90%[dim] · [dim]first total 80.8k`);
+    expect(strip(line!)).toBe(`[accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M[dim] · [accent]⚡ cache 90%[dim] · [dim]init tokens 80.8k`);
   });
 
   it("drops missing fragments without leaving a dangling separator", () => {

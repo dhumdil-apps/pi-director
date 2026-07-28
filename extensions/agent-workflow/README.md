@@ -30,7 +30,8 @@ lands, before long context or compaction can erase it.
   error; headless is refused before the dialog, since a non-TUI `select()` resolves `undefined` and
   would look the same.
 - `save_plan` (`task.ts`) — presents the plan and renames the session, keeping
-  the leading timestamp so `.pi/plan/` stays time-ordered. Before approval, a
+  the leading timestamp so `.pi/plan/` stays time-ordered. It also persists the
+  display-only `plan` phase as a custom session entry. Before approval, a
   passed complete `plan` replaces the draft so the user always reviews one
   coherent proposal. Once the approval kickoff appears on the session branch,
   passed changes append under `## Revision <n> — <date>`, preserving the approved
@@ -76,9 +77,15 @@ the next audit.
   `/handoff <session-name>`; Revise or dismissing approves nothing. Headless
   sessions get a displayed message naming the command instead. Which task was
   approved — and the digest of what was approved — is held in memory only, so a
-  reload costs one extra prompt.
+  reload costs one extra prompt. Display phase is separate: post-execution human
+  input records `explore`, plan saves record `plan`, and approval records
+  `execute`; these are custom session entries excluded from model context, so
+  reloads recover the latest revision cycle rather than treating the first
+  approval as permanent.
 - `/handoff [session-name]` (`handoff.ts`) — spawns a fresh session seeded with
-  the name and a kickoff naming the plan path. Resolution: explicit name, then
+  the name, a display-only `execute` phase entry, and a kickoff naming the plan
+  path. The phase is seeded before replacement-session extensions initialize;
+  the kickoff remains the model's instruction. Resolution: explicit name, then
   session name, then a lone remaining plan — several mean it asks which.
 
 Plan files are never deleted by the agent; `.pi/plan/` is the user's to keep,

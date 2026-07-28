@@ -96,7 +96,7 @@ export function contextIndicatorText(
     cacheHitText(extras?.lastUsage, theme),
     extras?.firstTurnTokens == null
       ? undefined
-      : theme.fg("dim", `first total ${formatTokens(extras.firstTurnTokens)}`),
+      : theme.fg("dim", `init tokens ${formatTokens(extras.firstTurnTokens)}`),
   ].filter((fragment): fragment is string => fragment !== undefined);
   return fragments.join(theme.fg("dim", SEPARATOR));
 }

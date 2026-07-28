@@ -23,7 +23,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { isLeanContext } from "./context-usage.js";
 import { planPath } from "./task.js";
 import { handoffKickoff } from "./handoff.js";
-import { PHASE_EVENT, type WorkflowPhase } from "./phase.js";
+import { derivePhaseFromBranch, recordWorkflowPhase } from "./phase.js";
 import { resolvePlanTask } from "./task.js";
 
 /** Content identity of a plan file; a missing file hashes as empty, never throws. */
@@ -68,6 +68,15 @@ export function registerApproval(pi: ExtensionAPI): void {
 	let unapprovedTask: string | undefined;
 	let warnedTask: string | undefined;
 
+	// A new human turn after execution starts another workflow cycle. Extension
+	// input includes our approval kickoff, which must remain in execute.
+	pi.on("input", async (event, ctx) => {
+		if (event.source === "extension") return;
+		if (derivePhaseFromBranch(ctx.sessionManager.getBranch()) === "execute") {
+			recordWorkflowPhase(pi, "explore");
+		}
+	});
+
 	pi.on("tool_execution_end", async (event, ctx) => {
 		if (event.toolName !== "save_plan" || event.isError) return;
 		const details = (event.result as { details?: { name?: unknown } } | undefined)?.details;
@@ -76,7 +85,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 		if (details.name === approved?.task && (await planDigest(ctx.cwd, details.name)) === approved.digest) return;
 		pendingOffer = { task: details.name };
 		unapprovedTask = details.name;
-		emitPhase(pi, "plan");
+		recordWorkflowPhase(pi, "plan");
 	});
 
 	// Soft back-stop: notify, never reject. Silence here is the failure mode worth
@@ -106,7 +115,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 		if (choice?.startsWith(PROCEED)) {
 			approved = { task, digest: await planDigest(ctx.cwd, task) };
 			unapprovedTask = undefined;
-			emitPhase(pi, "execute");
+			recordWorkflowPhase(pi, "execute");
 			proceed(pi, ctx, task);
 			return;
 		}
@@ -120,11 +129,6 @@ export function registerApproval(pi: ExtensionAPI): void {
 		}
 		ctx.ui.notify(`Plan not approved — revise and save again, or run /handoff ${task}.`, "info");
 	});
-}
-
-/** Display only: the indicator listens, the model never sees it (phase.ts). */
-function emitPhase(pi: ExtensionAPI, phase: WorkflowPhase): void {
-	pi.events.emit?.(PHASE_EVENT, { phase });
 }
 
 /** Start execution here, naming the concrete plan path so the turn opens on it. */

@@ -9,6 +9,7 @@
  */
 
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import { PHASE_EVENT, type PhaseEvent } from "./phase.js";
 import { type PlanTask, resolvePlanTask } from "./task.js";
 
 const HANDOFF_NOTICE_TYPE = "agent-workflow:handoff-notice";
@@ -44,10 +45,11 @@ export async function openHandoffSession(
 	await ctx.waitForIdle();
 	await ctx.newSession({
 		parentSession: ctx.sessionManager.getSessionFile(),
-		// The kickoff message carries the approval; the new session only needs to
-		// know which task it is, so save_plan renames the right plan file.
+		// Seed task identity and display phase before replacement-session
+		// extensions initialize; the kickoff separately instructs the model.
 		setup: async (sessionManager) => {
 			sessionManager.appendSessionInfo(task.name);
+			sessionManager.appendCustomEntry(PHASE_EVENT, { phase: "execute" } satisfies PhaseEvent);
 		},
 		withSession: async (next) => {
 			// sendUserMessage resolves only when the triggered turn ends: an

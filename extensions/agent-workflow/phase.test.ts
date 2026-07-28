@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { handoffKickoff } from "./handoff.js";
-import { derivePhaseFromBranch, hasApprovedPlan } from "./phase.js";
+import { derivePhaseFromBranch, hasApprovedPlan, PHASE_EVENT } from "./phase.js";
 
 const userMessage = (content: unknown) => ({ type: "message", message: { role: "user", content } }) as never;
+const phaseEntry = (phase: string) => ({ type: "custom", customType: PHASE_EVENT, data: { phase } }) as never;
 
 describe("derivePhaseFromBranch", () => {
 	it("reads the kickoff handoff.ts actually sends", () => {
@@ -15,7 +16,20 @@ describe("derivePhaseFromBranch", () => {
 		expect(derivePhaseFromBranch([userMessage(blocks)])).toBe("execute");
 	});
 
-	it("is undefined for a session with no plan in play, so no badge is rendered", () => {
+	it("uses the latest persisted transition across revision cycles", () => {
+		const entries = [
+			phaseEntry("explore"),
+			phaseEntry("plan"),
+			userMessage("Execute the approved plan at .pi/plan/x.md."),
+			phaseEntry("execute"),
+			phaseEntry("explore"),
+			phaseEntry("plan"),
+		];
+		expect(derivePhaseFromBranch(entries)).toBe("plan");
+		expect(derivePhaseFromBranch([...entries, phaseEntry("execute")])).toBe("execute");
+	});
+
+	it("is undefined for a session with no phase signal", () => {
 		expect(derivePhaseFromBranch([])).toBeUndefined();
 		expect(derivePhaseFromBranch([userMessage("fix the typo in README")])).toBeUndefined();
 	});

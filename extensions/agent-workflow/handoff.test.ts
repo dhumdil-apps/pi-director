@@ -25,8 +25,7 @@ function makeHarness(cwd: string, options: CtxOptions = {}) {
 	};
 	const newSession = vi.fn(async (opts: any) => {
 		await opts.setup?.({
-			appendCustomMessageEntry: (customType: string, content: string, display: boolean, details: unknown) =>
-				seeded.entries.push({ customType, content, display, details }),
+			appendCustomEntry: (customType: string, data: unknown) => seeded.entries.push({ customType, data }),
 			appendSessionInfo: (name: string) => seeded.names.push(name),
 		});
 		await opts.withSession?.(next);
@@ -65,8 +64,10 @@ describe("openHandoffSession", () => {
 		await open();
 
 		expect(newSession).toHaveBeenCalledWith(expect.objectContaining({ parentSession: "/sessions/current.jsonl" }));
-		// No hidden fact is seeded: the kickoff message alone carries the approval.
-		expect(seeded.entries).toEqual([]);
+		// Display state is present before the replacement session is adopted.
+		expect(seeded.entries).toEqual([
+			{ customType: "agent-workflow:phase", data: { phase: "execute" } },
+		]);
 		expect(seeded.names).toEqual(["dashboard-polish"]);
 		const [kickoff] = next.sendUserMessage.mock.calls[0];
 		expect(kickoff).toContain(".pi/plan/dashboard-polish.md");
