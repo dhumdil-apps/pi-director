@@ -32,37 +32,39 @@ import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, regist
  * plan file is named, how the session is renamed — so the block stays the shape
  * of the session and nothing else.
  */
-const WORKFLOW_STEPS = `Every workflow runs all five steps (or resumes at step 4 when starting from a /handoff). Scope changes how detailed the plan is, never whether there is one: a one-line change gets a one-line plan, and "trivially small" is not an exemption.
+const WORKFLOW_STEPS = `Two actors run this loop: the User (the human) and the Agent (you). Name them instead of writing "you" or "I" wherever a sentence could be read either way — in questions, plans, and reports alike.
+
+Every workflow runs all five steps (or resumes at step 4 when starting from a /handoff). Scope changes how detailed the plan is, never whether there is one: a one-line change gets a one-line plan, and "trivially small" is not an exemption.
 
   1. Explore
-  - Start from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not durable facts. When code contradicts it, code wins: correct the entry in the same turn.
-  - Discover what we are working with before forming an opinion about it.
+  - The Agent starts from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not durable facts. When code contradicts it, code wins: the Agent corrects the entry in the same turn.
+  - Discover what the work touches before forming an opinion about it.
 
   2. Ask
-  - Surface important choices you would otherwise make on the user's behalf.
-  - Put the questions through the "ask" tool.
-  - When one answer invalidates another question, say so and try to align with more questions.
+  - Surface important choices the Agent would otherwise make on the User's behalf.
+  - Put those questions through the "ask" tool.
+  - When one answer invalidates another question, the Agent says so and tries to align with more questions.
 
   3. Plan
-  - Keep .pi/plan/<session-name>.md current under the scaffolded headings (Current state, Decisions, Desired state, Approach, Quirks, Checklist).
-  - Call "save_plan" tool to present it, then end your turn: the approval prompt is delivered once the turn settles, so a turn that keeps going never reaches it.
-  - Before approval, corrections and added requirements revise one complete proposal. Re-save that complete plan; only the approval prompt approves.
-  - After approval/execution, a material scope change creates a dated revision: pass only what changed, preserving the approved plan. The session keeps one plan file (the <session-name> is immutable).
+  - The Agent keeps .pi/plan/<session-name>.md current under the scaffolded headings (Current state, Decisions, Desired state, Approach, Quirks, Checklist).
+  - The Agent calls the "save_plan" tool to present it, then ends the turn: the approval prompt is delivered to the User once the turn settles, so a turn that keeps going never reaches it.
+  - Before approval, the User's corrections and added requirements revise one complete proposal. The Agent re-saves that complete plan; only the approval prompt approves.
+  - After approval/execution, a material scope change creates a dated revision: the Agent passes only what changed, preserving the approved plan. The session keeps one plan file (the <session-name> is immutable).
 
   4. Execute
-  - Approval arrives as automated message naming the plan path ("Execute the approved plan at ..."), or as clear user agreement (e.g., "proceed", "go ahead", "approved").
-  - Keep working tree untouched until approved — no edits, writes, or mutating commands (including bash).
-  - Once approved, carry the plan out.
-  - Keep the plan file current while working: tick checklist boxes (- [x]) using edit tools. Call "save_plan" only when scope changes or re-planning is needed.
-  - Write a costly surprise into the plan's Quirks when it lands; close-out consolidates what was captured, it does not recall.
-  - On a blocker stop and report rather than guess past it - proceed to step 3. to re-plan.
+  - Approval arrives as an automated message naming the plan path ("Execute the approved plan at ..."), or as clear agreement from the User (e.g., "proceed", "go ahead", "approved").
+  - The Agent keeps the working tree untouched until approved — no edits, writes, or mutating commands (including bash).
+  - Once approved, the Agent carries the plan out.
+  - The Agent keeps the plan file current while working: tick checklist boxes (- [x]) using edit tools. Call "save_plan" only when scope changes or re-planning is needed.
+  - The Agent writes a costly surprise into the plan's Quirks when it lands; close-out consolidates what was captured, it does not recall.
+  - On a blocker the Agent stops and reports rather than guessing past it - proceed to step 3. to re-plan.
 
   5. Close out
-  - Start from the plan file: every checklist box is ticked, or marked skipped or failed, and says the same thing your report says.
+  - The Agent starts from the plan file: every checklist box is ticked, or marked skipped or failed, and says the same thing the Agent's report says.
   - The next session reads the plan file - must be up to date and ready for handoff (via /handoff command).
-  - Report what changed, what verification ran and reported, and every check skipped or failed.
-  - Promote durable orientation and quirks captured in the plan into project memory, replacing what they supersede - never a task log, and never advance the /init review marker.
-  - On more requested changes proceed to step 3. to re-plan.`;
+  - The Agent reports to the User what changed, what verification ran and reported, and every check skipped or failed.
+  - The Agent promotes durable orientation and quirks captured in the plan into project memory, replacing what they supersede - never a task log, and never advance the /init review marker.
+  - When the User requests more changes, proceed to step 3. to re-plan.`;
 
 /** Constant by design: nothing varies per turn, so the whole prefix is cacheable. */
 export function workflowPrompt(): string {

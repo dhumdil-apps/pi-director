@@ -33,17 +33,19 @@ describe("ask tool", () => {
 		const result = await run();
 		expect(selectSpy).toHaveBeenCalledWith("Which one?", ["Keep the trim", "Restore verification", WRITE_CUSTOM_OPTION]);
 		expect(result.isError).toBe(false);
-		expect(result.content[0].text).toBe("User selected: 2. Restore verification — Re-add the commands agents cannot derive.");
+		expect(result.content[0].text).toBe("The User selected: 2. Restore verification — Re-add the commands agents cannot derive.");
 		expect(result.details as AskDetails).toMatchObject({ answer: "Restore verification", index: 2 });
 	});
 
-	it("allows selecting the last custom answer option and aborts the turn without error", async () => {
+	it("allows selecting the last custom answer option and both aborts and terminates the turn without error", async () => {
 		const { run, selectSpy, abortSpy } = harness(async () => WRITE_CUSTOM_OPTION);
 		const result = await run();
 		expect(selectSpy).toHaveBeenCalledWith("Which one?", ["Keep the trim", "Restore verification", WRITE_CUSTOM_OPTION]);
 		expect(abortSpy).toHaveBeenCalled();
 		expect(result.isError).toBe(false);
-		expect(result.content[0].text).toBe(`User selected: 3. ${WRITE_CUSTOM_OPTION}`);
+		expect(result.terminate).toBe(true);
+		expect(result.content[0].text).toContain(WRITE_CUSTOM_OPTION);
+		expect(result.content[0].text).toContain("stops here");
 		expect(result.details as AskDetails).toMatchObject({ answer: WRITE_CUSTOM_OPTION, index: 3 });
 	});
 

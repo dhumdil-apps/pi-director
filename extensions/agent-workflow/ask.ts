@@ -5,10 +5,14 @@
  * bundle prefers native dialogs, and the dialog itself only needs to carry the
  * short headlines. The reading material lives above it — `renderCall` prints the
  * question with every headline and its full description as soon as the call
- * streams in, so by the time the dialog opens the user has already read the
+ * streams in, so by the time the dialog opens the User has already read the
  * trade-offs and is only picking a letter.
  *
- * A dismissal is not an error: the agent should fall back to asking in prose.
+ * A dismissal is not an error: the Agent should fall back to asking in prose.
+ *
+ * Actors are named ("the User", "the Agent") rather than addressed as "you", so
+ * a sentence that mentions both reads the same in the tool text, in the model's
+ * reply, and in the plan file.
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -28,7 +32,7 @@ const AskParams = Type.Object({
 		{
 			minItems: MIN_OPTIONS,
 			maxItems: MAX_OPTIONS,
-			description: `${MIN_OPTIONS}-${MAX_OPTIONS} concrete choices, your recommendation first.`,
+			description: `${MIN_OPTIONS}-${MAX_OPTIONS} concrete choices, the Agent's recommendation first.`,
 		},
 	),
 });
@@ -52,7 +56,7 @@ export function registerAsk(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "ask",
 		label: "Ask",
-		description: "Ask the user to choose between concrete options, in a native picker. Use whenever a choice would otherwise be made on their behalf; put your recommendation first. For anything that does not fit a short list of options, ask in an ordinary message instead.",
+		description: "Ask the User to choose between concrete options, in a native picker. Use whenever a choice would otherwise be made on the User's behalf; put the Agent's recommendation first. For anything that does not fit a short list of options, the Agent asks in an ordinary message instead.",
 		parameters: AskParams,
 		// The dialog owns the screen while it is open, so it must not race another call.
 		executionMode: "sequential",
@@ -63,7 +67,7 @@ export function registerAsk(pi: ExtensionAPI): void {
 			// Non-TUI select() resolves undefined, which is indistinguishable from a
 			// dismissal — so headlessness is decided before the dialog, not after it.
 			if (!ctx.hasUI) {
-				return result("Error: no interactive UI — ask this in an ordinary message instead.", base, true);
+				return result("Error: no interactive UI — the Agent must ask this in an ordinary message instead.", base, true);
 			}
 			if (new Set(headlines).size !== headlines.length) {
 				return result("Error: option headlines must be distinct — the picker returns the headline, not an index.", base, true);
@@ -73,25 +77,31 @@ export function registerAsk(pi: ExtensionAPI): void {
 			const choice = await ctx.ui.select(params.question, pickerHeadlines);
 
 			if (choice === undefined) {
-				return result("User dismissed the question without answering — ask in an ordinary message, or say which option you would take and why.", base);
+				return result("The User dismissed the question without answering — the Agent asks in an ordinary message, or says which option it would take and why.", base);
 			}
 
 			if (choice === WRITE_CUSTOM_OPTION) {
+				// Belt and braces: the abort can be missed when the loop checks the
+				// signal, so the result also asks the batch to terminate. Terminating
+				// only takes effect when every result in the batch does, hence both.
 				ctx.abort();
-				return result(
-					`User selected: ${pickerHeadlines.length}. ${WRITE_CUSTOM_OPTION}`,
-					{ ...base, answer: WRITE_CUSTOM_OPTION, index: pickerHeadlines.length },
-				);
+				return {
+					...result(
+						`The User chose to write a custom answer instead: ${pickerHeadlines.length}. ${WRITE_CUSTOM_OPTION}. The Agent stops here and waits for it.`,
+						{ ...base, answer: WRITE_CUSTOM_OPTION, index: pickerHeadlines.length },
+					),
+					terminate: true,
+				};
 			}
 
 			const index = headlines.indexOf(choice);
 			if (index < 0) {
-				return result("User dismissed the question without answering — ask in an ordinary message, or say which option you would take and why.", base);
+				return result("The User dismissed the question without answering — the Agent asks in an ordinary message, or says which option it would take and why.", base);
 			}
 
 			const chosen = params.options[index];
 			return result(
-				`User selected: ${index + 1}. ${chosen.headline} — ${chosen.description}`,
+				`The User selected: ${index + 1}. ${chosen.headline} — ${chosen.description}`,
 				{ ...base, answer: chosen.headline, index: index + 1 },
 			);
 		},
