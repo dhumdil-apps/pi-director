@@ -13,15 +13,20 @@ import type {
 import type { Usage } from "@earendil-works/pi-ai";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { contextIndicatorText } from "../../agent-workflow/context-usage.js";
+import { addPhaseTime, formatDuration, type PlanTime } from "../../agent-workflow/plan-time.js";
 import type { WorkflowPhase } from "../../agent-workflow/phase.js";
 import { pickWord, WORD_INTERVAL_MS, wordPool } from "./whimsy.js";
 
 // Re-exported so existing importers (and the widget's own test) keep a single entry point.
 export { contextUsageText } from "../../agent-workflow/context-usage.js";
+export { formatDuration } from "../../agent-workflow/plan-time.js";
 
 const PHASE_WIDGET_ID = "workflow-phase";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const SPINNER_INTERVAL_MS = 120;
+const IDLE_REFRESH_INTERVAL_MS = 1_000;
+const CACHE_WARNING_IDLE_MS = 60_000;
+const CACHE_ERROR_IDLE_MS = 5 * 60_000;
 const IDLE_MARKER = "›";
 
 /** Cache and first-turn-total readouts that sit beside the context bar. */
@@ -43,39 +48,61 @@ export interface IndicatorExtras {
    * closure-local start would restart the counter mid-run.
    */
   runStartedAt?: number;
-  /** Working time accumulated before the current run, if any. */
-  sessionWorkingMs?: number;
+  /** Settled Explore/Plan/Execute totals shown beside the current phase. */
+  planTime?: PlanTime;
+  /** When the latest provider response completed, as epoch ms, for cache age. */
+  cacheStartedAt?: number;
   /** Injectable clock, so the live counter is testable. */
   now?: () => number;
 }
 
-/**
- * Coarse on purpose: sub-second precision would flicker at the spinner's 120 ms
- * cadence, and past an hour the minute is the useful digit.
- */
-export function formatDuration(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const seconds = total % 60;
-  const minutes = Math.floor(total / 60) % 60;
-  const hours = Math.floor(total / 3600);
-  if (hours > 0) return `${hours}h ${String(minutes).padStart(2, "0")}m`;
-  if (minutes > 0) return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
-  return `${seconds}s`;
-}
-
-/**
- * Total working time for this in-memory session. The settled total stays fixed
- * while idle; an active run is added at render time so no timer state lives here.
- */
+/** Active shows time in this phase; idle shows age of the provider's prompt cache. */
 function durationMs(
   working: boolean,
   extras: IndicatorExtras | undefined,
   now: number,
 ): number | undefined {
-  const settled = extras?.sessionWorkingMs;
-  if (working && extras?.runStartedAt != null)
-    return (settled ?? 0) + Math.max(0, now - extras.runStartedAt);
-  return settled;
+  if (!working) {
+    return extras?.cacheStartedAt == null
+      ? undefined
+      : Math.max(0, now - extras.cacheStartedAt);
+  }
+  return extras?.runStartedAt == null
+    ? undefined
+    : Math.max(0, now - extras.runStartedAt);
+}
+
+function timerColor(
+  working: boolean,
+  elapsedMs: number,
+): "accent" | "dim" | "warning" | "error" {
+  if (working) return "dim";
+  if (elapsedMs >= CACHE_ERROR_IDLE_MS) return "error";
+  if (elapsedMs >= CACHE_WARNING_IDLE_MS) return "warning";
+  return "accent";
+}
+
+/** Accumulated phase accounting stays visible and static while idle. */
+function phaseBuckets(
+  working: boolean,
+  extras: IndicatorExtras | undefined,
+  now: number,
+  theme: Theme,
+): string {
+  if (extras?.planTime == null) return "";
+  const currentPhase = extras.phase ?? "explore";
+  const time = working && extras.runStartedAt != null
+    ? addPhaseTime(extras.planTime, currentPhase, Math.max(0, now - extras.runStartedAt))
+    : extras.planTime;
+  const buckets: Array<[WorkflowPhase, number]> = [
+    ["explore", time.exploreMs],
+    ["plan", time.planMs],
+    ["execute", time.executeMs],
+  ];
+  return buckets.map(([bucketPhase, milliseconds]) => {
+    const text = `${bucketPhase} ${formatDuration(milliseconds)}`;
+    return `${theme.fg("dim", " · ")}${theme.fg(bucketPhase === currentPhase ? "accent" : "dim", text)}`;
+  }).join("");
 }
 
 // The two prompts describe the next useful user decision rather than exposing
@@ -136,6 +163,13 @@ export function updatePhaseIndicator(
         : undefined;
       spinnerTimer?.unref?.();
 
+      // Idle repaints the cache age and crosses its risk-color boundaries even
+      // when no Pi lifecycle event occurs.
+      const idleTimer = !working && extras?.cacheStartedAt != null
+        ? setInterval(() => tui.requestRender(), IDLE_REFRESH_INTERVAL_MS)
+        : undefined;
+      idleTimer?.unref?.();
+
       // The word outlives several spinner cycles, so it gets its own timer
       // rather than a modulo of the frame count.
       const pool = wordPool(extras?.phase);
@@ -156,18 +190,18 @@ export function updatePhaseIndicator(
           const context = contextIndicatorText(usage, theme, extras);
           // Two lines on purpose: the status word changes width every few
           // seconds, and a same-line context readout would slide with it.
-          const elapsed = durationMs(
-            working,
-            extras,
-            (extras?.now ?? Date.now)(),
-          );
-          // The spinner's own re-render drives the counter while working; idle
-          // renders it once and needs no timer.
+          const now = (extras?.now ?? Date.now)();
+          const elapsed = durationMs(working, extras, now);
+          // Active work rides the spinner; idle refreshes the cache-age timer.
           const timer =
             elapsed === undefined
               ? ""
-              : theme.fg("dim", ` ${formatDuration(elapsed)}`);
-          const status = `${theme.fg("accent", `${marker} `)}${statusText(extras?.phase, working, word, theme)}${timer}`;
+              : theme.fg(
+                  timerColor(working, elapsed),
+                  ` ${formatDuration(elapsed)}`,
+                );
+          const buckets = phaseBuckets(working, extras, now, theme);
+          const status = `${theme.fg("accent", `${marker} `)}${statusText(extras?.phase, working, word, theme)}${timer}${buckets}`;
           const lines = [truncateToWidth(status, width)];
           if (context !== undefined)
             lines.push(truncateToWidth(`  ${context}`, width));
@@ -176,6 +210,7 @@ export function updatePhaseIndicator(
         invalidate: () => {},
         dispose: () => {
           if (spinnerTimer) clearInterval(spinnerTimer);
+          if (idleTimer) clearInterval(idleTimer);
           if (wordTimer) clearInterval(wordTimer);
         },
       };

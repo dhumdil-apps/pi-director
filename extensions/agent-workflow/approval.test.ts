@@ -1,8 +1,9 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { registerApproval } from "./approval.js";
+import { withTimeSpent } from "./plan-time.js";
 
 const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
@@ -34,7 +35,7 @@ function harness(cwd: string, sessionName?: string) {
 	const offer = async (
 		task: string,
 		choice: string | undefined,
-		options: { editorText?: string; isError?: boolean; usage?: any; hasUI?: boolean; toolName?: string } = {},
+		options: { editorText?: string; isError?: boolean; usage?: any; hasUI?: boolean; mode?: "tui" | "print"; toolName?: string } = {},
 	) => {
 		const setEditorText = vi.fn();
 		const notify = vi.fn();
@@ -42,6 +43,7 @@ function harness(cwd: string, sessionName?: string) {
 		const ctx = {
 			cwd,
 			hasUI: options.hasUI ?? true,
+			mode: options.mode ?? (options.hasUI === false ? "print" : "tui"),
 			getContextUsage: () => options.usage,
 			ui: { notify, setEditorText, getEditorText: () => options.editorText ?? "", select },
 			sessionManager: { getBranch: () => branch, getSessionName: () => sessionName },
@@ -55,8 +57,9 @@ function harness(cwd: string, sessionName?: string) {
 	const approvedTasks = () => userMessages.map((content) => content.match(/plan\/(.+)\.md/)?.[1]);
 
 	const phases = () => emitted.filter(([name]) => name === "agent-workflow:phase").map(([, value]) => value.phase);
+	const waits = () => emitted.filter(([name]) => name === "agent-workflow:user-wait").map(([, value]) => value);
 
-	return { handlers, offer, messages, userMessages, approvedTasks, branch, phases };
+	return { handlers, offer, messages, userMessages, approvedTasks, branch, phases, waits };
 }
 
 describe("approval prompt", () => {
@@ -72,6 +75,10 @@ describe("approval prompt", () => {
 		const h = harness(cwd);
 		const first = await h.offer("dashboard-polish", "Revise the plan");
 		expect(first.select).toHaveBeenCalledTimes(1);
+		expect(h.waits()).toEqual([
+			{ waiting: true, reason: "approval" },
+			{ waiting: false, reason: "approval" },
+		]);
 		// Settle again without a new save: the offer was consumed.
 		await h.handlers.get("agent_settled")![0]({}, first.ctx);
 		expect(first.select).toHaveBeenCalledTimes(1);
@@ -92,6 +99,18 @@ describe("approval prompt", () => {
 		const h = harness(cwd);
 		await h.offer("dashboard-polish", PROCEED);
 		// Mid-implementation correction: same task, same plan contents.
+		const again = await h.offer("dashboard-polish", PROCEED);
+		expect(again.select).not.toHaveBeenCalled();
+		expect(h.approvedTasks()).toEqual(["dashboard-polish"]);
+	});
+
+	it("ignores a script-owned elapsed-time update after approval", async () => {
+		const path = join(cwd, ".pi", "plan", "dashboard-polish.md");
+		await writeFile(path, withTimeSpent(await readFile(path, "utf8"), "dashboard-polish", 0));
+		const h = harness(cwd);
+		await h.offer("dashboard-polish", PROCEED);
+		await writeFile(path, withTimeSpent(await readFile(path, "utf8"), "dashboard-polish", 83_000));
+
 		const again = await h.offer("dashboard-polish", PROCEED);
 		expect(again.select).not.toHaveBeenCalled();
 		expect(h.approvedTasks()).toEqual(["dashboard-polish"]);
@@ -205,11 +224,17 @@ describe("approval prompt", () => {
 		expect(select).not.toHaveBeenCalled();
 	});
 
-	it("degrades to a displayed /handoff hint when headless", async () => {
+	it("persists a context-free /handoff hint and prints it when headless", async () => {
+		const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 		const h = harness(cwd);
 		const { select } = await h.offer("dashboard-polish", undefined, { hasUI: false });
 		expect(select).not.toHaveBeenCalled();
-		const hint = h.messages.find((m) => m.display === true);
-		expect(hint?.content).toContain("/handoff dashboard-polish");
+		expect(h.messages).toEqual([]);
+		expect(h.branch.at(-1)).toMatchObject({
+			customType: "agent-workflow:notice",
+			data: { content: expect.stringContaining("/handoff dashboard-polish"), level: "info" },
+		});
+		expect(stderr).toHaveBeenCalledWith(expect.stringContaining("/handoff dashboard-polish"));
+		stderr.mockRestore();
 	});
 });

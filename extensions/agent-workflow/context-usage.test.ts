@@ -23,16 +23,16 @@ describe("contextSeverity", () => {
 });
 
 describe("cacheHitText", () => {
-  it("reports the share of the prompt served from cache", () => {
-    expect(cacheHitText(usage({ input: 100, cacheRead: 900 }), theme)).toBe("[accent]⚡ cache 90%");
+  it("reports the share of the prompt served from cache neutrally", () => {
+    expect(cacheHitText(usage({ input: 100, cacheRead: 900 }), theme)).toBe("[dim]🗃️ cache 90%");
   });
 
-  it("dims a hit rate below half", () => {
-    expect(cacheHitText(usage({ input: 900, cacheRead: 100 }), theme)).toBe("[dim]⚡ cache 10%");
+  it("keeps a low hit rate neutral", () => {
+    expect(cacheHitText(usage({ input: 900, cacheRead: 100 }), theme)).toBe("[dim]🗃️ cache 10%");
   });
 
   it("counts cache writes as prompt tokens that did not hit", () => {
-    expect(cacheHitText(usage({ cacheRead: 500, cacheWrite: 500 }), theme)).toBe("[accent]⚡ cache 50%");
+    expect(cacheHitText(usage({ cacheRead: 500, cacheWrite: 500 }), theme)).toBe("[dim]🗃️ cache 50%");
   });
 
   it("is undefined without usage or prompt tokens", () => {
@@ -49,7 +49,17 @@ describe("contextIndicatorText", () => {
       lastUsage: usage({ input: 100, cacheRead: 900 }),
       firstTurnTokens: 80_800,
     });
-    expect(strip(line!)).toBe(`[accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M[dim] · [accent]⚡ cache 90%[dim] · [dim]init tokens 80.8k`);
+    expect(strip(line!)).toBe(`[accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M[dim] · [dim]🗃️ cache 90%[dim] · [error]📦 init 80.8k`);
+  });
+
+  it.each([
+    [9_999, "dim"],
+    [10_000, "warning"],
+    [19_999, "warning"],
+    [20_000, "error"],
+  ])("colors %i initial tokens as %s independently of whole-context severity", (tokens, color) => {
+    expect(strip(contextIndicatorText(ctxUsage, theme, { firstTurnTokens: tokens })!))
+      .toContain(`[${color}]📦 init ${tokens >= 1_000 ? `${(tokens / 1_000).toFixed(1)}k` : tokens}`);
   });
 
   it("drops missing fragments without leaving a dangling separator", () => {

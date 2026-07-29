@@ -8,13 +8,18 @@ const OPTIONS = [
 
 function harness(select: (title: string, options: string[]) => Promise<string | undefined>, hasUI = true) {
 	const tools: any[] = [];
-	registerAsk({ registerTool: vi.fn((tool: any) => tools.push(tool)) } as any);
+	const emitted: Array<[string, unknown]> = [];
+	registerAsk({
+		registerTool: vi.fn((tool: any) => tools.push(tool)),
+		appendEntry: vi.fn(),
+		events: { emit: vi.fn((name: string, value: unknown) => emitted.push([name, value])) },
+	} as any);
 	const selectSpy = vi.fn(select);
 	const abortSpy = vi.fn();
 	const ctx = { hasUI, ui: { select: selectSpy }, abort: abortSpy };
 	const run = (params: any = { question: "Which one?", options: OPTIONS }) =>
 		tools[0].execute("call-1", params, undefined, undefined, ctx as any);
-	return { tool: tools[0], run, selectSpy, abortSpy };
+	return { tool: tools[0], run, selectSpy, abortSpy, emitted };
 }
 
 describe("ask tool", () => {
@@ -29,12 +34,17 @@ describe("ask tool", () => {
 	});
 
 	it("shows the question with headlines plus custom write option, and maps the pick back to its option", async () => {
-		const { run, selectSpy } = harness(async () => "Restore verification");
+		const { run, selectSpy, emitted } = harness(async () => "Restore verification");
 		const result = await run();
 		expect(selectSpy).toHaveBeenCalledWith("Which one?", ["Keep the trim", "Restore verification", WRITE_CUSTOM_OPTION]);
 		expect(result.isError).toBe(false);
 		expect(result.content[0].text).toBe("The User selected: 2. Restore verification — Re-add the commands agents cannot derive.");
 		expect(result.details as AskDetails).toMatchObject({ answer: "Restore verification", index: 2 });
+		expect(emitted).toEqual([
+			["agent-workflow:phase", { phase: "plan" }],
+			["agent-workflow:user-wait", { waiting: true, reason: "question" }],
+			["agent-workflow:user-wait", { waiting: false, reason: "question" }],
+		]);
 	});
 
 	it("allows selecting the last custom answer option and both aborts and terminates the turn without error", async () => {
@@ -49,12 +59,13 @@ describe("ask tool", () => {
 		expect(result.details as AskDetails).toMatchObject({ answer: WRITE_CUSTOM_OPTION, index: 3 });
 	});
 
-	it("treats a dismissal as an answerless result, not an error", async () => {
-		const { run } = harness(async () => undefined);
+	it("starts Plan timing even when the scope question is dismissed", async () => {
+		const { run, emitted } = harness(async () => undefined);
 		const result = await run();
 		expect(result.isError).toBe(false);
 		expect(result.content[0].text).toContain("dismissed");
 		expect((result.details as AskDetails).answer).toBeNull();
+		expect(emitted[0]).toEqual(["agent-workflow:phase", { phase: "plan" }]);
 	});
 
 	it("never opens a dialog headlessly, where select() would look like a dismissal", async () => {

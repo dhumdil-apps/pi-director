@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getAgentDir, loadProjectContextFiles, type ContextUsage, type ExtensionAPI, type Theme } from "@earendil-works/pi-coding-agent";
+import { getAgentDir, loadProjectContextFiles, type ContextUsage, type ExtensionAPI, type SessionEntry, type Theme } from "@earendil-works/pi-coding-agent";
 import { Box, type Component, Container, Markdown, Spacer, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { buildContextBreakdown, type ContextFile } from "./context-breakdown.js";
 import { renderHelp } from "./help.js";
@@ -125,7 +125,7 @@ export function welcomeContextInfo(cwd: string, systemPrompt: string): { working
 	const paths = loaded.map((file) => `- \`${tildify(file.path)}\``);
 	return {
 		workingDirectory: `*${truncateLeft(tildify(cwd), 60)}*`,
-		contextFiles: paths.length > 0 ? ["**Context files**", ...paths].join("\n") : undefined,
+		contextFiles: paths.length > 0 ? ["**📦 Context files**", ...paths].join("\n") : undefined,
 	};
 }
 
@@ -188,11 +188,21 @@ function loadBundleResources(): BundleResources {
 	}
 }
 
-/** Flatten a custom message's content (string or content-item array) to text. */
-function messageText(content: string | { type: string; text?: string }[]): string {
-	return typeof content === "string"
-		? content
-		: content.filter((item) => item.type === "text").map((item) => item.text ?? "").join("\n");
+interface DashboardEntryData {
+	content: string;
+}
+
+interface AgentStatusUpdate {
+	working?: boolean;
+	phase?: string;
+	contextUsed?: number;
+}
+
+/** Read display-only card content from a context-free custom entry. */
+function entryText(data: unknown): string {
+	return typeof (data as Partial<DashboardEntryData> | undefined)?.content === "string"
+		? (data as DashboardEntryData).content
+		: "";
 }
 
 /** Markdown component wired to the interactive theme, shared by the banner and /help. */
@@ -217,8 +227,8 @@ function themedMarkdown(theme: Theme, text: string): Markdown {
 }
 
 export default function sessionDashboardExtension(pi: ExtensionAPI): void {
-	pi.registerMessageRenderer("session-dashboard", (message, _options, theme) => {
-		const content = messageText(message.content);
+	pi.registerEntryRenderer("session-dashboard", (entry, _options, theme) => {
+		const content = entryText(entry.data);
 		const markdown = (text: string) => themedMarkdown(theme, text);
 		const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
 		const contentBox = new Container();
@@ -267,9 +277,9 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 	});
 
 	// /help renders as markdown inside the same themed box as the banner.
-	pi.registerMessageRenderer("session-dashboard-help", (message, _options, theme) => {
+	pi.registerEntryRenderer("session-dashboard-help", (entry, _options, theme) => {
 		const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
-		box.addChild(themedMarkdown(theme, messageText(message.content)));
+		box.addChild(themedMarkdown(theme, entryText(entry.data)));
 		return box;
 	});
 
@@ -277,29 +287,30 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 		description: "List the bundle's extensions, commands, and shortcuts",
 		handler: async () => {
 			const bundle = loadBundleResources();
-			pi.sendMessage(
-				{ customType: "session-dashboard-help", content: renderHelp(bundle.extensions), display: true },
-				{ triggerTurn: false },
-			);
+			pi.appendEntry("session-dashboard-help", { content: renderHelp(bundle.extensions) } satisfies DashboardEntryData);
 		},
 	});
 
-	// /context reuses the help renderer's themed markdown box.
-	pi.registerMessageRenderer("session-dashboard-context", (message, _options, theme) => {
+	// /context and its lightweight close-out reminder share the themed box.
+	const renderContextCard = (data: unknown, theme: Theme) => {
 		const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
-		box.addChild(themedMarkdown(theme, messageText(message.content)));
+		box.addChild(themedMarkdown(theme, entryText(data)));
 		return box;
-	});
+	};
+	pi.registerEntryRenderer("session-dashboard-context", (entry, _options, theme) => renderContextCard(entry.data, theme));
+	pi.registerEntryRenderer("session-dashboard-context-reminder", (entry, _options, theme) => renderContextCard(entry.data, theme));
 
 	function contextBreakdownContent(
 		systemPrompt: string,
 		contextFiles: ContextFile[],
 		usage: ContextUsage | undefined,
+		entries: SessionEntry[],
 	): string {
 		return buildContextBreakdown({
 			systemPrompt,
 			contextFiles,
 			tools: pi.getAllTools(),
+			entries,
 			totalTokens: usage?.tokens,
 			contextWindow: usage?.contextWindow,
 			home: homedir(),
@@ -310,16 +321,25 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 		description: "Break the context window down by source: prompt, context files, skills, tools, conversation",
 		handler: async (_args, ctx) => {
 			const options = ctx.getSystemPromptOptions();
-			const content = contextBreakdownContent(ctx.getSystemPrompt(), options.contextFiles ?? [], ctx.getContextUsage());
-			pi.sendMessage(
-				{
-					customType: "session-dashboard-context",
-					content: content || "*No context measured yet.*",
-					display: true,
-				},
-				{ triggerTurn: false },
-			);
+			const entries = ctx.sessionManager.buildContextEntries();
+			const content = contextBreakdownContent(ctx.getSystemPrompt(), options.contextFiles ?? [], ctx.getContextUsage(), entries);
+			pi.appendEntry("session-dashboard-context", {
+				content: content || "*No context measured yet.*",
+			} satisfies DashboardEntryData);
 		},
+	});
+
+	// Progress Tracker can emit several settled-state refreshes. Only the working
+	// edge closes a run, so one execution close-out produces one context-free hint.
+	let wasWorking = false;
+	pi.events?.on?.("agent-status:update", (value: unknown) => {
+		const status = value as AgentStatusUpdate;
+		if (status.working === false && wasWorking && status.phase === "execute" && (status.contextUsed ?? 0) > 10_000) {
+			pi.appendEntry("session-dashboard-context-reminder", {
+				content: `Context is ${Math.round(status.contextUsed! / 1_000)}k. Run \`/context\` to decide whether large contributors are justified.`,
+			} satisfies DashboardEntryData);
+		}
+		wasWorking = status.working === true;
 	});
 
 	pi.on("session_start", async (_event, ctx) => {
@@ -372,14 +392,9 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 				memoryNotice: showMemoryNotice ? `> ⚠️ ${memoryStatusNotice()}` : undefined,
 			});
 
-			pi.sendMessage(
-				{
-					customType: "session-dashboard",
-					content: welcomeText,
-					display: true,
-				},
-				{ triggerTurn: false }
-			);
+			// Custom entries persist and render in the transcript without entering
+			// LLM context; sendMessage would make the serialized chart part of every turn.
+			pi.appendEntry("session-dashboard", { content: welcomeText } satisfies DashboardEntryData);
 		} finally {
 			ctx.ui.setWidget("session-dashboard-loading", undefined);
 		}

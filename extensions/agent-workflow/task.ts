@@ -1,10 +1,10 @@
-import { randomUUID } from "node:crypto";
 import { existsSync, readdirSync } from "node:fs";
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
 import { hasApprovedPlan } from "./phase.js";
+import { EMPTY_PLAN_TIME, readPlanTiming, stripTimeSpent, timeSpentBlock, withPlanTiming, writePlanAtomically } from "./plan-time.js";
 
 /**
  * A session name is `[timestamp-][TICKET-N-]slug`. The timestamp segment is read
@@ -20,6 +20,8 @@ const PLAN_FILE = /^(.+)\.md$/;
 /** Scaffolded at session start; the topics mirror the plan step of the loop. */
 export const PLAN_TEMPLATE = [
 	"# <session-name>",
+	"",
+	timeSpentBlock(EMPTY_PLAN_TIME),
 	"",
 	"## Current state",
 	"<how it works today>",
@@ -75,7 +77,7 @@ function revisionStamp(now: Date): string {
 
 /** True while the file still holds nothing but the scaffold the session started with. */
 export function isScaffold(existing: string): boolean {
-	const body = existing.replace(/^# .*$/m, "").replace(/<[^>\n]+>/g, "").replace(/- \[ \]/g, "");
+	const body = stripTimeSpent(existing).replace(/^# .*$/m, "").replace(/<[^>\n]+>/g, "").replace(/- \[ \]/g, "");
 	return !body.replace(/^#+ .*$/gm, "").trim();
 }
 
@@ -229,17 +231,6 @@ export function resolvePlanTask(cwd: string, requested: string | undefined, sess
 	return { error: `No plan under ${CONFIG_DIR_NAME}/plan/ — plan first.` };
 }
 
-async function writeAtomically(path: string, contents: string): Promise<void> {
-	const temporaryPath = `${path}.${randomUUID()}.tmp`;
-	try {
-		await writeFile(temporaryPath, contents, { encoding: "utf8", flag: "wx" });
-		await rename(temporaryPath, path);
-	} catch (error) {
-		await rm(temporaryPath, { force: true });
-		throw error;
-	}
-}
-
 export function registerTaskManagement(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "save_plan",
@@ -260,15 +251,17 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 			try {
 				await ensurePiState(ctx.cwd);
 				if (current) await movePlan(ctx.cwd, current, name);
+				const existing = await readFile(path, "utf8").catch(() => "");
+				const timing = readPlanTiming(existing) ?? EMPTY_PLAN_TIME;
 				if (params.plan?.trim()) {
-					const existing = await readFile(path, "utf8").catch(() => "");
 					const approved = hasApprovedPlan(ctx.sessionManager.getBranch(), name);
-					contents = composePlan(existing, params.plan, new Date(), approved);
-					await writeAtomically(path, contents);
+					contents = withPlanTiming(composePlan(existing, params.plan, new Date(), approved), name, timing);
 				} else {
-					// Omitted body: present the file the agent has been keeping current.
-					contents = await readFile(path, "utf8").catch(() => "");
+					// Omitted body: present the file the agent has been keeping current,
+					// lazily upgrading a legacy plan to the script-owned time envelope.
+					contents = withPlanTiming(existing, name, timing);
 				}
+				await writePlanAtomically(path, contents);
 			} catch (error) {
 				return {
 					content: [{ type: "text" as const, text: `Error: could not save plan: ${(error as Error).message}.` }],

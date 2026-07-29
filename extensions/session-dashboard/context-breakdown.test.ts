@@ -20,12 +20,10 @@ const FILES = [
 ];
 
 describe("estimateTextTokens", () => {
-	it("uses the host's chars/4 heuristic, rounding up", () => {
-		expect(estimateTextTokens("")).toBe(0);
-		expect(estimateTextTokens("abc")).toBe(1);
-		expect(estimateTextTokens("abcd")).toBe(1);
-		expect(estimateTextTokens("abcde")).toBe(2);
-	});
+	it.each([["", 0], ["abc", 1], ["abcd", 1], ["abcde", 2]])(
+		"estimates %j as %i tokens",
+		(text, expected) => expect(estimateTextTokens(text)).toBe(expected),
+	);
 });
 
 describe("measureSystemPrompt", () => {
@@ -130,37 +128,45 @@ describe("buildContextBreakdown", () => {
 		systemPrompt: PROMPT,
 		contextFiles: FILES,
 		tools: [{ name: "read", description: "Read a file", parameters: { type: "object" } }],
+		entries: [
+			{ type: "message", message: { role: "assistant", content: [{ type: "toolCall", id: "call-1", name: "read", arguments: { path: "/home/m/docs/host-api.md" } }] } },
+			{ type: "message", message: { role: "toolResult", toolCallId: "call-1", toolName: "read", content: [{ type: "text", text: "x".repeat(40_000) }] } },
+		] as any,
 		contextWindow: 200_000,
 		home: "/home/m",
 	};
 
 	it("renders every source in one block", () => {
 		const block = buildContextBreakdown({ ...input, totalTokens: 84_000 });
-		expect(block).toContain("conversation");
-		expect(block).toContain("base prompt");
-		expect(block).toContain("…/Github/AGENTS.md");
-		expect(block).toContain("skills");
-		expect(block).toContain("tools (1)");
-		expect(block).toContain("total -> 84.0k");
+		for (const source of [
+			"conversation / unclassified",
+			"base prompt",
+			"…/Github/AGENTS.md",
+			"skills",
+			"tools (1)",
+			"total -> 84.0k",
+			"large contributors (>=10k estimated)",
+			"tool result: read …/docs/host-api.md",
+		]) expect(block).toContain(source);
 	});
 
-	it("derives the conversation as the remainder of the reported total", () => {
+	it("derives the conversation and unclassified remainder from the reported total", () => {
 		const overhead =
 			measureSystemPrompt(PROMPT, FILES, "/home/m").reduce((sum, s) => sum + s.tokens, 0) +
 			measureTools(input.tools).tokens;
 		const block = buildContextBreakdown({ ...input, totalTokens: 84_000 });
-		const conversation = Number(/conversation\s+\S+\s+([\d.]+)k/.exec(block)![1]) * 1000;
+		const remainder = Number(/conversation \/ unclassified\s+\S+\s+([\d.]+)k/.exec(block)![1]) * 1000;
 		// formatTokens rounds to one decimal, so compare at 100-token resolution.
-		expect(conversation).toBeCloseTo(84_000 - overhead, -2);
+		expect(remainder).toBeCloseTo(84_000 - overhead, -2);
 	});
 
-	it("omits the conversation when no total has been reported yet", () => {
-		expect(buildContextBreakdown({ ...input, totalTokens: null })).not.toContain("conversation");
+	it("omits the remainder when no total has been reported yet", () => {
+		expect(buildContextBreakdown({ ...input, totalTokens: null })).not.toContain("conversation / unclassified");
 	});
 
-	it("never reports a negative conversation when the estimate overshoots", () => {
+	it("never reports a negative remainder when the estimate overshoots", () => {
 		const block = buildContextBreakdown({ ...input, totalTokens: 10 });
-		expect(block).not.toContain("conversation");
+		expect(block).not.toContain("conversation / unclassified");
 		expect(block).toContain("total -> 10");
 	});
 });

@@ -23,8 +23,9 @@ longer exists simply renders nothing.
 All Status Bar progress bars use the theme accent normally, changing to warning
 and error at their configured usage thresholds. CPU, RAM, and SSD usage render
 as one high-contrast, partial-height bar per metric and show a `0%` placeholder
-until a sample is available. Subscription hourly and weekly usage each use
-seven bars.
+until a sample is available. Subscription countdown bars use weeks at seven or
+more days remaining, days below a week, and hours below a day, rounding partial
+units up and capping the countdown at five bars.
 
 ## User surface
 

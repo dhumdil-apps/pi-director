@@ -11,15 +11,19 @@ transcript cannot show.
 
   ```
   › What’s your goal?
-    LLM Attention Span (ctx) ▃         84.0k / 1.0M · init tokens 84.0k
+    LLM Attention Span (ctx) ▃         84.0k / 1.0M · 📦 init 84.0k
   ```
 
   The context readout owns its own line so it never slides sideways as the word
   above it changes width. The marker swaps for a braille spinner while the agent
   works, and line 2 is omitted entirely while the token count is unknown. After
-  the first completed turn, it retains the provider-reported aggregate context
-  as dim `init tokens …`; that exact aggregate includes the initial user message,
-  so it never claims to measure instructions alone. Five partial-height blocks
+  the first completed turn, it retains the first provider response's own
+  `usage.totalTokens` as `📦 init …`; reading the response directly avoids a
+  post-tool context snapshot that already includes results for the next request.
+  That aggregate includes the initial user message, so it never claims to measure
+  instructions alone. Initial tokens use their own
+  absolute colors (dim below 10k, warning at 10k, error at 20k), independent
+  of whole-context pressure. Five partial-height blocks
   carry the context-window percentage. The spinner advances every 120 ms only
   during active work and is cleared when Pi disposes the widget. The context
   readout refreshes at turn boundaries and is colored accent / warning / error:
@@ -46,14 +50,29 @@ transcript cannot show.
   pools do not overlap, so the gate stays readable while the line
   moves; the colour follows the badge. Pools and the pick live in `ui/whimsy.ts`
   (`pickWord` takes its randomness as an argument so the rotation is testable).
-- Session work timer — a dim elapsed readout trails the word or badge (`5s`,
-  `1m 23s`, `1h 04m`). It sums every interval between `agent_start` and
-  `agent_settled` for the current in-memory session: the total counts up while
-  work is in flight, pauses beside the idle prompt, and resumes with the next
-  run. A fresh or reloaded session starts with no timer; elapsed time is not
-  persisted or reconstructed. The counter owns no timer of its own — it is
-  derived at render time from the settled total and current start stamp held in
-  `index.ts`, because Pi re-creates the widget factory on every refresh.
+- Work/cache timer — one compact dim readout trails the active word and
+  counts only the current phase interval (`5s`, `1m 23s`, `1h 04m`). It resets
+  whenever Explore, Plan, or Execute begins rather than displaying grand-total
+  task time. Full accumulated phase totals follow it as
+  `· explore 5s · plan 12s · execute 3s`: the current phase is accent and the
+  others are dim. The active bucket advances live; all three remain visible and
+  static while idle or waiting. Native question and plan approval dialogs pause
+  task timing because the Agent is waiting on the User, and the indicator
+  switches to the phase-specific static prompt while the dialog is open. In the
+  leading timer position, idle or waiting instead shows age from the latest
+  provider response: accent below 1 minute, warning from 1 minute, and error
+  from 5 minutes as prompt-cache miss risk increases. `message_end` starts cache
+  age before tool execution, and the latest timestamped assistant message
+  restores it across reloads and handoffs. A slow idle repaint advances the age
+  and its colors without another Pi event. Active intervals accrue to Explore,
+  Plan, or Execute, splitting immediately when a context-free phase event lands;
+  an initial phase-less interval counts as Explore. On settlement the total and
+  phase buckets atomically update the named plan's script-owned `time-spent`
+  block. Existing total-only history migrates to Unallocated, while marker-free
+  legacy plans remain byte-identical until their next settled run. Persistence
+  is best-effort if the plan is unavailable. The active phase-local timer and
+  bucket update are derived from the current segment stamp; the idle-only timer
+  is disposed with the widget. Normal row truncation protects narrow terminals.
 - `agent-status:update` event — `working`, `phase`, `sessionName`, `contextUsed`,
   `contextMax`, `cacheRead`, `cacheWrite`, `cacheHitRate`, `cwd`, for observers
   such as Pi Inspector Bridge. Inspector displays phase/session context but

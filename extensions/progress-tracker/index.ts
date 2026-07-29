@@ -9,16 +9,32 @@
  * much context is left.
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, MessageEndEvent, SessionEntry, TurnEndEvent } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
 import { derivePhaseFromBranch, isWorkflowPhase, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
+import { addPhaseTime, EMPTY_PLAN_TIME, readPlanTime, updatePlanTime, type PlanTime } from "../agent-workflow/plan-time.js";
+import { planPath } from "../agent-workflow/task.js";
+import { USER_WAIT_EVENT, type UserWaitEvent } from "../agent-workflow/user-wait.js";
 import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
+
+/** Latest provider response on the active branch, used after reloads and handoffs. */
+function latestAssistantTimestamp(entries: SessionEntry[]): number | undefined {
+  for (let index = entries.length - 1; index >= 0; index--) {
+    const entry = entries[index];
+    if (entry?.type !== "message") continue;
+    const message = entry.message as { role?: string; timestamp?: unknown };
+    if (message.role === "assistant" && typeof message.timestamp === "number" && Number.isFinite(message.timestamp)) {
+      return message.timestamp;
+    }
+  }
+  return undefined;
+}
 
 export default function (pi: ExtensionAPI) {
   let currentCtx: ExtensionContext | undefined;
   let working = false;
-  // The first completed turn's provider-reported aggregate context. It includes
-  // the initial user message, so the UI labels it as a total rather than instructions.
+  // The first provider response's reported aggregate usage. Read it from the
+  // response itself: live context can already include tool results for the next request.
   let firstTurnTokens: number | undefined;
   // Display only (see phase.ts). Live transitions update immediately; persisted
   // custom entries reconstruct the latest cycle across handoffs and reloads.
@@ -26,11 +42,22 @@ export default function (pi: ExtensionAPI) {
   // Run timing. The widget re-creates its factory every refresh, so the start
   // stamp has to live here or the counter would restart at each turn boundary.
   let runStartedAt: number | undefined;
-  let sessionWorkingMs: number | undefined;
+  let planTime: PlanTime | undefined;
+  let cacheStartedAt: number | undefined;
+  let waitingForUser = false;
+
+  // Close the current interval before changing phase. Undefined is the initial
+  // Explore state: the display can still ask for a goal while timing is precise.
+  const accrueUntil = (now: number) => {
+    if (runStartedAt == null) return;
+    planTime = addPhaseTime(planTime ?? EMPTY_PLAN_TIME, phase ?? "explore", Math.max(0, now - runStartedAt));
+    runStartedAt = now;
+  };
 
   pi.events.on?.(PHASE_EVENT, (payload: unknown) => {
     const next = (payload as PhaseEvent | undefined)?.phase;
     if (!isWorkflowPhase(next)) return;
+    accrueUntil(Date.now());
     phase = next;
     refreshStatus();
   });
@@ -48,7 +75,8 @@ export default function (pi: ExtensionAPI) {
     } catch {
       lastUsage = undefined;
     }
-    updatePhaseIndicator(currentCtx, working, usage, { lastUsage, firstTurnTokens, phase, runStartedAt, sessionWorkingMs });
+    const indicatorWorking = working && !waitingForUser;
+    updatePhaseIndicator(currentCtx, indicatorWorking, usage, { lastUsage, firstTurnTokens, phase, runStartedAt, planTime, cacheStartedAt });
     const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
@@ -63,15 +91,25 @@ export default function (pi: ExtensionAPI) {
     });
   };
 
-  const adopt = (ctx: ExtensionContext) => {
+  const adopt = async (ctx: ExtensionContext) => {
     currentCtx = ctx;
     working = !ctx.isIdle();
-    // Extensions re-instantiate on newSession(), so the closure is empty here even
-    // for a session that was approved: re-derive rather than trust the reset.
+    waitingForUser = false;
+    // Extensions re-instantiate on newSession(), so reconstruct display state
+    // and cache age from the active branch rather than trust the empty closure.
     try {
-      phase = derivePhaseFromBranch(ctx.sessionManager.getBranch());
+      const branch = ctx.sessionManager.getBranch();
+      phase = derivePhaseFromBranch(branch);
+      cacheStartedAt = latestAssistantTimestamp(branch);
     } catch {
       // A branch that cannot be read is not worth a missing indicator.
+    }
+    // A marker-free legacy plan stays visually unchanged until its first new run.
+    // Existing persisted totals resume across reloads and handoffs.
+    const name = pi.getSessionName?.();
+    if (name && runStartedAt == null) {
+      const persisted = await readPlanTime(planPath(ctx.cwd, name));
+      if (persisted !== undefined) planTime = persisted;
     }
     refreshStatus();
   };
@@ -80,10 +118,12 @@ export default function (pi: ExtensionAPI) {
     firstTurnTokens = undefined;
     phase = undefined;
     runStartedAt = undefined;
-    sessionWorkingMs = undefined;
-    adopt(ctx);
+    planTime = undefined;
+    cacheStartedAt = undefined;
+    waitingForUser = false;
+    await adopt(ctx);
   });
-  pi.on("session_tree", async (_event, ctx) => adopt(ctx));
+  pi.on("session_tree", async (_event, ctx) => { await adopt(ctx); });
 
   // Keep ctx reference fresh on every turn
   pi.on("input", async (_event, ctx) => {
@@ -94,7 +134,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("agent_start", async (_event, ctx) => {
     currentCtx = ctx;
     working = true;
-    sessionWorkingMs ??= 0;
+    planTime ??= EMPTY_PLAN_TIME;
     runStartedAt ??= Date.now();
     refreshStatus();
   });
@@ -102,8 +142,15 @@ export default function (pi: ExtensionAPI) {
   pi.on("agent_settled", async (_event, ctx) => {
     currentCtx = ctx;
     working = false;
-    if (runStartedAt != null) sessionWorkingMs = (sessionWorkingMs ?? 0) + Math.max(0, Date.now() - runStartedAt);
+    const settledAt = Date.now();
+    accrueUntil(settledAt);
     runStartedAt = undefined;
+    waitingForUser = false;
+    const name = pi.getSessionName?.();
+    if (name && planTime != null) {
+      // Best-effort persistence: an unavailable plan must not break turn settlement.
+      await updatePlanTime(planPath(ctx.cwd, name), name, planTime).catch(() => {});
+    }
     refreshStatus();
   });
 
@@ -111,11 +158,40 @@ export default function (pi: ExtensionAPI) {
     currentCtx = ctx;
   });
 
-  pi.on("turn_end", async (_event, ctx) => {
+  // message_end precedes tool execution, so cache age includes time spent in a
+  // long-running tool or waiting for a human answer after the provider responds.
+  pi.on("message_end", async (event: MessageEndEvent, ctx) => {
+    if (event.message.role !== "assistant") return;
     currentCtx = ctx;
-    if (firstTurnTokens == null) {
-      const tokens = ctx.getContextUsage()?.tokens;
+    const timestamp = event.message.timestamp;
+    cacheStartedAt = typeof timestamp === "number" && Number.isFinite(timestamp)
+      ? timestamp
+      : Date.now();
+    refreshStatus();
+  });
+
+  pi.on("turn_end", async (event: TurnEndEvent, ctx) => {
+    currentCtx = ctx;
+    if (firstTurnTokens == null && event.message.role === "assistant") {
+      const tokens = event.message.usage.totalTokens;
       if (typeof tokens === "number" && Number.isFinite(tokens) && tokens >= 0) firstTurnTokens = tokens;
+    }
+    refreshStatus();
+  });
+
+  pi.events.on?.(USER_WAIT_EVENT, (payload: unknown) => {
+    const next = payload as UserWaitEvent | undefined;
+    if (typeof next?.waiting !== "boolean" || next.waiting === waitingForUser) return;
+    const now = Date.now();
+    if (next.waiting) {
+      if (working && runStartedAt != null) {
+        accrueUntil(now);
+        runStartedAt = undefined;
+      }
+      waitingForUser = true;
+    } else {
+      waitingForUser = false;
+      if (working) runStartedAt = now;
     }
     refreshStatus();
   });

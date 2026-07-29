@@ -2,6 +2,7 @@ import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readPlanTiming, readTimeSpent, withPlanTiming, withTimeSpent } from "./plan-time.js";
 import { autoSlug, canonicalTaskName, composePlan, ensurePiState, isScaffold, listPlanNames, MEMORY_STUB, movePlan, normalizeTaskName, PLAN_TEMPLATE, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
 
 function makeHarness(cwd: string, name?: string) {
@@ -57,7 +58,7 @@ describe("save_plan", () => {
 		const saved = await harness.execute({ name: "SI-7 dashboard polish", plan });
 		const path = join(cwd, ".pi", "plan", "SI-7-dashboard-polish.md");
 		expect(saved.details).toEqual({ name: "SI-7-dashboard-polish", path });
-		expect(await readFile(path, "utf8")).toBe(plan);
+		expect(await readFile(path, "utf8")).toBe(withTimeSpent(plan, "SI-7-dashboard-polish", 0));
 		expect(harness.getName()).toBe("SI-7-dashboard-polish");
 	});
 
@@ -67,7 +68,7 @@ describe("save_plan", () => {
 		const replacement = "## Current state\n\nRevised.\n\n## Desired state\n\nD instead.\n";
 		const result = await harness.execute({ name: "revised approach", plan: replacement });
 		expect(result.isError).toBeUndefined();
-		expect(await readFile(result.details.path, "utf8")).toBe(replacement);
+		expect(await readFile(result.details.path, "utf8")).toBe(withTimeSpent(replacement, "revised-approach", 0));
 	});
 
 	it("appends a re-plan after the approval kickoff", async () => {
@@ -85,7 +86,17 @@ describe("save_plan", () => {
 		await seedPlan(cwd, "scaffolded-task", PLAN_TEMPLATE.replace("<session-name>", "scaffolded-task"));
 		const harness = makeHarness(cwd, "scaffolded-task");
 		const result = await harness.execute({ name: "scaffolded task", plan });
-		expect(await readFile(result.details.path, "utf8")).toBe(plan);
+		expect(await readFile(result.details.path, "utf8")).toBe(withTimeSpent(plan, "scaffolded-task", 0));
+	});
+
+	it("preserves the phase breakdown when replacing a proposal", async () => {
+		const timing = { exploreMs: 20_000, planMs: 30_000, executeMs: 33_456, unallocatedMs: 0 };
+		await seedPlan(cwd, "timed-proposal", withPlanTiming(plan, "timed-proposal", timing));
+		const harness = makeHarness(cwd, "timed-proposal");
+		const result = await harness.execute({ name: "timed proposal", plan: "## Current state\n\nChanged.\n" });
+		const saved = await readFile(result.details.path, "utf8");
+		expect(readTimeSpent(saved)).toBe(83_456);
+		expect(readPlanTiming(saved)).toEqual(timing);
 	});
 
 	it("presents the on-disk plan when no body is passed, instead of clobbering it", async () => {
@@ -94,7 +105,7 @@ describe("save_plan", () => {
 		const result = await harness.execute({ name: "existing name" });
 		expect(result.isError).toBeUndefined();
 		expect(result.content[0].text).toContain("Edited by the agent.");
-		expect(await readFile(join(cwd, ".pi", "plan", "existing-name.md"), "utf8")).toBe("Edited by the agent.\n");
+		expect(await readFile(join(cwd, ".pi", "plan", "existing-name.md"), "utf8")).toBe(withTimeSpent("Edited by the agent.\n", "existing-name", 0));
 	});
 
 	it("echoes the saved plan so the decision is made against the file", async () => {
@@ -103,11 +114,12 @@ describe("save_plan", () => {
 		expect(result.content[0].text).toContain("## Approach");
 	});
 
-	it("says the plan is empty rather than pretending there is one", async () => {
+	it("gives a missing plan its canonical title and zero-time marker", async () => {
 		const harness = makeHarness(cwd);
 		const result = await harness.execute({ name: "nothing written yet" });
 		expect(result.isError).toBeUndefined();
-		expect(result.content[0].text).toContain("(empty)");
+		expect(result.content[0].text).toContain("# nothing-written-yet");
+		expect(result.content[0].text).toContain("**Time spent:** 0s");
 	});
 
 	it("keeps the timestamp prefix and moves the file when the slug changes", async () => {

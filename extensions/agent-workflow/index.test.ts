@@ -18,6 +18,7 @@ function harness(cwd = "/pi-director-index-test-nonexistent") {
 			handlers.set(name, [...(handlers.get(name) ?? []), handler]);
 		}),
 		registerCommand: vi.fn((name: string, command: any) => commands.set(name, command)),
+		registerEntryRenderer: vi.fn(),
 		registerTool: vi.fn((tool: any) => tools.push(tool)),
 		getSessionName: vi.fn(() => sessionName),
 		setSessionName: vi.fn((name: string) => { sessionName = name; }),
@@ -59,6 +60,7 @@ describe("workflow prompt", () => {
 		expect(prompt.startsWith("base")).toBe(true);
 		expect(prompt.match(/<pi_workflow>/g)).toHaveLength(1);
 		expect([...h.commands.keys()]).toEqual(["handoff"]);
+		expect(h.pi.registerEntryRenderer).toHaveBeenCalledWith("agent-workflow:notice", expect.any(Function));
 		// Input records the display-only explore phase; the approval prompt is
 		// armed by tool_execution_end and delivered by agent_settled.
 		expect(h.handlers.has("input")).toBe(true);
@@ -84,10 +86,12 @@ describe("workflow prompt", () => {
 		expect(first.slice(first.indexOf("<pi_workflow>"))).toBe(second.slice(second.indexOf("<pi_workflow>")));
 	});
 
-	it("closes the small-task loophole by name", () => {
+	it("closes the small-task loophole for both planning and the scope question", () => {
 		// Stating scale-invariance abstractly was not enough: an agent read it and still
 		// carved out an exemption for a rename it judged too small to plan.
 		expect(workflowPrompt()).toContain('"trivially small" is not an exemption');
+		expect(workflowPrompt()).toContain("asks at least one question");
+		expect(workflowPrompt()).toContain("even for simple work");
 	});
 });
 
@@ -127,6 +131,8 @@ describe("plan scaffolding", () => {
 		expect(await planFiles()).toEqual([`${name}.md`]);
 		const written = await readFile(join(cwd, ".pi", "plan", `${name}.md`), "utf8");
 		expect(written).toContain(`# ${name}`);
+		expect(written).toContain("<!-- time-spent:start total-ms=0 explore-ms=0 plan-ms=0 execute-ms=0 unallocated-ms=0 -->");
+		expect(written).toContain("**Time spent:** 0s");
 		expect(written).toContain("## Checklist");
 		// The MEMORY stub is part of the same bootstrap.
 		await expect(readFile(join(cwd, ".pi", "MEMORY.md"), "utf8")).resolves.toContain("#");

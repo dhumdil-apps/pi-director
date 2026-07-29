@@ -32,24 +32,27 @@ describe("status bar transient segments", () => {
 		expect(renderBar(segments, settings, theme, 80)[0]).toContain("sonnet · ⚡ notice");
 	});
 
-	it("puts a transient segment on the line it declares", () => {
-		const segments = new Map<string, Segment>([
-			["branch", { id: "branch", text: "main" }],
-			["notice", { id: "notice", text: "notice", transient: true, row: 2 }],
-		]);
+	it.each([
+		[
+			"puts a transient segment on its declared line",
+			new Map<string, Segment>([
+				["branch", { id: "branch", text: "main" }],
+				["notice", { id: "notice", text: "notice", transient: true, row: 2 }],
+			]),
+			[false, true],
+		],
+		[
+			"hides an unconfigured non-transient segment",
+			new Map<string, Segment>([
+				["branch", { id: "branch", text: "main" }],
+				["model", { id: "model", text: "sonnet" }],
+				["hidden", { id: "hidden", text: "hidden" }],
+			]),
+			[false],
+		],
+	])("%s", (_name, segments, expectedLines) => {
 		const lines = renderBar(segments, settings, theme, 80);
-		expect(lines).toHaveLength(2);
-		expect(lines[0]).not.toContain("notice");
-		expect(lines[1]).toContain("notice");
-	});
-
-	it("does not show an unconfigured non-transient segment", () => {
-		const segments = new Map<string, Segment>([
-			["branch", { id: "branch", text: "main" }],
-			["model", { id: "model", text: "sonnet" }],
-			["hidden", { id: "hidden", text: "hidden" }],
-		]);
-		expect(renderBar(segments, settings, theme, 80).join("\n")).not.toContain("hidden");
+		expect(lines.map((line) => line.includes("notice") || line.includes("hidden"))).toEqual(expectedLines);
 	});
 });
 
@@ -88,19 +91,13 @@ describe("status bar lines", () => {
 		expect(lines.every((line) => visibleWidth(line) === 100)).toBe(true);
 	});
 
-	it("keeps an empty line between used lines as a blank row", () => {
-		const lines = renderBar(segments, layout({ left: ["branch"] }, {}, { left: ["cpu"] }), theme, 40);
-		expect(lines).toHaveLength(3);
-		expect(lines[1]).toBe(" ".repeat(40));
-		expect(lines[2]).toContain("cpu");
-	});
-
-	it("drops trailing empty lines", () => {
-		const lines = renderBar(segments, layout({ left: ["branch"] }, { left: ["tokens"] }), theme, 40);
-		expect(lines).toHaveLength(2);
-	});
-
-	it("falls back to one blank line when nothing has content", () => {
-		expect(renderBar(new Map(), layout({ left: ["branch"] }), theme, 40)).toEqual([" ".repeat(40)]);
+	it.each([
+		["keeps an interior blank row", segments, layout({ left: ["branch"] }, {}, { left: ["cpu"] }), 3, 1],
+		["drops trailing empty rows", segments, layout({ left: ["branch"] }, { left: ["tokens"] }), 2, undefined],
+		["falls back to one blank row", new Map<string, Segment>(), layout({ left: ["branch"] }), 1, 0],
+	])("%s", (_name, available, configured, length, blankIndex) => {
+		const lines = renderBar(available, configured, theme, 40);
+		expect(lines).toHaveLength(length);
+		if (blankIndex !== undefined) expect(lines[blankIndex]).toBe(" ".repeat(40));
 	});
 });

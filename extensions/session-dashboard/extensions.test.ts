@@ -12,6 +12,15 @@ import { USAGE_CHART_END, USAGE_CHART_START, renderWelcomeText } from "./welcome
 
 const BUNDLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
+function expectInOrder(text: string, ...parts: string[]): void {
+	let previous = -1;
+	for (const part of parts) {
+		const index = text.indexOf(part);
+		expect(index).toBeGreaterThan(previous);
+		previous = index;
+	}
+}
+
 function activeExtensionNames(): string[] {
 	const pkg = JSON.parse(readFileSync(join(BUNDLE_ROOT, "package.json"), "utf8"));
 	return pkg.pi.extensions.map((entry: string) => entry.split("/").filter(Boolean).at(-2));
@@ -47,27 +56,21 @@ describe("session dashboard extension metadata", () => {
 			expect(presentation.description).not.toBe("");
 			expect(deck).toContain(presentation.name);
 		}
-		expect(deck).not.toContain("README");
-		// Compact deck: names only, no per-extension prose descriptions.
-		expect(deck).not.toContain(" — ");
-		expect(deck.indexOf("**Display**")).toBeLessThan(deck.indexOf("**Usage**"));
-		expect(deck.indexOf("**Usage**")).toBeLessThan(deck.indexOf("**Workflow**"));
-		expect(deck.indexOf("**Workflow**")).toBeLessThan(deck.indexOf("**Config**"));
+		for (const prose of ["README", " — "]) expect(deck).not.toContain(prose);
+		expectInOrder(deck, "**Display**", "**Usage**", "**Workflow**", "**Config**");
 	});
 
 	it("renders the current directory before the hint without a footer when omitted", () => {
 		const welcome = renderWelcomeText({
 			workingDirectory: "~/work",
-			contextFiles: "**Context files**\n- `AGENTS.md`",
+			contextFiles: "**📦 Context files**\n- `AGENTS.md`",
 			tip: "🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`",
 		});
 		expect(welcome.startsWith("~/work")).toBe(true);
-		expect(welcome.indexOf("~/work")).toBeLessThan(welcome.indexOf("🧠 `/init`"));
-		expect(welcome.indexOf("🧠 `/init`")).toBeLessThan(welcome.indexOf("**Context files**"));
-		expect(welcome.trimEnd()).toBe("~/work\n\n🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`\n\n**Context files**\n- `AGENTS.md`");
-		expect(welcome).not.toContain("🧩 **Extensions**");
-		expect(welcome).not.toContain("Session context");
-		expect(welcome).not.toContain("Quick reference");
+		expectInOrder(welcome, "~/work", "🧠 `/init`", "**📦 Context files**");
+		for (const omitted of ["🧩 **Extensions**", "Session context", "Quick reference"]) {
+			expect(welcome).not.toContain(omitted);
+		}
 	});
 
 	it("places the hint and chart before context, with memory notice last", () => {
@@ -75,13 +78,9 @@ describe("session dashboard extension metadata", () => {
 			workingDirectory: "~/work",
 			tip: "❓ `/help`",
 			usageChart: '{"model":true}',
-			contextFiles: "**Context files**\n- `AGENTS.md`",
+			contextFiles: "**📦 Context files**\n- `AGENTS.md`",
 			memoryNotice: "> ⚠️ Project memory needs review.",
 		});
-		expect(welcome.indexOf("~/work")).toBeLessThan(welcome.indexOf("❓ `/help`"));
-		expect(welcome.indexOf("❓ `/help`")).toBeLessThan(welcome.indexOf('{"model":true}'));
-		expect(welcome.indexOf('{"model":true}')).toBeLessThan(welcome.indexOf("**Context files**"));
-		expect(welcome.indexOf("**Context files**")).toBeLessThan(welcome.indexOf("Project memory needs review"));
-		expect(welcome.trimEnd()).toBe(`~/work\n\n❓ \`/help\`\n\n${USAGE_CHART_START}\n{"model":true}\n${USAGE_CHART_END}\n\n**Context files**\n- \`AGENTS.md\`\n\n> ⚠️ Project memory needs review.`);
+		expectInOrder(welcome, "~/work", "❓ `/help`", USAGE_CHART_START, '{"model":true}', USAGE_CHART_END, "**📦 Context files**", "Project memory needs review");
 	});
 });

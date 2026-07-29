@@ -18,13 +18,16 @@ code, backend, and process truth.
 2. Observe before acting:
    - `pi-inspector app` for compact `app:state` semantic state.
    - `pi-inspector events`, `network`, `body`, or `screenshot` only as needed.
-   - Use DOM, accessibility, storage, or Vue/Pinia state as debugging fallbacks,
-     not as the first interpretation of app behavior.
+   - Use storage, Eval, or the run bundle as debugging fallbacks, not as the first
+     interpretation of app behavior.
 3. Run `pi-inspector flows` and prefer a named journey with
-   `pi-inspector flow run <name> --param k=v`.
-4. Use raw navigate/click/type/scroll/eval only when no flow fits. If the same
-   journey needs repeated ad-hoc actions, propose or add a target-repo flow.
-5. Record the flow name, outcome, relevant semantic state, and captured evidence
+   `pi-inspector flow run <name> --param k=v`; sweep a suite with
+   `pi-inspector flow run --all` or `--tag <tag>`.
+4. Read `pi-inspector run show last` for the verdict, the API requests the run triggered
+   (attributed to the step that caused them), console output, and backend log lines.
+5. Use raw navigate/click/type/scroll/eval only when no flow fits. If the journey is worth
+   repeating, draft it with `pi-inspector flow scaffold <name> -o <flows-dir>/<name>.json`.
+6. Record the flow name, outcome, relevant semantic state, and captured evidence
    in the task close-out. If Inspector was unavailable, say browser verification
    was not run.
 

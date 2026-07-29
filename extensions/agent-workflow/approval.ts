@@ -21,18 +21,19 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { isLeanContext } from "./context-usage.js";
+import { stripTimeSpent } from "./plan-time.js";
 import { planPath } from "./task.js";
+import { duringUserWait } from "./user-wait.js";
 import { handoffKickoff } from "./handoff.js";
+import { appendHeadlessNotice } from "./notice.js";
 import { derivePhaseFromBranch, recordWorkflowPhase } from "./phase.js";
 import { resolvePlanTask } from "./task.js";
 
 /** Content identity of a plan file; a missing file hashes as empty, never throws. */
 async function planDigest(cwd: string, task: string): Promise<string> {
 	const contents = await readFile(planPath(cwd, task), "utf8").catch(() => "");
-	return createHash("sha256").update(contents).digest("hex");
+	return createHash("sha256").update(stripTimeSpent(contents)).digest("hex");
 }
-
-const APPROVAL_NOTICE_TYPE = "agent-workflow:approval-notice";
 
 // Enough to catch the ways the working tree actually changes; a shell command is
 // included wholesale rather than guessed at, since a read-only command warns at
@@ -104,14 +105,13 @@ export function registerApproval(pi: ExtensionAPI): void {
 		const { task } = offer;
 
 		if (!ctx.hasUI) {
-			pi.sendMessage(
-				{ customType: APPROVAL_NOTICE_TYPE, content: `Plan saved — run /handoff ${task} to execute it in a fresh session.`, display: true },
-				{ triggerTurn: false },
-			);
+			appendHeadlessNotice(pi, ctx.mode, `Plan saved — run /handoff ${task} to execute it in a fresh session.`, "info");
 			return;
 		}
 
-		const choice = await ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage())));
+		const choice = await duringUserWait(pi, "approval", () =>
+			ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage()))),
+		);
 		if (choice?.startsWith(PROCEED)) {
 			approved = { task, digest: await planDigest(ctx.cwd, task) };
 			unapprovedTask = undefined;

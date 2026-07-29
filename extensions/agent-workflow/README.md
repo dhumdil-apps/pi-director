@@ -21,8 +21,13 @@ lands, before long context or compaction can erase it.
 
 ## Tools
 
-- `ask` (`ask.ts`) — a question and two to four options, each a short headline
-  plus a one-sentence description, recommendation first. A final "Write custom answer..."
+- `ask` (`ask.ts`) — the required boundary between Explore and Plan. Every
+  initial plan or re-plan starts with at least one picker question, even when the
+  only decision is whether the smallest proposed scope is sufficient. Invoking
+  the valid interactive picker records the context-free `plan` phase; the human
+  response wait is excluded from work time. The tool offers two to four options,
+  each a short headline plus a one-sentence description, recommendation first.
+  A final "Write custom answer..."
   option is appended to the picker so the user can close the picker and type an answer directly
   without triggering a new model call. The full Q&A is printed in the transcript by `renderCall`;
   the dialog below is a plain `ctx.ui.select` over the headlines alone, so answering is one keypress.
@@ -51,8 +56,11 @@ a deliberate knowledge pass.
 
 Explore opens on project memory — `.pi/MEMORY.md`, or wherever the project's
 `AGENTS.md` says it lives — orientation and quirks, so discovery begins
-with a map rather than from zero. Entries are *leads to verify, not facts* and
-carry no per-entry confidence or staleness tags that can rot. The single hidden
+with a map rather than from zero. For Pi behavior, Explore checks local source
+and focused tests before Pi-core documentation; opening host docs requires a
+named API question that local evidence did not answer. Entries are *leads to
+verify, not facts* and carry no per-entry confidence or staleness tags that can
+rot. The single hidden
 review marker has a narrower role: it records only a deliberate `/init` audit.
 The read-only project-memory extension ignores knowledge-only commits and warns
 when relevant Git state has moved. Code remains authoritative, and an entry
@@ -64,7 +72,13 @@ the next audit.
 - **Auto-scaffold** (`index.ts`) — an unnamed session's first turn creates
   `.pi/plan/<timestamp>-<first-prompt-words>.md` from `PLAN_TEMPLATE` and a
   `.pi/MEMORY.md` stub — orientation and quirks — then names the session after
-  it. The stub is written only when the file is absent, so an
+  it. The plan includes a script-owned `time-spent` block below its title;
+  Progress Tracker updates exact total, Explore, Plan, and Execute milliseconds
+  whenever a run settles. The visible block prints the same breakdown for human
+  review. `save_plan` preserves that block while replacing Agent-authored
+  sections, and approval identity excludes it so a timer tick cannot trigger a
+  new decision. Legacy total-only blocks migrate that history into an
+  Unallocated bucket; marker-free plans start at zero when next saved or settled. The memory stub is written only when absent, so an
   existing memory is never reshaped. Best-effort: an unwritable cwd is ignored
   rather than failing the turn.
 - **The approval picker** (`approval.ts`) — a successful `save_plan` whose plan
@@ -75,7 +89,8 @@ the next audit.
   handoff, or revise?* Context load picks the recommendation (lean → Proceed,
   loaded → Handoff). Proceed kicks off execution; Handoff prefills
   `/handoff <session-name>`; Revise or dismissing approves nothing. Headless
-  sessions get a displayed message naming the command instead. Which task was
+  sessions get a context-free notice entry naming the command instead, also
+  written to stderr in print mode. Which task was
   approved — and the digest of what was approved — is held in memory only, so a
   reload costs one extra prompt. Display phase is separate: post-execution human
   input records `explore`, plan saves record `plan`, and approval records
@@ -86,7 +101,8 @@ the next audit.
   the name, a display-only `execute` phase entry, and a kickoff naming the plan
   path. The phase is seeded before replacement-session extensions initialize;
   the kickoff remains the model's instruction. Resolution: explicit name, then
-  session name, then a lone remaining plan — several mean it asks which.
+  session name, then a lone remaining plan — several mean it asks which. Headless
+  resolution errors use the same context-free notice path and print-mode stderr.
 
 Plan files are never deleted by the agent; `.pi/plan/` is the user's to keep,
 archive, or prune, and legacy `.pi/goal/` files are ignored and preserved.

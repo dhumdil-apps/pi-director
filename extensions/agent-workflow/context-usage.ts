@@ -16,6 +16,8 @@ import { SEPARATOR } from "../status-bar/src/powerbar/settings.js";
 // predictable meaning regardless of the provider's window size.
 export const CONTEXT_WARNING_PERCENT = 20;
 export const CONTEXT_ERROR_PERCENT = 40;
+const INIT_TOKENS_WARNING = 10_000;
+const INIT_TOKENS_ERROR = 20_000;
 
 /** Compact token count: 940, 84.0k, 1.0M. */
 export function formatTokens(tokens: number): string {
@@ -62,12 +64,8 @@ export function contextUsageText(usage: ContextUsage | undefined, theme: Theme):
   return [theme.fg(color, "LLM Attention Span (ctx)"), bar, theme.fg(color, readout)].filter(Boolean).join(" ");
 }
 
-// Below half the prompt served from cache, the readout is a cost warning rather than
-// reassurance, so it drops to dim instead of claiming the accent color.
-const CACHE_HEALTHY_PERCENT = 50;
-
 /**
- * Share of the last request's prompt that was served from cache — `⚡ cache 92%`.
+ * Share of the last request's prompt that was served from cache — `🗃️ cache 92%`.
  * Undefined when no assistant turn has completed or the provider reported no
  * prompt tokens at all (nothing to have hit).
  */
@@ -76,7 +74,17 @@ export function cacheHitText(usage: Usage | undefined, theme: Theme): string | u
   const prompt = (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheWrite ?? 0);
   if (prompt <= 0) return undefined;
   const percent = Math.round(((usage.cacheRead ?? 0) / prompt) * 100);
-  return theme.fg(percent >= CACHE_HEALTHY_PERCENT ? "accent" : "dim", `⚡ cache ${percent}%`);
+  return theme.fg("dim", `🗃️ cache ${percent}%`);
+}
+
+/** Initial prompt weight is neutral until its absolute size becomes a concern. */
+function initialTokensText(tokens: number, theme: Theme): string {
+  const color: ThemeColor = tokens >= INIT_TOKENS_ERROR
+    ? "error"
+    : tokens >= INIT_TOKENS_WARNING
+      ? "warning"
+      : "dim";
+  return theme.fg(color, `📦 init ${formatTokens(tokens)}`);
 }
 
 /**
@@ -96,7 +104,7 @@ export function contextIndicatorText(
     cacheHitText(extras?.lastUsage, theme),
     extras?.firstTurnTokens == null
       ? undefined
-      : theme.fg("dim", `init tokens ${formatTokens(extras.firstTurnTokens)}`),
+      : initialTokensText(extras.firstTurnTokens, theme),
   ].filter((fragment): fragment is string => fragment !== undefined);
   return fragments.join(theme.fg("dim", SEPARATOR));
 }

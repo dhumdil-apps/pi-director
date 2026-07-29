@@ -34,24 +34,24 @@ beforeEach(() => {
 	vi.clearAllMocks();
 });
 
+function expectInOrder(text: string, ...parts: string[]): void {
+	let previous = -1;
+	for (const part of parts) {
+		const index = text.indexOf(part);
+		expect(index).toBeGreaterThan(previous);
+		previous = index;
+	}
+}
+
 describe("tildify", () => {
-	it("tildifies a path under the home directory", () => {
-		const home = homedir();
-		expect(tildify(`${home}/projects/foo`)).toBe("~/projects/foo");
-	});
-
-	it("tildifies the home directory itself", () => {
-		expect(tildify(homedir())).toBe("~");
-	});
-
-	it("does not mistake a sibling directory that merely shares the home dir as a prefix", () => {
-		const home = homedir();
-		const sibling = `${home}-backup/projects/foo`;
-		expect(tildify(sibling)).toBe(sibling);
-	});
-
-	it("leaves paths outside the home directory untouched", () => {
-		expect(tildify("/var/log/foo")).toBe("/var/log/foo");
+	const home = homedir();
+	it.each([
+		[`${home}/projects/foo`, "~/projects/foo"],
+		[home, "~"],
+		[`${home}-backup/projects/foo`, `${home}-backup/projects/foo`],
+		["/var/log/foo", "/var/log/foo"],
+	])("maps %s to %s", (path, expected) => {
+		expect(tildify(path)).toBe(expected);
 	});
 });
 
@@ -75,8 +75,9 @@ describe("UsageChartCard", () => {
 
 	it("renders the Last 30 Days · Per bucket cost · by model header and a per-model legend", () => {
 		const rendered = card().render(72);
-		expect(rendered[0]).toContain("Last 30 Days");
-		expect(rendered[0]).toContain("Per bucket cost · by model");
+		for (const heading of ["Last 30 Days", "Per bucket cost · by model"]) {
+			expect(rendered[0]).toContain(heading);
+		}
 		expect(rendered.some((line) => line.includes("anthropic") && line.includes("100%"))).toBe(true);
 	});
 
@@ -119,16 +120,65 @@ describe("UsageChartCard", () => {
 	});
 });
 
+describe("context-free dashboard cards", () => {
+	it("registers entry renderers and appends /help and /context without model messages", async () => {
+		const commands = new Map<string, (args: string, ctx: unknown) => Promise<void>>();
+		const appendEntry = vi.fn();
+		const registerEntryRenderer = vi.fn();
+		let statusListener: ((value: unknown) => void) | undefined;
+		const pi = {
+			appendEntry,
+			events: { on: (_name: string, listener: (value: unknown) => void) => { statusListener = listener; } },
+			getAllTools: () => [],
+			registerEntryRenderer,
+			registerCommand: (name: string, options: { handler: (args: string, ctx: unknown) => Promise<void> }) => {
+				commands.set(name, options.handler);
+			},
+			on: vi.fn(),
+		};
+		sessionDashboardExtension(pi as never);
+
+		expect(registerEntryRenderer.mock.calls.map(([type]) => type)).toEqual([
+			"session-dashboard",
+			"session-dashboard-help",
+			"session-dashboard-context",
+			"session-dashboard-context-reminder",
+		]);
+
+		await commands.get("help")?.("", {});
+		await commands.get("context")?.("", {
+			getSystemPrompt: () => "Pi base prompt.",
+			getSystemPromptOptions: () => ({ contextFiles: [] }),
+			getContextUsage: () => ({ tokens: 10, contextWindow: 1_000 }),
+			sessionManager: { buildContextEntries: () => [] },
+		});
+
+		expect(appendEntry.mock.calls.map(([type]) => type)).toEqual([
+			"session-dashboard-help",
+			"session-dashboard-context",
+		]);
+		expect(appendEntry.mock.calls[0]?.[1].content).toContain("# Help");
+		expect(appendEntry.mock.calls[1]?.[1].content).toContain("context breakdown");
+
+		statusListener?.({ working: true, phase: "execute", contextUsed: 12_000 });
+		statusListener?.({ working: false, phase: "execute", contextUsed: 12_000 });
+		statusListener?.({ working: false, phase: "execute", contextUsed: 12_000 });
+		expect(appendEntry.mock.calls[2]?.[0]).toBe("session-dashboard-context-reminder");
+		expect(appendEntry.mock.calls[2]?.[1].content).toContain("Run `/context`");
+		expect(appendEntry).toHaveBeenCalledTimes(3);
+	});
+});
+
 describe("session dashboard startup", () => {
 	it("shows a loading widget until the welcome message is ready", async () => {
 		const handlers = new Map<string, (event: unknown, ctx: unknown) => Promise<void>>();
 		const setWidget = vi.fn();
-		const sendMessage = vi.fn();
+		const appendEntry = vi.fn();
 		const pi = {
-			registerMessageRenderer: vi.fn(),
+			registerEntryRenderer: vi.fn(),
 			registerCommand: vi.fn(),
 			on: (event: string, handler: (event: unknown, ctx: unknown) => Promise<void>) => handlers.set(event, handler),
-			sendMessage,
+			appendEntry,
 		};
 		const loadedContext = "Follow the repository guide.";
 		contextMocks.loadProjectContextFiles.mockReturnValueOnce([
@@ -148,21 +198,20 @@ describe("session dashboard startup", () => {
 
 		await startup;
 
-		const content = sendMessage.mock.calls[0]?.[0].content as string;
-		expect(content).toContain("> 🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`");
-		expect(content).not.toContain("⚡ Raw Pi");
-		expect(content).not.toContain("⌘ Handoff");
-		expect(content).not.toContain("/mode");
-		expect(content).not.toContain("📜");
-		expect(content).toContain("**Context files**");
-		expect(content).toContain("`/workspace/AGENTS.md`");
-		expect(content).not.toContain("ignored/AGENTS.md");
-		expect(content).toContain(`*${tildify(process.cwd())}*`);
-		expect(content.match(/❓ `\/help`/g)).toHaveLength(1);
-		expect(content.match(/⚙️ `\/extension-settings`/g)).toHaveLength(1);
-		expect(content.match(/📊 `\/usage`/g)).toHaveLength(1);
-		expect(content.match(/🧠 `\/init`/g)).toHaveLength(1);
-		expect(content).not.toContain("π Measure twice, cut once. What’s your goal?");
+		expect(appendEntry.mock.calls[0]?.[0]).toBe("session-dashboard");
+		const content = appendEntry.mock.calls[0]?.[1].content as string;
+		for (const included of [
+			"> 🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`",
+			"**📦 Context files**",
+			"`/workspace/AGENTS.md`",
+			`*${tildify(process.cwd())}*`,
+		]) expect(content).toContain(included);
+		for (const omitted of ["⚡ Raw Pi", "⌘ Handoff", "/mode", "📜", "ignored/AGENTS.md", "π Measure twice, cut once. What’s your goal?"]) {
+			expect(content).not.toContain(omitted);
+		}
+		for (const command of ["❓ `/help`", "⚙️ `/extension-settings`", "📊 `/usage`", "🧠 `/init`"]) {
+			expect(content.split(command)).toHaveLength(2);
+		}
 		expect(content.startsWith(`*${tildify(process.cwd())}*`)).toBe(true);
 		expect(setWidget).toHaveBeenLastCalledWith("session-dashboard-loading", undefined);
 	});
@@ -178,12 +227,12 @@ describe("session dashboard startup", () => {
 		}));
 
 		const handlers = new Map<string, (event: unknown, ctx: unknown) => Promise<void>>();
-		const sendMessage = vi.fn();
+		const appendEntry = vi.fn();
 		const pi = {
-			registerMessageRenderer: vi.fn(),
+			registerEntryRenderer: vi.fn(),
 			registerCommand: vi.fn(),
 			on: (event: string, handler: (event: unknown, ctx: unknown) => Promise<void>) => handlers.set(event, handler),
-			sendMessage,
+			appendEntry,
 		};
 		sessionDashboardExtension(pi as never);
 
@@ -195,14 +244,14 @@ describe("session dashboard startup", () => {
 		});
 		expect(usageMocks.collectUsageData).toHaveBeenCalledOnce();
 		expect(memoryMocks.inspectProjectMemory).toHaveBeenCalledWith(process.cwd());
-		expect(sendMessage).not.toHaveBeenCalled();
+		expect(appendEntry).not.toHaveBeenCalled();
 
 		resolveUsage(null);
 		await Promise.resolve();
-		expect(sendMessage).not.toHaveBeenCalled();
+		expect(appendEntry).not.toHaveBeenCalled();
 		resolveMemory({ kind: "current" });
 		await startup;
-		expect(sendMessage).toHaveBeenCalledOnce();
+		expect(appendEntry).toHaveBeenCalledOnce();
 	});
 
 	it("renders an unreviewed memory notice inside the ordered dashboard card", async () => {
@@ -212,12 +261,12 @@ describe("session dashboard startup", () => {
 			location: {},
 		});
 		const handlers = new Map<string, (event: unknown, ctx: unknown) => Promise<void>>();
-		const sendMessage = vi.fn();
+		const appendEntry = vi.fn();
 		const pi = {
-			registerMessageRenderer: vi.fn(),
+			registerEntryRenderer: vi.fn(),
 			registerCommand: vi.fn(),
 			on: (event: string, handler: (event: unknown, ctx: unknown) => Promise<void>) => handlers.set(event, handler),
-			sendMessage,
+			appendEntry,
 		};
 		sessionDashboardExtension(pi as never);
 
@@ -228,12 +277,12 @@ describe("session dashboard startup", () => {
 			ui: { setWidget: vi.fn() },
 		});
 
-		const content = sendMessage.mock.calls[0]?.[0].content as string;
+		const content = appendEntry.mock.calls[0]?.[1].content as string;
 		const tip = "> 🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`";
 		const notice = "> ⚠️ Project memory may be stale. Run /init to refresh it.";
-		expect(sendMessage).toHaveBeenCalledOnce();
+		expect(appendEntry).toHaveBeenCalledOnce();
 		expect(content).toContain(notice);
-		expect(content.indexOf(tip)).toBeLessThan(content.indexOf(notice));
+		expectInOrder(content, tip, notice);
 	});
 
 	it("serializes a daily per-model 30-day graph", async () => {
@@ -258,12 +307,12 @@ describe("session dashboard startup", () => {
 			bounds: { todayMs: now - day, weekStartMs: now - 7 * day, lastWeekStartMs: now - 14 * day, last30DaysStartMs: start, nowMs: now },
 		});
 		const handlers = new Map<string, (event: unknown, ctx: unknown) => Promise<void>>();
-		const sendMessage = vi.fn();
+		const appendEntry = vi.fn();
 		const pi = {
-			registerMessageRenderer: vi.fn(),
+			registerEntryRenderer: vi.fn(),
 			registerCommand: vi.fn(),
 			on: (event: string, handler: (event: unknown, ctx: unknown) => Promise<void>) => handlers.set(event, handler),
-			sendMessage,
+			appendEntry,
 		};
 		sessionDashboardExtension(pi as never);
 		const loadedContext = "Follow the repository guide.";
@@ -277,13 +326,11 @@ describe("session dashboard startup", () => {
 			ui: { setWidget: vi.fn() },
 		});
 
-		const content = sendMessage.mock.calls[0]?.[0].content as string;
+		const content = appendEntry.mock.calls[0]?.[1].content as string;
 		const json = content.match(/<!-- session-dashboard-usage-chart -->\n(.+)\n<!-- \/session-dashboard-usage-chart -->/)?.[1];
 		const graph = JSON.parse(json ?? "") as GraphModel;
 		const notice = "> ⚠️ Project memory may be stale. Run /init to refresh it.";
-		expect(content.indexOf("🧠 `/init`")).toBeLessThan(content.indexOf("<!-- session-dashboard-usage-chart -->"));
-		expect(content.indexOf("<!-- session-dashboard-usage-chart -->")).toBeLessThan(content.indexOf("**Context files**"));
-		expect(content.indexOf("**Context files**")).toBeLessThan(content.indexOf(notice));
+		expectInOrder(content, "🧠 `/init`", "<!-- session-dashboard-usage-chart -->", "**📦 Context files**", notice);
 		expect(content.trimEnd().endsWith(notice)).toBe(true);
 		expect(content.match(/❓ `\/help`/g)).toHaveLength(1);
 		expect(graph).toMatchObject({ domainStartMs: start, domainEndMs: now, bucketMs: day });

@@ -2,65 +2,28 @@ import { describe, expect, it } from "vitest";
 import { segmentsForLabel, segmentsForWindow } from "./index.js";
 
 describe("segmentsForLabel", () => {
-	it("maps hour windows to their hour count", () => {
-		expect(segmentsForLabel("5h")).toBe(5);
-		expect(segmentsForLabel("3h")).toBe(3);
-	});
-
-	it("clamps short windows to the minimum", () => {
-		expect(segmentsForLabel("1h")).toBe(3);
-	});
-
-	it("converts multi-day hour windows to days", () => {
-		expect(segmentsForLabel("72h")).toBe(3);
-		expect(segmentsForLabel("168h")).toBe(7);
-	});
-
-	it("maps day windows", () => {
-		expect(segmentsForLabel("3d")).toBe(3);
-		expect(segmentsForLabel("7d")).toBe(7);
-		expect(segmentsForLabel("30d")).toBe(12);
-	});
-
-	it("maps named windows", () => {
-		expect(segmentsForLabel("Week")).toBe(7);
-		expect(segmentsForLabel("Day")).toBe(12);
-		expect(segmentsForLabel("Month")).toBe(10);
-		expect(segmentsForLabel("Monthly")).toBe(10);
-	});
-
-	it("falls back for non-duration labels", () => {
-		expect(segmentsForLabel("Credits")).toBe(10);
-		expect(segmentsForLabel("Tokens")).toBe(10);
-		expect(segmentsForLabel("Extra [active] 1/5")).toBe(10);
-		expect(segmentsForLabel("")).toBe(10);
-		expect(segmentsForLabel(undefined)).toBe(10);
+	it.each([
+		["5h", 5], ["3h", 3], ["1h", 3],
+		["72h", 3], ["168h", 7],
+		["3d", 3], ["7d", 7], ["30d", 12],
+		["Week", 7], ["Day", 12], ["Month", 10], ["Monthly", 10],
+		["Credits", 10], ["Tokens", 10], ["Extra [active] 1/5", 10], ["", 10], [undefined, 10],
+	])("maps %s to %i segments", (label, expected) => {
+		expect(segmentsForLabel(label)).toBe(expected);
 	});
 });
 
 describe("segmentsForWindow", () => {
 	const window = (resetDescription?: string, label = "Month") => ({ label, usedPercent: 0, resetDescription });
 
-	it("rounds day countdowns up to the next daily bar", () => {
-		expect(segmentsForWindow(window("4d8h"))).toBe(5);
-		expect(segmentsForWindow(window("4d"))).toBe(4);
-		expect(segmentsForWindow(window("1d1m"))).toBe(2);
-	});
-
-	it("caps day countdowns at five bars", () => {
-		expect(segmentsForWindow(window("5d"))).toBe(5);
-		expect(segmentsForWindow(window("12d"))).toBe(5);
-	});
-
-	it("rounds hour countdowns up and caps them at five bars", () => {
-		expect(segmentsForWindow(window("2h30m"))).toBe(3);
-		expect(segmentsForWindow(window("5h"))).toBe(5);
-		expect(segmentsForWindow(window("8h"))).toBe(5);
-	});
-
-	it("falls back to the label cadence without a supported countdown", () => {
-		expect(segmentsForWindow(window(undefined, "Week"))).toBe(7);
-		expect(segmentsForWindow(window("now", "Month"))).toBe(10);
-		expect(segmentsForWindow(window("active", "3d"))).toBe(3);
+	it.each([
+		["4d8h", "Month", 5], ["4d", "Month", 4], ["1d1m", "Month", 2],
+		["5d", "Month", 5], ["6d23h", "Month", 5],
+		["7d", "Month", 1], ["7d1h", "Month", 2], ["14d", "Month", 2],
+		["28d1m", "Month", 5], ["42d", "Month", 5],
+		["2h30m", "Month", 3], ["5h", "Month", 5], ["8h", "Month", 5],
+		[undefined, "Week", 7], ["now", "Month", 10], ["active", "3d", 3],
+	])("maps countdown %s with label %s to %i segments", (reset, label, expected) => {
+		expect(segmentsForWindow(window(reset, label))).toBe(expected);
 	});
 });

@@ -1,5 +1,5 @@
 /**
- * The ask tool — step 3 of the loop, made a keypress instead of a paragraph.
+ * The ask tool — the boundary between Explore and Plan, made a keypress instead of a paragraph.
  *
  * Deliberately a plain `ctx.ui.select` rather than a `ui.custom` overlay: the
  * bundle prefers native dialogs, and the dialog itself only needs to carry the
@@ -18,6 +18,8 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
+import { recordWorkflowPhase } from "./phase.js";
+import { duringUserWait } from "./user-wait.js";
 
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 4;
@@ -56,7 +58,7 @@ export function registerAsk(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "ask",
 		label: "Ask",
-		description: "Ask the User to choose between concrete options, in a native picker. Use whenever a choice would otherwise be made on the User's behalf; put the Agent's recommendation first. For anything that does not fit a short list of options, the Agent asks in an ordinary message instead.",
+		description: "Ask the User to choose between concrete options, in a native picker. Use at least once before every initial plan or re-plan, and whenever another choice would otherwise be made on the User's behalf; put the Agent's recommendation first. For anything that does not fit a short list of options, the Agent asks in an ordinary message instead.",
 		parameters: AskParams,
 		// The dialog owns the screen while it is open, so it must not race another call.
 		executionMode: "sequential",
@@ -73,8 +75,13 @@ export function registerAsk(pi: ExtensionAPI): void {
 				return result("Error: option headlines must be distinct — the picker returns the headline, not an index.", base, true);
 			}
 
+			// The mandatory scope question is the boundary between discovery and
+			// composing the plan. Human response time is paused separately below.
+			recordWorkflowPhase(pi, "plan");
 			const pickerHeadlines = [...headlines, WRITE_CUSTOM_OPTION];
-			const choice = await ctx.ui.select(params.question, pickerHeadlines);
+			const choice = await duringUserWait(pi, "question", () =>
+				ctx.ui.select(params.question, pickerHeadlines),
+			);
 
 			if (choice === undefined) {
 				return result("The User dismissed the question without answering — the Agent asks in an ordinary message, or says which option it would take and why.", base);

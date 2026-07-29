@@ -63,8 +63,9 @@ export function segmentsForLabel(label: string | undefined): number {
 
 /**
  * Uses the same compact countdown that is shown beside the bar so the width
- * represents the time horizon the percentage must cover. A partial lower unit
- * rounds up: `4d8h` needs five daily bars and `2h30m` needs three hourly bars.
+ * represents the time horizon the percentage must cover. The unit narrows as
+ * reset approaches: weeks at 7+ days, then days, then hours. A partial lower
+ * unit rounds up within that tier.
  */
 function segmentsForCountdown(resetDescription: string | undefined): number | undefined {
 	const match = resetDescription?.trim().match(/^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?$/i);
@@ -74,7 +75,11 @@ function segmentsForCountdown(resetDescription: string | undefined): number | un
 	const hours = Number(match[2] ?? 0);
 	const minutes = Number(match[3] ?? 0);
 
-	if (days > 0) return Math.min(MAX_COUNTDOWN_SEGMENTS, days + Number(hours > 0 || minutes > 0));
+	const hasPartialDay = hours > 0 || minutes > 0;
+	if (days >= 7) {
+		return Math.min(MAX_COUNTDOWN_SEGMENTS, Math.ceil((days + Number(hasPartialDay)) / 7));
+	}
+	if (days > 0) return Math.min(MAX_COUNTDOWN_SEGMENTS, days + Number(hasPartialDay));
 	return Math.min(MAX_COUNTDOWN_SEGMENTS, hours + Number(minutes > 0));
 }
 

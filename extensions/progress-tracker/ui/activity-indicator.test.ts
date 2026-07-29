@@ -109,10 +109,6 @@ describe("phase indicator", () => {
 			expect(status(lines)).toBe("[accent]› [accent]What’s up next?");
 		});
 
-		it("shows the goal prompt before a plan is approved", () => {
-			expect(status(mount(false).component.render(120))).toBe("[accent]› [dim]What’s your goal?");
-		});
-
 		it("keeps the idle marker and starts no timer when the agent is not working", () => {
 			const { component, requestRender } = mount(false);
 
@@ -136,37 +132,76 @@ describe("phase indicator", () => {
 			expect(requestRender).not.toHaveBeenCalled();
 		});
 
-		it("adds the in-flight run to prior session work, without a timer of its own", () => {
+		it("shows only the current phase interval in the leading timer", () => {
 			let now = 10_000;
 			const { component } = mount(true, {
 				phase: "execute",
 				random: () => 0,
 				runStartedAt: 5_000,
-				sessionWorkingMs: 60_000,
 				now: () => now,
 			});
 			const word = `[accent]${wordPool("execute")[0]}…`;
 
-			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${word}[dim] 1m 05s`);
+			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${word}[dim] 5s`);
 
 			// Only the spinner and word timers exist; the counter rides their re-renders.
 			expect(vi.getTimerCount()).toBe(2);
 
 			now = 28_000;
-			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${word}[dim] 1m 23s`);
+			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${word}[dim] 23s`);
 		});
 
-		it("keeps cumulative session work fixed on the idle row", () => {
+		it("shows live full-name phase buckets with the current phase accented", () => {
+			const { component } = mount(true, {
+				phase: "plan",
+				random: () => 0,
+				runStartedAt: 5_000,
+				planTime: { exploreMs: 10_000, planMs: 20_000, executeMs: 30_000, unallocatedMs: 0 },
+				now: () => 10_000,
+			});
+
+			expect(status(component.render(240))).toContain(
+				"[dim] 5s[dim] · [dim]explore 10s[dim] · [accent]plan 25s[dim] · [dim]execute 30s",
+			);
+		});
+
+		it("keeps static phase buckets beside cache age while idle", () => {
 			let now = 10_000;
-			const component = mount(false, { phase: "execute", sessionWorkingMs: 107_000, now: () => now }).component;
-			expect(status(component.render(120))).toBe("[accent]› [accent]What’s up next?[dim] 1m 47s");
+			const component = mount(false, {
+				phase: "plan",
+				planTime: { exploreMs: 10_000, planMs: 20_000, executeMs: 30_000, unallocatedMs: 0 },
+				cacheStartedAt: 5_000,
+				now: () => now,
+			}).component;
+			const phaseBuckets = "[dim]explore 10s[dim] · [accent]plan 20s[dim] · [dim]execute 30s";
 
-			now = 90_000;
-			expect(status(component.render(120))).toBe("[accent]› [accent]What’s up next?[dim] 1m 47s");
+			for (const [at, age] of [[10_000, "5s"], [34_000, "29s"]] as const) {
+				now = at;
+				expect(status(component.render(240))).toContain(`[accent] ${age}[dim] · ${phaseBuckets}`);
+			}
 		});
 
-		it("shows no duration before the session's first run", () => {
-			expect(status(mount(false, { runStartedAt: undefined }).component.render(120))).toBe("[accent]› [dim]What’s your goal?");
+		it("warns after 1m cache age and turns red after 5m", () => {
+			let now = 10_000;
+			const { component, requestRender } = mount(false, {
+				phase: "execute",
+				cacheStartedAt: 10_000,
+				now: () => now,
+			});
+
+			for (const [at, duration] of [
+				[10_000, "[accent] 0s"],
+				[70_000, "[warning] 1m 00s"],
+				[310_000, "[error] 5m 00s"],
+			] as const) {
+				now = at;
+				expect(status(component.render(120))).toContain(duration);
+			}
+
+			vi.advanceTimersByTime(1_000);
+			expect(requestRender).toHaveBeenCalledOnce();
+			component.dispose();
+			expect(vi.getTimerCount()).toBe(0);
 		});
 	});
 

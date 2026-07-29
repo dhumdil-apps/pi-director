@@ -24,6 +24,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { registerApproval } from "./approval.js";
 import { registerAsk } from "./ask.js";
 import { openHandoffSession } from "./handoff.js";
+import { registerWorkflowNotices } from "./notice.js";
 import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, registerTaskManagement } from "./task.js";
 
 /**
@@ -38,15 +39,16 @@ Every workflow runs all five steps (or resumes at step 4 when starting from a /h
 
   1. Explore
   - The Agent starts from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not durable facts. When code contradicts it, code wins: the Agent corrects the entry in the same turn.
+  - For Pi behavior, inspect local source and focused tests first; open Pi-core docs only for a named host-API question that local evidence leaves unresolved.
   - Discover what the work touches before forming an opinion about it.
 
   2. Ask
-  - Surface important choices the Agent would otherwise make on the User's behalf.
-  - Put those questions through the "ask" tool.
+  - Before every initial plan or re-plan, the Agent asks at least one question with the "ask" tool — even for simple work — so the User can confirm the smallest useful scope. Calling "ask" starts Plan timing.
+  - Surface every other important choice the Agent would otherwise make on the User's behalf through the same tool.
   - When one answer invalidates another question, the Agent says so and tries to align with more questions.
 
   3. Plan
-  - The Agent keeps .pi/plan/<session-name>.md current under the scaffolded headings (Current state, Decisions, Desired state, Approach, Quirks, Checklist).
+  - After the required scope question is answered, the Agent keeps .pi/plan/<session-name>.md current under the scaffolded headings (Current state, Decisions, Desired state, Approach, Quirks, Checklist).
   - The Agent calls the "save_plan" tool to present it, then ends the turn: the approval prompt is delivered to the User once the turn settles, so a turn that keeps going never reaches it.
   - Before approval, the User's corrections and added requirements revise one complete proposal. The Agent re-saves that complete plan; only the approval prompt approves.
   - After approval/execution, a material scope change creates a dated revision: the Agent passes only what changed, preserving the approved plan. The session keeps one plan file (the <session-name> is immutable).
@@ -75,6 +77,7 @@ export default function createExtension(pi: ExtensionAPI): void {
 	registerTaskManagement(pi);
 	registerAsk(pi);
 	registerApproval(pi);
+	registerWorkflowNotices(pi);
 
 	pi.registerCommand("handoff", {
 		description: "Hand the approved plan to a fresh session: /handoff [session-name]",

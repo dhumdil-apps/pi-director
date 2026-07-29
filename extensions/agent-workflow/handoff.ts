@@ -9,10 +9,10 @@
  */
 
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import { appendHeadlessNotice } from "./notice.js";
 import { PHASE_EVENT, type PhaseEvent } from "./phase.js";
 import { type PlanTask, resolvePlanTask } from "./task.js";
 
-const HANDOFF_NOTICE_TYPE = "agent-workflow:handoff-notice";
 const USAGE = "Usage: /handoff [session-name].";
 
 /** Executing from a handoff is auto-approved: the user approved the plan in the session that handed off. */
@@ -32,7 +32,7 @@ export async function openHandoffSession(
 ): Promise<void> {
 	const notify = (message: string, type: "info" | "warning") => {
 		if (ctx.hasUI) ctx.ui.notify(message, type);
-		else pi.sendMessage({ customType: HANDOFF_NOTICE_TYPE, content: message, display: true }, { triggerTurn: false });
+		else appendHeadlessNotice(pi, ctx.mode, message, type);
 	};
 
 	const { task, error } = resolvePlanTask(ctx.cwd, taskName, ctx.sessionManager.getSessionName());
