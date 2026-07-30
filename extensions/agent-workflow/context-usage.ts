@@ -2,8 +2,8 @@
  * Context-usage readout shared across the workflow UI.
  *
  * Lives in agent-workflow (not progress-tracker) so the approval prompt can
- * lean on the same thresholds the phase indicator's `LLM Attention Span (ctx) <bar>`
- * readout uses, without a circular import: progress-tracker already depends
+ * lean on the same thresholds the Status Bar's `LLM Attention Span (ctx) <bar>`
+ * segment uses, without a circular import: progress-tracker already depends
  * on agent-workflow.
  */
 

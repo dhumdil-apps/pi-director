@@ -50,7 +50,7 @@ const DEFAULT_LINES: Record<string, string> = {
 	"line2-right": "",
 	"line3-left": "cpu,ram,disk,net",
 	"line3-right": "sub-hourly,sub-weekly",
-	"line4-left": "",
+	"line4-left": "attention-span",
 	"line4-right": "",
 };
 

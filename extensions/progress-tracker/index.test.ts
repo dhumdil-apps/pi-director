@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
+import { CHECKPOINT_EVENT } from "../agent-workflow/checkpoint.js";
 import { readPlanTiming, readTimeSpent, withTimeSpent } from "../agent-workflow/plan-time.js";
 import { USER_WAIT_EVENT } from "../agent-workflow/user-wait.js";
 import createExtension from "./index.js";
@@ -71,28 +72,31 @@ function indicator(widgets: Array<[string, any]>, width = 80): string[] {
   return indicatorComponent(widgets).render(width);
 }
 
+function attention(emitted: Array<[string, any]>): string | undefined {
+  const [, payload] = emitted.findLast(([name, value]) => name === "powerbar:update" && value.id === "attention-span")!;
+  return payload.render?.(theme);
+}
+
 describe("progress tracker indicator", () => {
-  it("renders the pre-plan goal prompt and the context readout on its own line", async () => {
-    const { handlers } = harness();
+  it("renders the pre-plan goal prompt and publishes context to the status bar", async () => {
+    const { handlers, emitted } = harness();
     const widgets: Array<[string, any]> = [];
     await handlers.get("session_start")![0]({}, ctxWith(widgets));
-    expect(indicator(widgets).map(strip)).toEqual([
-      "[accent]› [dim]What’s your goal?",
-      `  [accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M`,
+    expect(emitted).toContainEqual([
+      "powerbar:register-segment",
+      { id: "attention-span", label: "LLM Attention Span", row: 4 },
     ]);
+    expect(indicator(widgets).map(strip)).toEqual(["[accent]› [dim]What’s your goal?"]);
+    expect(strip(attention(emitted)!)).toBe(
+      `[accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M`,
+    );
   });
 
-  it("updates the idle prompt above the context readout once a plan is approved", async () => {
+  it("updates the single-line idle prompt once a plan is approved", async () => {
     const { handlers, listeners } = harness();
     const widgets: Array<[string, any]> = [];
     const ctx = ctxWith(widgets);
     await handlers.get("session_start")![0]({}, ctx);
-
-    listeners.get("agent-workflow:phase")![0]({ phase: "plan" });
-    expect(indicator(widgets).map(strip)).toEqual([
-      "[accent]› [dim]What’s the plan?",
-      `  [accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M`,
-    ]);
 
     listeners.get("agent-workflow:phase")![0]({ phase: "execute" });
     expect(strip(indicator(widgets)[0])).toContain("[accent]What’s up next?");
@@ -112,9 +116,9 @@ describe("progress tracker indicator", () => {
     const ctx = ctxWith(widgets, branch);
     await handlers.get("session_start")![0]({}, ctx);
 
-    branch.push(phaseEntry("explore"), phaseEntry("plan"));
+    branch.push(phaseEntry("plan"));
     await handlers.get("session_tree")![0]({}, ctx);
-    expect(strip(indicator(widgets)[0])).toContain("[dim]What’s the plan?");
+    expect(strip(indicator(widgets)[0])).toContain("[dim]What’s your goal?");
   });
 
   it("does not leak the previous phase into a replacement session", async () => {
@@ -129,7 +133,7 @@ describe("progress tracker indicator", () => {
   });
 
   it("retains the provider-reported first-turn total alongside live context", async () => {
-    const { handlers } = harness();
+    const { handlers, emitted } = harness();
     const widgets: Array<[string, any]> = [];
     const ctx = ctxWith(widgets);
     await handlers.get("session_start")![0]({}, ctx);
@@ -137,11 +141,11 @@ describe("progress tracker indicator", () => {
     await handlers.get("turn_end")![0]({
       message: { role: "assistant", usage: { totalTokens: 6_400 } },
     }, ctx);
-    expect(indicator(widgets, 120).map(strip)[1]).toContain("[dim]📦 init 6.4k");
+    expect(strip(attention(emitted)!)).toContain("[dim]📦 init 6.4k");
 
     // A replacement session starts clean until its first completed turn.
     await handlers.get("session_start")![0]({}, ctx);
-    expect(indicator(widgets).map(strip)[1]).not.toContain("📦 init");
+    expect(strip(attention(emitted)!)).not.toContain("📦 init");
   });
 
   it("shows task work while active, cache age while idle, and resets with the session", async () => {
@@ -162,7 +166,8 @@ describe("progress tracker indicator", () => {
       await handlers.get("message_end")![0]({ message: { role: "assistant", timestamp: 6_500 } }, ctx);
       now.mockReturnValue(7_000);
       await handlers.get("agent_settled")![0]({}, ctx);
-      expect(strip(indicator(widgets, 160)[0])).toContain("[accent] 0s[dim] · [accent]explore 6s");
+      expect(strip(indicator(widgets, 160)[0])).toContain("[accent]explore 6s");
+      expect(strip(indicator(widgets, 160)[0])).not.toContain("[accent] 0s");
 
       now.mockReturnValue(100_000);
       expect(strip(indicator(widgets)[0])).toContain("[warning] 1m 33s");
@@ -177,7 +182,8 @@ describe("progress tracker indicator", () => {
       await handlers.get("message_end")![0]({ message: { role: "assistant", timestamp: 104_500 } }, ctx);
       now.mockReturnValue(105_000);
       await handlers.get("agent_settled")![0]({}, ctx);
-      expect(strip(indicator(widgets, 160)[0])).toContain("[accent] 0s[dim] · [accent]explore 11s");
+      expect(strip(indicator(widgets, 160)[0])).toContain("[accent]explore 11s");
+      expect(strip(indicator(widgets, 160)[0])).not.toContain("[accent] 0s");
 
       await handlers.get("session_start")![0]({}, ctx);
       expect(strip(indicator(widgets)[0])).not.toMatch(/\] \d/);
@@ -193,26 +199,28 @@ describe("progress tracker indicator", () => {
       const widgets: Array<[string, any]> = [];
       const ctx = ctxWith(widgets);
       await handlers.get("session_start")![0]({}, ctx);
-      listeners.get("agent-workflow:phase")![0]({ phase: "plan" });
       await handlers.get("agent_start")![0]({}, ctx);
 
       now.mockReturnValue(5_000);
       await handlers.get("message_end")![0]({ message: { role: "assistant", timestamp: 5_000 } }, ctx);
+      listeners.get(CHECKPOINT_EVENT)![0]({ action: "open", id: "approval-1", kind: "approval", timestamp: 5_000 });
       listeners.get(USER_WAIT_EVENT)![0]({ waiting: true, reason: "approval" });
-      expect(strip(indicator(widgets)[0])).toContain("[dim]What’s the plan?[accent] 0s");
+      expect(strip(indicator(widgets)[0])).toContain("[dim]What’s your goal?");
+      expect(strip(indicator(widgets)[0])).not.toContain("[accent] 0s");
       const [, waitingStatus] = emitted.findLast(([name]) => name === "agent-status:update")!;
       expect(waitingStatus.working).toBe(true);
 
       now.mockReturnValue(65_000);
       expect(strip(indicator(widgets)[0])).toContain("[warning] 1m 00s");
       listeners.get(USER_WAIT_EVENT)![0]({ waiting: false, reason: "approval" });
+      listeners.get(CHECKPOINT_EVENT)![0]({ action: "resolve", id: "approval-1", outcome: "revise", timestamp: 65_000 });
       now.mockReturnValue(67_000);
-      expect(strip(indicator(widgets, 160)[0])).toContain("[dim] 2s[dim] · [dim]explore 0s[dim] · [accent]plan 6s");
+      expect(strip(indicator(widgets, 200)[0])).toContain("[dim] 2s[dim] · [accent]explore 6s[dim] · [dim]execute 0s[dim] · [dim]decision 1m 00s");
 
       now.mockReturnValue(68_000);
       await handlers.get("agent_settled")![0]({}, ctx);
       await handlers.get("agent_start")![0]({}, ctx);
-      expect(strip(indicator(widgets, 160)[0])).toContain("[dim] 0s[dim] · [dim]explore 0s[dim] · [accent]plan 7s");
+      expect(strip(indicator(widgets, 200)[0])).toContain("[dim] 0s[dim] · [accent]explore 7s[dim] · [dim]execute 0s[dim] · [dim]decision 1m 00s");
     } finally {
       now.mockRestore();
     }
@@ -230,7 +238,7 @@ describe("progress tracker indicator", () => {
       const branch = [assistantEntry(500)];
       const ctx = ctxWith(widgets, branch, cwd);
       await first.handlers.get("session_start")![0]({}, ctx);
-      expect(strip(indicator(widgets)[0])).toContain("[accent] 0s");
+      expect(strip(indicator(widgets)[0])).not.toContain("[accent] 0s");
 
       await first.handlers.get("agent_start")![0]({}, ctx);
       now.mockReturnValue(6_000);
@@ -240,14 +248,14 @@ describe("progress tracker indicator", () => {
       await first.handlers.get("agent_settled")![0]({}, ctx);
       const persisted = await readFile(path, "utf8");
       expect(readTimeSpent(persisted)).toBe(65_000);
-      expect(readPlanTiming(persisted)).toEqual({ exploreMs: 5_000, planMs: 0, executeMs: 0, unallocatedMs: 60_000 });
+      expect(readPlanTiming(persisted)).toEqual({ exploreMs: 5_000, executeMs: 0, decisionMs: 0, unallocatedMs: 60_000 });
 
       now.mockReturnValue(10_000);
       const replacement = harness();
       const restored: Array<[string, any]> = [];
       const restoredCtx = ctxWith(restored, branch, cwd);
       await replacement.handlers.get("session_start")![0]({}, restoredCtx);
-      expect(strip(indicator(restored)[0])).toContain("[accent] 4s");
+      expect(strip(indicator(restored)[0])).not.toContain("[accent] 4s");
       await replacement.handlers.get("agent_start")![0]({}, restoredCtx);
       expect(strip(indicator(restored, 160)[0])).toContain("[dim] 0s[dim] · [accent]explore 5s");
     } finally {
@@ -256,7 +264,7 @@ describe("progress tracker indicator", () => {
     }
   });
 
-  it("splits an active run immediately when the workflow phase changes", async () => {
+  it("splits an active run immediately when the workflow mode changes", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "pi-progress-phases-"));
     const path = join(cwd, ".pi", "plan", "debug-login.md");
     await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
@@ -269,23 +277,19 @@ describe("progress tracker indicator", () => {
       await handlers.get("session_start")![0]({}, ctx);
       await handlers.get("agent_start")![0]({}, ctx);
 
-      now.mockReturnValue(3_000);
-      listeners.get("agent-workflow:phase")![0]({ phase: "plan" });
-      expect(strip(indicator(widgets, 240)[0])).toContain("[dim] 0s[dim] · [dim]explore 2s[dim] · [accent]plan 0s[dim] · [dim]execute 0s");
-
       now.mockReturnValue(7_000);
       listeners.get("agent-workflow:phase")![0]({ phase: "execute" });
-      expect(strip(indicator(widgets, 240)[0])).toContain("[dim] 0s[dim] · [dim]explore 2s[dim] · [dim]plan 4s[dim] · [accent]execute 0s");
+      expect(strip(indicator(widgets, 240)[0])).toContain("[dim] 0s[dim] · [dim]explore 6s[dim] · [accent]execute 0s[dim] · [dim]decision 0s");
 
       now.mockReturnValue(10_000);
-      expect(strip(indicator(widgets, 240)[0])).toContain("[dim] 3s[dim] · [dim]explore 2s[dim] · [dim]plan 4s[dim] · [accent]execute 3s");
+      expect(strip(indicator(widgets, 240)[0])).toContain("[dim] 3s[dim] · [dim]explore 6s[dim] · [accent]execute 3s[dim] · [dim]decision 0s");
       now.mockReturnValue(11_000);
       await handlers.get("agent_settled")![0]({}, ctx);
 
       expect(readPlanTiming(await readFile(path, "utf8"))).toEqual({
-        exploreMs: 2_000,
-        planMs: 4_000,
+        exploreMs: 6_000,
         executeMs: 4_000,
+        decisionMs: 0,
         unallocatedMs: 0,
       });
     } finally {

@@ -5,11 +5,12 @@ only describes it; where they disagree, the block wins.
 
 ## The loop
 
-Injected into every turn: **explore, ask, plan, execute, close out**. Two
-guarantees carry it — nothing in the working tree changes until the user has
-approved a plan, and questions are cheap. The loop is scale-invariant: a
-one-line change gets a one-line plan, so "too small to plan" is not an exit.
-Each step names an action; the mechanics live in the tool that performs it.
+Injected into every turn: **Align → Explore ↔ Align → Execute ↔ Align → Close
+out**. Explore and Execute are the sustained work modes. Align is a short,
+User-visible checkpoint that confirms intent, records consequential decisions,
+and chooses the next mode. Two guarantees carry the loop — nothing in the
+working tree changes until the User has approved a plan, and decisions are
+cheap. It is scale-invariant: a one-line change gets a one-line plan.
 Nothing is enforced.
 
 Execute keeps the plan file current rather than only the transcript: checklist
@@ -21,23 +22,25 @@ lands, before long context or compaction can erase it.
 
 ## Tools
 
-- `ask` (`ask.ts`) — the required boundary between Explore and Plan. Every
-  initial plan or re-plan starts with at least one picker question, even when the
-  only decision is whether the smallest proposed scope is sufficient. Invoking
-  the valid interactive picker records the context-free `plan` phase; the human
-  response wait is excluded from work time. The tool offers two to four options,
-  each a short headline plus a one-sentence description, recommendation first.
+- `ask` (`ask.ts`) — the cheap initial or adaptive Align checkpoint. Initial
+  Align happens before source discovery and confirms the smallest useful scope;
+  adaptive Align is reserved for decisions that materially change the next work
+  interval. The tool offers two to four options, each a short headline plus a
+  one-sentence description, recommendation first. Presenting the picker opens a
+  context-free checkpoint entry; normal selection, dismissal, or failure closes
+  it. User response latency accrues to Decision while active work is paused.
   A final "Write custom answer..."
-  option is appended to the picker so the user can close the picker and type an answer directly
-  without triggering a new model call. The full Q&A is printed in the transcript by `renderCall`;
-  the dialog below is a plain `ctx.ui.select` over the headlines alone, so answering is one keypress.
-  Headlines must be distinct — `ui.select` returns the label, not an index. Dismissing is not an
-  error; headless is refused before the dialog, since a non-TUI `select()` resolves `undefined` and
-  would look the same.
+  option is appended to the picker so the User can close it and type directly
+  without triggering a new model call. That checkpoint remains open until the
+  next human input supplies or cancels the answer, including after reload. The
+  full Q&A is printed in the transcript by `renderCall`; the dialog below is a
+  plain `ctx.ui.select` over the headlines alone, so answering is one keypress.
+  Headlines must be distinct — `ui.select` returns the label, not an index.
+  Dismissing is not an error; headless is refused before the dialog, since a
+  non-TUI `select()` resolves `undefined` and would look the same.
 - `save_plan` (`task.ts`) — presents the plan and renames the session, keeping
-  the leading timestamp so `.pi/plan/` stays time-ordered. It also persists the
-  display-only `plan` phase as a custom session entry. Before approval, a
-  passed complete `plan` replaces the draft so the user always reviews one
+  the leading timestamp so `.pi/plan/` stays time-ordered. Before approval, a
+  passed complete `plan` replaces the draft so the User always reviews one
   coherent proposal. Once the approval kickoff appears on the session branch,
   passed changes append under `## Revision <n> — <date>`, preserving the approved
   plan and the material scope change. An empty file or pristine scaffold takes
@@ -54,14 +57,15 @@ a deliberate knowledge pass.
 
 ## Starting from what is already known
 
-Explore opens on project memory — `.pi/MEMORY.md`, or wherever the project's
-`AGENTS.md` says it lives — orientation and quirks, so discovery begins
-with a map rather than from zero. For Pi behavior, Explore checks local source
-and focused tests before Pi-core documentation; opening host docs requires a
-named API question that local evidence did not answer. Entries are *leads to
-verify, not facts* and carry no per-entry confidence or staleness tags that can
-rot. The single hidden
-review marker has a narrower role: it records only a deliberate `/init` audit.
+Initial Align uses the request, loaded instructions, existing session context,
+and at most one bounded project-memory read where the project's `AGENTS.md`
+requires it. Source discovery waits until the scope checkpoint resolves. Explore
+then verifies memory's orientation and quirks rather than starting from zero.
+For Pi behavior, Explore checks local source and focused tests before Pi-core
+documentation; opening host docs requires a named API question that local
+evidence did not answer. Entries are *leads to verify, not facts* and carry no
+per-entry confidence or staleness tags that can rot. The single hidden review
+marker has a narrower role: it records only a deliberate `/init` audit.
 The read-only project-memory extension ignores knowledge-only commits and warns
 when relevant Git state has moved. Code remains authoritative, and an entry
 disproved during ordinary work is corrected immediately rather than waiting for
@@ -73,14 +77,15 @@ the next audit.
   `.pi/plan/<timestamp>-<first-prompt-words>.md` from `PLAN_TEMPLATE` and a
   `.pi/MEMORY.md` stub — orientation and quirks — then names the session after
   it. The plan includes a script-owned `time-spent` block below its title;
-  Progress Tracker updates exact total, Explore, Plan, and Execute milliseconds
-  whenever a run settles. The visible block prints the same breakdown for human
-  review. `save_plan` preserves that block while replacing Agent-authored
-  sections, and approval identity excludes it so a timer tick cannot trigger a
-  new decision. Legacy total-only blocks migrate that history into an
-  Unallocated bucket; marker-free plans start at zero when next saved or settled. The memory stub is written only when absent, so an
-  existing memory is never reshaped. Best-effort: an unwritable cwd is ignored
-  rather than failing the turn.
+  Progress Tracker updates exact Explore and Execute work plus aggregate capped
+  Decision latency whenever a run settles or checkpoint resolves. The visible
+  block prints the same breakdown for human review. `save_plan` preserves that
+  block while replacing Agent-authored sections, and approval identity excludes
+  it so a timer tick cannot trigger a new decision. Historical `planMs` is folded
+  into Explore; legacy total-only blocks migrate into Unallocated; marker-free
+  plans start at zero when next saved or settled. The memory stub is written only
+  when absent, so an existing memory is never reshaped. Best-effort: an
+  unwritable cwd is ignored rather than failing the turn.
 - **The approval picker** (`approval.ts`) — a successful `save_plan` whose plan
   file differs from the last approved contents arms it (a SHA-256 digest, since
   the session name is immutable and keying on it would allow only one decision
@@ -88,15 +93,16 @@ the next audit.
   silent); it opens when the turn settles: *Proceed,
   handoff, or revise?* Context load picks the recommendation (lean → Proceed,
   loaded → Handoff). Proceed kicks off execution; Handoff prefills
-  `/handoff <session-name>`; Revise or dismissing approves nothing. Headless
-  sessions get a context-free notice entry naming the command instead, also
-  written to stderr in print mode. Which task was
-  approved — and the digest of what was approved — is held in memory only, so a
-  reload costs one extra prompt. Display phase is separate: post-execution human
-  input records `explore`, plan saves record `plan`, and approval records
-  `execute`; these are custom session entries excluded from model context, so
-  reloads recover the latest revision cycle rather than treating the first
-  approval as permanent.
+  `/handoff <session-name>`; Revise or dismissing approves nothing. The picker
+  is an `approval` checkpoint with Proceed/Handoff/Revise/dismissed outcomes.
+  Headless sessions get a context-free notice entry naming the command instead,
+  also written to stderr in print mode. Which task was approved — and the digest
+  of what was approved — is held in memory only, so a reload costs one extra
+  prompt. Display mode is separate: post-execution human
+  input records `explore` and approval records `execute`; these are custom
+  session entries excluded from model context. Historical `plan` entries map to
+  Explore. Reloads recover the latest revision cycle rather than treating the
+  first approval as permanent.
 - `/handoff [session-name]` (`handoff.ts`) — spawns a fresh session seeded with
   the name, a display-only `execute` phase entry, and a kickoff naming the plan
   path. The phase is seeded before replacement-session extensions initialize;

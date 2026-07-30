@@ -86,12 +86,10 @@ describe("workflow prompt", () => {
 		expect(first.slice(first.indexOf("<pi_workflow>"))).toBe(second.slice(second.indexOf("<pi_workflow>")));
 	});
 
-	it("closes the small-task loophole for both planning and the scope question", () => {
-		// Stating scale-invariance abstractly was not enough: an agent read it and still
-		// carved out an exemption for a rename it judged too small to plan.
-		expect(workflowPrompt()).toContain('"trivially small" is not an exemption');
-		expect(workflowPrompt()).toContain("asks at least one question");
-		expect(workflowPrompt()).toContain("even for simple work");
+	it("keeps plans scale-invariant and requires the initial Align fast path", () => {
+		expect(workflowPrompt()).toContain("A one-line change gets a one-line plan");
+		expect(workflowPrompt()).toContain("asks one compact, high-leverage scope question");
+		expect(workflowPrompt()).toContain("even when the goal appears clear");
 	});
 });
 
@@ -131,7 +129,7 @@ describe("plan scaffolding", () => {
 		expect(await planFiles()).toEqual([`${name}.md`]);
 		const written = await readFile(join(cwd, ".pi", "plan", `${name}.md`), "utf8");
 		expect(written).toContain(`# ${name}`);
-		expect(written).toContain("<!-- time-spent:start total-ms=0 explore-ms=0 plan-ms=0 execute-ms=0 unallocated-ms=0 -->");
+		expect(written).toContain("<!-- time-spent:start total-ms=0 explore-ms=0 execute-ms=0 decision-ms=0 unallocated-ms=0 -->");
 		expect(written).toContain("**Time spent:** 0s");
 		expect(written).toContain("## Checklist");
 		// The MEMORY stub is part of the same bootstrap.

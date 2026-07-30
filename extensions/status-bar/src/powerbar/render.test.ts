@@ -20,6 +20,18 @@ describe("shared percentage bar", () => {
 		const rendered = renderPercentageBar(25, 4, theme, "accent");
 		expect(rendered.replace(/\x1b\[[0-9;]*m/g, "")).toBe("█      ");
 	});
+
+	it("renders theme-aware segment content with independent colors", () => {
+		const richTheme = {
+			fg: (color: string, text: string) => `[${color}]${text}`,
+			getFgAnsi: () => "",
+		} as any;
+		const segments = new Map<string, Segment>([[
+			"attention",
+			{ id: "attention", text: "", render: (nextTheme) => `${nextTheme.fg("accent", "ctx")} ${nextTheme.fg("error", "$10.00")}` },
+		]]);
+		expect(renderBar(segments, layout({ left: ["attention"] }), richTheme, 40)[0]).toContain("[accent]ctx [error]$10.00");
+	});
 });
 
 describe("status bar transient segments", () => {

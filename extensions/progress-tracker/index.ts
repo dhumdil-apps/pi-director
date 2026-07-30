@@ -1,6 +1,7 @@
 /**
- * Progress Tracker — an always-visible activity and context indicator above the
- * editor, plus the agent-status event other tools observe.
+ * Progress Tracker — an always-visible activity indicator above the editor,
+ * a configurable Status Bar context segment, and the agent-status event other
+ * tools observe.
  *
  * It deliberately ships no todo tool: pi has none on purpose ("they confuse
  * models"), and a structured list the agent must keep in sync is ceremony, not
@@ -9,11 +10,13 @@
  * much context is left.
  */
 
-import type { ExtensionAPI, ExtensionContext, MessageEndEvent, SessionEntry, TurnEndEvent } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, MessageEndEvent, SessionEntry, Theme, TurnEndEvent } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
-import { derivePhaseFromBranch, isWorkflowPhase, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
-import { addPhaseTime, EMPTY_PLAN_TIME, readPlanTime, updatePlanTime, type PlanTime } from "../agent-workflow/plan-time.js";
+import { CHECKPOINT_EVENT, deriveOpenCheckpoint, type CheckpointEvent, type OpenCheckpoint } from "../agent-workflow/checkpoint.js";
+import { derivePhaseFromBranch, normalizeWorkflowPhase, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
+import { addDecisionTime, addPhaseTime, EMPTY_PLAN_TIME, readPlanTime, updatePlanTime, type PlanTime } from "../agent-workflow/plan-time.js";
 import { planPath } from "../agent-workflow/task.js";
+import { contextIndicatorText } from "../agent-workflow/context-usage.js";
 import { USER_WAIT_EVENT, type UserWaitEvent } from "../agent-workflow/user-wait.js";
 import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
 
@@ -31,6 +34,8 @@ function latestAssistantTimestamp(entries: SessionEntry[]): number | undefined {
 }
 
 export default function (pi: ExtensionAPI) {
+  pi.events.emit?.("powerbar:register-segment", { id: "attention-span", label: "LLM Attention Span", row: 4 });
+
   let currentCtx: ExtensionContext | undefined;
   let working = false;
   // The first provider response's reported aggregate usage. Read it from the
@@ -45,6 +50,7 @@ export default function (pi: ExtensionAPI) {
   let planTime: PlanTime | undefined;
   let cacheStartedAt: number | undefined;
   let waitingForUser = false;
+  let openCheckpoint: OpenCheckpoint | undefined;
 
   // Close the current interval before changing phase. Undefined is the initial
   // Explore state: the display can still ask for a goal while timing is precise.
@@ -55,10 +61,23 @@ export default function (pi: ExtensionAPI) {
   };
 
   pi.events.on?.(PHASE_EVENT, (payload: unknown) => {
-    const next = (payload as PhaseEvent | undefined)?.phase;
-    if (!isWorkflowPhase(next)) return;
+    const next = normalizeWorkflowPhase((payload as PhaseEvent | undefined)?.phase);
+    if (!next) return;
     accrueUntil(Date.now());
     phase = next;
+    refreshStatus();
+  });
+
+  pi.events.on?.(CHECKPOINT_EVENT, (payload: unknown) => {
+    const event = payload as CheckpointEvent | undefined;
+    if (!event || (event.action !== "open" && event.action !== "resolve")) return;
+    if (event.action === "open") {
+      openCheckpoint = { id: event.id, kind: event.kind, openedAt: event.timestamp };
+    } else if (openCheckpoint?.id === event.id) {
+      planTime = addDecisionTime(planTime ?? EMPTY_PLAN_TIME, event.timestamp - openCheckpoint.openedAt);
+      openCheckpoint = undefined;
+      void persistTiming();
+    }
     refreshStatus();
   });
 
@@ -76,7 +95,18 @@ export default function (pi: ExtensionAPI) {
       lastUsage = undefined;
     }
     const indicatorWorking = working && !waitingForUser;
-    updatePhaseIndicator(currentCtx, indicatorWorking, usage, { lastUsage, firstTurnTokens, phase, runStartedAt, planTime, cacheStartedAt });
+    updatePhaseIndicator(currentCtx, indicatorWorking, { phase, runStartedAt, planTime, cacheStartedAt, checkpointOpenedAt: openCheckpoint?.openedAt });
+    if (usage && usage.tokens != null && usage.contextWindow > 0) {
+      const capturedUsage = usage;
+      const capturedExtras = { lastUsage, firstTurnTokens };
+      pi.events.emit?.("powerbar:update", {
+        id: "attention-span",
+        row: 4,
+        render: (theme: Theme) => contextIndicatorText(capturedUsage, theme, capturedExtras),
+      });
+    } else {
+      pi.events.emit?.("powerbar:update", { id: "attention-span", text: undefined });
+    }
     const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
@@ -91,6 +121,12 @@ export default function (pi: ExtensionAPI) {
     });
   };
 
+  const persistTiming = async () => {
+    const name = pi.getSessionName?.();
+    if (!currentCtx || !name || planTime == null) return;
+    await updatePlanTime(planPath(currentCtx.cwd, name), name, planTime).catch(() => {});
+  };
+
   const adopt = async (ctx: ExtensionContext) => {
     currentCtx = ctx;
     working = !ctx.isIdle();
@@ -100,6 +136,7 @@ export default function (pi: ExtensionAPI) {
     try {
       const branch = ctx.sessionManager.getBranch();
       phase = derivePhaseFromBranch(branch);
+      openCheckpoint = deriveOpenCheckpoint(branch);
       cacheStartedAt = latestAssistantTimestamp(branch);
     } catch {
       // A branch that cannot be read is not worth a missing indicator.
@@ -121,6 +158,7 @@ export default function (pi: ExtensionAPI) {
     planTime = undefined;
     cacheStartedAt = undefined;
     waitingForUser = false;
+    openCheckpoint = undefined;
     await adopt(ctx);
   });
   pi.on("session_tree", async (_event, ctx) => { await adopt(ctx); });
@@ -146,11 +184,8 @@ export default function (pi: ExtensionAPI) {
     accrueUntil(settledAt);
     runStartedAt = undefined;
     waitingForUser = false;
-    const name = pi.getSessionName?.();
-    if (name && planTime != null) {
-      // Best-effort persistence: an unavailable plan must not break turn settlement.
-      await updatePlanTime(planPath(ctx.cwd, name), name, planTime).catch(() => {});
-    }
+    // Best-effort persistence: an unavailable plan must not break turn settlement.
+    await persistTiming();
     refreshStatus();
   });
 
@@ -197,6 +232,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("session_shutdown", async (_event, ctx) => {
+    pi.events.emit?.("powerbar:update", { id: "attention-span", text: undefined });
     clearPhaseIndicator(ctx);
     currentCtx = undefined;
     working = false;

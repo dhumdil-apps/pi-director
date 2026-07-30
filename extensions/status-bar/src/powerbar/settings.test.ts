@@ -28,7 +28,7 @@ describe("powerbar layout settings", () => {
 			{ left: ["git-branch", "session-name"], right: ["provider", "model"] },
 			{ left: ["agent-stats", "tokens"], right: [] },
 			{ left: ["cpu", "ram", "disk", "net"], right: ["sub-hourly", "sub-weekly"] },
-			{ left: [], right: [] },
+			{ left: ["attention-span"], right: [] },
 		]);
 	});
 

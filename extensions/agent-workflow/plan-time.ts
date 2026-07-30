@@ -4,20 +4,24 @@ import type { WorkflowPhase } from "./phase.js";
 
 const TIME_SPENT_BLOCK = /^<!-- time-spent:start[^\r\n]* -->\r?\n\*\*Time spent:\*\*[^\r\n]*\r?\n(?:- [^\r\n]*\r?\n)*<!-- time-spent:end -->$/m;
 const LEGACY_TIME = /^<!-- time-spent:start ms=(\d+) -->/m;
-const PHASE_TIME = /^<!-- time-spent:start total-ms=(\d+) explore-ms=(\d+) plan-ms=(\d+) execute-ms=(\d+) unallocated-ms=(\d+) -->/m;
+const WORKFLOW_TIME = /^<!-- time-spent:start total-ms=(\d+) explore-ms=(\d+) execute-ms=(\d+) decision-ms=(\d+) unallocated-ms=(\d+) -->/m;
+const LEGACY_PHASE_TIME = /^<!-- time-spent:start total-ms=(\d+) explore-ms=(\d+) plan-ms=(\d+) execute-ms=(\d+) unallocated-ms=(\d+) -->/m;
+
+export const DECISION_CAP_MS = 5 * 60_000;
 
 export interface PlanTime {
 	exploreMs: number;
-	planMs: number;
 	executeMs: number;
+	/** Capped wall-clock latency while Align choices remain unresolved. */
+	decisionMs: number;
 	/** Time persisted before phase tracking existed. */
 	unallocatedMs: number;
 }
 
 export const EMPTY_PLAN_TIME: PlanTime = {
 	exploreMs: 0,
-	planMs: 0,
 	executeMs: 0,
+	decisionMs: 0,
 	unallocatedMs: 0,
 };
 
@@ -26,13 +30,18 @@ function exactMs(value: number): number {
 }
 
 export function totalTimeSpent(time: PlanTime): number {
-	return exactMs(time.exploreMs) + exactMs(time.planMs) + exactMs(time.executeMs) + exactMs(time.unallocatedMs);
+	return exactMs(time.exploreMs) + exactMs(time.executeMs) + exactMs(time.decisionMs) + exactMs(time.unallocatedMs);
 }
 
 export function addPhaseTime(time: PlanTime, phase: WorkflowPhase, ms: number): PlanTime {
 	const next = { ...time };
 	next[`${phase}Ms` as const] += exactMs(ms);
 	return next;
+}
+
+/** Decision is wall time, capped independently for every checkpoint. */
+export function addDecisionTime(time: PlanTime, elapsedMs: number): PlanTime {
+	return { ...time, decisionMs: time.decisionMs + Math.min(exactMs(elapsedMs), DECISION_CAP_MS) };
 }
 
 /** The same coarse duration shown by Progress Tracker. */
@@ -49,29 +58,36 @@ export function formatDuration(ms: number): string {
 export function timeSpentBlock(value: PlanTime | number): string {
 	const time = typeof value === "number" ? { ...EMPTY_PLAN_TIME, unallocatedMs: exactMs(value) } : value;
 	const exploreMs = exactMs(time.exploreMs);
-	const planMs = exactMs(time.planMs);
 	const executeMs = exactMs(time.executeMs);
+	const decisionMs = exactMs(time.decisionMs);
 	const unallocatedMs = exactMs(time.unallocatedMs);
-	const totalMs = exploreMs + planMs + executeMs + unallocatedMs;
+	const totalMs = exploreMs + executeMs + decisionMs + unallocatedMs;
 	const lines = [
-		`<!-- time-spent:start total-ms=${totalMs} explore-ms=${exploreMs} plan-ms=${planMs} execute-ms=${executeMs} unallocated-ms=${unallocatedMs} -->`,
+		`<!-- time-spent:start total-ms=${totalMs} explore-ms=${exploreMs} execute-ms=${executeMs} decision-ms=${decisionMs} unallocated-ms=${unallocatedMs} -->`,
 		`**Time spent:** ${formatDuration(totalMs)}`,
 		`- Explore: ${formatDuration(exploreMs)}`,
-		`- Plan: ${formatDuration(planMs)}`,
 		`- Execute: ${formatDuration(executeMs)}`,
+		`- Decision: ${formatDuration(decisionMs)} wall`,
 	];
 	if (unallocatedMs > 0) lines.push(`- Unallocated: ${formatDuration(unallocatedMs)}`);
 	lines.push("<!-- time-spent:end -->");
 	return lines.join("\n");
 }
 
-/** Parse phase timing, migrating a total-only block into unallocated history. */
+/** Parse timing, folding historical Plan work into Explore and starting Decision at zero. */
 export function readPlanTiming(contents: string): PlanTime | undefined {
-	const phase = contents.match(PHASE_TIME);
+	const workflow = contents.match(WORKFLOW_TIME);
+	if (workflow) {
+		const [, declaredTotal, explore, execute, decision, unallocated] = workflow.map(Number);
+		const timing = { exploreMs: explore!, executeMs: execute!, decisionMs: decision!, unallocatedMs: unallocated! };
+		if (Object.values(timing).every(Number.isSafeInteger) && totalTimeSpent(timing) === declaredTotal) return timing;
+		return undefined;
+	}
+	const phase = contents.match(LEGACY_PHASE_TIME);
 	if (phase) {
 		const [, declaredTotal, explore, plan, execute, unallocated] = phase.map(Number);
-		const timing = { exploreMs: explore!, planMs: plan!, executeMs: execute!, unallocatedMs: unallocated! };
-		if (Object.values(timing).every(Number.isSafeInteger) && totalTimeSpent(timing) === declaredTotal) return timing;
+		const timing = { exploreMs: explore! + plan!, executeMs: execute!, decisionMs: 0, unallocatedMs: unallocated! };
+		if ([declaredTotal, explore, plan, execute, unallocated].every(Number.isSafeInteger) && totalTimeSpent(timing) === declaredTotal) return timing;
 		return undefined;
 	}
 	const legacy = contents.match(LEGACY_TIME)?.[1];

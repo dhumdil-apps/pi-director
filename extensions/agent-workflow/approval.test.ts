@@ -192,15 +192,15 @@ describe("approval prompt", () => {
 		expect(quiet).not.toHaveBeenCalled();
 	});
 
-	it("records each phase again for a revision cycle", async () => {
+	it("records only Explore and Execute across a revision cycle", async () => {
 		const h = harness(cwd);
 		const { ctx } = await h.offer("dashboard-polish", PROCEED);
-		expect(h.phases()).toEqual(["plan", "execute"]);
+		expect(h.phases()).toEqual(["execute"]);
 
 		await h.handlers.get("input")![0]({ source: "interactive", text: "please refine it" }, ctx);
 		await writeFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), `${planText}\n## Revision 2 — later\n\nMore.\n`);
 		await h.offer("dashboard-polish", PROCEED);
-		expect(h.phases()).toEqual(["plan", "execute", "explore", "plan", "execute"]);
+		expect(h.phases()).toEqual(["execute", "explore", "execute"]);
 	});
 
 	it("does not mistake the extension approval kickoff for a new exploration cycle", async () => {
@@ -212,10 +212,10 @@ describe("approval prompt", () => {
 		expect(h.phases()).toEqual([]);
 	});
 
-	it("keeps an unapproved revision in plan", async () => {
+	it("keeps an unapproved revision in Explore", async () => {
 		const revised = harness(cwd);
 		await revised.offer("dashboard-polish", "Revise the plan");
-		expect(revised.phases()).toEqual(["plan"]);
+		expect(revised.phases()).toEqual([]);
 	});
 
 	it("never arms on a failed save", async () => {

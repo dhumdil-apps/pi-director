@@ -20,6 +20,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { isLeanContext } from "./context-usage.js";
 import { stripTimeSpent } from "./plan-time.js";
 import { planPath } from "./task.js";
@@ -86,7 +87,6 @@ export function registerApproval(pi: ExtensionAPI): void {
 		if (details.name === approved?.task && (await planDigest(ctx.cwd, details.name)) === approved.digest) return;
 		pendingOffer = { task: details.name };
 		unapprovedTask = details.name;
-		recordWorkflowPhase(pi, "plan");
 	});
 
 	// Soft back-stop: notify, never reject. Silence here is the failure mode worth
@@ -109,10 +109,18 @@ export function registerApproval(pi: ExtensionAPI): void {
 			return;
 		}
 
-		const choice = await duringUserWait(pi, "approval", () =>
-			ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage()))),
-		);
+		const checkpoint = openCheckpoint(pi, "approval");
+		let choice: string | undefined;
+		try {
+			choice = await duringUserWait(pi, "approval", () =>
+				ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage()))),
+			);
+		} catch (error) {
+			resolveCheckpoint(pi, checkpoint.id, "failure");
+			throw error;
+		}
 		if (choice?.startsWith(PROCEED)) {
+			resolveCheckpoint(pi, checkpoint.id, "proceed");
 			approved = { task, digest: await planDigest(ctx.cwd, task) };
 			unapprovedTask = undefined;
 			recordWorkflowPhase(pi, "execute");
@@ -120,6 +128,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 			return;
 		}
 		if (choice?.startsWith(HANDOFF)) {
+			resolveCheckpoint(pi, checkpoint.id, "handoff");
 			// Only a command handler can spawn a session, so the handoff path hands
 			// the user the exact command — naming the task, since .pi/plan/ accumulates.
 			const command = `/handoff ${task}`;
@@ -127,6 +136,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 			ctx.ui.notify(`Press Enter to run ${command} in a new session.`, "info");
 			return;
 		}
+		resolveCheckpoint(pi, checkpoint.id, choice?.startsWith(REVISE) ? "revise" : "dismissed");
 		ctx.ui.notify(`Plan not approved — revise and save again, or run /handoff ${task}.`, "info");
 	});
 }

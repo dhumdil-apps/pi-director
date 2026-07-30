@@ -5,7 +5,7 @@
  * Segment IDs: "tokens", "agent-stats"
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
 
 function formatTokens(count: number): string {
 	if (count < 1000) return count.toString();
@@ -13,6 +13,12 @@ function formatTokens(count: number): string {
 	if (count < 1000000) return `${Math.round(count / 1000)}k`;
 	if (count < 10000000) return `${(count / 1000000).toFixed(1)}M`;
 	return `${Math.round(count / 1000000)}M`;
+}
+
+function costColor(cost: number): ThemeColor {
+	if (cost >= 10) return "error";
+	if (cost >= 5) return "warning";
+	return "accent";
 }
 
 function emitSessionStats(pi: ExtensionAPI, ctx: ExtensionContext): void {
@@ -55,13 +61,15 @@ function emitSessionStats(pi: ExtensionAPI, ctx: ExtensionContext): void {
 		return;
 	}
 
-	const parts = [`↑${formatTokens(totalInput)}`, `↓${formatTokens(totalOutput)}`];
-	if (totalCost > 0) parts.push(`$${totalCost.toFixed(2)}`);
+	const tokenText = `↑${formatTokens(totalInput)} ↓${formatTokens(totalOutput)}`;
+	const costText = totalCost > 0 ? `$${totalCost.toFixed(2)}` : undefined;
 	pi.events.emit("powerbar:update", {
 		id: "tokens",
-		text: parts.join(" "),
-		color: "dim",
 		row: 2,
+		render: (theme: Theme) => [
+			theme.fg("dim", tokenText),
+			costText ? theme.fg(costColor(totalCost), costText) : undefined,
+		].filter((part): part is string => part !== undefined).join(" "),
 	});
 }
 

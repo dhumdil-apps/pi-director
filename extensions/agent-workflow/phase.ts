@@ -17,7 +17,7 @@
 
 import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent";
 
-export type WorkflowPhase = "explore" | "plan" | "execute";
+export type WorkflowPhase = "explore" | "execute";
 
 /** Used for both the display event and the context-free persisted session entry. */
 export const PHASE_EVENT = "agent-workflow:phase";
@@ -27,7 +27,13 @@ export interface PhaseEvent {
 }
 
 export function isWorkflowPhase(value: unknown): value is WorkflowPhase {
-	return value === "explore" || value === "plan" || value === "execute";
+	return value === "explore" || value === "execute";
+}
+
+/** Historical Plan work is non-mutating proposal work, so it resumes as Explore. */
+export function normalizeWorkflowPhase(value: unknown): WorkflowPhase | undefined {
+	if (value === "plan") return "explore";
+	return isWorkflowPhase(value) ? value : undefined;
 }
 
 /** Persist first, then notify live observers; custom entries never enter LLM context. */
@@ -73,8 +79,8 @@ export function derivePhaseFromBranch(entries: SessionEntry[]): WorkflowPhase | 
 	for (let index = entries.length - 1; index >= 0; index--) {
 		const entry = entries[index]!;
 		if (entry.type === "custom" && entry.customType === PHASE_EVENT) {
-			const phase = (entry.data as Partial<PhaseEvent> | undefined)?.phase;
-			if (isWorkflowPhase(phase)) return phase;
+			const phase = normalizeWorkflowPhase((entry.data as { phase?: unknown } | undefined)?.phase);
+			if (phase) return phase;
 		}
 		const text = messageText(entry);
 		if (text && KICKOFF_PATTERN.test(text)) return "execute";

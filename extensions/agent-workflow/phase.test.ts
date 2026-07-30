@@ -16,16 +16,14 @@ describe("derivePhaseFromBranch", () => {
 		expect(derivePhaseFromBranch([userMessage(blocks)])).toBe("execute");
 	});
 
-	it("uses the latest persisted transition across revision cycles", () => {
+	it("uses the latest persisted transition and maps legacy Plan to Explore", () => {
 		const entries = [
 			phaseEntry("explore"),
-			phaseEntry("plan"),
 			userMessage("Execute the approved plan at .pi/plan/x.md."),
 			phaseEntry("execute"),
-			phaseEntry("explore"),
 			phaseEntry("plan"),
 		];
-		expect(derivePhaseFromBranch(entries)).toBe("plan");
+		expect(derivePhaseFromBranch(entries)).toBe("explore");
 		expect(derivePhaseFromBranch([...entries, phaseEntry("execute")])).toBe("execute");
 	});
 

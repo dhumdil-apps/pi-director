@@ -56,21 +56,19 @@ describe("phase indicator", () => {
 					setWidget: (_id: string, nextFactory: unknown) => { factory = nextFactory; },
 				},
 			} as any;
-			updatePhaseIndicator(ctx, working, { tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 } as any, extras);
+			updatePhaseIndicator(ctx, working, extras);
 			const requestRender = vi.fn();
 			return { component: factory({ requestRender }, theme), requestRender };
 		};
 
-		/** Line 1 is the marker plus the working word or the idle badge; the context readout is line 2. */
 		const status = (lines: string[]) => strip(lines[0]);
-		const contextLine = `  [accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M`;
 
-		it("rotates the spinner frame every 120ms and re-renders, keeping context text", () => {
+		it("rotates the spinner frame every 120ms and re-renders", () => {
 			// A fixed word keeps this case about the spinner alone.
 			const { component, requestRender } = mount(true, { phase: "execute", random: () => 0 });
 			const word = `[accent]${wordPool("execute")[0]}…`;
 
-			expect(component.render(120).map(strip)).toEqual([`[accent]⠋ ${word}`, contextLine]);
+			expect(component.render(120).map(strip)).toEqual([`[accent]⠋ ${word}`]);
 
 			vi.advanceTimersByTime(120);
 			expect(requestRender).toHaveBeenCalledTimes(1);
@@ -82,19 +80,19 @@ describe("phase indicator", () => {
 			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${word}`);
 		});
 
-		it("swaps the working word at the configured interval, from the pool the phase flavours", () => {
+		it("swaps the working word at the configured interval", () => {
 			const draws = [0, 0.99];
 			let draw = 0;
 			const { component, requestRender } = mount(true, {
-				phase: "plan",
+				phase: "explore",
 				random: () => draws[Math.min(draw++, draws.length - 1)],
 			});
 
-			expect(status(component.render(120))).toContain(`${wordPool("plan")[0]}…`);
+			expect(status(component.render(120))).toContain(`${wordPool("explore")[0]}…`);
 
 			vi.advanceTimersByTime(WORD_INTERVAL_MS);
 			expect(requestRender).toHaveBeenCalledTimes(Math.floor(WORD_INTERVAL_MS / 120) + 1);
-			expect(status(component.render(120))).toContain(`${wordPool("plan").at(-1)}…`);
+			expect(status(component.render(120))).toContain(`${wordPool("explore").at(-1)}…`);
 		});
 
 		it("words the explore state too, and never names a session mode", () => {
@@ -112,12 +110,12 @@ describe("phase indicator", () => {
 		it("keeps the idle marker and starts no timer when the agent is not working", () => {
 			const { component, requestRender } = mount(false);
 
-			expect(component.render(120).map(strip)).toEqual(["[accent]› [dim]What’s your goal?", contextLine]);
+			expect(component.render(120).map(strip)).toEqual(["[accent]› [dim]What’s your goal?"]);
 
 			vi.advanceTimersByTime(120 * 5);
 			expect(requestRender).not.toHaveBeenCalled();
 			expect(vi.getTimerCount()).toBe(0);
-			expect(component.render(120).map(strip)).toEqual(["[accent]› [dim]What’s your goal?", contextLine]);
+			expect(component.render(120).map(strip)).toEqual(["[accent]› [dim]What’s your goal?"]);
 		});
 
 		it("clears the spinner timer when pi disposes the widget", () => {
@@ -151,37 +149,55 @@ describe("phase indicator", () => {
 			expect(strip(component.render(120)[0])).toBe(`[accent]⠋ ${word}[dim] 23s`);
 		});
 
-		it("shows live full-name phase buckets with the current phase accented", () => {
+		it("shows live work buckets with the current mode accented and Decision separate", () => {
 			const { component } = mount(true, {
-				phase: "plan",
+				phase: "explore",
 				random: () => 0,
 				runStartedAt: 5_000,
-				planTime: { exploreMs: 10_000, planMs: 20_000, executeMs: 30_000, unallocatedMs: 0 },
+				planTime: { exploreMs: 10_000, executeMs: 30_000, decisionMs: 2_000, unallocatedMs: 0 },
 				now: () => 10_000,
 			});
 
 			expect(status(component.render(240))).toContain(
-				"[dim] 5s[dim] · [dim]explore 10s[dim] · [accent]plan 25s[dim] · [dim]execute 30s",
+				"[dim] 5s[dim] · [accent]explore 15s[dim] · [dim]execute 30s[dim] · [dim]decision 2s",
 			);
 		});
 
-		it("keeps static phase buckets beside cache age while idle", () => {
+		it("keeps static phase buckets visible while hiding sub-minute idle age", () => {
 			let now = 10_000;
 			const component = mount(false, {
-				phase: "plan",
-				planTime: { exploreMs: 10_000, planMs: 20_000, executeMs: 30_000, unallocatedMs: 0 },
+				phase: "explore",
+				planTime: { exploreMs: 30_000, executeMs: 30_000, decisionMs: 2_000, unallocatedMs: 0 },
 				cacheStartedAt: 5_000,
 				now: () => now,
 			}).component;
-			const phaseBuckets = "[dim]explore 10s[dim] · [accent]plan 20s[dim] · [dim]execute 30s";
+			const phaseBuckets = "[accent]explore 30s[dim] · [dim]execute 30s[dim] · [dim]decision 2s";
 
-			for (const [at, age] of [[10_000, "5s"], [34_000, "29s"]] as const) {
-				now = at;
-				expect(status(component.render(240))).toContain(`[accent] ${age}[dim] · ${phaseBuckets}`);
-			}
+			expect(status(component.render(240))).not.toContain("[accent] 5s");
+			expect(status(component.render(240))).toContain(`[dim] · ${phaseBuckets}`);
+
+			now = 65_000;
+			expect(status(component.render(240))).toContain(`[warning] 1m 00s[dim] · ${phaseBuckets}`);
 		});
 
-		it("warns after 1m cache age and turns red after 5m", () => {
+		it("advances an unresolved Decision and caps that checkpoint at five minutes", () => {
+			let now = 10_000;
+			const { component, requestRender } = mount(false, {
+				phase: "explore",
+				planTime: { exploreMs: 10_000, executeMs: 0, decisionMs: 2_000, unallocatedMs: 0 },
+				checkpointOpenedAt: 5_000,
+				now: () => now,
+			});
+			expect(status(component.render(240))).toContain("[dim]decision 7s");
+			now = 305_000;
+			expect(status(component.render(240))).toContain("[dim]decision 5m 02s+");
+			vi.advanceTimersByTime(1_000);
+			expect(requestRender).toHaveBeenCalledOnce();
+			expect(vi.getTimerCount()).toBe(0);
+			component.dispose();
+		});
+
+		it("shows idle age from 1m, then caps it red and stops its timer at 5m", () => {
 			let now = 10_000;
 			const { component, requestRender } = mount(false, {
 				phase: "execute",
@@ -189,10 +205,11 @@ describe("phase indicator", () => {
 				now: () => now,
 			});
 
+			expect(status(component.render(120))).not.toContain("[accent] 0s");
 			for (const [at, duration] of [
-				[10_000, "[accent] 0s"],
 				[70_000, "[warning] 1m 00s"],
-				[310_000, "[error] 5m 00s"],
+				[310_000, "[error] 5m+"],
+				[610_000, "[error] 5m+"],
 			] as const) {
 				now = at;
 				expect(status(component.render(120))).toContain(duration);
@@ -200,8 +217,20 @@ describe("phase indicator", () => {
 
 			vi.advanceTimersByTime(1_000);
 			expect(requestRender).toHaveBeenCalledOnce();
-			component.dispose();
 			expect(vi.getTimerCount()).toBe(0);
+
+			vi.advanceTimersByTime(10_000);
+			expect(requestRender).toHaveBeenCalledOnce();
+			component.dispose();
+
+			const alreadyExpired = mount(false, {
+				phase: "explore",
+				cacheStartedAt: 10_000,
+				now: () => 610_000,
+			}).component;
+			expect(status(alreadyExpired.render(120))).toContain("[error] 5m+");
+			expect(vi.getTimerCount()).toBe(0);
+			alreadyExpired.dispose();
 		});
 	});
 

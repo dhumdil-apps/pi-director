@@ -1,5 +1,5 @@
 /**
- * The ask tool — the boundary between Explore and Plan, made a keypress instead of a paragraph.
+ * The ask tool — a short Align checkpoint made a keypress instead of a paragraph.
  *
  * Deliberately a plain `ctx.ui.select` rather than a `ui.custom` overlay: the
  * bundle prefers native dialogs, and the dialog itself only needs to carry the
@@ -18,7 +18,8 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
-import { recordWorkflowPhase } from "./phase.js";
+import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
+import { derivePhaseFromBranch, recordWorkflowPhase } from "./phase.js";
 import { duringUserWait } from "./user-wait.js";
 
 const MIN_OPTIONS = 2;
@@ -75,15 +76,21 @@ export function registerAsk(pi: ExtensionAPI): void {
 				return result("Error: option headlines must be distinct — the picker returns the headline, not an index.", base, true);
 			}
 
-			// The mandatory scope question is the boundary between discovery and
-			// composing the plan. Human response time is paused separately below.
-			recordWorkflowPhase(pi, "plan");
 			const pickerHeadlines = [...headlines, WRITE_CUSTOM_OPTION];
-			const choice = await duringUserWait(pi, "question", () =>
-				ctx.ui.select(params.question, pickerHeadlines),
-			);
+			const checkpoint = openCheckpoint(pi, "question");
+			let choice: string | undefined;
+			try {
+				choice = await duringUserWait(pi, "question", () =>
+					ctx.ui.select(params.question, pickerHeadlines),
+				);
+			} catch (error) {
+				resolveCheckpoint(pi, checkpoint.id, "failure");
+				throw error;
+			}
 
 			if (choice === undefined) {
+				resolveCheckpoint(pi, checkpoint.id, "dismissed");
+				if (derivePhaseFromBranch(ctx.sessionManager.getBranch()) === "execute") recordWorkflowPhase(pi, "explore");
 				return result("The User dismissed the question without answering — the Agent asks in an ordinary message, or says which option it would take and why.", base);
 			}
 
@@ -103,9 +110,12 @@ export function registerAsk(pi: ExtensionAPI): void {
 
 			const index = headlines.indexOf(choice);
 			if (index < 0) {
+				resolveCheckpoint(pi, checkpoint.id, "dismissed");
 				return result("The User dismissed the question without answering — the Agent asks in an ordinary message, or says which option it would take and why.", base);
 			}
 
+			resolveCheckpoint(pi, checkpoint.id, "selected");
+			if (derivePhaseFromBranch(ctx.sessionManager.getBranch()) === "execute") recordWorkflowPhase(pi, "explore");
 			const chosen = params.options[index];
 			return result(
 				`The User selected: ${index + 1}. ${chosen.headline} — ${chosen.description}`,

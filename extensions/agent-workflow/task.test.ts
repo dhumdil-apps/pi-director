@@ -90,12 +90,12 @@ describe("save_plan", () => {
 	});
 
 	it("preserves the phase breakdown when replacing a proposal", async () => {
-		const timing = { exploreMs: 20_000, planMs: 30_000, executeMs: 33_456, unallocatedMs: 0 };
+		const timing = { exploreMs: 50_000, executeMs: 33_456, decisionMs: 12_000, unallocatedMs: 0 };
 		await seedPlan(cwd, "timed-proposal", withPlanTiming(plan, "timed-proposal", timing));
 		const harness = makeHarness(cwd, "timed-proposal");
 		const result = await harness.execute({ name: "timed proposal", plan: "## Current state\n\nChanged.\n" });
 		const saved = await readFile(result.details.path, "utf8");
-		expect(readTimeSpent(saved)).toBe(83_456);
+		expect(readTimeSpent(saved)).toBe(95_456);
 		expect(readPlanTiming(saved)).toEqual(timing);
 	});
 
