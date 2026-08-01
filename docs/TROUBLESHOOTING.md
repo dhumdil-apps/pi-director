@@ -54,9 +54,9 @@ error as a regression or compatibility issue to fix.
 
 ## Project memory is not being used
 
-- Project memory is a user-owned `.pi/MEMORY.md` file holding selective orientation and quirks; a concrete path in root `AGENTS.md` wins. A sectioned stub is scaffolded when absent, and `/memory` can bootstrap both files in a new project.
-- Run `/memory` for an incremental audit since the hidden reviewed commit, or `/memory full` for a repository-wide pass. Only a clean audit advances `<!-- memory-review: commit=<sha> reviewed-at=<time> -->`.
-- At interactive startup, `project-memory` stays silent when current. A warning means memory is missing, relevant committed or working-tree files moved, or Git history cannot prove freshness. The warning is advisory and never triggers a refresh.
+- Project memory is a user-owned `.pi/MEMORY.md` file holding selective orientation and quirks; a concrete portable path in shared root `AGENTS.md` wins. `/init` can bootstrap shared and Pi-local instruction layers plus the memory file in a new project.
+- Run `/init` for an incremental audit since the hidden reviewed commit, or `/init full` for a repository-wide pass. A completed audit advances `<!-- memory-review: commit=<sha> reviewed-at=<time> -->` even when ordinary uncommitted work exists.
+- At interactive startup, `project-memory` ignores staged, unstaged, and untracked files. Relevant commits after the marker get a 24-hour grace period; the same stale `HEAD` is not repeated, and another reminder requires both a new `HEAD` and a 24-hour cooldown. Missing or unverifiable markers use the same advisory `Project memory may be stale. Run /init to refresh it.` message.
 - Ordinary exploration treats entries as leads to verify against code. Code wins; correct a disproved entry immediately. Capture a costly surprise in the plan's `## Quirks`, then promote only durable facts at close-out without advancing the review marker.
 - Retain a fact only when rediscovering it costs more than reading it. Every entry names hidden breakage when relevant and the path, symbol, or command that re-establishes the fact.
 - `.pi/` is ignored by default; projects may customize that Git policy.

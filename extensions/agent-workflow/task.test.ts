@@ -2,12 +2,14 @@ import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { autoSlug, canonicalTaskName, composePlan, ensurePiState, isScaffold, listPlanNames, MEMORY_STUB, movePlan, normalizeTaskName, PLAN_TEMPLATE, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
+import { readPlanTiming, readTimeSpent, withPlanTiming, withTimeSpent } from "./plan-time.js";
+import { autoSlug, beginTask, canonicalTaskName, composePlan, ensurePiState, INVESTIGATION_TEMPLATE, isScaffold, listPlanNames, MEMORY_STUB, movePlan, normalizeTaskName, PLAN_TEMPLATE, readArtifactMetadata, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
 
 function makeHarness(cwd: string, name?: string) {
 	let sessionName = name;
 	const tools = new Map<string, any>();
 	const sent: any[] = [];
+	const branch: any[] = [];
 	const pi = {
 		on: vi.fn(),
 		registerTool: (registered: any) => tools.set(registered.name, registered),
@@ -16,13 +18,15 @@ function makeHarness(cwd: string, name?: string) {
 		sendMessage: vi.fn((message: any) => sent.push(message)),
 	};
 	registerTaskManagement(pi as never);
-	const ctx = { cwd };
+	const ctx = { cwd, sessionManager: { getBranch: () => branch } };
 	const run = (name: string, params: any) => tools.get(name)!.execute("call", params, undefined, undefined, ctx);
 	return {
 		execute: (params: any) => run("save_plan", params),
 		pi,
 		sent,
 		getName: () => sessionName,
+		getTool: (name: string) => tools.get(name),
+		branch,
 	};
 }
 
@@ -50,20 +54,39 @@ describe("save_plan", () => {
 	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-task-management-")); });
 	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
 
+	it("reserves post-approval saves for material re-plans", () => {
+		const tool = makeHarness(cwd).getTool("save_plan");
+		expect(tool.description).toContain("only for a material re-plan that needs renewed approval");
+		expect(tool.description).toContain("reopen the approval picker");
+		expect(tool.description).toContain("Directly edit routine checklist, Quirks, and completion updates");
+		expect(tool.description).toContain("do not call save_plan at close-out");
+		expect(tool.parameters.properties.plan.description).toContain("pass only material re-plan changes");
+		expect(tool.parameters.properties.plan.description).toContain("Use the edit tool instead for routine checklist, Quirks, and completion updates");
+	});
+
 	it("normalizes the name, writes the flat plan file, and names the session", async () => {
 		const harness = makeHarness(cwd);
 		const saved = await harness.execute({ name: "SI-7 dashboard polish", plan });
 		const path = join(cwd, ".pi", "plan", "SI-7-dashboard-polish.md");
-		expect(saved.details).toEqual({ name: "SI-7-dashboard-polish", path });
-		expect(await readFile(path, "utf8")).toBe(plan);
+		expect(saved.details).toEqual({ name: "SI-7-dashboard-polish", path, kind: "implementation" });
+		expect(await readFile(path, "utf8")).toBe(withTimeSpent(plan, "SI-7-dashboard-polish", 0));
 		expect(harness.getName()).toBe("SI-7-dashboard-polish");
 	});
 
-	it("appends a re-save as a revision instead of losing the earlier plan", async () => {
+	it("replaces a pre-approval draft with the current complete proposal", async () => {
 		const harness = makeHarness(cwd);
 		await harness.execute({ name: "revised approach", plan });
-		const result = await harness.execute({ name: "revised approach", plan: "## Approach\n\nD instead.\n" });
+		const replacement = "## Current state\n\nRevised.\n\n## Desired state\n\nD instead.\n";
+		const result = await harness.execute({ name: "revised approach", plan: replacement });
 		expect(result.isError).toBeUndefined();
+		expect(await readFile(result.details.path, "utf8")).toBe(withTimeSpent(replacement, "revised-approach", 0));
+	});
+
+	it("appends a re-plan after the approval kickoff", async () => {
+		const harness = makeHarness(cwd);
+		await harness.execute({ name: "revised approach", plan });
+		harness.branch.push({ type: "message", message: { role: "user", content: "Execute the approved plan at .pi/plan/revised-approach.md." } });
+		const result = await harness.execute({ name: "revised approach", plan: "## Approach\n\nD instead.\n" });
 		const contents = await readFile(result.details.path, "utf8");
 		expect(contents).toContain("A.");
 		expect(contents).toContain("D instead.");
@@ -74,7 +97,29 @@ describe("save_plan", () => {
 		await seedPlan(cwd, "scaffolded-task", PLAN_TEMPLATE.replace("<session-name>", "scaffolded-task"));
 		const harness = makeHarness(cwd, "scaffolded-task");
 		const result = await harness.execute({ name: "scaffolded task", plan });
-		expect(await readFile(result.details.path, "utf8")).toBe(plan);
+		const saved = await readFile(result.details.path, "utf8");
+		expect(saved).toContain("<!-- agent-workflow:artifact kind=implementation -->");
+		expect(saved.replace("<!-- agent-workflow:artifact kind=implementation -->\n\n", "")).toBe(withTimeSpent(plan, "scaffolded-task", 0));
+	});
+
+	it("preserves sourced implementation metadata when replacing a proposal", async () => {
+		const investigation = "2026-07-31--12-00-00-cache-audit";
+		await seedPlan(cwd, investigation, INVESTIGATION_TEMPLATE.replace("<session-name>", investigation));
+		const started = await beginTask(cwd, investigation, "fix cache recovery", "implementation");
+		const harness = makeHarness(cwd, started.name);
+		const result = await harness.execute({ name: "fix cache recovery", plan });
+		expect(result.details).toMatchObject({ kind: "implementation", source: investigation });
+		expect(readArtifactMetadata(await readFile(result.details.path, "utf8"))).toEqual({ kind: "implementation", source: investigation });
+	});
+
+	it("preserves the phase breakdown when replacing a proposal", async () => {
+		const timing = { exploreMs: 50_000, executeMs: 33_456, decisionMs: 12_000, unallocatedMs: 0 };
+		await seedPlan(cwd, "timed-proposal", withPlanTiming(plan, "timed-proposal", timing));
+		const harness = makeHarness(cwd, "timed-proposal");
+		const result = await harness.execute({ name: "timed proposal", plan: "## Current state\n\nChanged.\n" });
+		const saved = await readFile(result.details.path, "utf8");
+		expect(readTimeSpent(saved)).toBe(95_456);
+		expect(readPlanTiming(saved)).toEqual(timing);
 	});
 
 	it("presents the on-disk plan when no body is passed, instead of clobbering it", async () => {
@@ -83,7 +128,7 @@ describe("save_plan", () => {
 		const result = await harness.execute({ name: "existing name" });
 		expect(result.isError).toBeUndefined();
 		expect(result.content[0].text).toContain("Edited by the agent.");
-		expect(await readFile(join(cwd, ".pi", "plan", "existing-name.md"), "utf8")).toBe("Edited by the agent.\n");
+		expect(await readFile(join(cwd, ".pi", "plan", "existing-name.md"), "utf8")).toBe(withTimeSpent("Edited by the agent.\n", "existing-name", 0));
 	});
 
 	it("echoes the saved plan so the decision is made against the file", async () => {
@@ -92,11 +137,12 @@ describe("save_plan", () => {
 		expect(result.content[0].text).toContain("## Approach");
 	});
 
-	it("says the plan is empty rather than pretending there is one", async () => {
+	it("gives a missing plan its canonical title and zero-time marker", async () => {
 		const harness = makeHarness(cwd);
 		const result = await harness.execute({ name: "nothing written yet" });
 		expect(result.isError).toBeUndefined();
-		expect(result.content[0].text).toContain("(empty)");
+		expect(result.content[0].text).toContain("# nothing-written-yet");
+		expect(result.content[0].text).toContain("**Time spent:** 0s");
 	});
 
 	it("keeps the timestamp prefix and moves the file when the slug changes", async () => {
@@ -134,16 +180,17 @@ describe("composePlan", () => {
 		expect(composePlan(PLAN_TEMPLATE.replace("<session-name>", "x-task"), "B.", now)).toBe("B.\n");
 	});
 
-	it("numbers appended revisions from 2 and keeps counting", () => {
-		const second = composePlan("Original.", "Changed.", now);
+	it("replaces a draft and only appends revisions after approval", () => {
+		expect(composePlan("Original.", "Changed.", now)).toBe("Changed.\n");
+		const second = composePlan("Original.", "Changed.", now, true);
 		expect(second).toContain("## Revision 2 — 2026-07-25 18:53");
 		expect(second.startsWith("Original.")).toBe(true);
-		expect(composePlan(second, "Changed again.", now)).toContain("## Revision 3 —");
+		expect(composePlan(second, "Changed again.", now, true)).toContain("## Revision 3 —");
 	});
 
-	it("does not duplicate a body that is already the tail of the file", () => {
-		const once = composePlan("Original.", "Changed.", now);
-		expect(composePlan(once, "Changed.", now)).toBe(once);
+	it("does not duplicate a body that is already the tail of an approved plan", () => {
+		const once = composePlan("Original.", "Changed.", now, true);
+		expect(composePlan(once, "Changed.", now, true)).toBe(once);
 	});
 
 	it("treats an empty body as leave-as-is, and reads the scaffold as untouched", () => {
@@ -235,6 +282,34 @@ describe("auto-scaffold naming", () => {
 		expect(timestampPrefix(name)).toBe("2026-07-24--13-05-01");
 		expect(timestampPrefix("2026-07-24-13-05-01-dashboard-polish")).toBeUndefined();
 		expect(timestampPrefix("dashboard-polish")).toBeUndefined();
+	});
+});
+
+describe("context-informed task setup", () => {
+	let cwd: string;
+	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-begin-task-")); });
+	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
+
+	it("renames the temporary scaffold and selects the investigation template", async () => {
+		const temporary = "2026-07-31--12-00-00-review-cache-behavior";
+		await seedPlan(cwd, temporary, PLAN_TEMPLATE.replace("<session-name>", temporary));
+		const started = await beginTask(cwd, temporary, "cache behavior audit", "investigation");
+		expect(started.name).toBe("2026-07-31--12-00-00-cache-behavior-audit");
+		const contents = await readFile(started.path, "utf8");
+		expect(contents).toContain("## Question");
+		expect(contents).toContain("## Findings");
+		expect(readArtifactMetadata(contents)).toEqual({ kind: "investigation" });
+		await expect(access(join(cwd, ".pi", "plan", `${temporary}.md`))).rejects.toThrow();
+	});
+
+	it("preserves an investigation and creates a distinct sourced implementation plan", async () => {
+		const investigation = "2026-07-31--12-00-00-cache-behavior-audit";
+		const record = INVESTIGATION_TEMPLATE.replace("<session-name>", investigation).replace("<verified evidence and observations>", "Confirmed evidence.");
+		await seedPlan(cwd, investigation, record);
+		const started = await beginTask(cwd, investigation, "fix cache recovery", "implementation");
+		expect(started.name).toBe("2026-07-31--12-00-00-fix-cache-recovery");
+		await expect(readFile(join(cwd, ".pi", "plan", `${investigation}.md`), "utf8")).resolves.toContain("Confirmed evidence.");
+		expect(readArtifactMetadata(await readFile(started.path, "utf8"))).toEqual({ kind: "implementation", source: investigation });
 	});
 });
 

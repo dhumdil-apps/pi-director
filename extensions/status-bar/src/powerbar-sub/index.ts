@@ -17,6 +17,7 @@ interface RateWindow {
 	label: string;
 	usedPercent: number;
 	resetDescription?: string;
+	resetAt?: string;
 }
 
 interface UsageCoreState {
@@ -30,6 +31,10 @@ interface UsageCoreState {
 const DEFAULT_SEGMENTS = 10;
 const MIN_SEGMENTS = 3;
 const MAX_SEGMENTS = 12;
+const MAX_WEEK_SEGMENTS = 4;
+const MAX_DAY_SEGMENTS = 5;
+const MAX_HOUR_SEGMENTS = 8;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function clamp(n: number): number {
 	return Math.min(MAX_SEGMENTS, Math.max(MIN_SEGMENTS, n));
@@ -60,6 +65,63 @@ export function segmentsForLabel(label: string | undefined): number {
 	return DEFAULT_SEGMENTS;
 }
 
+/** Sum only Monday–Friday time, preserving partial days at either end. */
+function weekdayMsBetween(start: Date, end: Date): number | undefined {
+	const startMs = start.getTime();
+	const endMs = end.getTime();
+	if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return undefined;
+
+	let weekdayMs = 0;
+	let cursor = startMs;
+	while (cursor < endMs) {
+		const current = new Date(cursor);
+		const nextMidnight = new Date(
+			current.getFullYear(),
+			current.getMonth(),
+			current.getDate() + 1,
+		).getTime();
+		const sliceEnd = Math.min(endMs, nextMidnight);
+		const day = current.getDay();
+		if (day >= 1 && day <= 5) weekdayMs += sliceEnd - cursor;
+		cursor = sliceEnd;
+	}
+	return weekdayMs;
+}
+
+/**
+ * Uses the displayed countdown to select weeks, days, or hours. Monthly
+ * horizons use four week blocks; day horizons exclude weekends when an exact
+ * reset is available; hour horizons use at most one eight-hour workday.
+ */
+function segmentsForCountdown(
+	resetDescription: string | undefined,
+	resetAt: string | undefined,
+	now: Date,
+): number | undefined {
+	const match = resetDescription?.trim().match(/^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?$/i);
+	if (!match || (!match[1] && !match[2])) return undefined;
+
+	const days = Number(match[1] ?? 0);
+	const hours = Number(match[2] ?? 0);
+	const minutes = Number(match[3] ?? 0);
+	const hasPartialDay = hours > 0 || minutes > 0;
+
+	if (days >= 7) {
+		return Math.min(MAX_WEEK_SEGMENTS, Math.ceil((days + Number(hasPartialDay)) / 7));
+	}
+	if (days > 0) {
+		const weekdayMs = resetAt ? weekdayMsBetween(now, new Date(resetAt)) : undefined;
+		if (weekdayMs !== undefined) return Math.min(MAX_DAY_SEGMENTS, Math.ceil(weekdayMs / DAY_MS));
+		return Math.min(MAX_DAY_SEGMENTS, days + Number(hasPartialDay));
+	}
+	return Math.min(MAX_HOUR_SEGMENTS, hours + Number(minutes > 0));
+}
+
+/** Prefer the displayed reset countdown, falling back to the window's cadence. */
+export function segmentsForWindow(window: RateWindow, now = new Date()): number {
+	return segmentsForCountdown(window.resetDescription, window.resetAt, now) ?? segmentsForLabel(window.label);
+}
+
 function getColor(pct: number): string {
 	if (pct > 80) return "error";
 	if (pct > 60) return "warning";
@@ -85,7 +147,7 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow | un
 		text: textParts.join(" "),
 		suffix: `${pct}%`,
 		bar: pct,
-		barSegments: segmentsForLabel(label),
+		barSegments: segmentsForWindow(window),
 		color: getColor(pct),
 		row: 3,
 	});

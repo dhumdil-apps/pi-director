@@ -2,8 +2,8 @@
  * Context-usage readout shared across the workflow UI.
  *
  * Lives in agent-workflow (not progress-tracker) so the approval prompt can
- * lean on the same thresholds the phase indicator's `LLM Attention Span (ctx) <bar>`
- * readout uses, without a circular import: progress-tracker already depends
+ * lean on the same thresholds the Status Bar's `LLM Attention Span (ctx) <bar>`
+ * segment uses, without a circular import: progress-tracker already depends
  * on agent-workflow.
  */
 
@@ -12,13 +12,12 @@ import type { Usage } from "@earendil-works/pi-ai";
 import { renderPercentageBar } from "../status-bar/src/powerbar/render.js";
 import { SEPARATOR } from "../status-bar/src/powerbar/settings.js";
 
-// Severity reacts to the absolute token count as well as the fill ratio: on a 1M-window
-// model 200k of context is only 20% full, yet output quality has already degraded. Whichever
-// threshold trips first wins.
-export const CONTEXT_WARNING_TOKENS = 100_000;
-export const CONTEXT_ERROR_TOKENS = 200_000;
-export const CONTEXT_WARNING_PERCENT = 40;
-export const CONTEXT_ERROR_PERCENT = 80;
+// Context-window percentage is the only severity signal, so the color has a
+// predictable meaning regardless of the provider's window size.
+export const CONTEXT_WARNING_PERCENT = 20;
+export const CONTEXT_ERROR_PERCENT = 40;
+const INIT_TOKENS_WARNING = 10_000;
+const INIT_TOKENS_ERROR = 20_000;
 
 /** Compact token count: 940, 84.0k, 1.0M. */
 export function formatTokens(tokens: number): string {
@@ -33,9 +32,9 @@ export function formatTokens(tokens: number): string {
  */
 export function contextSeverity(usage: ContextUsage | undefined): ThemeColor | undefined {
   if (!usage || usage.tokens == null || usage.contextWindow <= 0) return undefined;
-  const percent = Math.round(usage.percent ?? (usage.tokens / usage.contextWindow) * 100);
-  if (usage.tokens > CONTEXT_ERROR_TOKENS || percent > CONTEXT_ERROR_PERCENT) return "error";
-  if (usage.tokens > CONTEXT_WARNING_TOKENS || percent > CONTEXT_WARNING_PERCENT) return "warning";
+  const percent = usage.percent ?? (usage.tokens / usage.contextWindow) * 100;
+  if (percent > CONTEXT_ERROR_PERCENT) return "error";
+  if (percent > CONTEXT_WARNING_PERCENT) return "warning";
   return "accent";
 }
 
@@ -47,8 +46,8 @@ export function isLeanContext(usage: ContextUsage | undefined): boolean {
   return (contextSeverity(usage) ?? "accent") === "accent";
 }
 
-// Compact five-block meter: enough to show context pressure while leaving room for
-// the descriptive label and token readout on its own line above the editor.
+// Five partial-height blocks show context pressure while leaving room for the
+// live total and cache readout beside them.
 const CONTEXT_BAR_WIDTH = 5;
 
 /**
@@ -65,12 +64,8 @@ export function contextUsageText(usage: ContextUsage | undefined, theme: Theme):
   return [theme.fg(color, "LLM Attention Span (ctx)"), bar, theme.fg(color, readout)].filter(Boolean).join(" ");
 }
 
-// Below half the prompt served from cache, the readout is a cost warning rather than
-// reassurance, so it drops to dim instead of claiming the accent color.
-const CACHE_HEALTHY_PERCENT = 50;
-
 /**
- * Share of the last request's prompt that was served from cache — `⚡ cache 92%`.
+ * Share of the last request's prompt that was served from cache — `🗃️ cache 92%`.
  * Undefined when no assistant turn has completed or the provider reported no
  * prompt tokens at all (nothing to have hit).
  */
@@ -79,40 +74,37 @@ export function cacheHitText(usage: Usage | undefined, theme: Theme): string | u
   const prompt = (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheWrite ?? 0);
   if (prompt <= 0) return undefined;
   const percent = Math.round(((usage.cacheRead ?? 0) / prompt) * 100);
-  return theme.fg(percent >= CACHE_HEALTHY_PERCENT ? "accent" : "dim", `⚡ cache ${percent}%`);
+  return theme.fg("dim", `🗃️ cache ${percent}%`);
+}
+
+/** Initial prompt weight is neutral until its absolute size becomes a concern. */
+function initialTokensText(tokens: number, theme: Theme): string {
+  const color: ThemeColor = tokens >= INIT_TOKENS_ERROR
+    ? "error"
+    : tokens >= INIT_TOKENS_WARNING
+      ? "warning"
+      : "dim";
+  return theme.fg(color, `📦 init ${formatTokens(tokens)}`);
 }
 
 /**
- * Growth since the previous turn — `+3.2k`. Undefined on the first turn (no
- * baseline) and when nothing moved, so a steady context adds no noise.
- */
-export function contextDeltaText(
-  current: number | null | undefined,
-  previous: number | undefined,
-  theme: Theme,
-): string | undefined {
-  if (current == null || previous == null) return undefined;
-  const delta = current - previous;
-  if (delta === 0) return undefined;
-  return theme.fg("dim", `${delta > 0 ? "+" : "−"}${formatTokens(Math.abs(delta))}`);
-}
-
-/**
- * The full indicator readout: context bar, cache hit rate, turn delta — joined
- * with the powerbar's separator, with missing fragments dropped rather than
- * leaving a dangling divider. Undefined when even the bar is unknown.
+ * The full indicator readout: context bar, cache hit rate, and retained
+ * first-turn aggregate — joined with the powerbar's separator. Undefined when
+ * even the bar is unknown.
  */
 export function contextIndicatorText(
   usage: ContextUsage | undefined,
   theme: Theme,
-  extras?: { lastUsage?: Usage; previousTokens?: number },
+  extras?: { lastUsage?: Usage; firstTurnTokens?: number },
 ): string | undefined {
   const context = contextUsageText(usage, theme);
   if (!context) return undefined;
   const fragments = [
     context,
     cacheHitText(extras?.lastUsage, theme),
-    contextDeltaText(usage?.tokens, extras?.previousTokens, theme),
+    extras?.firstTurnTokens == null
+      ? undefined
+      : initialTokensText(extras.firstTurnTokens, theme),
   ].filter((fragment): fragment is string => fragment !== undefined);
   return fragments.join(theme.fg("dim", SEPARATOR));
 }

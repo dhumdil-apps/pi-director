@@ -18,11 +18,13 @@ function harness(cwd = "/pi-director-index-test-nonexistent") {
 			handlers.set(name, [...(handlers.get(name) ?? []), handler]);
 		}),
 		registerCommand: vi.fn((name: string, command: any) => commands.set(name, command)),
+		registerEntryRenderer: vi.fn(),
 		registerTool: vi.fn((tool: any) => tools.push(tool)),
 		getSessionName: vi.fn(() => sessionName),
 		setSessionName: vi.fn((name: string) => { sessionName = name; }),
 		sendMessage: vi.fn(),
 		sendUserMessage: vi.fn(),
+		appendEntry: vi.fn(),
 		events: { emit: vi.fn(), on: vi.fn() },
 	};
 	createExtension(pi as any);
@@ -58,9 +60,10 @@ describe("workflow prompt", () => {
 		expect(prompt.startsWith("base")).toBe(true);
 		expect(prompt.match(/<pi_workflow>/g)).toHaveLength(1);
 		expect([...h.commands.keys()]).toEqual(["handoff"]);
-		// The only turn-time hooks are the system-prompt injector and the approval
-		// prompt (tool_execution_end arms it, agent_settled delivers it).
-		expect(h.handlers.has("input")).toBe(false);
+		expect(h.pi.registerEntryRenderer).toHaveBeenCalledWith("agent-workflow:notice", expect.any(Function));
+		// Input records the display-only explore phase; the approval prompt is
+		// armed by tool_execution_end and delivered by agent_settled.
+		expect(h.handlers.has("input")).toBe(true);
 		expect(h.handlers.has("agent_start")).toBe(false);
 		expect(h.handlers.has("agent_settled")).toBe(true);
 	});
@@ -81,6 +84,34 @@ describe("workflow prompt", () => {
 		const first = await harness().inject("one thing");
 		const second = await harness().inject("a completely different thing");
 		expect(first.slice(first.indexOf("<pi_workflow>"))).toBe(second.slice(second.indexOf("<pi_workflow>")));
+	});
+
+	it("keeps plans scale-invariant and requires the initial Align fast path", () => {
+		expect(workflowPrompt()).toContain("A one-line change gets a one-line plan");
+		expect(workflowPrompt()).toContain("asks one compact, high-leverage scope question");
+		expect(workflowPrompt()).toContain("even when the goal appears clear");
+	});
+
+	it("uses bounded workflow context before Align without starting task-source discovery", () => {
+		expect(workflowPrompt()).toContain("applicable AGENTS files");
+		expect(workflowPrompt()).toContain("Task-source discovery still waits until Align resolves");
+		expect(workflowPrompt()).toContain("Recall under .pi/plan/ stays bounded");
+		expect(workflowPrompt()).toContain("Never scan the full archive by default");
+		expect(workflowPrompt()).toContain("completed status as leads to verify");
+	});
+
+	it("separates investigation reports from implementation approval", () => {
+		expect(workflowPrompt()).toContain("classifies the requested outcome as implementation or investigation");
+		expect(workflowPrompt()).toContain("do not call \"save_plan\"");
+		expect(workflowPrompt()).toContain("Preserve the investigation record, create a separate plan");
+		expect(workflowPrompt()).toContain("recommend Handoff");
+	});
+
+	it("uses direct plan edits for routine execution and save_plan only for material re-plans", () => {
+		expect(workflowPrompt()).toContain("Routine progress and completion updates never use \"save_plan\"");
+		expect(workflowPrompt()).toContain("Present that changed plan with \"save_plan\" for renewed approval");
+		expect(workflowPrompt()).toContain("reopens the approval picker");
+		expect(workflowPrompt()).toContain("Do not call \"save_plan\" at close-out");
 	});
 });
 
@@ -120,6 +151,9 @@ describe("plan scaffolding", () => {
 		expect(await planFiles()).toEqual([`${name}.md`]);
 		const written = await readFile(join(cwd, ".pi", "plan", `${name}.md`), "utf8");
 		expect(written).toContain(`# ${name}`);
+		expect(written).toContain("<!-- time-spent:start total-ms=0 explore-ms=0 execute-ms=0 decision-ms=0 unallocated-ms=0 -->");
+		expect(written).toContain("**Time spent:** 0s");
+		expect(written).toContain("## Align");
 		expect(written).toContain("## Checklist");
 		// The MEMORY stub is part of the same bootstrap.
 		await expect(readFile(join(cwd, ".pi", "MEMORY.md"), "utf8")).resolves.toContain("#");

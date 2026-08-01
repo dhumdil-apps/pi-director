@@ -46,7 +46,7 @@ export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
 	{
 		name: "project-memory",
 		group: "workflow",
-		description: "Checks project-memory review provenance at startup and suggests the manual `/memory` audit when needed.",
+		description: "Checks project-memory review provenance at startup and suggests the manual `/init` audit when needed.",
 	},
 	{
 		name: "progress-tracker",

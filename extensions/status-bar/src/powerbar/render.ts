@@ -27,6 +27,8 @@ export interface Segment {
 	row?: 1 | 2 | 3 | 4;
 	/** Render on the right while active even when absent from saved settings. */
 	transient?: boolean;
+	/** Theme-aware content for segments whose fragments need independent colors. */
+	render?: (theme: Theme) => string | undefined;
 }
 
 /** Convert a foreground ANSI escape to background by replacing SGR 38 with 48. */
@@ -72,6 +74,9 @@ export function renderPercentageBar(percent: number, width: number, theme: Theme
  * Layout: [icon] [text] [bar] [suffix]
  */
 function renderSegmentText(segment: Segment, theme: Theme): string {
+	const custom = segment.render?.(theme);
+	if (custom !== undefined) return custom;
+
 	const parts: string[] = [];
 	const themeColor = (segment.color || "muted") as ThemeColor;
 
@@ -104,7 +109,7 @@ function renderSideSegments(ids: string[], segments: Map<string, Segment>, theme
 	const rendered: RenderedSegment[] = [];
 	for (const id of ids) {
 		const seg = segments.get(id);
-		if (!seg || (!seg.text && !seg.suffix && seg.bar === undefined)) continue;
+		if (!seg || (!seg.text && !seg.suffix && seg.bar === undefined && !seg.render)) continue;
 		const text = renderSegmentText(seg, theme);
 		rendered.push({ text, width: visibleWidth(text) });
 	}
@@ -187,7 +192,7 @@ export function renderBar(
 	const configured = new Set(settings.lines.flatMap((line) => [...line.left, ...line.right]));
 	const hasContent = (id: string): boolean => {
 		const segment = segments.get(id);
-		return !!segment && (!!segment.text || !!segment.suffix || segment.bar !== undefined);
+		return !!segment && (!!segment.text || !!segment.suffix || segment.bar !== undefined || !!segment.render);
 	};
 
 	// A transient segment nobody placed rides along on the right of its declared line.
@@ -208,5 +213,9 @@ export function renderBar(
 	let last = lines.length - 1;
 	while (last >= 0 && lines[last] === undefined) last--;
 	if (last < 0) return [" ".repeat(width)];
-	return lines.slice(0, last + 1).map((line) => line ?? " ".repeat(width));
+	const rendered = lines.slice(0, last + 1).map((line) => line ?? " ".repeat(width));
+	if (!settings.lineGap) return rendered;
+
+	const gap = " ".repeat(width);
+	return rendered.flatMap((line, index) => index === rendered.length - 1 ? [line] : [line, gap]);
 }

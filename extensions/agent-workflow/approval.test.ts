@@ -1,8 +1,9 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { registerApproval } from "./approval.js";
+import { withTimeSpent } from "./plan-time.js";
 
 const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
@@ -22,6 +23,7 @@ function harness(cwd: string, sessionName?: string) {
 		events: { emit: vi.fn((name: string, value: any) => emitted.push([name, value])) },
 		sendMessage: vi.fn((message: any) => messages.push(message)),
 		sendUserMessage: vi.fn((content: string) => userMessages.push(content)),
+		appendEntry: vi.fn((customType: string, data: unknown) => branch.push({ type: "custom", customType, data })),
 	};
 	registerApproval(pi as never);
 
@@ -33,7 +35,7 @@ function harness(cwd: string, sessionName?: string) {
 	const offer = async (
 		task: string,
 		choice: string | undefined,
-		options: { editorText?: string; isError?: boolean; usage?: any; hasUI?: boolean; toolName?: string } = {},
+		options: { editorText?: string; isError?: boolean; usage?: any; hasUI?: boolean; mode?: "tui" | "print"; toolName?: string; kind?: "implementation" | "investigation"; source?: string } = {},
 	) => {
 		const setEditorText = vi.fn();
 		const notify = vi.fn();
@@ -41,24 +43,23 @@ function harness(cwd: string, sessionName?: string) {
 		const ctx = {
 			cwd,
 			hasUI: options.hasUI ?? true,
+			mode: options.mode ?? (options.hasUI === false ? "print" : "tui"),
 			getContextUsage: () => options.usage,
 			ui: { notify, setEditorText, getEditorText: () => options.editorText ?? "", select },
 			sessionManager: { getBranch: () => branch, getSessionName: () => sessionName },
 		};
-		await handlers.get("tool_execution_end")![0]({ toolName: options.toolName ?? "save_plan", isError: options.isError ?? false, result: { details: { name: task } } }, ctx);
+		await handlers.get("tool_execution_end")![0]({ toolName: options.toolName ?? "save_plan", isError: options.isError ?? false, result: { details: { name: task, kind: options.kind ?? "implementation", source: options.source } } }, ctx);
 		await handlers.get("agent_settled")![0]({}, ctx);
 		return { setEditorText, notify, select, ctx };
 	};
 
-	/**
-	 * Approval leaves no durable trace — the kickoff message it sends IS the
-	 * record, so the tasks kicked off are the tasks approved.
-	 */
+	/** The kickoff still identifies which concrete task execution started. */
 	const approvedTasks = () => userMessages.map((content) => content.match(/plan\/(.+)\.md/)?.[1]);
 
 	const phases = () => emitted.filter(([name]) => name === "agent-workflow:phase").map(([, value]) => value.phase);
+	const waits = () => emitted.filter(([name]) => name === "agent-workflow:user-wait").map(([, value]) => value);
 
-	return { handlers, offer, messages, userMessages, approvedTasks, branch, phases };
+	return { handlers, offer, messages, userMessages, approvedTasks, branch, phases, waits };
 }
 
 describe("approval prompt", () => {
@@ -74,6 +75,10 @@ describe("approval prompt", () => {
 		const h = harness(cwd);
 		const first = await h.offer("dashboard-polish", "Revise the plan");
 		expect(first.select).toHaveBeenCalledTimes(1);
+		expect(h.waits()).toEqual([
+			{ waiting: true, reason: "approval" },
+			{ waiting: false, reason: "approval" },
+		]);
 		// Settle again without a new save: the offer was consumed.
 		await h.handlers.get("agent_settled")![0]({}, first.ctx);
 		expect(first.select).toHaveBeenCalledTimes(1);
@@ -84,8 +89,9 @@ describe("approval prompt", () => {
 		const { notify } = await h.offer("dashboard-polish", PROCEED);
 		expect(h.approvedTasks()).toEqual(["dashboard-polish"]);
 		expect(h.userMessages[0]).toBe("Execute the approved plan at .pi/plan/dashboard-polish.md.");
-		// Approval leaves nothing behind in the session: no hidden fact, no notice.
+		// Display state is persisted as a context-free custom entry, not a notice.
 		expect(h.messages).toEqual([]);
+		expect(h.branch.at(-1)).toMatchObject({ customType: "agent-workflow:phase", data: { phase: "execute" } });
 		expect(notify).not.toHaveBeenCalled();
 	});
 
@@ -93,6 +99,18 @@ describe("approval prompt", () => {
 		const h = harness(cwd);
 		await h.offer("dashboard-polish", PROCEED);
 		// Mid-implementation correction: same task, same plan contents.
+		const again = await h.offer("dashboard-polish", PROCEED);
+		expect(again.select).not.toHaveBeenCalled();
+		expect(h.approvedTasks()).toEqual(["dashboard-polish"]);
+	});
+
+	it("ignores a script-owned elapsed-time update after approval", async () => {
+		const path = join(cwd, ".pi", "plan", "dashboard-polish.md");
+		await writeFile(path, withTimeSpent(await readFile(path, "utf8"), "dashboard-polish", 0));
+		const h = harness(cwd);
+		await h.offer("dashboard-polish", PROCEED);
+		await writeFile(path, withTimeSpent(await readFile(path, "utf8"), "dashboard-polish", 83_000));
+
 		const again = await h.offer("dashboard-polish", PROCEED);
 		expect(again.select).not.toHaveBeenCalled();
 		expect(h.approvedTasks()).toEqual(["dashboard-polish"]);
@@ -138,16 +156,21 @@ describe("approval prompt", () => {
 		}
 	});
 
-	it("recommends Proceed on a lean context and Handoff on a loaded one", async () => {
+	it("recommends Proceed on a lean context and Handoff on a loaded or investigation-derived plan", async () => {
 		const lean = harness(cwd);
 		const { select: leanSelect } = await lean.offer("dashboard-polish", undefined);
 		expect(leanSelect.mock.calls[0]![1][0]).toBe(PROCEED);
 
 		const loaded = harness(cwd);
 		const { select: loadedSelect } = await loaded.offer("dashboard-polish", undefined, {
-			usage: { tokens: 150_000, contextWindow: 1_000_000, percent: 15 },
+			// Percentage alone decides: past the warning threshold a fresh session is the recommendation.
+			usage: { tokens: 250_000, contextWindow: 1_000_000, percent: 25 },
 		});
 		expect(loadedSelect.mock.calls[0]![1][0]).toBe("Handoff to a fresh session (recommended)");
+
+		const derived = harness(cwd);
+		const { select: derivedSelect } = await derived.offer("dashboard-polish", undefined, { source: "cache-audit" });
+		expect(derivedSelect.mock.calls[0]![1][0]).toBe("Handoff to a fresh session (recommended)");
 	});
 
 	it("warns once when the working tree changes before approval, and not after it", async () => {
@@ -173,15 +196,36 @@ describe("approval prompt", () => {
 		expect(quiet).not.toHaveBeenCalled();
 	});
 
-	it("emits plan on save and execute on approval, for the indicator only", async () => {
+	it("records only Explore and Execute across a revision cycle", async () => {
 		const h = harness(cwd);
-		await h.offer("dashboard-polish", PROCEED);
-		expect(h.phases()).toEqual(["plan", "execute"]);
+		const { ctx } = await h.offer("dashboard-polish", PROCEED);
+		expect(h.phases()).toEqual(["execute"]);
 
-		// Revising stays in plan: nothing was approved.
+		await h.handlers.get("input")![0]({ source: "interactive", text: "please refine it" }, ctx);
+		await writeFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), `${planText}\n## Revision 2 — later\n\nMore.\n`);
+		await h.offer("dashboard-polish", PROCEED);
+		expect(h.phases()).toEqual(["execute", "explore", "execute"]);
+	});
+
+	it("does not mistake the extension approval kickoff for a new exploration cycle", async () => {
+		const h = harness(cwd);
+		await h.handlers.get("input")![0](
+			{ source: "extension", text: "Execute the approved plan..." },
+			{ sessionManager: { getBranch: () => h.branch } },
+		);
+		expect(h.phases()).toEqual([]);
+	});
+
+	it("keeps an unapproved revision in Explore", async () => {
 		const revised = harness(cwd);
 		await revised.offer("dashboard-polish", "Revise the plan");
-		expect(revised.phases()).toEqual(["plan"]);
+		expect(revised.phases()).toEqual([]);
+	});
+
+	it("does not offer execution for an investigation record", async () => {
+		const h = harness(cwd);
+		const { select } = await h.offer("dashboard-polish", undefined, { kind: "investigation" });
+		expect(select).not.toHaveBeenCalled();
 	});
 
 	it("never arms on a failed save", async () => {
@@ -190,11 +234,17 @@ describe("approval prompt", () => {
 		expect(select).not.toHaveBeenCalled();
 	});
 
-	it("degrades to a displayed /handoff hint when headless", async () => {
+	it("persists a context-free /handoff hint and prints it when headless", async () => {
+		const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 		const h = harness(cwd);
 		const { select } = await h.offer("dashboard-polish", undefined, { hasUI: false });
 		expect(select).not.toHaveBeenCalled();
-		const hint = h.messages.find((m) => m.display === true);
-		expect(hint?.content).toContain("/handoff dashboard-polish");
+		expect(h.messages).toEqual([]);
+		expect(h.branch.at(-1)).toMatchObject({
+			customType: "agent-workflow:notice",
+			data: { content: expect.stringContaining("/handoff dashboard-polish"), level: "info" },
+		});
+		expect(stderr).toHaveBeenCalledWith(expect.stringContaining("/handoff dashboard-polish"));
+		stderr.mockRestore();
 	});
 });

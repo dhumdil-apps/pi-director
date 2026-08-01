@@ -20,19 +20,21 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { isLeanContext } from "./context-usage.js";
+import { stripTimeSpent } from "./plan-time.js";
 import { planPath } from "./task.js";
+import { duringUserWait } from "./user-wait.js";
 import { handoffKickoff } from "./handoff.js";
-import { PHASE_EVENT, type WorkflowPhase } from "./phase.js";
+import { appendHeadlessNotice } from "./notice.js";
+import { derivePhaseFromBranch, recordWorkflowPhase } from "./phase.js";
 import { resolvePlanTask } from "./task.js";
 
 /** Content identity of a plan file; a missing file hashes as empty, never throws. */
 async function planDigest(cwd: string, task: string): Promise<string> {
 	const contents = await readFile(planPath(cwd, task), "utf8").catch(() => "");
-	return createHash("sha256").update(contents).digest("hex");
+	return createHash("sha256").update(stripTimeSpent(contents)).digest("hex");
 }
-
-const APPROVAL_NOTICE_TYPE = "agent-workflow:approval-notice";
 
 // Enough to catch the ways the working tree actually changes; a shell command is
 // included wholesale rather than guessed at, since a read-only command warns at
@@ -48,8 +50,8 @@ const REVISE = "Revise the plan";
  * context-load recommendation lives in the labels: a lean context recommends
  * proceeding here, a loaded one recommends handing off to a fresh session.
  */
-export function approvalOptions(lean: boolean): string[] {
-	return lean
+export function approvalOptions(lean: boolean, preferHandoff = false): string[] {
+	return lean && !preferHandoff
 		? [`${PROCEED} (recommended)`, HANDOFF, REVISE]
 		: [`${HANDOFF} (recommended)`, PROCEED, REVISE];
 }
@@ -57,7 +59,7 @@ export function approvalOptions(lean: boolean): string[] {
 export function registerApproval(pi: ExtensionAPI): void {
 	// Ephemeral by design: a pending offer belongs to the turn that armed it and
 	// is never persisted, so a reload never resurrects a stale prompt.
-	let pendingOffer: { task: string } | undefined;
+	let pendingOffer: { task: string; preferHandoff: boolean } | undefined;
 	// Which task the user approved in this session. Deliberately in-memory: it
 	// only suppresses a duplicate prompt, so a reload costing one extra prompt is
 	// cheaper than a durable fact and the derivation that reads it back.
@@ -68,15 +70,23 @@ export function registerApproval(pi: ExtensionAPI): void {
 	let unapprovedTask: string | undefined;
 	let warnedTask: string | undefined;
 
+	// A new human turn after execution starts another workflow cycle. Extension
+	// input includes our approval kickoff, which must remain in execute.
+	pi.on("input", async (event, ctx) => {
+		if (event.source === "extension") return;
+		if (derivePhaseFromBranch(ctx.sessionManager.getBranch()) === "execute") {
+			recordWorkflowPhase(pi, "explore");
+		}
+	});
+
 	pi.on("tool_execution_end", async (event, ctx) => {
 		if (event.toolName !== "save_plan" || event.isError) return;
-		const details = (event.result as { details?: { name?: unknown } } | undefined)?.details;
-		if (typeof details?.name !== "string") return;
+		const details = (event.result as { details?: { name?: unknown; kind?: unknown; source?: unknown } } | undefined)?.details;
+		if (typeof details?.name !== "string" || details.kind === "investigation") return;
 		// Re-presenting the approved plan unchanged is a correction, not a new decision.
 		if (details.name === approved?.task && (await planDigest(ctx.cwd, details.name)) === approved.digest) return;
-		pendingOffer = { task: details.name };
+		pendingOffer = { task: details.name, preferHandoff: typeof details.source === "string" };
 		unapprovedTask = details.name;
-		emitPhase(pi, "plan");
 	});
 
 	// Soft back-stop: notify, never reject. Silence here is the failure mode worth
@@ -92,25 +102,33 @@ export function registerApproval(pi: ExtensionAPI): void {
 		const offer = pendingOffer;
 		if (!offer) return;
 		pendingOffer = undefined;
-		const { task } = offer;
+		const { task, preferHandoff } = offer;
 
 		if (!ctx.hasUI) {
-			pi.sendMessage(
-				{ customType: APPROVAL_NOTICE_TYPE, content: `Plan saved — run /handoff ${task} to execute it in a fresh session.`, display: true },
-				{ triggerTurn: false },
-			);
+			appendHeadlessNotice(pi, ctx.mode, `Plan saved — run /handoff ${task} to execute it in a fresh session.`, "info");
 			return;
 		}
 
-		const choice = await ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage())));
+		const checkpoint = openCheckpoint(pi, "approval");
+		let choice: string | undefined;
+		try {
+			choice = await duringUserWait(pi, "approval", () =>
+				ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage()), preferHandoff)),
+			);
+		} catch (error) {
+			resolveCheckpoint(pi, checkpoint.id, "failure");
+			throw error;
+		}
 		if (choice?.startsWith(PROCEED)) {
+			resolveCheckpoint(pi, checkpoint.id, "proceed");
 			approved = { task, digest: await planDigest(ctx.cwd, task) };
 			unapprovedTask = undefined;
-			emitPhase(pi, "execute");
+			recordWorkflowPhase(pi, "execute");
 			proceed(pi, ctx, task);
 			return;
 		}
 		if (choice?.startsWith(HANDOFF)) {
+			resolveCheckpoint(pi, checkpoint.id, "handoff");
 			// Only a command handler can spawn a session, so the handoff path hands
 			// the user the exact command — naming the task, since .pi/plan/ accumulates.
 			const command = `/handoff ${task}`;
@@ -118,13 +136,9 @@ export function registerApproval(pi: ExtensionAPI): void {
 			ctx.ui.notify(`Press Enter to run ${command} in a new session.`, "info");
 			return;
 		}
+		resolveCheckpoint(pi, checkpoint.id, choice?.startsWith(REVISE) ? "revise" : "dismissed");
 		ctx.ui.notify(`Plan not approved — revise and save again, or run /handoff ${task}.`, "info");
 	});
-}
-
-/** Display only: the indicator listens, the model never sees it (phase.ts). */
-function emitPhase(pi: ExtensionAPI, phase: WorkflowPhase): void {
-	pi.events.emit?.(PHASE_EVENT, { phase });
 }
 
 /** Start execution here, naming the concrete plan path so the turn opens on it. */

@@ -21,6 +21,7 @@ interface PowerbarUpdatePayload {
 	barSegments?: number;
 	row?: 1 | 2 | 3 | 4;
 	transient?: boolean;
+	render?: (theme: Theme) => string | undefined;
 }
 
 interface SegmentRegistration {
@@ -52,7 +53,8 @@ function segmentEquals(left: Segment | undefined, right: Segment): boolean {
 		left.bar === right.bar &&
 		left.barSegments === right.barSegments &&
 		left.row === right.row &&
-		left.transient === right.transient
+		left.transient === right.transient &&
+		left.render === right.render
 	);
 }
 
@@ -100,7 +102,7 @@ export default function createExtension(pi: ExtensionAPI): void {
 		const payload = data as PowerbarUpdatePayload;
 		if (!payload?.id) return;
 
-		if (!payload.text && payload.bar === undefined) {
+		if (!payload.text && payload.bar === undefined && !payload.render) {
 			const changed = segments.delete(payload.id);
 			if (!changed) return;
 		} else {
@@ -114,6 +116,7 @@ export default function createExtension(pi: ExtensionAPI): void {
 				barSegments: payload.barSegments,
 				row: payload.row,
 				transient: payload.transient,
+				render: payload.render,
 			};
 			if (segmentEquals(segments.get(payload.id), nextSegment)) return;
 			segments.set(payload.id, nextSegment);

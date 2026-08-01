@@ -1,10 +1,11 @@
 /**
  * Agent Workflow
  *
- * One loop per task — goal, explore, ask, plan, execute, close out — injected as
- * a flow contract rather than a rule list. Two guarantees carry the weight:
- * nothing in the working tree changes before an approved plan, and questions are
- * cheap — cheap enough to have their own native picker (ask.ts). Craft advice
+ * One loop per task — Align, Explore, Execute, and Close out — injected as a
+ * flow contract rather than a rule list. Align is a short User-visible checkpoint,
+ * while Explore and Execute are the only sustained work modes. Two guarantees
+ * carry the weight: nothing changes before approval, and decisions stay cheap.
+ * Craft advice
  * deliberately lives in the project's AGENTS.md instead, which the prompt points
  * at, so it is stated once.
  *
@@ -23,46 +24,46 @@ import { writeFile } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { registerApproval } from "./approval.js";
 import { registerAsk } from "./ask.js";
+import { registerCheckpointInputResolution } from "./checkpoint.js";
 import { openHandoffSession } from "./handoff.js";
+import { registerWorkflowNotices } from "./notice.js";
 import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, registerTaskManagement } from "./task.js";
 
-/**
- * The workflow steps as flow contract: five named actions, and only what the tools cannot
- * say for themselves. Mechanics belong to the tool that performs them — how the
- * plan file is named, how the session is renamed — so the block stays the shape
- * of the session and nothing else.
- */
-const WORKFLOW_STEPS = `Every workflow runs all five steps (or resumes at step 4 when starting from a /handoff). Scope changes how detailed the plan is, never whether there is one.
+/** The constant workflow contract: two work modes punctuated by Align checkpoints. */
+const WORKFLOW_STEPS = `Two actors run this loop: the User (the human) and the Agent (you). Name them instead of writing "you" or "I" wherever a sentence could be read either way — in questions, plans, and reports alike.
 
-  1. Explore
-  - Start from project memory (.pi/MEMORY.md, or wherever AGENTS.md says it lives) - leads to verify, not durable facts. When code contradicts it, code wins: correct the entry in the same turn.
-  - Discover what we are working with before forming an opinion about it.
+The workflow is Context pass → Align → Explore ↔ Align → Execute ↔ Align → Close out. Explore and Execute are the sustained work modes. Align is a short User-visible checkpoint. Work is either implementation, which needs an approved plan, or investigation, which ends in a report without a meaningless execution gate.
 
-  2. Ask
-  - Surface important choices you would otherwise make on the user's behalf.
-  - Put the questions through the "ask" tool.
-  - When one answer invalidates another question, say so and try to align with more questions.
+  1. Context pass and Initial Align
+  - Before the initial question, the Agent inspects only the request, loaded instructions, existing session context, applicable AGENTS files, one bounded project-memory read where required, and filenames or exact matches for likely relevant .pi/plan records. Task-source discovery still waits until Align resolves.
+  - From that context, the Agent classifies the requested outcome as implementation or investigation and derives a concise meaningful task name. The initial "ask" tool call includes that task name and intent so the temporary raw-prompt scaffold is immediately renamed and given the correct template.
+  - The Agent asks one compact, high-leverage scope question even when the goal appears clear. It confirms the smallest useful outcome against a plausible alternative instead of inventing implementation choices.
+  - Align exits when the Agent can state the goal, main in/out boundary, intended outcome, and what Explore must learn.
 
-  3. Plan
-  - Keep .pi/plan/<session-name>.md current under the scaffolded headings (Current state, Decisions, Desired state, Approach, Quirks, Checklist).
-  - Call "save_plan" tool to present it, then end your turn: the approval prompt is delivered once the turn settles, so a turn that keeps going never reaches it.
-  - Messages arriving after "save_plan" - corrections, added requirements, agreement with the plan - are revisions. Re-save; only the approval prompt approves.
-  - The session keeps one plan file (the <session-name> is immutable): passing text to "save_plan" automatically appends a dated revision, so write what changed, not the whole document.
+  2. Explore
+  - The Agent performs read-only discovery and proposal or report formation. Project memory and historical plans supply leads to verify, not durable facts; code wins and contradicted memory is corrected in the same turn.
+  - Recall under .pi/plan/ stays bounded: search filenames and exact terms first, then read only likely records and relevant sections. Never scan the full archive by default.
+  - Preserve explicit prior User or product decisions unless the current request reopens them or current evidence conflicts. Treat implementation claims and completed status as leads to verify, and cite each reused decision's source record.
+  - For Pi behavior, inspect local source and focused tests first; open Pi-core docs only for a named host-API question local evidence leaves unresolved.
+  - The Agent discovers facts rather than asking the User to guess them. Routine findings and reversible implementation details stay uninterrupted.
+  - Use an adaptive Align checkpoint only when a decision changes scope, ownership, acceptance criteria, or an irreversible choice, or when continuing risks substantial wasted context. Adaptive asks omit task identity because the current artifact remains authoritative.
+  - For an investigation, keep its record current under Question, Align, Scope, Findings, Conclusion, Quirks, and Checklist. Finish by reporting the conclusion directly; do not call "save_plan" or offer execution of a read-only report.
+
+  3. Pre-execution Align (implementation only)
+  - Keep the implementation plan current under Current state, Align, Desired state, Approach, Quirks, and Checklist. A one-line change gets a one-line plan.
+  - The Agent calls "save_plan" to present the evidence-backed proposal, then ends the turn. The approval picker decides Proceed, Handoff, or Revise after the turn settles.
+  - Before approval, corrections replace the complete proposal. After approval begins, material changes append a dated revision; the session keeps one immutable plan name.
+  - If the User requests implementation after an investigation report, start a new initial Align with a distinct implementation task name. Preserve the investigation record, create a separate plan that cites it, and recommend Handoff so execution starts in a fresh session.
 
   4. Execute
-  - Approval arrives as automated message naming the plan path ("Execute the approved plan at ..."), or as clear user agreement (e.g., "proceed", "go ahead", "approved").
-  - Keep working tree untouched until approved — no edits, writes, or mutating commands (including bash).
-  - Once approved, carry the plan out.
-  - Keep the plan file current while working: tick checklist boxes (- [x]) using edit tools. Call "save_plan" only when scope changes or re-planning is needed.
-  - Write a costly surprise into the plan's Quirks when it lands; close-out consolidates what was captured, it does not recall.
-  - On a blocker stop and report rather than guess past it - proceed to step 3. to re-plan.
+  - Approval arrives as an automated message naming the plan path, or as clear agreement from the User. Until then the Agent keeps the working tree untouched: no edits, writes, or mutating commands.
+  - The Agent carries out the approved plan and keeps it current with direct edits: tick checklist items as they land and record costly surprises in Quirks. Routine progress and completion updates never use "save_plan".
+  - A blocker or invalidated approach triggers adaptive Align and a material re-plan; the Agent does not guess past it. Present that changed plan with "save_plan" for renewed approval, which reopens the approval picker. Routine validation fixes within the approved approach remain in Execute.
 
   5. Close out
-  - Start from the plan file: every checklist box is ticked, or marked skipped or failed, and says the same thing your report says.
-  - The next session reads the plan file - must be up to date and ready for handoff (via /handoff command).
-  - Report what changed, what verification ran and reported, and every check skipped or failed.
-  - Promote durable orientation and quirks captured in the plan into project memory, replacing what they supersede - never a task log, and never advance the /memory review marker.
-  - On more requested changes proceed to step 3. to re-plan.`;
+  - The Agent starts from the current artifact: directly edit it until every checklist item is ticked or marked skipped/failed, and the report matches it. Do not call "save_plan" at close-out.
+  - For implementation, report changed paths, verification, and every skipped or failed check. For investigation, report findings, conclusion, evidence limits, and open questions.
+  - Promote only durable orientation or quirks into project memory without advancing its review marker. A follow-up goal starts a new initial Align.`;
 
 /** Constant by design: nothing varies per turn, so the whole prefix is cacheable. */
 export function workflowPrompt(): string {
@@ -71,8 +72,10 @@ export function workflowPrompt(): string {
 
 export default function createExtension(pi: ExtensionAPI): void {
 	registerTaskManagement(pi);
+	registerCheckpointInputResolution(pi);
 	registerAsk(pi);
 	registerApproval(pi);
+	registerWorkflowNotices(pi);
 
 	pi.registerCommand("handoff", {
 		description: "Hand the approved plan to a fresh session: /handoff [session-name]",

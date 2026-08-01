@@ -21,7 +21,7 @@ Run the working copy — extensions, prompts, and themes, no push required — w
 off so the managed copy cannot load alongside it:
 
 ```bash
-pi -ne -np --no-themes -e ~/Github/pi-director
+pi -ne -np --no-themes -e ~/GitHub/dev/pi-stack/pi-director
 ```
 
 `-e` accepts the package directory and reads its `package.json` manifest; `.`
@@ -51,14 +51,14 @@ Smoke the working copy headlessly — the bundle loads and the loop guidance is
 injected:
 
 ```bash
-pi -p -ne -e ~/Github/pi-director --tools '' --no-session "Reply with exactly one word: the first step of the workflow loop in your instructions."
+pi -p -ne -e ~/GitHub/dev/pi-stack/pi-director --tools '' --no-session "Reply with exactly one word: the first step of the workflow loop in your instructions."
 ```
 
 Session-boundary changes need a scratch project with a seeded plan
 (`.pi/plan/demo-task.md`) and a session directory to inspect afterwards:
 
 ```bash
-pi -p -ne -e ~/Github/pi-director --tools '' --session-dir ./sessions "/handoff demo-task"
+pi -p -ne -e ~/GitHub/dev/pi-stack/pi-director --tools '' --session-dir ./sessions "/handoff demo-task"
 ```
 
 The newest file under `./sessions` must contain, in order: the `parentSession`
@@ -99,4 +99,4 @@ Treat an upstream update as a merge, not a blind overwrite:
 5. Run the component's checks plus bundle tests and load smoke.
 6. Update its snapshot in `UPSTREAM.md`.
 
-High-risk local behavior to preserve includes explicit plan approval (save before presenting), plan-backed project-memory promotion at close-out, and `/memory` remaining the only writer of review provenance.
+High-risk local behavior to preserve includes explicit plan approval (save before presenting), plan-backed project-memory promotion at close-out, and `/init` remaining the only writer of review provenance.

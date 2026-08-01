@@ -1,28 +1,48 @@
 /**
- * Which side of the approval gate the session is on — for display only.
+ * The current workflow cycle phase — for display only.
  *
  * This is deliberately not the retired mode/loop state machine (mode.ts,
- * loop.ts): nothing here is written to the session, and nothing here reaches
- * the model. The injected LOOP stays one byte-identical constant and the phase
- * only ever reaches a widget, so a wrong badge misinforms the user for one turn
+ * loop.ts): only context-free display state is written to the session, and
+ * nothing here reaches the model. The injected LOOP stays one byte-identical
+ * constant and the phase only ever reaches display surfaces, so a wrong badge
+ * misinforms the user for one turn
  * instead of shifting the contract under the agent.
  *
- * Two sources, in precedence order:
- *  - live transitions emitted by approval.ts (in-memory, this session's decisions);
- *  - the kickoff message in the branch, for the cases no transition was seen —
- *    a /handoff-seeded session is approved by construction and never runs the
- *    prompt, and a reload starts with an empty closure.
+ * Transitions are both emitted live and persisted as custom session entries,
+ * which do not reach the model. Reconstruction reads the latest transition so
+ * revisions can cycle through the phases repeatedly. Approval kickoff messages
+ * remain a backward-compatible execute signal for sessions created before the
+ * persisted entries existed.
  */
 
-import type { SessionEntry } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent";
 
-export type WorkflowPhase = "plan" | "execute";
+export type WorkflowPhase = "explore" | "execute";
 
-/** Emitted by approval.ts, consumed by progress-tracker's indicator. */
+/** Used for both the display event and the context-free persisted session entry. */
 export const PHASE_EVENT = "agent-workflow:phase";
 
 export interface PhaseEvent {
 	phase: WorkflowPhase;
+}
+
+export function isWorkflowPhase(value: unknown): value is WorkflowPhase {
+	return value === "explore" || value === "execute";
+}
+
+/** Historical Plan work is non-mutating proposal work, so it resumes as Explore. */
+export function normalizeWorkflowPhase(value: unknown): WorkflowPhase | undefined {
+	if (value === "plan") return "explore";
+	return isWorkflowPhase(value) ? value : undefined;
+}
+
+/** Persist first, then notify live observers; custom entries never enter LLM context. */
+export function recordWorkflowPhase(
+	pi: Pick<ExtensionAPI, "appendEntry" | "events">,
+	phase: WorkflowPhase,
+): void {
+	pi.appendEntry(PHASE_EVENT, { phase } satisfies PhaseEvent);
+	pi.events.emit?.(PHASE_EVENT, { phase } satisfies PhaseEvent);
 }
 
 /**
@@ -32,6 +52,12 @@ export interface PhaseEvent {
  * pins the sentence).
  */
 const KICKOFF_PATTERN = /^Execute the approved plan at .+\.md\./m;
+
+/** Whether this branch has crossed the approval gate for the named plan. */
+export function hasApprovedPlan(entries: SessionEntry[], task: string): boolean {
+	const kickoff = `Execute the approved plan at .pi/plan/${task}.md.`;
+	return entries.some((entry) => messageText(entry) === kickoff);
+}
 
 function messageText(entry: SessionEntry): string | undefined {
 	if (entry.type !== "message") return undefined;
@@ -46,12 +72,16 @@ function messageText(entry: SessionEntry): string | undefined {
 }
 
 /**
- * `execute` once a kickoff message appears on the branch, otherwise undefined —
- * never `plan`, so an ordinary session with no plan in play renders no badge at
- * all rather than claiming a phase it was never in.
+ * Reconstruct the latest transition. Persisted phase entries make repeated
+ * revision cycles unambiguous; kickoff matching keeps older sessions working.
  */
 export function derivePhaseFromBranch(entries: SessionEntry[]): WorkflowPhase | undefined {
-	for (const entry of entries) {
+	for (let index = entries.length - 1; index >= 0; index--) {
+		const entry = entries[index]!;
+		if (entry.type === "custom" && entry.customType === PHASE_EVENT) {
+			const phase = normalizeWorkflowPhase((entry.data as { phase?: unknown } | undefined)?.phase);
+			if (phase) return phase;
+		}
 		const text = messageText(entry);
 		if (text && KICKOFF_PATTERN.test(text)) return "execute";
 	}

@@ -1,21 +1,21 @@
 /**
  * Project Memory
  *
- * Read-only startup detection for the user-owned project memory. The `/memory`
- * prompt owns every write; this extension only resolves the file, compares its
- * review marker with Git, and offers a non-blocking interactive notice.
+ * Advisory startup detection for the user-owned project memory. The `/init`
+ * prompt owns the review marker; this module compares its commit cursor with
+ * committed Git history and keeps reminder cooldown state outside the project.
  */
 
 import { execFile } from "node:child_process";
-import { readFile } from "node:fs/promises";
-import { isAbsolute, join, normalize, relative, resolve } from "node:path";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, join, normalize, relative, resolve } from "node:path";
 import { promisify } from "node:util";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const execFileAsync = promisify(execFile);
+const REMINDER_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const REVIEW_MARKER_PREFIX = "<!-- memory-review:";
-const REVIEW_MARKER =
-	/<!-- memory-review: commit=([0-9a-f]{40}) reviewed-at=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z) -->/;
+const REVIEW_MARKER = /<!-- memory-review: commit=([0-9a-f]{40}) reviewed-at=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z) -->/;
 const DECLARED_MEMORY_PATH = /`([^`\n]*MEMORY\.md)`/g;
 
 export interface MemoryReview {
@@ -31,11 +31,44 @@ export interface ProjectMemoryLocation {
 }
 
 export type ProjectMemoryStatus =
-	| { kind: "current"; location: ProjectMemoryLocation; review: MemoryReview }
-	| { kind: "stale"; location: ProjectMemoryLocation; review: MemoryReview }
-	| { kind: "dirty"; location: ProjectMemoryLocation; review: MemoryReview }
-	| { kind: "unreviewed"; location: ProjectMemoryLocation; reason: "memory-missing" | "marker-missing" }
-	| { kind: "unknown"; location: ProjectMemoryLocation; review?: MemoryReview; reason: "git-unavailable" | "invalid-marker" | "unborn-repository" | "history-diverged" };
+	| {
+			kind: "current";
+			location: ProjectMemoryLocation;
+			review: MemoryReview;
+			head: string;
+	  }
+	| {
+			kind: "stale";
+			location: ProjectMemoryLocation;
+			review: MemoryReview;
+			head: string;
+			staleSince: string;
+	  }
+	| {
+			kind: "unreviewed";
+			location: ProjectMemoryLocation;
+			head?: string;
+			reason: "memory-missing" | "marker-missing";
+	  }
+	| {
+			kind: "unknown";
+			location: ProjectMemoryLocation;
+			review?: MemoryReview;
+			head?: string;
+			reason: "git-unavailable" | "invalid-marker" | "unborn-repository" | "history-diverged";
+	  };
+
+interface ReminderRecord {
+	token: string;
+	remindedAt: string;
+}
+
+type ReminderCache = Record<string, ReminderRecord>;
+
+export interface ReminderOptions {
+	now?: Date;
+	cachePath?: string;
+}
 
 async function git(cwd: string, args: string[]): Promise<string> {
 	const { stdout } = await execFileAsync("git", args, {
@@ -50,6 +83,14 @@ async function git(cwd: string, args: string[]): Promise<string> {
 async function readOptional(path: string): Promise<string | undefined> {
 	try {
 		return await readFile(path, "utf8");
+	} catch {
+		return undefined;
+	}
+}
+
+async function readHead(root: string): Promise<string | undefined> {
+	try {
+		return (await git(root, ["rev-parse", "--verify", "HEAD"])).trim() || undefined;
 	} catch {
 		return undefined;
 	}
@@ -82,7 +123,7 @@ export async function resolveProjectMemory(cwd: string): Promise<ProjectMemoryLo
 			if (memoryPath) break;
 		}
 	}
-	if (!memoryPath && await readOptional(join(root, "MEMORY.md")) !== undefined) {
+	if (!memoryPath && (await readOptional(join(root, "MEMORY.md"))) !== undefined) {
 		memoryPath = join(root, "MEMORY.md");
 	}
 	memoryPath ??= join(root, ".pi", "MEMORY.md");
@@ -103,35 +144,73 @@ export function parseMemoryReview(contents: string): MemoryReview | undefined {
 	return { commit: match[1], reviewedAt: match[2] };
 }
 
-function splitZeroTerminated(value: string): string[] {
-	return value.split("\0").filter(Boolean).map((path) => path.replaceAll("\\", "/"));
+function relevantHistoryPathspec(location: ProjectMemoryLocation): string[] {
+	return [
+		".",
+		":(top,literal,exclude)AGENTS.md",
+		":(top,literal,exclude).pi/AGENTS.md",
+		`:(top,literal,exclude)${location.memoryRelativePath}`,
+		":(top,glob,exclude).pi/plan/**",
+	];
 }
 
-function relevantPaths(paths: string[], location: ProjectMemoryLocation): string[] {
-	const ignored = new Set(["AGENTS.md", location.memoryRelativePath]);
-	return paths.filter((path) => !ignored.has(path));
+async function oldestRelevantCommitAt(location: ProjectMemoryLocation, from: string, head: string): Promise<string | undefined> {
+	const output = await git(location.root, ["log", "--reverse", "--format=%cI", `${from}..${head}`, "--", ...relevantHistoryPathspec(location)]);
+	return output
+		.split("\n")
+		.find((line) => line.trim().length > 0)
+		?.trim();
 }
 
-async function workingTreePaths(root: string): Promise<string[]> {
-	const [unstaged, staged, untracked] = await Promise.all([
-		git(root, ["diff", "--name-only", "-z"]),
-		git(root, ["diff", "--cached", "--name-only", "-z"]),
-		git(root, ["ls-files", "--others", "--exclude-standard", "-z"]),
-	]);
-	return splitZeroTerminated(`${unstaged}${staged}${untracked}`);
+function reminderCachePath(): string {
+	return join(getAgentDir(), "cache", "project-memory-reminders.json");
+}
+
+async function readReminderCache(path: string): Promise<ReminderCache> {
+	try {
+		const value = JSON.parse(await readFile(path, "utf8"));
+		return value && typeof value === "object" && !Array.isArray(value) ? (value as ReminderCache) : {};
+	} catch {
+		return {};
+	}
+}
+
+async function writeReminderCache(path: string, cache: ReminderCache): Promise<void> {
+	await mkdir(dirname(path), { recursive: true });
+	const temporaryPath = `${path}.${process.pid}.${Date.now()}.tmp`;
+	try {
+		await writeFile(temporaryPath, `${JSON.stringify(cache, null, 2)}\n`, "utf8");
+		await rename(temporaryPath, path);
+	} finally {
+		await rm(temporaryPath, { force: true }).catch(() => {});
+	}
+}
+
+function reminderToken(status: Exclude<ProjectMemoryStatus, { kind: "current" }>): string {
+	if (status.kind === "stale") return `stale:${status.head}`;
+	if (status.kind === "unreviewed") return `unreviewed:${status.reason}:${status.head ?? "none"}`;
+	return `unknown:${status.reason}:${status.head ?? status.review?.commit ?? "none"}`;
 }
 
 /** Classify whether project memory may lag the repository it describes. */
 export async function inspectProjectMemory(cwd: string): Promise<ProjectMemoryStatus> {
 	const location = await resolveProjectMemory(cwd);
 	const contents = await readOptional(location.memoryPath);
-	if (contents === undefined) return { kind: "unreviewed", location, reason: "memory-missing" };
+	if (contents === undefined) {
+		return {
+			kind: "unreviewed",
+			location,
+			head: await readHead(location.root),
+			reason: "memory-missing",
+		};
+	}
 
 	const review = parseMemoryReview(contents);
 	if (!review) {
+		const head = await readHead(location.root);
 		return contents.includes(REVIEW_MARKER_PREFIX)
-			? { kind: "unknown", location, reason: "invalid-marker" }
-			: { kind: "unreviewed", location, reason: "marker-missing" };
+			? { kind: "unknown", location, head, reason: "invalid-marker" }
+			: { kind: "unreviewed", location, head, reason: "marker-missing" };
 	}
 
 	try {
@@ -152,42 +231,72 @@ export async function inspectProjectMemory(cwd: string): Promise<ProjectMemorySt
 	try {
 		await git(location.root, ["merge-base", "--is-ancestor", review.commit, head]);
 	} catch {
-		return { kind: "unknown", location, review, reason: "history-diverged" };
+		return {
+			kind: "unknown",
+			location,
+			review,
+			head,
+			reason: "history-diverged",
+		};
 	}
 
 	try {
-		const dirty = relevantPaths(await workingTreePaths(location.root), location);
-		if (dirty.length > 0) return { kind: "dirty", location, review };
-		const committed = splitZeroTerminated(await git(location.root, ["diff", "--name-only", "-z", `${review.commit}..${head}`]));
-		if (relevantPaths(committed, location).length > 0) return { kind: "stale", location, review };
-		return { kind: "current", location, review };
+		const staleSince = await oldestRelevantCommitAt(location, review.commit, head);
+		return staleSince ? { kind: "stale", location, review, head, staleSince } : { kind: "current", location, review, head };
 	} catch {
-		return { kind: "unknown", location, review, reason: "git-unavailable" };
+		return {
+			kind: "unknown",
+			location,
+			review,
+			head,
+			reason: "git-unavailable",
+		};
 	}
 }
 
-export function memoryStatusNotice(status: Exclude<ProjectMemoryStatus, { kind: "current" }>): string {
-	switch (status.kind) {
-		case "dirty":
-			return "Project memory may lag uncommitted repository changes. Run /memory when you want to review it.";
-		case "stale":
-			return `Project memory was last reviewed at ${status.review.commit.slice(0, 8)}. Run /memory when you want to refresh it.`;
-		case "unreviewed":
-			return status.reason === "memory-missing"
-				? "Project memory is not initialized. Run /memory when you want to build it."
-				: "Project memory has no review marker. Run /memory when you want to audit it.";
-		case "unknown":
-			return "Project memory freshness could not be established from Git. Run /memory full when you want to audit it.";
+/**
+ * Claim the advisory reminder for this repository. A relevant commit gets one
+ * day of grace; unchanged stale state is silent after its first reminder.
+ */
+export async function claimProjectMemoryReminder(status: ProjectMemoryStatus, options: ReminderOptions = {}): Promise<boolean> {
+	const cachePath = options.cachePath ?? reminderCachePath();
+	const cache = await readReminderCache(cachePath);
+	const key = status.location.root;
+
+	if (status.kind === "current") {
+		if (cache[key]) {
+			delete cache[key];
+			await writeReminderCache(cachePath, cache).catch(() => {});
+		}
+		return false;
 	}
+
+	const now = options.now ?? new Date();
+	if (status.kind === "stale") {
+		const staleAt = new Date(status.staleSince).valueOf();
+		const age = now.valueOf() - staleAt;
+		if (Number.isFinite(staleAt) && age >= 0 && age < REMINDER_INTERVAL_MS) return false;
+	}
+
+	const token = reminderToken(status);
+	const previous = cache[key];
+	const previousAt = previous ? new Date(previous.remindedAt).valueOf() : Number.NaN;
+	if (previous?.token === token) return false;
+	if (Number.isFinite(previousAt) && now.valueOf() - previousAt < REMINDER_INTERVAL_MS) return false;
+
+	cache[key] = { token, remindedAt: now.toISOString() };
+	await writeReminderCache(cachePath, cache).catch(() => {});
+	return true;
 }
 
-export default function createExtension(pi: ExtensionAPI): void {
-	let notified = false;
-	pi.on("session_start", async (_event, ctx) => {
-		if (notified || !ctx.hasUI) return;
-		const status = await inspectProjectMemory(ctx.cwd);
-		if (status.kind === "current") return;
-		notified = true;
-		ctx.ui.notify(memoryStatusNotice(status), "warning");
-	});
+export function memoryStatusNotice(): string {
+	return "Project memory may be stale. Run /init to refresh it.";
+}
+
+/**
+ * Freshness inspection remains a package extension for its reusable API, while
+ * Session Dashboard owns the single visible startup card.
+ */
+export default function createExtension(_pi: ExtensionAPI): void {
+	void _pi;
 }

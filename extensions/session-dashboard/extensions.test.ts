@@ -12,6 +12,15 @@ import { USAGE_CHART_END, USAGE_CHART_START, renderWelcomeText } from "./welcome
 
 const BUNDLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
+function expectInOrder(text: string, ...parts: string[]): void {
+	let previous = -1;
+	for (const part of parts) {
+		const index = text.indexOf(part);
+		expect(index).toBeGreaterThan(previous);
+		previous = index;
+	}
+}
+
 function activeExtensionNames(): string[] {
 	const pkg = JSON.parse(readFileSync(join(BUNDLE_ROOT, "package.json"), "utf8"));
 	return pkg.pi.extensions.map((entry: string) => entry.split("/").filter(Boolean).at(-2));
@@ -22,6 +31,11 @@ describe("session dashboard extension metadata", () => {
 		const names = activeExtensionNames();
 		expect(presentationCoverageErrors(names)).toEqual([]);
 		expect(EXTENSION_PRESENTATIONS.map((presentation) => presentation.name).sort()).toEqual([...names].sort());
+	});
+
+	it("loads the project-memory notice after the session dashboard", () => {
+		const names = activeExtensionNames();
+		expect(names.indexOf("session-dashboard")).toBeLessThan(names.indexOf("project-memory"));
 	});
 
 	// The catalog is hand-written prose, so nothing kept it in step with the
@@ -42,33 +56,31 @@ describe("session dashboard extension metadata", () => {
 			expect(presentation.description).not.toBe("");
 			expect(deck).toContain(presentation.name);
 		}
-		expect(deck).not.toContain("README");
-		// Compact deck: names only, no per-extension prose descriptions.
-		expect(deck).not.toContain(" — ");
-		expect(deck.indexOf("**Display**")).toBeLessThan(deck.indexOf("**Usage**"));
-		expect(deck.indexOf("**Usage**")).toBeLessThan(deck.indexOf("**Workflow**"));
-		expect(deck.indexOf("**Workflow**")).toBeLessThan(deck.indexOf("**Config**"));
+		for (const prose of ["README", " — "]) expect(deck).not.toContain(prose);
+		expectInOrder(deck, "**Display**", "**Usage**", "**Workflow**", "**Config**");
 	});
 
-	it("renders context and hints without a footer when omitted", () => {
+	it("renders the current directory before the hint without a footer when omitted", () => {
 		const welcome = renderWelcomeText({
-			contextInfo: "~/work\n📜 AGENTS.md\n❓ `/help`",
-			tip: "Share your goal → explore → plan → you approve → proceed or hand off.",
+			workingDirectory: "~/work",
+			contextFiles: "**📦 Context files**\n- `AGENTS.md`",
+			tip: "🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`",
 		});
 		expect(welcome.startsWith("~/work")).toBe(true);
-		expect(welcome.indexOf("❓ `/help`")).toBeLessThan(welcome.indexOf("Share your goal"));
-		expect(welcome.trimEnd()).toBe("~/work\n📜 AGENTS.md\n❓ `/help`\n\nShare your goal → explore → plan → you approve → proceed or hand off.");
-		expect(welcome).not.toContain("🧩 **Extensions**");
-		expect(welcome).not.toContain("Session context");
-		expect(welcome).not.toContain("Quick reference");
+		expectInOrder(welcome, "~/work", "🧠 `/init`", "**📦 Context files**");
+		for (const omitted of ["🧩 **Extensions**", "Session context", "Quick reference"]) {
+			expect(welcome).not.toContain(omitted);
+		}
 	});
 
-	it("places the context before the usage chart without a footer", () => {
+	it("places the hint and chart before context, with memory notice last", () => {
 		const welcome = renderWelcomeText({
-			contextInfo: "~/work",
+			workingDirectory: "~/work",
+			tip: "❓ `/help`",
 			usageChart: '{"model":true}',
+			contextFiles: "**📦 Context files**\n- `AGENTS.md`",
+			memoryNotice: "> ⚠️ Project memory needs review.",
 		});
-		expect(welcome.indexOf("~/work")).toBeLessThan(welcome.indexOf('{"model":true}'));
-		expect(welcome.trimEnd()).toBe(`~/work\n\n${USAGE_CHART_START}\n{"model":true}\n${USAGE_CHART_END}`);
+		expectInOrder(welcome, "~/work", "❓ `/help`", USAGE_CHART_START, '{"model":true}', USAGE_CHART_END, "**📦 Context files**", "Project memory needs review");
 	});
 });

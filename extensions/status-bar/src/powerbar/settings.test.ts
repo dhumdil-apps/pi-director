@@ -22,14 +22,22 @@ afterEach(() => {
 });
 
 describe("powerbar layout settings", () => {
-	it("defaults to the layout the fixed per-producer rows used to render", async () => {
+	it("defaults to the compact fixed-row layout", async () => {
 		const { loadSettings } = await import("./settings.js");
-		expect(loadSettings().lines).toEqual([
+		const settings = loadSettings();
+		expect(settings.lines).toEqual([
 			{ left: ["git-branch", "session-name"], right: ["provider", "model"] },
 			{ left: ["agent-stats", "tokens"], right: [] },
 			{ left: ["cpu", "ram", "disk", "net"], right: ["sub-hourly", "sub-weekly"] },
-			{ left: [], right: [] },
+			{ left: ["attention-span"], right: [] },
 		]);
+		expect(settings.lineGap).toBe(false);
+	});
+
+	it("loads the enabled line gap", async () => {
+		writeStored({ "line-gap": "on" });
+		const { loadSettings } = await import("./settings.js");
+		expect(loadSettings().lineGap).toBe(true);
 	});
 
 	it("splits a stored left/right layout across the lines its segments sat on", async () => {

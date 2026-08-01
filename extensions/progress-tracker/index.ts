@@ -1,6 +1,7 @@
 /**
- * Progress Tracker — an always-visible activity and context indicator above the
- * editor, plus the agent-status event other tools observe.
+ * Progress Tracker — an always-visible activity indicator above the editor,
+ * a configurable Status Bar context segment, and the agent-status event other
+ * tools observe.
  *
  * It deliberately ships no todo tool: pi has none on purpose ("they confuse
  * models"), and a structured list the agent must keep in sync is ceremony, not
@@ -9,25 +10,74 @@
  * much context is left.
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, MessageEndEvent, SessionEntry, Theme, TurnEndEvent } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
-import { derivePhaseFromBranch, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
+import { CHECKPOINT_EVENT, deriveOpenCheckpoint, type CheckpointEvent, type OpenCheckpoint } from "../agent-workflow/checkpoint.js";
+import { derivePhaseFromBranch, normalizeWorkflowPhase, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
+import { addDecisionTime, addPhaseTime, EMPTY_PLAN_TIME, readPlanTime, updatePlanTime, type PlanTime } from "../agent-workflow/plan-time.js";
+import { planPath, TASK_STARTED_EVENT, type TaskStartedEvent } from "../agent-workflow/task.js";
+import { contextIndicatorText } from "../agent-workflow/context-usage.js";
+import { USER_WAIT_EVENT, type UserWaitEvent } from "../agent-workflow/user-wait.js";
 import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
 
+/** Latest provider response on the active branch, used after reloads and handoffs. */
+function latestAssistantTimestamp(entries: SessionEntry[]): number | undefined {
+  for (let index = entries.length - 1; index >= 0; index--) {
+    const entry = entries[index];
+    if (entry?.type !== "message") continue;
+    const message = entry.message as { role?: string; timestamp?: unknown };
+    if (message.role === "assistant" && typeof message.timestamp === "number" && Number.isFinite(message.timestamp)) {
+      return message.timestamp;
+    }
+  }
+  return undefined;
+}
+
 export default function (pi: ExtensionAPI) {
+  pi.events.emit?.("powerbar:register-segment", { id: "attention-span", label: "LLM Attention Span", row: 4 });
+
   let currentCtx: ExtensionContext | undefined;
   let working = false;
-  // Baseline for the growth delta. Only turn_end advances it, so the readout
-  // means "since the last turn" rather than "since the last repaint".
-  let previousTokens: number | undefined;
-  // Display only (see phase.ts). Live transitions win; the branch fallback covers
-  // the sessions no transition ever reaches — /handoff-seeded ones and reloads.
+  // The first provider response's reported aggregate usage. Read it from the
+  // response itself: live context can already include tool results for the next request.
+  let firstTurnTokens: number | undefined;
+  // Display only (see phase.ts). Live transitions update immediately; persisted
+  // custom entries reconstruct the latest cycle across handoffs and reloads.
   let phase: WorkflowPhase | undefined;
+  // Run timing. The widget re-creates its factory every refresh, so the start
+  // stamp has to live here or the counter would restart at each turn boundary.
+  let runStartedAt: number | undefined;
+  let planTime: PlanTime | undefined;
+  let cacheStartedAt: number | undefined;
+  let waitingForUser = false;
+  let openCheckpoint: OpenCheckpoint | undefined;
+
+  // Close the current interval before changing phase. Undefined is the initial
+  // Explore state: the display can still ask for a goal while timing is precise.
+  const accrueUntil = (now: number) => {
+    if (runStartedAt == null) return;
+    planTime = addPhaseTime(planTime ?? EMPTY_PLAN_TIME, phase ?? "explore", Math.max(0, now - runStartedAt));
+    runStartedAt = now;
+  };
 
   pi.events.on?.(PHASE_EVENT, (payload: unknown) => {
-    const next = (payload as PhaseEvent | undefined)?.phase;
-    if (next !== "plan" && next !== "execute") return;
+    const next = normalizeWorkflowPhase((payload as PhaseEvent | undefined)?.phase);
+    if (!next) return;
+    accrueUntil(Date.now());
     phase = next;
+    refreshStatus();
+  });
+
+  pi.events.on?.(CHECKPOINT_EVENT, (payload: unknown) => {
+    const event = payload as CheckpointEvent | undefined;
+    if (!event || (event.action !== "open" && event.action !== "resolve")) return;
+    if (event.action === "open") {
+      openCheckpoint = { id: event.id, kind: event.kind, openedAt: event.timestamp };
+    } else if (openCheckpoint?.id === event.id) {
+      planTime = addDecisionTime(planTime ?? EMPTY_PLAN_TIME, event.timestamp - openCheckpoint.openedAt);
+      openCheckpoint = undefined;
+      void persistTiming();
+    }
     refreshStatus();
   });
 
@@ -44,7 +94,19 @@ export default function (pi: ExtensionAPI) {
     } catch {
       lastUsage = undefined;
     }
-    updatePhaseIndicator(currentCtx, working, usage, { lastUsage, previousTokens, phase });
+    const indicatorWorking = working && !waitingForUser;
+    updatePhaseIndicator(currentCtx, indicatorWorking, { phase, runStartedAt, planTime, cacheStartedAt, checkpointOpenedAt: openCheckpoint?.openedAt });
+    if (usage && usage.tokens != null && usage.contextWindow > 0) {
+      const capturedUsage = usage;
+      const capturedExtras = { lastUsage, firstTurnTokens };
+      pi.events.emit?.("powerbar:update", {
+        id: "attention-span",
+        row: 4,
+        render: (theme: Theme) => contextIndicatorText(capturedUsage, theme, capturedExtras),
+      });
+    } else {
+      pi.events.emit?.("powerbar:update", { id: "attention-span", text: undefined });
+    }
     const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
@@ -59,24 +121,47 @@ export default function (pi: ExtensionAPI) {
     });
   };
 
-  const adopt = (ctx: ExtensionContext) => {
+  const persistTiming = async () => {
+    const name = pi.getSessionName?.();
+    if (!currentCtx || !name || planTime == null) return;
+    await updatePlanTime(planPath(currentCtx.cwd, name), name, planTime).catch(() => {});
+  };
+
+  const adopt = async (ctx: ExtensionContext) => {
     currentCtx = ctx;
     working = !ctx.isIdle();
-    // A session start or tree move discards the old baseline: the delta would
-    // otherwise report a branch switch as this turn's growth.
-    previousTokens = undefined;
-    // Extensions re-instantiate on newSession(), so the closure is empty here even
-    // for a session that was approved: re-derive rather than trust the reset.
+    waitingForUser = false;
+    // Extensions re-instantiate on newSession(), so reconstruct display state
+    // and cache age from the active branch rather than trust the empty closure.
     try {
-      phase = derivePhaseFromBranch(ctx.sessionManager.getBranch()) ?? phase;
+      const branch = ctx.sessionManager.getBranch();
+      phase = derivePhaseFromBranch(branch);
+      openCheckpoint = deriveOpenCheckpoint(branch);
+      cacheStartedAt = latestAssistantTimestamp(branch);
     } catch {
       // A branch that cannot be read is not worth a missing indicator.
+    }
+    // A marker-free legacy plan stays visually unchanged until its first new run.
+    // Existing persisted totals resume across reloads and handoffs.
+    const name = pi.getSessionName?.();
+    if (name && runStartedAt == null) {
+      const persisted = await readPlanTime(planPath(ctx.cwd, name));
+      if (persisted !== undefined) planTime = persisted;
     }
     refreshStatus();
   };
 
-  pi.on("session_start", async (_event, ctx) => adopt(ctx));
-  pi.on("session_tree", async (_event, ctx) => adopt(ctx));
+  pi.on("session_start", async (_event, ctx) => {
+    firstTurnTokens = undefined;
+    phase = undefined;
+    runStartedAt = undefined;
+    planTime = undefined;
+    cacheStartedAt = undefined;
+    waitingForUser = false;
+    openCheckpoint = undefined;
+    await adopt(ctx);
+  });
+  pi.on("session_tree", async (_event, ctx) => { await adopt(ctx); });
 
   // Keep ctx reference fresh on every turn
   pi.on("input", async (_event, ctx) => {
@@ -87,12 +172,20 @@ export default function (pi: ExtensionAPI) {
   pi.on("agent_start", async (_event, ctx) => {
     currentCtx = ctx;
     working = true;
+    planTime ??= EMPTY_PLAN_TIME;
+    runStartedAt ??= Date.now();
     refreshStatus();
   });
 
   pi.on("agent_settled", async (_event, ctx) => {
     currentCtx = ctx;
     working = false;
+    const settledAt = Date.now();
+    accrueUntil(settledAt);
+    runStartedAt = undefined;
+    waitingForUser = false;
+    // Best-effort persistence: an unavailable plan must not break turn settlement.
+    await persistTiming();
     refreshStatus();
   });
 
@@ -100,15 +193,54 @@ export default function (pi: ExtensionAPI) {
     currentCtx = ctx;
   });
 
-  pi.on("turn_end", async (_event, ctx) => {
+  // message_end precedes tool execution, so cache age includes time spent in a
+  // long-running tool or waiting for a human answer after the provider responds.
+  pi.on("message_end", async (event: MessageEndEvent, ctx) => {
+    if (event.message.role !== "assistant") return;
     currentCtx = ctx;
+    const timestamp = event.message.timestamp;
+    cacheStartedAt = typeof timestamp === "number" && Number.isFinite(timestamp)
+      ? timestamp
+      : Date.now();
     refreshStatus();
-    // Advance the baseline only after the turn's readout has been rendered, so
-    // the delta shown for this turn is the growth the turn caused.
-    previousTokens = ctx.getContextUsage()?.tokens ?? undefined;
+  });
+
+  pi.on("turn_end", async (event: TurnEndEvent, ctx) => {
+    currentCtx = ctx;
+    if (firstTurnTokens == null && event.message.role === "assistant") {
+      const tokens = event.message.usage.totalTokens;
+      if (typeof tokens === "number" && Number.isFinite(tokens) && tokens >= 0) firstTurnTokens = tokens;
+    }
+    refreshStatus();
+  });
+
+  pi.events.on?.(TASK_STARTED_EVENT, (payload: unknown) => {
+    const next = payload as TaskStartedEvent | undefined;
+    if (!next?.resetTiming) return;
+    planTime = EMPTY_PLAN_TIME;
+    runStartedAt = working && !waitingForUser ? Date.now() : undefined;
+    refreshStatus();
+  });
+
+  pi.events.on?.(USER_WAIT_EVENT, (payload: unknown) => {
+    const next = payload as UserWaitEvent | undefined;
+    if (typeof next?.waiting !== "boolean" || next.waiting === waitingForUser) return;
+    const now = Date.now();
+    if (next.waiting) {
+      if (working && runStartedAt != null) {
+        accrueUntil(now);
+        runStartedAt = undefined;
+      }
+      waitingForUser = true;
+    } else {
+      waitingForUser = false;
+      if (working) runStartedAt = now;
+    }
+    refreshStatus();
   });
 
   pi.on("session_shutdown", async (_event, ctx) => {
+    pi.events.emit?.("powerbar:update", { id: "attention-span", text: undefined });
     clearPhaseIndicator(ctx);
     currentCtx = undefined;
     working = false;

@@ -6,12 +6,14 @@ import { openHandoffSession } from "./handoff.js";
 
 const plan = "## Current state\n\nA.\n\n## Desired state\n\nB.\n\n## Approach\n\nC.\n\n## Quirks\n\nD.\n";
 
-interface CtxOptions { sessionName?: string; hasUI?: boolean }
+interface CtxOptions { sessionName?: string; hasUI?: boolean; mode?: "tui" | "print" }
 
 function makeHarness(cwd: string, options: CtxOptions = {}) {
 	const sent: any[] = [];
+	const entries: any[] = [];
 	const notify = vi.fn();
 	const pi = {
+		appendEntry: vi.fn((customType: string, data: unknown) => entries.push({ customType, data })),
 		sendMessage: vi.fn((message: any) => sent.push(message)),
 	};
 
@@ -25,8 +27,7 @@ function makeHarness(cwd: string, options: CtxOptions = {}) {
 	};
 	const newSession = vi.fn(async (opts: any) => {
 		await opts.setup?.({
-			appendCustomMessageEntry: (customType: string, content: string, display: boolean, details: unknown) =>
-				seeded.entries.push({ customType, content, display, details }),
+			appendCustomEntry: (customType: string, data: unknown) => seeded.entries.push({ customType, data }),
 			appendSessionInfo: (name: string) => seeded.names.push(name),
 		});
 		await opts.withSession?.(next);
@@ -36,6 +37,7 @@ function makeHarness(cwd: string, options: CtxOptions = {}) {
 	const ctx = {
 		cwd,
 		hasUI: options.hasUI ?? true,
+		mode: options.mode ?? (options.hasUI === false ? "print" : "tui"),
 		ui: { notify },
 		waitForIdle: vi.fn(async () => {}),
 		newSession,
@@ -46,7 +48,7 @@ function makeHarness(cwd: string, options: CtxOptions = {}) {
 	};
 
 	const open = (taskName?: string) => openHandoffSession(pi as never, ctx as never, taskName);
-	return { open, notify, sent, newSession, next, seeded };
+	return { open, notify, sent, entries, newSession, next, seeded };
 }
 
 async function seedPlan(cwd: string, name: string) {
@@ -65,8 +67,10 @@ describe("openHandoffSession", () => {
 		await open();
 
 		expect(newSession).toHaveBeenCalledWith(expect.objectContaining({ parentSession: "/sessions/current.jsonl" }));
-		// No hidden fact is seeded: the kickoff message alone carries the approval.
-		expect(seeded.entries).toEqual([]);
+		// Display state is present before the replacement session is adopted.
+		expect(seeded.entries).toEqual([
+			{ customType: "agent-workflow:phase", data: { phase: "execute" } },
+		]);
 		expect(seeded.names).toEqual(["dashboard-polish"]);
 		const [kickoff] = next.sendUserMessage.mock.calls[0];
 		expect(kickoff).toContain(".pi/plan/dashboard-polish.md");
@@ -99,10 +103,17 @@ describe("openHandoffSession", () => {
 		expect(newSession).not.toHaveBeenCalled();
 	});
 
-	it("falls back to a displayed message when the session has no UI", async () => {
-		const { open, sent, newSession } = makeHarness(cwd, { hasUI: false });
+	it("persists a context-free error and prints it when the session has no UI", async () => {
+		const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+		const { open, sent, entries, newSession } = makeHarness(cwd, { hasUI: false });
 		await open();
-		expect(sent[0]).toMatchObject({ display: true, content: expect.stringContaining("plan first") });
+		expect(sent).toEqual([]);
+		expect(entries[0]).toMatchObject({
+			customType: "agent-workflow:notice",
+			data: { content: expect.stringContaining("plan first"), level: "warning" },
+		});
+		expect(stderr).toHaveBeenCalledWith(expect.stringContaining("plan first"));
 		expect(newSession).not.toHaveBeenCalled();
+		stderr.mockRestore();
 	});
 });
