@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { CHECKPOINT_EVENT } from "../agent-workflow/checkpoint.js";
 import { readPlanTiming, readTimeSpent, withTimeSpent } from "../agent-workflow/plan-time.js";
+import { TASK_STARTED_EVENT } from "../agent-workflow/task.js";
 import { USER_WAIT_EVENT } from "../agent-workflow/user-wait.js";
 import createExtension from "./index.js";
 
@@ -88,7 +89,7 @@ describe("progress tracker indicator", () => {
     ]);
     expect(indicator(widgets).map(strip)).toEqual(["[accent]› [dim]What’s your goal?"]);
     expect(strip(attention(emitted)!)).toBe(
-      `[accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M`,
+      `[accent]Context window ${bar("▃    ")} [accent]84.0k / 1.0M`,
     );
   });
 
@@ -215,12 +216,12 @@ describe("progress tracker indicator", () => {
       listeners.get(USER_WAIT_EVENT)![0]({ waiting: false, reason: "approval" });
       listeners.get(CHECKPOINT_EVENT)![0]({ action: "resolve", id: "approval-1", outcome: "revise", timestamp: 65_000 });
       now.mockReturnValue(67_000);
-      expect(strip(indicator(widgets, 200)[0])).toContain("[dim] 2s[dim] · [accent]explore 6s[dim] · [dim]execute 0s[dim] · [dim]decision 1m 00s");
+      expect(strip(indicator(widgets, 200)[0])).toContain("[dim] 2s[dim] · [accent]explore 6s[dim] · [dim]align 1m 00s[dim] · [dim]execute 0s");
 
       now.mockReturnValue(68_000);
       await handlers.get("agent_settled")![0]({}, ctx);
       await handlers.get("agent_start")![0]({}, ctx);
-      expect(strip(indicator(widgets, 200)[0])).toContain("[dim] 0s[dim] · [accent]explore 7s[dim] · [dim]execute 0s[dim] · [dim]decision 1m 00s");
+      expect(strip(indicator(widgets, 200)[0])).toContain("[dim] 0s[dim] · [accent]explore 7s[dim] · [dim]align 1m 00s[dim] · [dim]execute 0s");
     } finally {
       now.mockRestore();
     }
@@ -264,6 +265,33 @@ describe("progress tracker indicator", () => {
     }
   });
 
+  it("starts separate timing when an investigation creates a follow-up implementation plan", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "pi-progress-new-task-"));
+    const path = join(cwd, ".pi", "plan", "debug-login.md");
+    await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
+    await writeFile(path, withTimeSpent("# debug-login\n\nBody.\n", "debug-login", 60_000));
+    const now = vi.spyOn(Date, "now").mockReturnValue(1_000);
+    try {
+      const { handlers, listeners } = harness();
+      const ctx = ctxWith([], [], cwd);
+      await handlers.get("session_start")![0]({}, ctx);
+      await handlers.get("agent_start")![0]({}, ctx);
+      now.mockReturnValue(2_000);
+      listeners.get(TASK_STARTED_EVENT)![0]({ resetTiming: true });
+      now.mockReturnValue(5_000);
+      await handlers.get("agent_settled")![0]({}, ctx);
+      expect(readPlanTiming(await readFile(path, "utf8"))).toEqual({
+        exploreMs: 3_000,
+        executeMs: 0,
+        decisionMs: 0,
+        unallocatedMs: 0,
+      });
+    } finally {
+      now.mockRestore();
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
   it("splits an active run immediately when the workflow mode changes", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "pi-progress-phases-"));
     const path = join(cwd, ".pi", "plan", "debug-login.md");
@@ -279,10 +307,10 @@ describe("progress tracker indicator", () => {
 
       now.mockReturnValue(7_000);
       listeners.get("agent-workflow:phase")![0]({ phase: "execute" });
-      expect(strip(indicator(widgets, 240)[0])).toContain("[dim] 0s[dim] · [dim]explore 6s[dim] · [accent]execute 0s[dim] · [dim]decision 0s");
+      expect(strip(indicator(widgets, 240)[0])).toContain("[dim] 0s[dim] · [dim]explore 6s[dim] · [dim]align 0s[dim] · [accent]execute 0s");
 
       now.mockReturnValue(10_000);
-      expect(strip(indicator(widgets, 240)[0])).toContain("[dim] 3s[dim] · [dim]explore 6s[dim] · [accent]execute 3s[dim] · [dim]decision 0s");
+      expect(strip(indicator(widgets, 240)[0])).toContain("[dim] 3s[dim] · [dim]explore 6s[dim] · [dim]align 0s[dim] · [accent]execute 3s");
       now.mockReturnValue(11_000);
       await handlers.get("agent_settled")![0]({}, ctx);
 

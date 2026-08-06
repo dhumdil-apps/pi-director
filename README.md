@@ -47,7 +47,7 @@ pi list
 
 - **agent-workflow** — One loop per task: Align → Explore ↔ Align → Execute ↔ Align → Close out. Explore and Execute are the sustained work modes; Align is a short User-visible checkpoint. Every session scaffolds `.pi/plan/<timestamp-slug>.md` as the living document; `ask` provides initial or adaptive alignment, while `save_plan` arms the Proceed/Handoff/Revise approval checkpoint. `/handoff` spawns a fresh seeded session. The injected block is constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
 - **project-memory** — Low-noise startup check for the hidden `memory-review` commit cursor. It ignores uncommitted work, gives relevant commits a one-day grace period, and suppresses repeated reminders until both `HEAD` changes and 24 hours pass; cooldown state stays outside the repository.
-- **progress-tracker** — Above-editor Explore/Execute activity and accumulated Decision latency, plus the configurable Status Bar context segment. No tool, no command: it observes.
+- **progress-tracker** — Above-editor Explore/Align/Execute timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
 - **pi-inspector skill & bridge** — Detects an authorized Pi Inspector session for browser debugging and verification, while reporting Director phase and session context back to Inspector over its display-only channel.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).

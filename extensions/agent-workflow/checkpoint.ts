@@ -23,7 +23,7 @@ function publish(pi: CheckpointPi, event: CheckpointEvent): void {
 	pi.events.emit?.(CHECKPOINT_EVENT, event);
 }
 
-/** Open immediately before presenting a choice so Decision latency has an observable boundary. */
+/** Open immediately before presenting a choice so Align latency has an observable boundary. */
 export function openCheckpoint(
 	pi: CheckpointPi,
 	kind: CheckpointKind,

@@ -15,7 +15,7 @@ import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
 import { CHECKPOINT_EVENT, deriveOpenCheckpoint, type CheckpointEvent, type OpenCheckpoint } from "../agent-workflow/checkpoint.js";
 import { derivePhaseFromBranch, normalizeWorkflowPhase, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
 import { addDecisionTime, addPhaseTime, EMPTY_PLAN_TIME, readPlanTime, updatePlanTime, type PlanTime } from "../agent-workflow/plan-time.js";
-import { planPath } from "../agent-workflow/task.js";
+import { planPath, TASK_STARTED_EVENT, type TaskStartedEvent } from "../agent-workflow/task.js";
 import { contextIndicatorText } from "../agent-workflow/context-usage.js";
 import { USER_WAIT_EVENT, type UserWaitEvent } from "../agent-workflow/user-wait.js";
 import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
@@ -211,6 +211,14 @@ export default function (pi: ExtensionAPI) {
       const tokens = event.message.usage.totalTokens;
       if (typeof tokens === "number" && Number.isFinite(tokens) && tokens >= 0) firstTurnTokens = tokens;
     }
+    refreshStatus();
+  });
+
+  pi.events.on?.(TASK_STARTED_EVENT, (payload: unknown) => {
+    const next = payload as TaskStartedEvent | undefined;
+    if (!next?.resetTiming) return;
+    planTime = EMPTY_PLAN_TIME;
+    runStartedAt = working && !waitingForUser ? Date.now() : undefined;
     refreshStatus();
   });
 

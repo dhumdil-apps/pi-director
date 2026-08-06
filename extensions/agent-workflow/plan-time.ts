@@ -39,7 +39,7 @@ export function addPhaseTime(time: PlanTime, phase: WorkflowPhase, ms: number): 
 	return next;
 }
 
-/** Decision is wall time, capped independently for every checkpoint. */
+/** Align is wall time, capped independently for every checkpoint. */
 export function addDecisionTime(time: PlanTime, elapsedMs: number): PlanTime {
 	return { ...time, decisionMs: time.decisionMs + Math.min(exactMs(elapsedMs), DECISION_CAP_MS) };
 }
@@ -66,15 +66,15 @@ export function timeSpentBlock(value: PlanTime | number): string {
 		`<!-- time-spent:start total-ms=${totalMs} explore-ms=${exploreMs} execute-ms=${executeMs} decision-ms=${decisionMs} unallocated-ms=${unallocatedMs} -->`,
 		`**Time spent:** ${formatDuration(totalMs)}`,
 		`- Explore: ${formatDuration(exploreMs)}`,
+		`- Align: ${formatDuration(decisionMs)} wall`,
 		`- Execute: ${formatDuration(executeMs)}`,
-		`- Decision: ${formatDuration(decisionMs)} wall`,
 	];
 	if (unallocatedMs > 0) lines.push(`- Unallocated: ${formatDuration(unallocatedMs)}`);
 	lines.push("<!-- time-spent:end -->");
 	return lines.join("\n");
 }
 
-/** Parse timing, folding historical Plan work into Explore and starting Decision at zero. */
+/** Parse timing, folding historical Plan work into Explore and starting Align at zero. */
 export function readPlanTiming(contents: string): PlanTime | undefined {
 	const workflow = contents.match(WORKFLOW_TIME);
 	if (workflow) {

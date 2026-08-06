@@ -50,8 +50,8 @@ const REVISE = "Revise the plan";
  * context-load recommendation lives in the labels: a lean context recommends
  * proceeding here, a loaded one recommends handing off to a fresh session.
  */
-export function approvalOptions(lean: boolean): string[] {
-	return lean
+export function approvalOptions(lean: boolean, preferHandoff = false): string[] {
+	return lean && !preferHandoff
 		? [`${PROCEED} (recommended)`, HANDOFF, REVISE]
 		: [`${HANDOFF} (recommended)`, PROCEED, REVISE];
 }
@@ -59,7 +59,7 @@ export function approvalOptions(lean: boolean): string[] {
 export function registerApproval(pi: ExtensionAPI): void {
 	// Ephemeral by design: a pending offer belongs to the turn that armed it and
 	// is never persisted, so a reload never resurrects a stale prompt.
-	let pendingOffer: { task: string } | undefined;
+	let pendingOffer: { task: string; preferHandoff: boolean } | undefined;
 	// Which task the user approved in this session. Deliberately in-memory: it
 	// only suppresses a duplicate prompt, so a reload costing one extra prompt is
 	// cheaper than a durable fact and the derivation that reads it back.
@@ -81,11 +81,11 @@ export function registerApproval(pi: ExtensionAPI): void {
 
 	pi.on("tool_execution_end", async (event, ctx) => {
 		if (event.toolName !== "save_plan" || event.isError) return;
-		const details = (event.result as { details?: { name?: unknown } } | undefined)?.details;
-		if (typeof details?.name !== "string") return;
+		const details = (event.result as { details?: { name?: unknown; kind?: unknown; source?: unknown } } | undefined)?.details;
+		if (typeof details?.name !== "string" || details.kind === "investigation") return;
 		// Re-presenting the approved plan unchanged is a correction, not a new decision.
 		if (details.name === approved?.task && (await planDigest(ctx.cwd, details.name)) === approved.digest) return;
-		pendingOffer = { task: details.name };
+		pendingOffer = { task: details.name, preferHandoff: typeof details.source === "string" };
 		unapprovedTask = details.name;
 	});
 
@@ -102,7 +102,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 		const offer = pendingOffer;
 		if (!offer) return;
 		pendingOffer = undefined;
-		const { task } = offer;
+		const { task, preferHandoff } = offer;
 
 		if (!ctx.hasUI) {
 			appendHeadlessNotice(pi, ctx.mode, `Plan saved — run /handoff ${task} to execute it in a fresh session.`, "info");
@@ -113,7 +113,7 @@ export function registerApproval(pi: ExtensionAPI): void {
 		let choice: string | undefined;
 		try {
 			choice = await duringUserWait(pi, "approval", () =>
-				ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage()))),
+				ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage()), preferHandoff)),
 			);
 		} catch (error) {
 			resolveCheckpoint(pi, checkpoint.id, "failure");

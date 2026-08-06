@@ -1,26 +1,34 @@
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { type AskDetails, registerAsk, WRITE_CUSTOM_OPTION } from "./ask.js";
+import { INVESTIGATION_TEMPLATE, PLAN_TEMPLATE, TASK_STARTED_EVENT } from "./task.js";
 
 const OPTIONS = [
 	{ headline: "Keep the trim", description: "Ship the shorter file as it stands." },
 	{ headline: "Restore verification", description: "Re-add the commands agents cannot derive." },
 ];
 
-function harness(select: (title: string, options: string[]) => Promise<string | undefined>, hasUI = true) {
+function harness(select: (title: string, options: string[]) => Promise<string | undefined>, hasUI = true, cwd = "/unused", initialName?: string) {
 	const tools: any[] = [];
 	const emitted: Array<[string, any]> = [];
 	const branch: any[] = [];
+	let sessionName = initialName;
+	const setSessionName = vi.fn((name: string) => { sessionName = name; });
 	registerAsk({
 		registerTool: vi.fn((tool: any) => tools.push(tool)),
 		appendEntry: vi.fn((customType: string, data: unknown) => branch.push({ type: "custom", customType, data })),
 		events: { emit: vi.fn((name: string, value: unknown) => emitted.push([name, value])) },
+		getSessionName: vi.fn(() => sessionName),
+		setSessionName,
 	} as any);
 	const selectSpy = vi.fn(select);
 	const abortSpy = vi.fn();
-	const ctx = { hasUI, ui: { select: selectSpy }, abort: abortSpy, sessionManager: { getBranch: () => branch } };
+	const ctx = { cwd, hasUI, ui: { select: selectSpy }, abort: abortSpy, sessionManager: { getBranch: () => branch } };
 	const run = (params: any = { question: "Which one?", options: OPTIONS }) =>
 		tools[0].execute("call-1", params, undefined, undefined, ctx as any);
-	return { tool: tools[0], run, selectSpy, abortSpy, emitted };
+	return { tool: tools[0], run, selectSpy, abortSpy, emitted, setSessionName };
 }
 
 describe("ask tool", () => {
@@ -29,9 +37,39 @@ describe("ask tool", () => {
 		expect(tool.name).toBe("ask");
 		// Sequential: the dialog owns the screen, so it must not race another call.
 		expect(tool.executionMode).toBe("sequential");
-		expect(Object.keys(tool.parameters.properties)).toEqual(["question", "options"]);
+		expect(Object.keys(tool.parameters.properties)).toEqual(["question", "task", "options"]);
 		expect(tool.parameters.properties.options.minItems).toBe(2);
 		expect(tool.parameters.properties.options.maxItems).toBe(4);
+	});
+
+	it("uses initial task identity to rename and select the investigation template before asking", async () => {
+		const cwd = await mkdtemp(join(tmpdir(), "pi-ask-task-"));
+		try {
+			const initial = "2026-07-31--12-00-00-check-the-cache";
+			await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
+			await writeFile(join(cwd, ".pi", "plan", `${initial}.md`), PLAN_TEMPLATE.replace("<session-name>", initial));
+			const { run, setSessionName } = harness(async () => "Keep the trim", true, cwd, initial);
+			await run({ question: "Which one?", task: { name: "cache behavior audit", intent: "investigation" }, options: OPTIONS });
+			const next = "2026-07-31--12-00-00-cache-behavior-audit";
+			expect(setSessionName).toHaveBeenCalledWith(next);
+			expect(await readFile(join(cwd, ".pi", "plan", `${next}.md`), "utf8")).toContain("## Findings");
+		} finally {
+			await rm(cwd, { recursive: true, force: true });
+		}
+	});
+
+	it("resets timing when a follow-up implementation preserves an investigation", async () => {
+		const cwd = await mkdtemp(join(tmpdir(), "pi-ask-follow-up-"));
+		try {
+			const investigation = "2026-07-31--12-00-00-cache-audit";
+			await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
+			await writeFile(join(cwd, ".pi", "plan", `${investigation}.md`), INVESTIGATION_TEMPLATE.replace("<session-name>", investigation));
+			const { run, emitted } = harness(async () => "Keep the trim", true, cwd, investigation);
+			await run({ question: "Which one?", task: { name: "fix cache recovery", intent: "implementation" }, options: OPTIONS });
+			expect(emitted).toContainEqual([TASK_STARTED_EVENT, { resetTiming: true }]);
+		} finally {
+			await rm(cwd, { recursive: true, force: true });
+		}
 	});
 
 	it("shows the question with headlines plus custom write option, and maps the pick back to its option", async () => {

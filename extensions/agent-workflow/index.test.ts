@@ -91,6 +91,28 @@ describe("workflow prompt", () => {
 		expect(workflowPrompt()).toContain("asks one compact, high-leverage scope question");
 		expect(workflowPrompt()).toContain("even when the goal appears clear");
 	});
+
+	it("uses bounded workflow context before Align without starting task-source discovery", () => {
+		expect(workflowPrompt()).toContain("applicable AGENTS files");
+		expect(workflowPrompt()).toContain("Task-source discovery still waits until Align resolves");
+		expect(workflowPrompt()).toContain("Recall under .pi/plan/ stays bounded");
+		expect(workflowPrompt()).toContain("Never scan the full archive by default");
+		expect(workflowPrompt()).toContain("completed status as leads to verify");
+	});
+
+	it("separates investigation reports from implementation approval", () => {
+		expect(workflowPrompt()).toContain("classifies the requested outcome as implementation or investigation");
+		expect(workflowPrompt()).toContain("do not call \"save_plan\"");
+		expect(workflowPrompt()).toContain("Preserve the investigation record, create a separate plan");
+		expect(workflowPrompt()).toContain("recommend Handoff");
+	});
+
+	it("uses direct plan edits for routine execution and save_plan only for material re-plans", () => {
+		expect(workflowPrompt()).toContain("Routine progress and completion updates never use \"save_plan\"");
+		expect(workflowPrompt()).toContain("Present that changed plan with \"save_plan\" for renewed approval");
+		expect(workflowPrompt()).toContain("reopens the approval picker");
+		expect(workflowPrompt()).toContain("Do not call \"save_plan\" at close-out");
+	});
 });
 
 describe("/handoff command", () => {
@@ -131,7 +153,10 @@ describe("plan scaffolding", () => {
 		expect(written).toContain(`# ${name}`);
 		expect(written).toContain("<!-- time-spent:start total-ms=0 explore-ms=0 execute-ms=0 decision-ms=0 unallocated-ms=0 -->");
 		expect(written).toContain("**Time spent:** 0s");
+		expect(written).toContain("## Align");
 		expect(written).toContain("## Checklist");
+		expect(written).toContain("## Close out\n### PR summary");
+		expect(written).toContain("### QA steps");
 		// The MEMORY stub is part of the same bootstrap.
 		await expect(readFile(join(cwd, ".pi", "MEMORY.md"), "utf8")).resolves.toContain("#");
 	});

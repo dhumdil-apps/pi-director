@@ -10,7 +10,7 @@ const theme = {
 
 function layout(...lines: Array<{ left?: string[]; right?: string[] }>): PowerbarSettings {
 	const padded = [...lines, {}, {}, {}, {}].slice(0, 4);
-	return { lines: padded.map((line) => ({ left: line.left ?? [], right: line.right ?? [] })) };
+	return { lines: padded.map((line) => ({ left: line.left ?? [], right: line.right ?? [] })), lineGap: false };
 }
 
 const settings = layout({ left: ["branch"], right: ["model"] });
@@ -101,6 +101,17 @@ describe("status bar lines", () => {
 		expect(lines[2]).toContain("net ↓1G ↑2G");
 		expect(lines[2]).toContain("5h");
 		expect(lines.every((line) => visibleWidth(line) === 100)).toBe(true);
+	});
+
+	it("inserts a full-width blank row between rendered lines when enabled", () => {
+		const configured = layout({ left: ["branch"] }, { left: ["tokens"] }, { left: ["cpu"] });
+		configured.lineGap = true;
+
+		const lines = renderBar(segments, configured, theme, 40);
+
+		expect(lines).toHaveLength(5);
+		expect(lines[1]).toBe(" ".repeat(40));
+		expect(lines[3]).toBe(" ".repeat(40));
 	});
 
 	it.each([

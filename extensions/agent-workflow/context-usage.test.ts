@@ -49,7 +49,7 @@ describe("contextIndicatorText", () => {
       lastUsage: usage({ input: 100, cacheRead: 900 }),
       firstTurnTokens: 80_800,
     });
-    expect(strip(line!)).toBe(`[accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M[dim] · [dim]🗃️ cache 90%[dim] · [error]📦 init 80.8k`);
+    expect(strip(line!)).toBe(`[accent]Context window ${bar("▃    ")} [accent]84.0k / 1.0M[dim] · [dim]🗃️ cache 90%[dim] · [error]📦 init 80.8k`);
   });
 
   it.each([
@@ -63,7 +63,7 @@ describe("contextIndicatorText", () => {
   });
 
   it("drops missing fragments without leaving a dangling separator", () => {
-    expect(strip(contextIndicatorText(ctxUsage, theme)!)).toBe(`[accent]LLM Attention Span (ctx) ${bar("▃    ")} [accent]84.0k / 1.0M`);
+    expect(strip(contextIndicatorText(ctxUsage, theme)!)).toBe(`[accent]Context window ${bar("▃    ")} [accent]84.0k / 1.0M`);
   });
 
   it("is undefined when the context total itself is unknown", () => {

@@ -35,7 +35,7 @@ function harness(cwd: string, sessionName?: string) {
 	const offer = async (
 		task: string,
 		choice: string | undefined,
-		options: { editorText?: string; isError?: boolean; usage?: any; hasUI?: boolean; mode?: "tui" | "print"; toolName?: string } = {},
+		options: { editorText?: string; isError?: boolean; usage?: any; hasUI?: boolean; mode?: "tui" | "print"; toolName?: string; kind?: "implementation" | "investigation"; source?: string } = {},
 	) => {
 		const setEditorText = vi.fn();
 		const notify = vi.fn();
@@ -48,7 +48,7 @@ function harness(cwd: string, sessionName?: string) {
 			ui: { notify, setEditorText, getEditorText: () => options.editorText ?? "", select },
 			sessionManager: { getBranch: () => branch, getSessionName: () => sessionName },
 		};
-		await handlers.get("tool_execution_end")![0]({ toolName: options.toolName ?? "save_plan", isError: options.isError ?? false, result: { details: { name: task } } }, ctx);
+		await handlers.get("tool_execution_end")![0]({ toolName: options.toolName ?? "save_plan", isError: options.isError ?? false, result: { details: { name: task, kind: options.kind ?? "implementation", source: options.source } } }, ctx);
 		await handlers.get("agent_settled")![0]({}, ctx);
 		return { setEditorText, notify, select, ctx };
 	};
@@ -156,7 +156,7 @@ describe("approval prompt", () => {
 		}
 	});
 
-	it("recommends Proceed on a lean context and Handoff on a loaded one", async () => {
+	it("recommends Proceed on a lean context and Handoff on a loaded or investigation-derived plan", async () => {
 		const lean = harness(cwd);
 		const { select: leanSelect } = await lean.offer("dashboard-polish", undefined);
 		expect(leanSelect.mock.calls[0]![1][0]).toBe(PROCEED);
@@ -167,6 +167,10 @@ describe("approval prompt", () => {
 			usage: { tokens: 250_000, contextWindow: 1_000_000, percent: 25 },
 		});
 		expect(loadedSelect.mock.calls[0]![1][0]).toBe("Handoff to a fresh session (recommended)");
+
+		const derived = harness(cwd);
+		const { select: derivedSelect } = await derived.offer("dashboard-polish", undefined, { source: "cache-audit" });
+		expect(derivedSelect.mock.calls[0]![1][0]).toBe("Handoff to a fresh session (recommended)");
 	});
 
 	it("warns once when the working tree changes before approval, and not after it", async () => {
@@ -216,6 +220,12 @@ describe("approval prompt", () => {
 		const revised = harness(cwd);
 		await revised.offer("dashboard-polish", "Revise the plan");
 		expect(revised.phases()).toEqual([]);
+	});
+
+	it("does not offer execution for an investigation record", async () => {
+		const h = harness(cwd);
+		const { select } = await h.offer("dashboard-polish", undefined, { kind: "investigation" });
+		expect(select).not.toHaveBeenCalled();
 	});
 
 	it("never arms on a failed save", async () => {

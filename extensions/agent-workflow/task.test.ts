@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readPlanTiming, readTimeSpent, withPlanTiming, withTimeSpent } from "./plan-time.js";
-import { autoSlug, canonicalTaskName, composePlan, ensurePiState, isScaffold, listPlanNames, MEMORY_STUB, movePlan, normalizeTaskName, PLAN_TEMPLATE, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
+import { autoSlug, beginTask, canonicalTaskName, composePlan, ensurePiState, INVESTIGATION_TEMPLATE, isScaffold, listPlanNames, MEMORY_STUB, movePlan, normalizeTaskName, PLAN_TEMPLATE, readArtifactMetadata, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
 
 function makeHarness(cwd: string, name?: string) {
 	let sessionName = name;
@@ -25,6 +25,7 @@ function makeHarness(cwd: string, name?: string) {
 		pi,
 		sent,
 		getName: () => sessionName,
+		getTool: (name: string) => tools.get(name),
 		branch,
 	};
 }
@@ -53,11 +54,21 @@ describe("save_plan", () => {
 	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-task-management-")); });
 	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
 
+	it("reserves post-approval saves for material re-plans", () => {
+		const tool = makeHarness(cwd).getTool("save_plan");
+		expect(tool.description).toContain("only for a material re-plan that needs renewed approval");
+		expect(tool.description).toContain("reopen the approval picker");
+		expect(tool.description).toContain("Directly edit routine checklist, Quirks, and completion updates");
+		expect(tool.description).toContain("do not call save_plan at close-out");
+		expect(tool.parameters.properties.plan.description).toContain("pass only material re-plan changes");
+		expect(tool.parameters.properties.plan.description).toContain("Use the edit tool instead for routine checklist, Quirks, and completion updates");
+	});
+
 	it("normalizes the name, writes the flat plan file, and names the session", async () => {
 		const harness = makeHarness(cwd);
 		const saved = await harness.execute({ name: "SI-7 dashboard polish", plan });
 		const path = join(cwd, ".pi", "plan", "SI-7-dashboard-polish.md");
-		expect(saved.details).toEqual({ name: "SI-7-dashboard-polish", path });
+		expect(saved.details).toEqual({ name: "SI-7-dashboard-polish", path, kind: "implementation" });
 		expect(await readFile(path, "utf8")).toBe(withTimeSpent(plan, "SI-7-dashboard-polish", 0));
 		expect(harness.getName()).toBe("SI-7-dashboard-polish");
 	});
@@ -86,7 +97,19 @@ describe("save_plan", () => {
 		await seedPlan(cwd, "scaffolded-task", PLAN_TEMPLATE.replace("<session-name>", "scaffolded-task"));
 		const harness = makeHarness(cwd, "scaffolded-task");
 		const result = await harness.execute({ name: "scaffolded task", plan });
-		expect(await readFile(result.details.path, "utf8")).toBe(withTimeSpent(plan, "scaffolded-task", 0));
+		const saved = await readFile(result.details.path, "utf8");
+		expect(saved).toContain("<!-- agent-workflow:artifact kind=implementation -->");
+		expect(saved.replace("<!-- agent-workflow:artifact kind=implementation -->\n\n", "")).toBe(withTimeSpent(plan, "scaffolded-task", 0));
+	});
+
+	it("preserves sourced implementation metadata when replacing a proposal", async () => {
+		const investigation = "2026-07-31--12-00-00-cache-audit";
+		await seedPlan(cwd, investigation, INVESTIGATION_TEMPLATE.replace("<session-name>", investigation));
+		const started = await beginTask(cwd, investigation, "fix cache recovery", "implementation");
+		const harness = makeHarness(cwd, started.name);
+		const result = await harness.execute({ name: "fix cache recovery", plan });
+		expect(result.details).toMatchObject({ kind: "implementation", source: investigation });
+		expect(readArtifactMetadata(await readFile(result.details.path, "utf8"))).toEqual({ kind: "implementation", source: investigation });
 	});
 
 	it("preserves the phase breakdown when replacing a proposal", async () => {
@@ -259,6 +282,34 @@ describe("auto-scaffold naming", () => {
 		expect(timestampPrefix(name)).toBe("2026-07-24--13-05-01");
 		expect(timestampPrefix("2026-07-24-13-05-01-dashboard-polish")).toBeUndefined();
 		expect(timestampPrefix("dashboard-polish")).toBeUndefined();
+	});
+});
+
+describe("context-informed task setup", () => {
+	let cwd: string;
+	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-begin-task-")); });
+	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
+
+	it("renames the temporary scaffold and selects the investigation template", async () => {
+		const temporary = "2026-07-31--12-00-00-review-cache-behavior";
+		await seedPlan(cwd, temporary, PLAN_TEMPLATE.replace("<session-name>", temporary));
+		const started = await beginTask(cwd, temporary, "cache behavior audit", "investigation");
+		expect(started.name).toBe("2026-07-31--12-00-00-cache-behavior-audit");
+		const contents = await readFile(started.path, "utf8");
+		expect(contents).toContain("## Question");
+		expect(contents).toContain("## Findings");
+		expect(readArtifactMetadata(contents)).toEqual({ kind: "investigation" });
+		await expect(access(join(cwd, ".pi", "plan", `${temporary}.md`))).rejects.toThrow();
+	});
+
+	it("preserves an investigation and creates a distinct sourced implementation plan", async () => {
+		const investigation = "2026-07-31--12-00-00-cache-behavior-audit";
+		const record = INVESTIGATION_TEMPLATE.replace("<session-name>", investigation).replace("<verified evidence and observations>", "Confirmed evidence.");
+		await seedPlan(cwd, investigation, record);
+		const started = await beginTask(cwd, investigation, "fix cache recovery", "implementation");
+		expect(started.name).toBe("2026-07-31--12-00-00-fix-cache-recovery");
+		await expect(readFile(join(cwd, ".pi", "plan", `${investigation}.md`), "utf8")).resolves.toContain("Confirmed evidence.");
+		expect(readArtifactMetadata(await readFile(started.path, "utf8"))).toEqual({ kind: "implementation", source: investigation });
 	});
 });
 

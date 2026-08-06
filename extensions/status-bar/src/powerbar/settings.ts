@@ -32,6 +32,8 @@ export interface PowerbarLine {
 export interface PowerbarSettings {
 	/** Always MAX_LINES entries, index 0 = line 1. */
 	lines: PowerbarLine[];
+	/** Insert one blank row between each rendered line. */
+	lineGap: boolean;
 }
 
 /** Setting id for one side of one line — `line2-right`. */
@@ -80,7 +82,13 @@ function parseList(value: string | undefined): string[] {
 }
 
 export function registerSettings(pi: ExtensionAPI, segmentOptions: OrderedListOption[]): void {
-	const definitions: SettingDefinition[] = [];
+	const definitions: SettingDefinition[] = [{
+		id: "line-gap",
+		label: "Line gap",
+		description: "Insert one blank row between each rendered Status Bar line.",
+		defaultValue: "off",
+		values: ["off", "on"],
+	}];
 	for (const line of LINES) {
 		for (const side of ["left", "right"] as const) {
 			const id = settingId(line, side);
@@ -136,5 +144,6 @@ export function loadSettings(): PowerbarSettings {
 			left: parseList(getSetting(EXTENSION_NAME, settingId(line, "left"), DEFAULT_LINES[settingId(line, "left")])),
 			right: parseList(getSetting(EXTENSION_NAME, settingId(line, "right"), DEFAULT_LINES[settingId(line, "right")])),
 		})),
+		lineGap: getSetting(EXTENSION_NAME, "line-gap", "off") === "on",
 	};
 }

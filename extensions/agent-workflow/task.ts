@@ -16,32 +16,62 @@ const SESSION_NAME = /^(?:(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})-)?(?:([a-z0-9]+
 const TICKET_ID = /\b([a-z0-9]+-\d+)\b/i;
 const MAX_SLUG_WORDS = 4;
 const PLAN_FILE = /^(.+)\.md$/;
+const ARTIFACT_MARKER = /^<!-- agent-workflow:artifact kind=(implementation|investigation)(?: source=([^\s]+))? -->$/m;
 
-/** Scaffolded at session start; the topics mirror the plan step of the loop. */
-export const PLAN_TEMPLATE = [
-	"# <session-name>",
-	"",
-	timeSpentBlock(EMPTY_PLAN_TIME),
-	"",
-	"## Current state",
-	"<how it works today>",
-	"",
-	"## Decisions",
-	"<questions asked and how they were answered>",
-	"",
-	"## Desired state",
-	"<what it should do instead>",
-	"",
-	"## Approach",
-	"<how to get from current to desired>",
-	"",
-	"## Quirks",
-	"<non-obvious constraints, gotchas, key paths>",
-	"",
-	"## Checklist",
-	"- [ ] <task>",
-	"",
-].join("\n");
+export type TaskIntent = "implementation" | "investigation";
+export const TASK_STARTED_EVENT = "agent-workflow:task-started";
+
+export interface TaskStartedEvent {
+	/** A distinct follow-up artifact starts its own timing history. */
+	resetTiming: boolean;
+}
+
+export interface ArtifactMetadata {
+	kind: TaskIntent;
+	/** The preserved investigation record that led to an implementation plan. */
+	source?: string;
+}
+
+function artifactMarker(metadata: ArtifactMetadata): string {
+	return `<!-- agent-workflow:artifact kind=${metadata.kind}${metadata.source ? ` source=${metadata.source}` : ""} -->`;
+}
+
+function template(metadata: ArtifactMetadata, sections: string[]): string {
+	return [
+		"# <session-name>",
+		"",
+		timeSpentBlock(EMPTY_PLAN_TIME),
+		"",
+		artifactMarker(metadata),
+		"",
+		...sections,
+		"",
+	].join("\n");
+}
+
+const IMPLEMENTATION_SECTIONS = [
+	"## Current state", "<how it works today>", "", "## Align", "<questions asked and how they were answered>", "",
+	"## Desired state", "<what it should do instead>", "", "## Approach", "<how to get from current to desired>", "",
+	"## Quirks", "<non-obvious constraints, gotchas, key paths>", "", "## Checklist", "- [ ] <task>", "",
+	"## Close out", "### PR summary", "<concise summary>", "", "### QA steps", "<checks run and results>",
+];
+
+const INVESTIGATION_SECTIONS = [
+	"## Question", "<what the investigation needs to answer>", "", "## Align", "<questions asked and how they were answered>", "",
+	"## Scope", "<what is and is not being investigated>", "", "## Findings", "<verified evidence and observations>", "",
+	"## Conclusion", "<answer and recommended next step>", "", "## Quirks", "<non-obvious constraints, gotchas, key paths>", "",
+	"## Checklist", "- [ ] <task>",
+];
+
+function templateFor(metadata: ArtifactMetadata): string {
+	return template(metadata, metadata.kind === "investigation" ? INVESTIGATION_SECTIONS : IMPLEMENTATION_SECTIONS);
+}
+
+/** Scaffolded at session start; the topics mirror the implementation path. */
+export const PLAN_TEMPLATE = templateFor({ kind: "implementation" });
+
+/** Read-only work keeps evidence and conclusions, not an execution proposal. */
+export const INVESTIGATION_TEMPLATE = templateFor({ kind: "investigation" });
 
 /**
  * Scaffolded alongside the first plan. Orientation maps the project; quirks record
@@ -65,7 +95,7 @@ const STOP_WORDS = new Set([
 
 const SavePlanParams = Type.Object({
 	name: Type.String({ description: "The new session name: a concise 2–4 meaningful-word summary of the work, optionally prefixed with a ticket ID (e.g. TEST-1234)." }),
-	plan: Type.Optional(Type.String({ description: "The plan as Markdown, under the headings the plan file was scaffolded with: Current state, Decisions, Desired state, Approach, Quirks, Checklist. Before approval, provide the complete current proposal and it replaces the draft; after execution begins, provide only changes and they append as a dated revision. Omit it to present what the Agent already wrote there with the edit tool." })),
+	plan: Type.Optional(Type.String({ description: "The plan as Markdown, under the headings the plan file was scaffolded with: Current state, Align, Desired state, Approach, Quirks, Checklist. Before approval, provide the complete current proposal and it replaces the draft. After execution begins, pass only material re-plan changes; they append as a dated revision and reopen approval. Use the edit tool instead for routine checklist, Quirks, and completion updates, and do not call save_plan at close-out. Omit plan to present what the Agent already wrote there." })),
 });
 
 const REVISION_HEADING = /^## Revision (\d+)\b/gm;
@@ -77,8 +107,29 @@ function revisionStamp(now: Date): string {
 
 /** True while the file still holds nothing but the scaffold the session started with. */
 export function isScaffold(existing: string): boolean {
-	const body = stripTimeSpent(existing).replace(/^# .*$/m, "").replace(/<[^>\n]+>/g, "").replace(/- \[ \]/g, "");
+	const body = stripTimeSpent(existing)
+		.replace(/^# .*$/m, "")
+		.replace(ARTIFACT_MARKER, "")
+		.replace(/<[^>\n]+>/g, "")
+		.replace(/- \[ \]/g, "");
 	return !body.replace(/^#+ .*$/gm, "").trim();
+}
+
+export function readArtifactMetadata(contents: string): ArtifactMetadata | undefined {
+	const match = contents.match(ARTIFACT_MARKER);
+	if (!match) return undefined;
+	return { kind: match[1] as TaskIntent, ...(match[2] ? { source: match[2] } : {}) };
+}
+
+/** Keep script-owned artifact identity even when save_plan replaces the proposal body. */
+function withArtifactMetadata(contents: string, metadata: ArtifactMetadata | undefined): string {
+	if (!metadata) return contents;
+	const clean = contents.replace(ARTIFACT_MARKER, "").trim();
+	const firstLineEnd = clean.indexOf("\n");
+	const firstLine = firstLineEnd === -1 ? clean : clean.slice(0, firstLineEnd);
+	if (!/^# (?!#)/.test(firstLine)) return `${artifactMarker(metadata)}${clean ? `\n\n${clean}` : ""}\n`;
+	const body = clean.slice(firstLineEnd === -1 ? clean.length : firstLineEnd + 1).trim();
+	return `${firstLine}\n\n${artifactMarker(metadata)}${body ? `\n\n${body}` : ""}\n`;
 }
 
 /**
@@ -161,7 +212,57 @@ export async function movePlan(cwd: string, from: string, to: string): Promise<v
 	if (from === to) return;
 	const source = planPath(cwd, from);
 	if (!existsSync(source)) return;
-	await rename(source, planPath(cwd, to));
+	const destination = planPath(cwd, to);
+	if (existsSync(destination)) throw new Error(`A plan named ${to} already exists`);
+	await rename(source, destination);
+}
+
+export interface BeginTaskResult {
+	name: string;
+	path: string;
+	metadata: ArtifactMetadata;
+}
+
+/**
+ * Apply the context-informed identity chosen for an initial/new-task Align.
+ * A follow-up implementation preserves its source investigation as a separate
+ * record; ordinary initial setup renames the temporary raw-prompt scaffold.
+ */
+export async function beginTask(cwd: string, current: string | undefined, summary: string, intent: TaskIntent): Promise<BeginTaskResult> {
+	await ensurePiState(cwd);
+	const prefix = timestampPrefix(current);
+	const previous = prefix && current ? current.slice(prefix.length + 1) : current;
+	const slug = normalizeTaskName(summary, previous || undefined);
+	const name = prefix ? `${prefix}-${slug}` : slug;
+	const sourcePath = current ? planPath(cwd, current) : undefined;
+	const sourceContents = sourcePath ? await readFile(sourcePath, "utf8").catch(() => "") : "";
+	const sourceMetadata = readArtifactMetadata(sourceContents);
+	const followsInvestigation = sourceMetadata?.kind === "investigation" && intent === "implementation";
+
+	if (followsInvestigation && current === name) {
+		throw new Error("A follow-up implementation needs a distinct name so the investigation record is preserved");
+	}
+
+	const metadata: ArtifactMetadata = followsInvestigation
+		? { kind: "implementation", source: current }
+		: { kind: intent };
+	const path = planPath(cwd, name);
+
+	if (followsInvestigation) {
+		if (existsSync(path)) throw new Error(`A plan named ${name} already exists`);
+		const contents = templateFor(metadata).replace("<session-name>", name);
+		await writeFile(path, contents, { encoding: "utf8", flag: "wx" });
+		return { name, path, metadata };
+	}
+
+	if (current) await movePlan(cwd, current, name);
+	const existing = await readFile(path, "utf8").catch(() => "");
+	if (!existing || isScaffold(existing)) {
+		const base = intent === "investigation" ? INVESTIGATION_TEMPLATE : PLAN_TEMPLATE;
+		const timing = readPlanTiming(existing) ?? EMPTY_PLAN_TIME;
+		await writePlanAtomically(path, withPlanTiming(base.replace("<session-name>", name), name, timing));
+	}
+	return { name, path, metadata: readArtifactMetadata(await readFile(path, "utf8")) ?? metadata };
 }
 
 export function planPath(cwd: string, name: string): string {
@@ -235,7 +336,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "save_plan",
 		label: "Save Plan",
-		description: "Present the plan at .pi/plan/<session-name>.md for the User's decision, renaming the session to a meaningful name — the leading timestamp is kept, so plans stay time-ordered. Before approval, a complete plan replaces the draft; after execution begins, a passed change appends as a dated revision. Omit the plan to present what the Agent already wrote there. Plan files belong to the User: never delete one.",
+		description: "Present the plan at .pi/plan/<session-name>.md for the User's decision, renaming the session to a meaningful name — the leading timestamp is kept, so plans stay time-ordered. Before approval, a complete plan replaces the draft. After execution begins, call save_plan only for a material re-plan that needs renewed approval: passed changes append as a dated revision and reopen the approval picker. Directly edit routine checklist, Quirks, and completion updates; do not call save_plan at close-out. Omit plan to present what the Agent already wrote there. Plan files belong to the User: never delete one.",
 		parameters: SavePlanParams,
 		async execute(_toolCallId, params: SavePlanInput, _signal, _onUpdate, ctx) {
 			// The session is auto-named at start, so a rename swaps the slug and keeps
@@ -253,9 +354,11 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 				if (current) await movePlan(ctx.cwd, current, name);
 				const existing = await readFile(path, "utf8").catch(() => "");
 				const timing = readPlanTiming(existing) ?? EMPTY_PLAN_TIME;
+				const metadata = readArtifactMetadata(existing);
 				if (params.plan?.trim()) {
 					const approved = hasApprovedPlan(ctx.sessionManager.getBranch(), name);
-					contents = withPlanTiming(composePlan(existing, params.plan, new Date(), approved), name, timing);
+					const composed = composePlan(existing, params.plan, new Date(), approved);
+					contents = withPlanTiming(withArtifactMetadata(composed, metadata), name, timing);
 				} else {
 					// Omitted body: present the file the agent has been keeping current,
 					// lazily upgrading a legacy plan to the script-owned time envelope.
@@ -280,7 +383,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 						text: `Plan at ${path}:\n\n${contents.trim() || "(empty)"}\n\nPlan presented — the Agent ends its turn now and awaits the User's decision. Approval arrives as a message naming this plan path.`,
 					},
 				],
-				details: { name, path },
+				details: { name, path, ...(readArtifactMetadata(contents) ?? { kind: "implementation" as const }) },
 			};
 		},
 	});

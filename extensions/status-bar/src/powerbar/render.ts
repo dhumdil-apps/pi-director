@@ -213,5 +213,9 @@ export function renderBar(
 	let last = lines.length - 1;
 	while (last >= 0 && lines[last] === undefined) last--;
 	if (last < 0) return [" ".repeat(width)];
-	return lines.slice(0, last + 1).map((line) => line ?? " ".repeat(width));
+	const rendered = lines.slice(0, last + 1).map((line) => line ?? " ".repeat(width));
+	if (!settings.lineGap) return rendered;
+
+	const gap = " ".repeat(width);
+	return rendered.flatMap((line, index) => index === rendered.length - 1 ? [line] : [line, gap]);
 }

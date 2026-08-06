@@ -20,6 +20,7 @@ import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { derivePhaseFromBranch, recordWorkflowPhase } from "./phase.js";
+import { beginTask, TASK_STARTED_EVENT, type TaskIntent, type TaskStartedEvent } from "./task.js";
 import { duringUserWait } from "./user-wait.js";
 
 const MIN_OPTIONS = 2;
@@ -27,6 +28,10 @@ const MAX_OPTIONS = 4;
 
 const AskParams = Type.Object({
 	question: Type.String({ description: "The question, as one sentence." }),
+	task: Type.Optional(Type.Object({
+		name: Type.String({ description: "The context-informed 2–4 word task name. Required for the initial question or when starting a new task; omit for adaptive questions within the current task." }),
+		intent: Type.Union([Type.Literal("implementation"), Type.Literal("investigation")], { description: "Whether the requested outcome changes the project or only investigates and reports." }),
+	})),
 	options: Type.Array(
 		Type.Object({
 			headline: Type.String({ description: "The choice in 2-5 words. This is what the picker shows, so it must be distinct from the other headlines." }),
@@ -59,7 +64,7 @@ export function registerAsk(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "ask",
 		label: "Ask",
-		description: "Ask the User to choose between concrete options, in a native picker. Use at least once before every initial plan or re-plan, and whenever another choice would otherwise be made on the User's behalf; put the Agent's recommendation first. For anything that does not fit a short list of options, the Agent asks in an ordinary message instead.",
+		description: "Ask the User to choose between concrete options, in a native picker. On the initial question or when starting a new task, include the context-informed task name and whether its outcome is implementation or investigation; omit task for adaptive questions. Use at least once before every initial plan or re-plan, and whenever another choice would otherwise be made on the User's behalf; put the Agent's recommendation first.",
 		parameters: AskParams,
 		// The dialog owns the screen while it is open, so it must not race another call.
 		executionMode: "sequential",
@@ -74,6 +79,17 @@ export function registerAsk(pi: ExtensionAPI): void {
 			}
 			if (new Set(headlines).size !== headlines.length) {
 				return result("Error: option headlines must be distinct — the picker returns the headline, not an index.", base, true);
+			}
+			if (params.task) {
+				try {
+					const started = await beginTask(ctx.cwd, pi.getSessionName(), params.task.name, params.task.intent as TaskIntent);
+					pi.setSessionName(started.name);
+					if (started.metadata.source) {
+						pi.events.emit?.(TASK_STARTED_EVENT, { resetTiming: true } satisfies TaskStartedEvent);
+					}
+				} catch (error) {
+					return result(`Error: could not start task: ${(error as Error).message}.`, base, true);
+				}
 			}
 
 			const pickerHeadlines = [...headlines, WRITE_CUSTOM_OPTION];

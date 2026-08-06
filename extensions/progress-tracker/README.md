@@ -6,9 +6,9 @@ renders the one thing the transcript cannot show.
 
 ## User surface
 
-- Phase indicator — one line above the editor holds the marker plus the mode
-  badge or working word. The marker swaps for a braille spinner while the agent
-  works. The spinner advances every 120 ms only during active work and is
+- Phase indicator — one line above the editor holds the marker plus the idle
+  prompt or active timing. The marker swaps for a braille spinner while the
+  agent works. The spinner advances every 120 ms only during active work and is
   cleared when Pi disposes the widget. Pi's own transient activity row stays
   hidden.
 - Attention segment — `LLM Attention Span (ctx)` is a normal configurable Status
@@ -35,27 +35,22 @@ renders the one thing the transcript cannot show.
   initializes; older sessions still fall back to their kickoff message. This is
   not the retired session-mode state machine — the injected loop is one constant
   and never varies with the prompt.
-- Working words — while a run is in flight the badge gives way to a word from
-  the mode's pool, swapped every 8 s for a different one at random:
-  `Aggressively stitching together…`/`Beating into submission…` once approved,
-  and `Peeking inside…`/`Sniffing around…` while exploring or preparing a plan.
-  The pools do not overlap, so the gate stays readable while the line moves; the
-  colour follows the badge. Pools and the pick live in `ui/whimsy.ts`
-  (`pickWord` takes its randomness as an argument so rotation is testable).
-- Work/cache timer — one compact dim readout trails the active word and counts
-  only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
+- Working phase — while a run is in flight the idle prompt gives way to the
+  spinner followed directly by timing; no phase label is shown.
+- Work/cache timer — one compact dim readout follows the active spinner and
+  counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
   Explore or Execute begins rather than displaying grand-total task time.
   Accumulated totals follow it as
-  `· explore 5s · execute 3s · decision 12s`: the current work mode is accent;
-  the other work mode and Decision are dim. Explore and Execute are mutually
-  exclusive Agent-work buckets. Decision is capped wall-clock latency while an
-  Align choice is unresolved, including User thinking or idle time, and is not a
-  third work mode.
+  `· explore 5s · align 12s · execute 3s`: the current work mode is accent;
+  the other work mode and Align are dim. Explore and Execute are mutually
+  exclusive Agent-work buckets. Align is capped wall-clock latency while a
+  checkpoint choice is unresolved, including User thinking or idle time, and is
+  not a third work mode.
 
   Native question and approval dialogs pause active work while the UI belongs to
-  the User. Separate persisted checkpoint events measure Decision, keep a custom
+  the User. Separate persisted checkpoint events measure Align, keep a custom
   answer open until the next human input, and reconstruct unresolved choices
-  after reload. The live Decision bucket advances to a five-minute per-checkpoint
+  after reload. The live Align bucket advances to a five-minute per-checkpoint
   cap and adds `+` once capped. Resolving a checkpoint persists its capped latency
   best-effort.
 

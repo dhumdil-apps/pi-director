@@ -13,7 +13,7 @@ extension.
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
-- **Progress Tracker** — Above-editor Explore/Execute activity and accumulated Decision latency, plus the configurable Status Bar context segment. No tool, no command: it observes.
+- **Progress Tracker** — Above-editor Explore/Align/Execute timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
 - **Pi Inspector Bridge** — Reports display-only Director phase and session status whenever a local Inspector is discoverable
 - **Session Dashboard** — Pi-glyph welcome, project-memory freshness notice, 30-day per-model spend chart, and initial context-source snapshot
 
@@ -33,17 +33,20 @@ agent, with the plan file on disk as the only thing carried across.
 
 ## Extension Preferences registry
 
-Status Bar is the only registrant, and everything it exposes is layout:
-`line1-left`, `line1-right` … `line4-right`, eight ordered segment pickers. The
-visual style is fixed on purpose — separator, bar style, bar width, and
-placement were configurable, and were either inert or actively misleading.
+Status Bar is the only registrant, and everything it exposes is layout: a
+`Line gap` on/off setting plus `line1-left`, `line1-right` … `line4-right`, eight
+ordered segment pickers. The visual style is fixed on purpose — separator, bar
+style, bar width, and placement were configurable, and were either inert or
+actively misleading.
 
 Defaults reproduce the previous fixed rows: `git-branch,session-name` /
 `provider,model` on line 1, `agent-stats,tokens` on line 2,
 `cpu,ram,disk,net` / `sub-hourly,sub-weekly` on line 3, with Progress Tracker's
-`attention-span` segment on line 4. A line left empty between two used lines
-renders as a blank line; trailing empty lines take no space. Unnamed sessions
-receive `<short-desc>` (or `<ticket>-<short-desc>` when a ticket is supplied).
+`attention-span` segment on line 4. `Line gap` defaults off; when enabled, one
+blank row appears between each rendered row. A line left empty between two used
+lines remains an intentional blank line; trailing empty lines take no space.
+Unnamed sessions receive `<short-desc>` (or `<ticket>-<short-desc>` when a ticket
+is supplied).
 
 Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 
@@ -63,7 +66,7 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
   What the agent is doing is visible in the transcript.
 - **No derived loop position in the prompt.** The injected block is a constant,
   so the whole prompt prefix stays cacheable; where the session stands is never
-  restated to the model. Progress Tracker's Explore/Execute state and Decision
+  restated to the model. Progress Tracker's Explore/Execute state and Align
   latency are display-only — they never enter model context or vary the injected
   loop.
 
