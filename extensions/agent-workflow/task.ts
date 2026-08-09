@@ -1,17 +1,9 @@
 import { existsSync, readdirSync } from "node:fs";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import {
-  CONFIG_DIR_NAME,
-  type ExtensionAPI,
-} from "@earendil-works/pi-coding-agent";
+import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
-import {
-  deriveWorkflowMode,
-  hasEnteredVibe,
-  MODE_LABEL,
-  type WorkflowMode,
-} from "./mode.js";
+import { deriveWorkflowMode, hasEnteredVibe, MODE_LABEL, type WorkflowMode } from "./mode.js";
 import {
   EMPTY_PLAN_TIME,
   readPlanTiming,
@@ -27,8 +19,7 @@ import {
  * ID `2026-07` and the rest as the slug. The legacy transformed timestamp is
  * still accepted so existing plan files remain resolvable.
  */
-const TIMESTAMP =
-  /^(\d{4}-\d{2}-\d{2}(?:--\d{2}-\d{2}-\d{2}|T\d{2}:\d{2}:\d{2}))(?:-|$)/i;
+const TIMESTAMP = /^(\d{4}-\d{2}-\d{2}(?:--\d{2}-\d{2}-\d{2}|T\d{2}:\d{2}:\d{2}))(?:-|$)/i;
 const SESSION_NAME =
   /^(?:(\d{4}-\d{2}-\d{2}(?:--\d{2}-\d{2}-\d{2}|T\d{2}:\d{2}:\d{2}))-)?(?:([a-z0-9]+-\d+)-)?([a-z0-9]+(?:-[a-z0-9]+)*)$/i;
 const TICKET_ID = /\b([a-z0-9]+-\d+)\b/i;
@@ -76,27 +67,13 @@ const SECTIONS = [
 ];
 
 /** The one artifact shape. A session owns a single plan file for its whole life. */
-export const PLAN_TEMPLATE = [
-  "# <session-name>",
-  "",
-  timeSpentBlock(EMPTY_PLAN_TIME),
-  "",
-  ...SECTIONS,
-  "",
-].join("\n");
+export const PLAN_TEMPLATE = ["# <session-name>", "", timeSpentBlock(EMPTY_PLAN_TIME), "", ...SECTIONS, ""].join("\n");
 
 /**
  * Scaffolded alongside the first plan. Orientation maps the project; quirks record
  * the non-obvious constraints worth reusing during exploration.
  */
-export const MEMORY_STUB = [
-  "# Project memory",
-  "",
-  "## Orientation",
-  "",
-  "## Quirks",
-  "",
-].join("\n");
+export const MEMORY_STUB = ["# Project memory", "", "## Orientation", "", "## Quirks", ""].join("\n");
 
 const HANDOFF_USAGE = "Usage: /handoff [session-name].";
 export const PLAN_SAVED_EVENT = "agent-workflow:plan-saved";
@@ -176,28 +153,21 @@ const SavePlanParams = Type.Object({
 
 const StartTaskParams = Type.Object({
   name: Type.String({
-    description:
-      "A context-informed 2–4 word task name, optionally prefixed with a ticket ID.",
+    description: "A context-informed 2–4 word task name, optionally prefixed with a ticket ID.",
   }),
 });
 
 const REVISION_HEADING = /^## Revision (\d+)\b/gm;
 
 function hasExecutionHistory(existing: string): boolean {
-  if (
-    /^## Close out$/m.test(existing) ||
-    /^## Revision \d+\b/m.test(existing)
-  ) {
+  if (/^## Close out$/m.test(existing) || /^## Revision \d+\b/m.test(existing)) {
     return true;
   }
   const workLogStart = existing.indexOf("## Work log");
   if (workLogStart === -1) return false;
   const bodyStart = workLogStart + "## Work log".length;
   const nextSection = existing.indexOf("\n## ", bodyStart);
-  const workLog = existing.slice(
-    bodyStart,
-    nextSection === -1 ? existing.length : nextSection,
-  );
+  const workLog = existing.slice(bodyStart, nextSection === -1 ? existing.length : nextSection);
   return workLog.replace("<requested increments and what landed>", "").trim() !== "";
 }
 
@@ -221,10 +191,7 @@ export function planHasOpenWork(existing: string): boolean {
 }
 
 /** Resolve the current artifact's live status without assuming a lone plan file. */
-export async function currentPlanHasOpenWork(
-  cwd: string,
-  name: string | undefined,
-): Promise<boolean> {
+export async function currentPlanHasOpenWork(cwd: string, name: string | undefined): Promise<boolean> {
   if (!name) return true;
   const existing = await readFile(planPath(cwd, name), "utf8").catch(() => "");
   return !existing || planHasOpenWork(existing);
@@ -236,12 +203,7 @@ export async function currentPlanHasOpenWork(
  * execution history, a changed plan becomes a dated revision, preserving the
  * original proposal and the reason it changed.
  */
-export function composePlan(
-  existing: string,
-  body: string,
-  now: Date,
-  appendRevision = false,
-): string {
+export function composePlan(existing: string, body: string, now: Date, appendRevision = false): string {
   const next = body.trim();
   const previous = existing.trim();
   if (!next) return `${previous}\n`;
@@ -256,10 +218,7 @@ export function composePlan(
 type SavePlanInput = Static<typeof SavePlanParams>;
 type StartTaskInput = Static<typeof StartTaskParams>;
 
-export function normalizeTaskName(
-  summary: string,
-  currentName?: string,
-): string {
+export function normalizeTaskName(summary: string, currentName?: string): string {
   const suppliedTicket = summary.match(TICKET_ID)?.[1]?.toUpperCase();
   const currentTicket = currentName?.match(TICKET_ID)?.[1]?.toUpperCase();
   const ticket = suppliedTicket ?? currentTicket;
@@ -279,9 +238,7 @@ export function normalizeTaskName(
   return ticket ? `${ticket}-${slug}` : slug;
 }
 
-export function canonicalTaskName(
-  name: string | undefined,
-): string | undefined {
+export function canonicalTaskName(name: string | undefined): string | undefined {
   const match = name?.trim().match(SESSION_NAME);
   if (!match) return undefined;
   const parts = [match[1], match[2]?.toUpperCase(), match[3].toLowerCase()];
@@ -303,19 +260,12 @@ function stamp(now: Date): string {
  * the local timestamp keeps `.pi/plan/` lexically time-ordered, while the
  * prepared words avoid leaking an unfinished prompt into the plan filename.
  */
-export function autoSlug(
-  prompt: string,
-  now: Date,
-  random: () => number = Math.random,
-): string {
+export function autoSlug(prompt: string, now: Date, random: () => number = Math.random): string {
   const ticket = prompt.match(TICKET_ID)?.[1]?.toUpperCase();
   const available = [...TEMPORARY_NAME_WORDS];
   const words: string[] = [];
   for (let i = 0; i < TEMPORARY_NAME_WORD_COUNT; i += 1) {
-    const index = Math.min(
-      available.length - 1,
-      Math.floor(random() * available.length),
-    );
+    const index = Math.min(available.length - 1, Math.floor(random() * available.length));
     words.push(available.splice(index, 1)[0]);
   }
   const ticketPart = ticket ? `-${ticket}` : "";
@@ -335,17 +285,12 @@ export async function ensurePiState(cwd: string): Promise<void> {
 }
 
 /** Carry a plan file over to its new name; a missing source is not an error. */
-export async function movePlan(
-  cwd: string,
-  from: string,
-  to: string,
-): Promise<void> {
+export async function movePlan(cwd: string, from: string, to: string): Promise<void> {
   if (from === to) return;
   const source = planPath(cwd, from);
   if (!existsSync(source)) return;
   const destination = planPath(cwd, to);
-  if (existsSync(destination))
-    throw new Error(`A plan named ${to} already exists`);
+  if (existsSync(destination)) throw new Error(`A plan named ${to} already exists`);
   await rename(source, destination);
 }
 
@@ -359,27 +304,15 @@ export interface BeginTaskResult {
  * in place; a session owns a single plan file for its whole life, so a later
  * differing name is refused rather than quietly starting a second record.
  */
-export async function beginTask(
-  cwd: string,
-  current: string | undefined,
-  summary: string,
-): Promise<BeginTaskResult> {
+export async function beginTask(cwd: string, current: string | undefined, summary: string): Promise<BeginTaskResult> {
   await ensurePiState(cwd);
   const prefix = timestampPrefix(current);
-  const previous =
-    prefix && current ? current.slice(prefix.length + 1) : current;
+  const previous = prefix && current ? current.slice(prefix.length + 1) : current;
   const slug = normalizeTaskName(summary, previous || undefined);
   const name = prefix ? `${prefix}-${slug}` : slug;
-  const sourceContents = current
-    ? await readFile(planPath(cwd, current), "utf8").catch(() => "")
-    : "";
+  const sourceContents = current ? await readFile(planPath(cwd, current), "utf8").catch(() => "") : "";
 
-  if (
-    current &&
-    current !== name &&
-    sourceContents &&
-    !isScaffold(sourceContents)
-  ) {
+  if (current && current !== name && sourceContents && !isScaffold(sourceContents)) {
     throw new Error(
       `${current} already owns this session's plan — keep extending it, or start a fresh session for a new goal`,
     );
@@ -390,14 +323,7 @@ export async function beginTask(
   const existing = await readFile(path, "utf8").catch(() => "");
   if (!existing || isScaffold(existing)) {
     const timing = readPlanTiming(existing) ?? EMPTY_PLAN_TIME;
-    await writePlanAtomically(
-      path,
-      withPlanTiming(
-        PLAN_TEMPLATE.replace("<session-name>", name),
-        name,
-        timing,
-      ),
-    );
+    await writePlanAtomically(path, withPlanTiming(PLAN_TEMPLATE.replace("<session-name>", name), name, timing));
   }
   return { name, path };
 }
@@ -497,8 +423,7 @@ export function resolvePlanTask(
 
   // The session name is the plan file's name once save_plan named it.
   const current = canonicalTaskName(sessionName);
-  if (current && existsSync(planPath(cwd, current)))
-    return taskFor(cwd, current);
+  if (current && existsSync(planPath(cwd, current))) return taskFor(cwd, current);
 
   const names = listPlanNames(cwd);
   if (names.length === 1) return taskFor(cwd, names[0]);
@@ -516,24 +441,12 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
     description:
       "Name this session's one artifact from context, without asking the User. Call once, on the first request of the session. A later call with a different name is refused: a session owns a single plan file for its whole life, and a genuinely new goal belongs in a fresh session.",
     parameters: StartTaskParams,
-    async execute(
-      _toolCallId,
-      params: StartTaskInput,
-      _signal,
-      _onUpdate,
-      ctx,
-    ) {
+    async execute(_toolCallId, params: StartTaskInput, _signal, _onUpdate, ctx) {
       try {
-        const started = await beginTask(
-          ctx.cwd,
-          pi.getSessionName(),
-          params.name,
-        );
+        const started = await beginTask(ctx.cwd, pi.getSessionName(), params.name);
         pi.setSessionName(started.name);
         return {
-          content: [
-            { type: "text" as const, text: `Task started at ${started.path}.` },
-          ],
+          content: [{ type: "text" as const, text: `Task started at ${started.path}.` }],
           details: { ...started },
         };
       } catch (error) {
@@ -578,8 +491,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
       // the timestamp: plan files stay in the order their tasks were started.
       const current = pi.getSessionName();
       const prefix = timestampPrefix(current);
-      const previous =
-        prefix && current ? current.slice(prefix.length + 1) : current;
+      const previous = prefix && current ? current.slice(prefix.length + 1) : current;
       const slug = normalizeTaskName(params.name, previous || undefined);
       const requestedName = prefix ? `${prefix}-${slug}` : slug;
       const executed = hasEnteredVibe(branch);
@@ -605,11 +517,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
         const existing = await readFile(path, "utf8").catch(() => "");
         const timing = readPlanTiming(existing) ?? EMPTY_PLAN_TIME;
         if (params.plan?.trim()) {
-          contents = withPlanTiming(
-            composePlan(existing, params.plan, new Date(), executed),
-            name,
-            timing,
-          );
+          contents = withPlanTiming(composePlan(existing, params.plan, new Date(), executed), name, timing);
         } else {
           // Omitted body: present the file the agent has been keeping current,
           // lazily upgrading a legacy plan to the script-owned time envelope.

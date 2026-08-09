@@ -10,56 +10,56 @@
 import type { ProviderName } from "./types.js";
 
 interface DetectionHint {
-	provider: ProviderName;
-	providerTokens: string[];
-	modelTokens: string[];
+  provider: ProviderName;
+  providerTokens: string[];
+  modelTokens: string[];
 }
 
 const DETECTION_HINTS: DetectionHint[] = [
-	{ provider: "anthropic", providerTokens: ["anthropic"], modelTokens: ["claude"] },
-	{ provider: "copilot", providerTokens: ["copilot", "github"], modelTokens: [] },
-	{ provider: "gemini", providerTokens: ["google", "gemini"], modelTokens: ["gemini"] },
-	{ provider: "antigravity", providerTokens: ["antigravity"], modelTokens: ["antigravity"] },
-	{ provider: "codex", providerTokens: ["openai", "codex"], modelTokens: ["gpt", "o1", "o3"] },
-	// "aws" alone is deliberately not a token here: it's broad enough to match
-	// "amazon-bedrock" or a similar AWS-hosted-but-not-Kiro provider string,
-	// reintroducing the exact false-positive class this module's header fix
-	// (explicit provider -> no fallback match) is meant to prevent.
-	{ provider: "kiro", providerTokens: ["kiro"], modelTokens: [] },
-	{ provider: "zai", providerTokens: ["zai", "z.ai", "xai"], modelTokens: [] },
+  { provider: "anthropic", providerTokens: ["anthropic"], modelTokens: ["claude"] },
+  { provider: "copilot", providerTokens: ["copilot", "github"], modelTokens: [] },
+  { provider: "gemini", providerTokens: ["google", "gemini"], modelTokens: ["gemini"] },
+  { provider: "antigravity", providerTokens: ["antigravity"], modelTokens: ["antigravity"] },
+  { provider: "codex", providerTokens: ["openai", "codex"], modelTokens: ["gpt", "o1", "o3"] },
+  // "aws" alone is deliberately not a token here: it's broad enough to match
+  // "amazon-bedrock" or a similar AWS-hosted-but-not-Kiro provider string,
+  // reintroducing the exact false-positive class this module's header fix
+  // (explicit provider -> no fallback match) is meant to prevent.
+  { provider: "kiro", providerTokens: ["kiro"], modelTokens: [] },
+  { provider: "zai", providerTokens: ["zai", "z.ai", "xai"], modelTokens: [] },
 ];
 
 export function detectProvider(model: { provider?: string; id?: string } | undefined): ProviderName | undefined {
-	if (!model) return undefined;
+  if (!model) return undefined;
 
-	const providerValue = model.provider?.toLowerCase() ?? "";
-	const idValue = model.id?.toLowerCase() ?? "";
+  const providerValue = model.provider?.toLowerCase() ?? "";
+  const idValue = model.id?.toLowerCase() ?? "";
 
-	// Antigravity special case (original pi-sub-core behavior).
-	if (providerValue.includes("antigravity") || idValue.includes("antigravity")) {
-		return "antigravity";
-	}
+  // Antigravity special case (original pi-sub-core behavior).
+  if (providerValue.includes("antigravity") || idValue.includes("antigravity")) {
+    return "antigravity";
+  }
 
-	// Match on provider tokens first.
-	for (const hint of DETECTION_HINTS) {
-		if (hint.providerTokens.some((token) => providerValue.includes(token))) {
-			return hint.provider;
-		}
-	}
+  // Match on provider tokens first.
+  for (const hint of DETECTION_HINTS) {
+    if (hint.providerTokens.some((token) => providerValue.includes(token))) {
+      return hint.provider;
+    }
+  }
 
-	// FIX: Only fall back to model tokens when provider is empty/unset.
-	// If provider was explicitly set (e.g. "bedrock") but didn't match any
-	// known provider above, the model is NOT on a known subscription.
-	if (providerValue) {
-		return undefined;
-	}
+  // FIX: Only fall back to model tokens when provider is empty/unset.
+  // If provider was explicitly set (e.g. "bedrock") but didn't match any
+  // known provider above, the model is NOT on a known subscription.
+  if (providerValue) {
+    return undefined;
+  }
 
-	// No provider set — try model tokens.
-	for (const hint of DETECTION_HINTS) {
-		if (hint.modelTokens.some((token) => idValue.includes(token))) {
-			return hint.provider;
-		}
-	}
+  // No provider set — try model tokens.
+  for (const hint of DETECTION_HINTS) {
+    if (hint.modelTokens.some((token) => idValue.includes(token))) {
+      return hint.provider;
+    }
+  }
 
-	return undefined;
+  return undefined;
 }

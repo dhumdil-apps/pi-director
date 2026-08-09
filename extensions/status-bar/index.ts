@@ -21,14 +21,14 @@ import powerbarTokens from "./src/powerbar-tokens/index.js";
 import powerbarCore from "./src/powerbar/index.js";
 
 export default function createExtension(pi: ExtensionAPI): void {
-	// Core must run before producers so its register-segment listener is live.
-	powerbarCore(pi);
+  // Core must run before producers so its register-segment listener is live.
+  powerbarCore(pi);
 
-	powerbarSession(pi);
-	powerbarGit(pi);
-	powerbarModel(pi);
-	powerbarProvider(pi);
-	powerbarTokens(pi);
-	powerbarSub(pi);
-	powerbarOs(pi);
+  powerbarSession(pi);
+  powerbarGit(pi);
+  powerbarModel(pi);
+  powerbarProvider(pi);
+  powerbarTokens(pi);
+  powerbarSub(pi);
+  powerbarOs(pi);
 }

@@ -8,6 +8,8 @@
   ],
   "license": "MIT",
   "scripts": {
+    "format": "prettier --write --ignore-unknown .",
+    "format:check": "prettier --check --ignore-unknown .",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

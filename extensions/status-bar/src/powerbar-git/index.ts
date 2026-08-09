@@ -17,18 +17,20 @@ import { isAbsolute, join, resolve } from "path";
  * silently disappears in an otherwise valid checkout.
  */
 function resolveGitDir(cwd: string): string | undefined {
-	const gitPath = join(cwd, ".git");
-	try {
-		const stat = statSync(gitPath);
-		if (stat.isDirectory()) return gitPath;
-		if (stat.isFile()) {
-			const match = readFileSync(gitPath, "utf-8").trim().match(/^gitdir:\s*(.+)$/);
-			if (match) return isAbsolute(match[1]) ? match[1] : resolve(cwd, match[1]);
-		}
-	} catch {
-		// Fall through to undefined below.
-	}
-	return undefined;
+  const gitPath = join(cwd, ".git");
+  try {
+    const stat = statSync(gitPath);
+    if (stat.isDirectory()) return gitPath;
+    if (stat.isFile()) {
+      const match = readFileSync(gitPath, "utf-8")
+        .trim()
+        .match(/^gitdir:\s*(.+)$/);
+      if (match) return isAbsolute(match[1]) ? match[1] : resolve(cwd, match[1]);
+    }
+  } catch {
+    // Fall through to undefined below.
+  }
+  return undefined;
 }
 
 // Strip control/escape characters (ANSI escapes, etc.) before a git-derived
@@ -39,60 +41,57 @@ function resolveGitDir(cwd: string): string | undefined {
 const CONTROL_CHARS = /[\x00-\x1F\x7F]/g;
 
 export function getGitBranch(cwd: string): string | undefined {
-	const gitDir = resolveGitDir(cwd);
-	if (!gitDir) return undefined;
-	try {
-		const head = readFileSync(join(gitDir, "HEAD"), "utf-8").trim();
-		const branch = head.startsWith("ref: refs/heads/")
-			? head.slice(16) // Named branch.
-			: head.slice(0, 8); // Detached HEAD — short hash.
-		return branch.replace(CONTROL_CHARS, "");
-	} catch {
-		return undefined;
-	}
+  const gitDir = resolveGitDir(cwd);
+  if (!gitDir) return undefined;
+  try {
+    const head = readFileSync(join(gitDir, "HEAD"), "utf-8").trim();
+    const branch = head.startsWith("ref: refs/heads/")
+      ? head.slice(16) // Named branch.
+      : head.slice(0, 8); // Detached HEAD — short hash.
+    return branch.replace(CONTROL_CHARS, "");
+  } catch {
+    return undefined;
+  }
 }
 
 function isDirty(cwd: string): Promise<boolean> {
-	return new Promise((resolve) => {
-		execFile(
-			"git",
-			["status", "--porcelain", "--untracked-files=no"],
-			{ cwd, timeout: 2000 },
-			(err, stdout) => resolve(!err && stdout.trim().length > 0),
-		);
-	});
+  return new Promise((resolve) => {
+    execFile("git", ["status", "--porcelain", "--untracked-files=no"], { cwd, timeout: 2000 }, (err, stdout) =>
+      resolve(!err && stdout.trim().length > 0),
+    );
+  });
 }
 
 async function emitBranch(pi: ExtensionAPI, ctx: ExtensionContext): Promise<void> {
-	const branch = getGitBranch(ctx.cwd);
-	if (branch) {
-		const dirty = await isDirty(ctx.cwd);
-		pi.events.emit("powerbar:update", {
-			id: "git-branch",
-			text: dirty ? `${branch}*` : branch,
-			icon: "⎇",
-			color: dirty ? "warning" : "muted",
-			row: 1,
-		});
-	} else {
-		pi.events.emit("powerbar:update", {
-			id: "git-branch",
-			text: undefined,
-		});
-	}
+  const branch = getGitBranch(ctx.cwd);
+  if (branch) {
+    const dirty = await isDirty(ctx.cwd);
+    pi.events.emit("powerbar:update", {
+      id: "git-branch",
+      text: dirty ? `${branch}*` : branch,
+      icon: "⎇",
+      color: dirty ? "warning" : "muted",
+      row: 1,
+    });
+  } else {
+    pi.events.emit("powerbar:update", {
+      id: "git-branch",
+      text: undefined,
+    });
+  }
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
-	pi.events.emit("powerbar:register-segment", { id: "git-branch", label: "Git Branch", row: 1 });
+  pi.events.emit("powerbar:register-segment", { id: "git-branch", label: "Git Branch", row: 1 });
 
-	pi.on("session_start", async (_event, ctx) => {
-		await emitBranch(pi, ctx);
-	});
+  pi.on("session_start", async (_event, ctx) => {
+    await emitBranch(pi, ctx);
+  });
 
-	// Refresh after tools that can change branch or dirty state
-	pi.on("tool_result", async (event, ctx) => {
-		if (event.toolName === "bash" || event.toolName === "edit" || event.toolName === "write") {
-			await emitBranch(pi, ctx);
-		}
-	});
+  // Refresh after tools that can change branch or dirty state
+  pi.on("tool_result", async (event, ctx) => {
+    if (event.toolName === "bash" || event.toolName === "edit" || event.toolName === "write") {
+      await emitBranch(pi, ctx);
+    }
+  });
 }

@@ -42,14 +42,8 @@ import {
 } from "../agent-workflow/plan-time.js";
 import { planPath } from "../agent-workflow/task.js";
 import { contextIndicatorText } from "../agent-workflow/context-usage.js";
-import {
-  USER_WAIT_EVENT,
-  type UserWaitEvent,
-} from "../agent-workflow/user-wait.js";
-import {
-  clearPhaseIndicator,
-  updatePhaseIndicator,
-} from "./ui/activity-indicator.js";
+import { USER_WAIT_EVENT, type UserWaitEvent } from "../agent-workflow/user-wait.js";
+import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
 
 /** Latest provider response on the active branch, used after reloads and handoffs. */
 function latestAssistantTimestamp(entries: SessionEntry[]): number | undefined {
@@ -57,11 +51,7 @@ function latestAssistantTimestamp(entries: SessionEntry[]): number | undefined {
     const entry = entries[index];
     if (entry?.type !== "message") continue;
     const message = entry.message as { role?: string; timestamp?: unknown };
-    if (
-      message.role === "assistant" &&
-      typeof message.timestamp === "number" &&
-      Number.isFinite(message.timestamp)
-    ) {
+    if (message.role === "assistant" && typeof message.timestamp === "number" && Number.isFinite(message.timestamp)) {
       return message.timestamp;
     }
   }
@@ -95,18 +85,12 @@ export default function (pi: ExtensionAPI) {
   // Ask state: the display can still ask for a goal while timing is precise.
   const accrueUntil = (now: number) => {
     if (runStartedAt == null) return;
-    planTime = addModeTime(
-      planTime ?? EMPTY_PLAN_TIME,
-      mode ?? "ask",
-      Math.max(0, now - runStartedAt),
-    );
+    planTime = addModeTime(planTime ?? EMPTY_PLAN_TIME, mode ?? "ask", Math.max(0, now - runStartedAt));
     runStartedAt = now;
   };
 
   pi.events.on?.(MODE_EVENT, (payload: unknown) => {
-    const next = normalizeWorkflowMode(
-      (payload as ModeEvent | undefined)?.mode,
-    );
+    const next = normalizeWorkflowMode((payload as ModeEvent | undefined)?.mode);
     if (!next) return;
     accrueUntil(Date.now());
     mode = next;
@@ -115,8 +99,7 @@ export default function (pi: ExtensionAPI) {
 
   pi.events.on?.(CHECKPOINT_EVENT, (payload: unknown) => {
     const event = payload as CheckpointEvent | undefined;
-    if (!event || (event.action !== "open" && event.action !== "resolve"))
-      return;
+    if (!event || (event.action !== "open" && event.action !== "resolve")) return;
     if (event.action === "open") {
       openCheckpoint = {
         id: event.id,
@@ -124,10 +107,7 @@ export default function (pi: ExtensionAPI) {
         openedAt: event.timestamp,
       };
     } else if (openCheckpoint?.id === event.id) {
-      planTime = addDecisionTime(
-        planTime ?? EMPTY_PLAN_TIME,
-        event.timestamp - openCheckpoint.openedAt,
-      );
+      planTime = addDecisionTime(planTime ?? EMPTY_PLAN_TIME, event.timestamp - openCheckpoint.openedAt);
       openCheckpoint = undefined;
       void persistTiming();
     }
@@ -161,8 +141,7 @@ export default function (pi: ExtensionAPI) {
       pi.events.emit?.("powerbar:update", {
         id: "attention-span",
         row: 4,
-        render: (theme: Theme) =>
-          contextIndicatorText(capturedUsage, theme, capturedExtras),
+        render: (theme: Theme) => contextIndicatorText(capturedUsage, theme, capturedExtras),
       });
     } else {
       pi.events.emit?.("powerbar:update", {
@@ -170,9 +149,7 @@ export default function (pi: ExtensionAPI) {
         text: undefined,
       });
     }
-    const prompt = lastUsage
-      ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite
-      : 0;
+    const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
       mode,
@@ -189,9 +166,7 @@ export default function (pi: ExtensionAPI) {
   const persistTiming = async () => {
     const name = pi.getSessionName?.();
     if (!currentCtx || !name || planTime == null) return;
-    await updatePlanTime(planPath(currentCtx.cwd, name), name, planTime).catch(
-      () => {},
-    );
+    await updatePlanTime(planPath(currentCtx.cwd, name), name, planTime).catch(() => {});
   };
 
   const adopt = async (ctx: ExtensionContext) => {
@@ -268,10 +243,7 @@ export default function (pi: ExtensionAPI) {
     if (event.message.role !== "assistant") return;
     currentCtx = ctx;
     const timestamp = event.message.timestamp;
-    cacheStartedAt =
-      typeof timestamp === "number" && Number.isFinite(timestamp)
-        ? timestamp
-        : Date.now();
+    cacheStartedAt = typeof timestamp === "number" && Number.isFinite(timestamp) ? timestamp : Date.now();
     refreshStatus();
   });
 
@@ -279,16 +251,14 @@ export default function (pi: ExtensionAPI) {
     currentCtx = ctx;
     if (firstTurnTokens == null && event.message.role === "assistant") {
       const tokens = event.message.usage.totalTokens;
-      if (typeof tokens === "number" && Number.isFinite(tokens) && tokens >= 0)
-        firstTurnTokens = tokens;
+      if (typeof tokens === "number" && Number.isFinite(tokens) && tokens >= 0) firstTurnTokens = tokens;
     }
     refreshStatus();
   });
 
   pi.events.on?.(USER_WAIT_EVENT, (payload: unknown) => {
     const next = payload as UserWaitEvent | undefined;
-    if (typeof next?.waiting !== "boolean" || next.waiting === waitingForUser)
-      return;
+    if (typeof next?.waiting !== "boolean" || next.waiting === waitingForUser) return;
     const now = Date.now();
     if (next.waiting) {
       if (working && runStartedAt != null) {

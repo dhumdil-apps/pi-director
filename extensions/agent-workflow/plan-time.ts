@@ -35,19 +35,10 @@ function exactMs(value: number): number {
 }
 
 export function totalTimeSpent(time: PlanTime): number {
-  return (
-    exactMs(time.askMs) +
-    exactMs(time.specMs) +
-    exactMs(time.vibeMs) +
-    exactMs(time.unallocatedMs)
-  );
+  return exactMs(time.askMs) + exactMs(time.specMs) + exactMs(time.vibeMs) + exactMs(time.unallocatedMs);
 }
 
-export function addModeTime(
-  time: PlanTime,
-  mode: WorkflowMode,
-  ms: number,
-): PlanTime {
+export function addModeTime(time: PlanTime, mode: WorkflowMode, ms: number): PlanTime {
   const next = { ...time };
   next[`${mode}Ms` as const] += exactMs(ms);
   return next;
@@ -73,10 +64,7 @@ export function formatDuration(ms: number): string {
 }
 
 export function timeSpentBlock(value: PlanTime | number): string {
-  const time =
-    typeof value === "number"
-      ? { ...EMPTY_PLAN_TIME, unallocatedMs: exactMs(value) }
-      : value;
+  const time = typeof value === "number" ? { ...EMPTY_PLAN_TIME, unallocatedMs: exactMs(value) } : value;
   const askMs = exactMs(time.askMs);
   const specMs = exactMs(time.specMs);
   const vibeMs = exactMs(time.vibeMs);
@@ -89,8 +77,7 @@ export function timeSpentBlock(value: PlanTime | number): string {
     `- Spec: ${formatDuration(specMs)}`,
     `- Vibe: ${formatDuration(vibeMs)}`,
   ];
-  if (unallocatedMs > 0)
-    lines.push(`- Unallocated: ${formatDuration(unallocatedMs)}`);
+  if (unallocatedMs > 0) lines.push(`- Unallocated: ${formatDuration(unallocatedMs)}`);
   lines.push("<!-- time-spent:end -->");
   return lines.join("\n");
 }
@@ -106,34 +93,24 @@ export function readPlanTiming(contents: string): PlanTime | undefined {
       vibeMs: vibe!,
       unallocatedMs: unallocated!,
     };
-    if (
-      Object.values(timing).every(Number.isSafeInteger) &&
-      totalTimeSpent(timing) === declaredTotal
-    )
-      return timing;
+    if (Object.values(timing).every(Number.isSafeInteger) && totalTimeSpent(timing) === declaredTotal) return timing;
     return undefined;
   }
   const workflow = contents.match(LEGACY_WORKFLOW_TIME);
   if (workflow) {
-    const [, declaredTotal, explore, execute, decision, unallocated] =
-      workflow.map(Number);
+    const [, declaredTotal, explore, execute, decision, unallocated] = workflow.map(Number);
     const timing = {
       askMs: decision!,
       specMs: explore!,
       vibeMs: execute!,
       unallocatedMs: unallocated!,
     };
-    if (
-      Object.values(timing).every(Number.isSafeInteger) &&
-      totalTimeSpent(timing) === declaredTotal
-    )
-      return timing;
+    if (Object.values(timing).every(Number.isSafeInteger) && totalTimeSpent(timing) === declaredTotal) return timing;
     return undefined;
   }
   const phase = contents.match(LEGACY_PHASE_TIME);
   if (phase) {
-    const [, declaredTotal, explore, plan, execute, unallocated] =
-      phase.map(Number);
+    const [, declaredTotal, explore, plan, execute, unallocated] = phase.map(Number);
     const timing = {
       askMs: 0,
       specMs: explore! + plan!,
@@ -141,9 +118,7 @@ export function readPlanTiming(contents: string): PlanTime | undefined {
       unallocatedMs: unallocated!,
     };
     if (
-      [declaredTotal, explore, plan, execute, unallocated].every(
-        Number.isSafeInteger,
-      ) &&
+      [declaredTotal, explore, plan, execute, unallocated].every(Number.isSafeInteger) &&
       totalTimeSpent(timing) === declaredTotal
     )
       return timing;
@@ -152,9 +127,7 @@ export function readPlanTiming(contents: string): PlanTime | undefined {
   const legacy = contents.match(LEGACY_TIME)?.[1];
   if (legacy === undefined) return undefined;
   const total = Number(legacy);
-  return Number.isSafeInteger(total)
-    ? { ...EMPTY_PLAN_TIME, unallocatedMs: total }
-    : undefined;
+  return Number.isSafeInteger(total) ? { ...EMPTY_PLAN_TIME, unallocatedMs: total } : undefined;
 }
 
 /** Exact persisted total milliseconds, or undefined for a marker-free plan. */
@@ -173,38 +146,25 @@ export function stripTimeSpent(contents: string): string {
 }
 
 /** Add or replace the script-owned block below the canonical plan title. */
-export function withPlanTiming(
-  contents: string,
-  name: string,
-  time: PlanTime,
-): string {
+export function withPlanTiming(contents: string, name: string, time: PlanTime): string {
   const clean = stripTimeSpent(contents).trim();
   const firstLineEnd = clean.indexOf("\n");
   const firstLine = firstLineEnd === -1 ? clean : clean.slice(0, firstLineEnd);
   const hasTitle = /^# (?!#)/.test(firstLine);
   const title = hasTitle ? firstLine : `# ${name}`;
-  const body = hasTitle
-    ? clean.slice(firstLineEnd === -1 ? clean.length : firstLineEnd + 1).trim()
-    : clean;
+  const body = hasTitle ? clean.slice(firstLineEnd === -1 ? clean.length : firstLineEnd + 1).trim() : clean;
   return `${title}\n\n${timeSpentBlock(time)}${body ? `\n\n${body}` : ""}\n`;
 }
 
 /** Backward-compatible helper: a scalar is historical, unallocated time. */
-export function withTimeSpent(
-  contents: string,
-  name: string,
-  ms: number,
-): string {
+export function withTimeSpent(contents: string, name: string, ms: number): string {
   return withPlanTiming(contents, name, {
     ...EMPTY_PLAN_TIME,
     unallocatedMs: exactMs(ms),
   });
 }
 
-export async function writePlanAtomically(
-  path: string,
-  contents: string,
-): Promise<void> {
+export async function writePlanAtomically(path: string, contents: string): Promise<void> {
   const temporaryPath = `${path}.${randomUUID()}.tmp`;
   try {
     await writeFile(temporaryPath, contents, { encoding: "utf8", flag: "wx" });
@@ -215,19 +175,13 @@ export async function writePlanAtomically(
   }
 }
 
-export async function readPlanTime(
-  path: string,
-): Promise<PlanTime | undefined> {
+export async function readPlanTime(path: string): Promise<PlanTime | undefined> {
   const contents = await readFile(path, "utf8").catch(() => undefined);
   return contents === undefined ? undefined : readPlanTiming(contents);
 }
 
 /** Replace only the time envelope, using an atomic rename for editor-safe writes. */
-export async function updatePlanTime(
-  path: string,
-  name: string,
-  time: PlanTime,
-): Promise<void> {
+export async function updatePlanTime(path: string, name: string, time: PlanTime): Promise<void> {
   const contents = await readFile(path, "utf8");
   await writePlanAtomically(path, withPlanTiming(contents, name, time));
 }

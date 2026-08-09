@@ -9,10 +9,7 @@
  * is the one piece of workflow state worth persisting.
  */
 
-import type {
-  ExtensionAPI,
-  SessionEntry,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent";
 
 export type WorkflowMode = "ask" | "spec" | "vibe";
 
@@ -38,9 +35,7 @@ export function isWorkflowMode(value: unknown): value is WorkflowMode {
  * Earlier sessions persisted a two-value mode plus a separate phase; both folded
  * into these three, so an old branch resolves instead of resetting to Ask.
  */
-export function normalizeWorkflowMode(
-  value: unknown,
-): WorkflowMode | undefined {
+export function normalizeWorkflowMode(value: unknown): WorkflowMode | undefined {
   if (value === "explore" || value === "plan") return "spec";
   if (value === "execute") return "vibe";
   if (value === "align") return "ask";
@@ -48,24 +43,17 @@ export function normalizeWorkflowMode(
 }
 
 /** Latest persisted choice wins, so commands and forks reconstruct deterministically. */
-export function deriveWorkflowMode(
-  entries: SessionEntry[],
-): WorkflowMode | undefined {
+export function deriveWorkflowMode(entries: SessionEntry[]): WorkflowMode | undefined {
   for (let index = entries.length - 1; index >= 0; index--) {
     const entry = entries[index];
     if (entry?.type !== "custom" || entry.customType !== MODE_EVENT) continue;
-    const mode = normalizeWorkflowMode(
-      (entry.data as { mode?: unknown } | undefined)?.mode,
-    );
+    const mode = normalizeWorkflowMode((entry.data as { mode?: unknown } | undefined)?.mode);
     if (mode) return mode;
   }
   return undefined;
 }
 
-export function recordWorkflowMode(
-  pi: Pick<ExtensionAPI, "appendEntry" | "events">,
-  mode: WorkflowMode,
-): void {
+export function recordWorkflowMode(pi: Pick<ExtensionAPI, "appendEntry" | "events">, mode: WorkflowMode): void {
   pi.appendEntry(MODE_EVENT, { mode } satisfies ModeEvent);
   pi.events.emit?.(MODE_EVENT, { mode } satisfies ModeEvent);
 }
@@ -80,9 +68,7 @@ export function hasEnteredVibe(entries: SessionEntry[]): boolean {
     (entry) =>
       entry.type === "custom" &&
       entry.customType === MODE_EVENT &&
-      normalizeWorkflowMode(
-        (entry.data as { mode?: unknown } | undefined)?.mode,
-      ) === "vibe",
+      normalizeWorkflowMode((entry.data as { mode?: unknown } | undefined)?.mode) === "vibe",
   );
 }
 

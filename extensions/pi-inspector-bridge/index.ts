@@ -28,7 +28,10 @@ export default function piInspectorBridge(pi: ExtensionAPI) {
     try {
       const response = await fetch(new URL(path, endpoint.url), {
         method: value ? "POST" : "GET",
-        headers: { authorization: `Bearer ${endpoint.token}`, ...(value ? { "content-type": "application/json" } : {}) },
+        headers: {
+          authorization: `Bearer ${endpoint.token}`,
+          ...(value ? { "content-type": "application/json" } : {}),
+        },
         body: value ? JSON.stringify(value) : undefined,
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
@@ -46,7 +49,17 @@ export default function piInspectorBridge(pi: ExtensionAPI) {
   };
   const post = () => {
     const cwd = typeof latest.cwd === "string" ? latest.cwd : process.cwd();
-    void Promise.resolve(claim(cwd)).then(() => send("/agent/status", { ...latest, sessionId, pid: process.pid, cwd, label: labelFor(cwd), ts: Date.now(), connected: true }));
+    void Promise.resolve(claim(cwd)).then(() =>
+      send("/agent/status", {
+        ...latest,
+        sessionId,
+        pid: process.pid,
+        cwd,
+        label: labelFor(cwd),
+        ts: Date.now(),
+        connected: true,
+      }),
+    );
   };
 
   pi.events.on("agent-status:update", (value: unknown) => {
@@ -65,13 +78,22 @@ export default function piInspectorBridge(pi: ExtensionAPI) {
     // Not awaited: the observer releases an owner whose pid is gone and ages a
     // session out by heartbeat TTL, so a goodbye that never lands costs nothing
     // — while awaiting two round trips would delay every quit by up to 1.5s.
-    void send("/agent/status", { ...latest, sessionId, pid: process.pid, cwd: ctx.cwd, label: labelFor(ctx.cwd), ts: Date.now(), connected: false });
+    void send("/agent/status", {
+      ...latest,
+      sessionId,
+      pid: process.pid,
+      cwd: ctx.cwd,
+      label: labelFor(ctx.cwd),
+      ts: Date.now(),
+      connected: false,
+    });
     void send("/agent/status/release", { sessionId });
   });
 }
 
 function resolveEndpoint(env: NodeJS.ProcessEnv = process.env, discoveryPath?: string): Endpoint | undefined {
-  if (env.AGENT_STATUS_URL && env.AGENT_STATUS_TOKEN) return { url: env.AGENT_STATUS_URL, token: env.AGENT_STATUS_TOKEN };
+  if (env.AGENT_STATUS_URL && env.AGENT_STATUS_TOKEN)
+    return { url: env.AGENT_STATUS_URL, token: env.AGENT_STATUS_TOKEN };
   try {
     const path = discoveryPath || env.AGENT_STATUS_DISCOVERY || join(homedir(), ".pi-inspector", "status.json");
     const parsed = JSON.parse(readFileSync(path, "utf8")) as { url?: string; statusToken?: string };
@@ -80,4 +102,6 @@ function resolveEndpoint(env: NodeJS.ProcessEnv = process.env, discoveryPath?: s
   return undefined;
 }
 
-function labelFor(cwd: string): string { return cwd.split(/[\\/]/).filter(Boolean).pop() || "agent"; }
+function labelFor(cwd: string): string {
+  return cwd.split(/[\\/]/).filter(Boolean).pop() || "agent";
+}

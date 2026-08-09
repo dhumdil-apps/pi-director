@@ -14,18 +14,18 @@ type SettingsFile = Record<string, Record<string, string>>;
  * Get the global settings file path.
  */
 function getGlobalSettingsPath(): string {
-	return join(getAgentDir(), SETTINGS_FILE_NAME);
+  return join(getAgentDir(), SETTINGS_FILE_NAME);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isSettingsFileShape(value: unknown): value is SettingsFile {
-	if (!isPlainObject(value)) return false;
-	return Object.values(value).every(
-		(ext) => isPlainObject(ext) && Object.values(ext).every((v) => typeof v === "string"),
-	);
+  if (!isPlainObject(value)) return false;
+  return Object.values(value).every(
+    (ext) => isPlainObject(ext) && Object.values(ext).every((v) => typeof v === "string"),
+  );
 }
 
 /**
@@ -34,11 +34,11 @@ function isSettingsFileShape(value: unknown): value is SettingsFile {
  * extension's stored preferences with no trace.
  */
 function backUpUnreadableFile(path: string): void {
-	try {
-		renameSync(path, `${path}.bak-${Date.now()}`);
-	} catch {
-		// Best-effort backup only.
-	}
+  try {
+    renameSync(path, `${path}.bak-${Date.now()}`);
+  } catch {
+    // Best-effort backup only.
+  }
 }
 
 /**
@@ -47,30 +47,30 @@ function backUpUnreadableFile(path: string): void {
  * up (so no data is silently lost) and returns empty object.
  */
 function loadSettingsFile(path: string): SettingsFile {
-	if (!existsSync(path)) {
-		return {};
-	}
-	let content: string;
-	try {
-		content = readFileSync(path, "utf-8");
-	} catch (err) {
-		console.error(`[extension-preferences] failed to read ${path}:`, err);
-		return {};
-	}
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(content);
-	} catch (err) {
-		console.error(`[extension-preferences] ${path} is not valid JSON; backing it up and starting fresh:`, err);
-		backUpUnreadableFile(path);
-		return {};
-	}
-	if (!isSettingsFileShape(parsed)) {
-		console.error(`[extension-preferences] ${path} has an unexpected shape; backing it up and starting fresh.`);
-		backUpUnreadableFile(path);
-		return {};
-	}
-	return parsed;
+  if (!existsSync(path)) {
+    return {};
+  }
+  let content: string;
+  try {
+    content = readFileSync(path, "utf-8");
+  } catch (err) {
+    console.error(`[extension-preferences] failed to read ${path}:`, err);
+    return {};
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch (err) {
+    console.error(`[extension-preferences] ${path} is not valid JSON; backing it up and starting fresh:`, err);
+    backUpUnreadableFile(path);
+    return {};
+  }
+  if (!isSettingsFileShape(parsed)) {
+    console.error(`[extension-preferences] ${path} has an unexpected shape; backing it up and starting fresh.`);
+    backUpUnreadableFile(path);
+    return {};
+  }
+  return parsed;
 }
 
 /**
@@ -78,13 +78,13 @@ function loadSettingsFile(path: string): SettingsFile {
  * full disk mid-write can't leave a truncated/corrupt settings file behind.
  */
 function saveSettingsFile(path: string, settings: SettingsFile): void {
-	const dir = dirname(path);
-	if (!existsSync(dir)) {
-		mkdirSync(dir, { recursive: true });
-	}
-	const tmpPath = `${path}.tmp-${process.pid}`;
-	writeFileSync(tmpPath, JSON.stringify(settings, null, "\t"));
-	renameSync(tmpPath, path);
+  const dir = dirname(path);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  const tmpPath = `${path}.tmp-${process.pid}`;
+  writeFileSync(tmpPath, JSON.stringify(settings, null, "\t"));
+  renameSync(tmpPath, path);
 }
 
 /**
@@ -97,16 +97,16 @@ function saveSettingsFile(path: string, settings: SettingsFile): void {
  * @returns The setting value
  */
 export function getSetting(extensionName: string, settingId: string, defaultValue?: string): string | undefined {
-	const globalPath = getGlobalSettingsPath();
-	const settings = loadSettingsFile(globalPath);
+  const globalPath = getGlobalSettingsPath();
+  const settings = loadSettingsFile(globalPath);
 
-	// Check if value exists in file
-	const extSettings = settings[extensionName];
-	if (extSettings && settingId in extSettings) {
-		return extSettings[settingId];
-	}
+  // Check if value exists in file
+  const extSettings = settings[extensionName];
+  if (extSettings && settingId in extSettings) {
+    return extSettings[settingId];
+  }
 
-	return defaultValue;
+  return defaultValue;
 }
 
 /**
@@ -118,13 +118,13 @@ export function getSetting(extensionName: string, settingId: string, defaultValu
  * @param value - Value to set
  */
 export function setSetting(extensionName: string, settingId: string, value: string): void {
-	const globalPath = getGlobalSettingsPath();
-	const settings = loadSettingsFile(globalPath);
+  const globalPath = getGlobalSettingsPath();
+  const settings = loadSettingsFile(globalPath);
 
-	if (!settings[extensionName]) {
-		settings[extensionName] = {};
-	}
-	settings[extensionName][settingId] = value;
+  if (!settings[extensionName]) {
+    settings[extensionName] = {};
+  }
+  settings[extensionName][settingId] = value;
 
-	saveSettingsFile(globalPath, settings);
+  saveSettingsFile(globalPath, settings);
 }

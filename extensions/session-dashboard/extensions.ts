@@ -1,15 +1,15 @@
 export interface ExtensionPresentation {
-	name: string;
-	group: "display" | "usage" | "workflow" | "guardrails" | "config";
-	description: string;
+  name: string;
+  group: "display" | "usage" | "workflow" | "guardrails" | "config";
+  description: string;
 }
 
 export const EXTENSION_GROUPS = [
-	{ id: "display", title: "Display" },
-	{ id: "usage", title: "Usage" },
-	{ id: "workflow", title: "Workflow" },
-	{ id: "guardrails", title: "Guardrails" },
-	{ id: "config", title: "Config" },
+  { id: "display", title: "Display" },
+  { id: "usage", title: "Usage" },
+  { id: "workflow", title: "Workflow" },
+  { id: "guardrails", title: "Guardrails" },
+  { id: "config", title: "Config" },
 ] as const;
 
 /**
@@ -17,67 +17,71 @@ export const EXTENSION_GROUPS = [
  * Keep this list in sync with the live manifest.
  */
 export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
-	{
-		name: "session-dashboard",
-		group: "display",
-		description: "Renders this startup welcome (Pi glyph, 30-day per-model cost chart, project context) and provides `/help` and `/context`; reads local usage history.",
-	},
-	{
-		name: "status-bar",
-		group: "display",
-		description: "Persistent status line: git, tokens, context, model, system, and quota segments.",
-	},
-	{
-		name: "usage-monitor",
-		group: "usage",
-		description: "Tracks subscription quota — cached at startup, refreshed every 60s and on model/session change; `/usage-refresh`.",
-	},
-	{
-		name: "usage-history",
-		group: "usage",
-		description: "Reads local session records to render historical token and spend data with `/usage`.",
-	},
-	{
-		name: "agent-workflow",
-		group: "workflow",
-		description: "Guides one workflow loop per task, with plan persistence, close-out, and durable project memory.",
-	},
-	{
-		name: "project-memory",
-		group: "workflow",
-		description: "Checks project-memory review provenance at startup and suggests the manual `/init` audit when needed.",
-	},
-	{
-		name: "progress-tracker",
-		group: "workflow",
-		description: "Always-visible activity and context indicator above the editor; emits `agent-status:update` for observers.",
-	},
-	{
-		name: "pi-inspector-bridge",
-		group: "workflow",
-		description: "Reports display-only workflow status whenever a local observer is discoverable.",
-	},
-	{
-		name: "interrupt-confirmation",
-		group: "guardrails",
-		description: "Confirms an interrupt before it stops a running agent.",
-	},
-	{
-		name: "extension-preferences",
-		group: "config",
-		description: "Stores shared extension settings locally and provides `/extension-settings`.",
-	},
+  {
+    name: "session-dashboard",
+    group: "display",
+    description:
+      "Renders this startup welcome (Pi glyph, 30-day per-model cost chart, project context) and provides `/help` and `/context`; reads local usage history.",
+  },
+  {
+    name: "status-bar",
+    group: "display",
+    description: "Persistent status line: git, tokens, context, model, system, and quota segments.",
+  },
+  {
+    name: "usage-monitor",
+    group: "usage",
+    description:
+      "Tracks subscription quota — cached at startup, refreshed every 60s and on model/session change; `/usage-refresh`.",
+  },
+  {
+    name: "usage-history",
+    group: "usage",
+    description: "Reads local session records to render historical token and spend data with `/usage`.",
+  },
+  {
+    name: "agent-workflow",
+    group: "workflow",
+    description: "Guides one workflow loop per task, with plan persistence, close-out, and durable project memory.",
+  },
+  {
+    name: "project-memory",
+    group: "workflow",
+    description:
+      "Checks project-memory review provenance at startup and suggests the manual `/init` audit when needed.",
+  },
+  {
+    name: "progress-tracker",
+    group: "workflow",
+    description:
+      "Always-visible activity and context indicator above the editor; emits `agent-status:update` for observers.",
+  },
+  {
+    name: "pi-inspector-bridge",
+    group: "workflow",
+    description: "Reports display-only workflow status whenever a local observer is discoverable.",
+  },
+  {
+    name: "interrupt-confirmation",
+    group: "guardrails",
+    description: "Confirms an interrupt before it stops a running agent.",
+  },
+  {
+    name: "extension-preferences",
+    group: "config",
+    description: "Stores shared extension settings locally and provides `/extension-settings`.",
+  },
 ];
 
 export function presentationCoverageErrors(extensionNames: readonly string[]): string[] {
-	const active = new Set(extensionNames);
-	const presented = new Set(EXTENSION_PRESENTATIONS.map((presentation) => presentation.name));
-	const missing = extensionNames.filter((name) => !presented.has(name));
-	const inactive = EXTENSION_PRESENTATIONS.map((presentation) => presentation.name).filter((name) => !active.has(name));
-	return [
-		...missing.map((name) => `Missing presentation metadata for active extension: ${name}`),
-		...inactive.map((name) => `Presentation metadata references inactive extension: ${name}`),
-	];
+  const active = new Set(extensionNames);
+  const presented = new Set(EXTENSION_PRESENTATIONS.map((presentation) => presentation.name));
+  const missing = extensionNames.filter((name) => !presented.has(name));
+  const inactive = EXTENSION_PRESENTATIONS.map((presentation) => presentation.name).filter((name) => !active.has(name));
+  return [
+    ...missing.map((name) => `Missing presentation metadata for active extension: ${name}`),
+    ...inactive.map((name) => `Presentation metadata references inactive extension: ${name}`),
+  ];
 }
 
 /**
@@ -86,18 +90,18 @@ export function presentationCoverageErrors(extensionNames: readonly string[]): s
  * descriptions live in each extension's README, not here.
  */
 export function renderExtensionDeck(extensionNames: readonly string[]): string {
-	const active = new Set(extensionNames);
-	const labelWidth = Math.max(...EXTENSION_GROUPS.map((group) => group.title.length), "Other".length);
-	const line = (title: string, names: readonly string[]) =>
-		`**${title}**${" ".repeat(labelWidth - title.length + 2)}${names.join(" · ")}`;
-	const groups = EXTENSION_GROUPS.flatMap((group) => {
-		const names = EXTENSION_PRESENTATIONS
-			.filter((presentation) => presentation.group === group.id && active.has(presentation.name))
-			.map((presentation) => presentation.name);
-		return names.length > 0 ? [line(group.title, names)] : [];
-	});
-	const presented = new Set(EXTENSION_PRESENTATIONS.map((presentation) => presentation.name));
-	const unknown = extensionNames.filter((name) => !presented.has(name));
-	if (unknown.length > 0) groups.push(line("Other", unknown));
-	return `🧩 **Extensions** (${extensionNames.length})\n\n${groups.join("\n")}`;
+  const active = new Set(extensionNames);
+  const labelWidth = Math.max(...EXTENSION_GROUPS.map((group) => group.title.length), "Other".length);
+  const line = (title: string, names: readonly string[]) =>
+    `**${title}**${" ".repeat(labelWidth - title.length + 2)}${names.join(" · ")}`;
+  const groups = EXTENSION_GROUPS.flatMap((group) => {
+    const names = EXTENSION_PRESENTATIONS.filter(
+      (presentation) => presentation.group === group.id && active.has(presentation.name),
+    ).map((presentation) => presentation.name);
+    return names.length > 0 ? [line(group.title, names)] : [];
+  });
+  const presented = new Set(EXTENSION_PRESENTATIONS.map((presentation) => presentation.name));
+  const unknown = extensionNames.filter((name) => !presented.has(name));
+  if (unknown.length > 0) groups.push(line("Other", unknown));
+  return `🧩 **Extensions** (${extensionNames.length})\n\n${groups.join("\n")}`;
 }

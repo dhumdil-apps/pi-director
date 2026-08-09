@@ -16,7 +16,6 @@ import {
 } from "../../agent-workflow/plan-time.js";
 import type { WorkflowMode } from "../../agent-workflow/mode.js";
 
-
 const PHASE_WIDGET_ID = "workflow-phase";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const SPINNER_INTERVAL_MS = 120;
@@ -45,25 +44,14 @@ export interface IndicatorExtras {
 }
 
 /** Active shows time in this mode; idle shows age of the provider's prompt cache. */
-function durationMs(
-  working: boolean,
-  extras: IndicatorExtras | undefined,
-  now: number,
-): number | undefined {
+function durationMs(working: boolean, extras: IndicatorExtras | undefined, now: number): number | undefined {
   if (!working) {
-    return extras?.cacheStartedAt == null
-      ? undefined
-      : Math.max(0, now - extras.cacheStartedAt);
+    return extras?.cacheStartedAt == null ? undefined : Math.max(0, now - extras.cacheStartedAt);
   }
-  return extras?.runStartedAt == null
-    ? undefined
-    : Math.max(0, now - extras.runStartedAt);
+  return extras?.runStartedAt == null ? undefined : Math.max(0, now - extras.runStartedAt);
 }
 
-function timerColor(
-  working: boolean,
-  elapsedMs: number,
-): "accent" | "dim" | "warning" | "error" {
+function timerColor(working: boolean, elapsedMs: number): "accent" | "dim" | "warning" | "error" {
   if (working) return "warning";
   if (elapsedMs >= CACHE_ERROR_IDLE_MS) return "error";
   if (elapsedMs >= CACHE_WARNING_IDLE_MS) return "warning";
@@ -71,40 +59,22 @@ function timerColor(
 }
 
 /** Accumulated per-mode accounting stays visible while idle. */
-function modeBuckets(
-  working: boolean,
-  extras: IndicatorExtras | undefined,
-  now: number,
-  theme: Theme,
-): string {
+function modeBuckets(working: boolean, extras: IndicatorExtras | undefined, now: number, theme: Theme): string {
   if (extras?.planTime == null) return "";
   const currentMode = extras.mode ?? "ask";
   let time =
     working && extras.runStartedAt != null
-      ? addModeTime(
-          extras.planTime,
-          currentMode,
-          Math.max(0, now - extras.runStartedAt),
-        )
+      ? addModeTime(extras.planTime, currentMode, Math.max(0, now - extras.runStartedAt))
       : extras.planTime;
-  const openDecisionMs =
-    extras.checkpointOpenedAt == null
-      ? 0
-      : Math.max(0, now - extras.checkpointOpenedAt);
+  const openDecisionMs = extras.checkpointOpenedAt == null ? 0 : Math.max(0, now - extras.checkpointOpenedAt);
   if (openDecisionMs > 0) time = addDecisionTime(time, openDecisionMs);
   const separator = theme.fg("dim", " · ");
   const ask = theme.fg(
     currentMode === "ask" ? "accent" : "dim",
     `ask ${formatDuration(time.askMs)}${openDecisionMs >= DECISION_CAP_MS ? "+" : ""}`,
   );
-  const spec = theme.fg(
-    currentMode === "spec" ? "accent" : "dim",
-    `spec ${formatDuration(time.specMs)}`,
-  );
-  const vibe = theme.fg(
-    currentMode === "vibe" ? "accent" : "dim",
-    `vibe ${formatDuration(time.vibeMs)}`,
-  );
+  const spec = theme.fg(currentMode === "spec" ? "accent" : "dim", `spec ${formatDuration(time.specMs)}`);
+  const vibe = theme.fg(currentMode === "vibe" ? "accent" : "dim", `vibe ${formatDuration(time.vibeMs)}`);
   return `${separator}${ask}${separator}${spec}${separator}${vibe}`;
 }
 
@@ -119,18 +89,11 @@ const MODE_PROMPTS: Record<WorkflowMode, string> = {
 /** Dim while aligning, accent once executing. */
 function modeText(mode: WorkflowMode | undefined, theme: Theme): string {
   const resolved: WorkflowMode = mode ?? "ask";
-  return theme.fg(
-    resolved === "vibe" ? "accent" : "dim",
-    MODE_PROMPTS[resolved],
-  );
+  return theme.fg(resolved === "vibe" ? "accent" : "dim", MODE_PROMPTS[resolved]);
 }
 
 /** Replace pi's transient working row with a persistent workflow indicator. */
-export function updatePhaseIndicator(
-  ctx: ExtensionContext,
-  working: boolean,
-  extras?: IndicatorExtras,
-): void {
+export function updatePhaseIndicator(ctx: ExtensionContext, working: boolean, extras?: IndicatorExtras): void {
   ctx.ui.setWorkingVisible(false);
   ctx.ui.setWidget(
     PHASE_WIDGET_ID,
@@ -150,11 +113,9 @@ export function updatePhaseIndicator(
       let idleTimer: ReturnType<typeof setInterval> | undefined;
       const clock = extras?.now ?? Date.now;
       const decisionStillLive = () =>
-        extras?.checkpointOpenedAt != null &&
-        clock() - extras.checkpointOpenedAt < DECISION_CAP_MS;
+        extras?.checkpointOpenedAt != null && clock() - extras.checkpointOpenedAt < DECISION_CAP_MS;
       const cacheStillLive = () =>
-        extras?.cacheStartedAt != null &&
-        (durationMs(false, extras, clock()) ?? 0) < CACHE_ERROR_IDLE_MS;
+        extras?.cacheStartedAt != null && (durationMs(false, extras, clock()) ?? 0) < CACHE_ERROR_IDLE_MS;
       if (!working && (cacheStillLive() || decisionStillLive())) {
         idleTimer = setInterval(() => {
           if (!cacheStillLive() && !decisionStillLive()) {
@@ -169,23 +130,16 @@ export function updatePhaseIndicator(
 
       return {
         render: (width: number) => {
-          const marker = working
-            ? SPINNER_FRAMES[tick % SPINNER_FRAMES.length]
-            : IDLE_MARKER;
+          const marker = working ? SPINNER_FRAMES[tick % SPINNER_FRAMES.length] : IDLE_MARKER;
           const now = (extras?.now ?? Date.now)();
           const elapsed = durationMs(working, extras, now);
           // Active work rides the spinner; idle refreshes the cache-age timer.
           const timer =
-            elapsed === undefined ||
-            (!working && elapsed < CACHE_WARNING_IDLE_MS)
+            elapsed === undefined || (!working && elapsed < CACHE_WARNING_IDLE_MS)
               ? ""
               : theme.fg(
                   timerColor(working, elapsed),
-                  ` ${
-                    !working && elapsed >= CACHE_ERROR_IDLE_MS
-                      ? "5m+"
-                      : formatDuration(elapsed)
-                  }`,
+                  ` ${!working && elapsed >= CACHE_ERROR_IDLE_MS ? "5m+" : formatDuration(elapsed)}`,
                 );
           const buckets = modeBuckets(working, extras, now, theme);
           const status = working

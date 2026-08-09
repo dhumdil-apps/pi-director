@@ -13,26 +13,15 @@
  * Only a command handler can spawn a session, so /handoff owns this entry point.
  */
 
-import type {
-  ExtensionAPI,
-  ExtensionCommandContext,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { appendHeadlessNotice } from "./notice.js";
-import {
-  MODE_EVENT,
-  MODE_LABEL,
-  type ModeEvent,
-  type WorkflowMode,
-} from "./mode.js";
+import { MODE_EVENT, MODE_LABEL, type ModeEvent, type WorkflowMode } from "./mode.js";
 import { suppressModePicker } from "./mode-picker.js";
 import { type PlanTask, resolvePlanTask } from "./task.js";
 
 const USAGE = "Usage: /handoff [session-name].";
 
-export function handoffKickoff(
-  task: PlanTask,
-  mode: WorkflowMode = "ask",
-): string {
+export function handoffKickoff(task: PlanTask, mode: WorkflowMode = "ask"): string {
   return `Continue the task recorded at ${task.planPath} in ${MODE_LABEL[mode]} mode. Extend that same file; do not start another.`;
 }
 
@@ -55,11 +44,7 @@ export async function openHandoffSession(
     else appendHeadlessNotice(pi, ctx.mode, message, type);
   };
 
-  const { task, error } = resolvePlanTask(
-    ctx.cwd,
-    taskName,
-    ctx.sessionManager.getSessionName(),
-  );
+  const { task, error } = resolvePlanTask(ctx.cwd, taskName, ctx.sessionManager.getSessionName());
   if (error || !task) {
     notify(error ?? USAGE, "warning");
     return;

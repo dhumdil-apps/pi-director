@@ -19,39 +19,15 @@ import {
   truncateToWidth,
   visibleWidth,
 } from "@earendil-works/pi-tui";
-import {
-  buildContextBreakdown,
-  type ContextFile,
-} from "./context-breakdown.js";
+import { buildContextBreakdown, type ContextFile } from "./context-breakdown.js";
 import { renderHelp } from "./help.js";
 import { collectUsageData } from "../usage-history/data.js";
-import {
-  buildGraphModel,
-  type GraphModel,
-  renderChart,
-  TOTAL_SERIES_KEY,
-} from "../usage-history/graph.js";
-import {
-  COLOR_RESET,
-  formatAxisCost,
-  seriesColor,
-} from "../usage-history/index.js";
-import {
-  claimProjectMemoryReminder,
-  inspectProjectMemory,
-  memoryStatusNotice,
-} from "../project-memory/index.js";
-import {
-  USAGE_CHART_END,
-  USAGE_CHART_START,
-  renderWelcomeText,
-} from "./welcome.js";
+import { buildGraphModel, type GraphModel, renderChart, TOTAL_SERIES_KEY } from "../usage-history/graph.js";
+import { COLOR_RESET, formatAxisCost, seriesColor } from "../usage-history/index.js";
+import { claimProjectMemoryReminder, inspectProjectMemory, memoryStatusNotice } from "../project-memory/index.js";
+import { USAGE_CHART_END, USAGE_CHART_START, renderWelcomeText } from "./welcome.js";
 
-const BUNDLE_ROOT = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "..",
-);
+const BUNDLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 const USAGE_CHART_MAX_WIDTH = 72;
 const USAGE_CHART_HEIGHT = 8;
@@ -84,10 +60,7 @@ export class UsageChartCard implements Component {
 
   render(width: number): string[] {
     if (width <= 0) return [];
-    const lines: string[] = [
-      this.titleFn("Last 30 Days") +
-        this.mutedFn(" · Per bucket cost · by model"),
-    ];
+    const lines: string[] = [this.titleFn("Last 30 Days") + this.mutedFn(" · Per bucket cost · by model")];
 
     if (this.model.groupedTotal === 0) {
       lines.push(this.dimFn("  No usage in the last 30 days"));
@@ -101,8 +74,7 @@ export class UsageChartCard implements Component {
       // Short spans use times or weekday + time so ticks stay distinct.
       // The 30-day dashboard uses dates.
       if (spanMs <= 26 * 3_600_000) return hm;
-      if (spanMs <= 8 * 24 * 3_600_000)
-        return `${d.toLocaleDateString(undefined, { weekday: "short" })} ${hm}`;
+      if (spanMs <= 8 * 24 * 3_600_000) return `${d.toLocaleDateString(undefined, { weekday: "short" })} ${hm}`;
       return d.toLocaleDateString(undefined, {
         day: "numeric",
         month: "short",
@@ -115,9 +87,7 @@ export class UsageChartCard implements Component {
       formatValue: formatAxisCost,
       formatTime,
       colorize: (seriesIndex, text) =>
-        seriesIndex < 0
-          ? this.dimFn(text)
-          : seriesColor(seriesIndex) + text + COLOR_RESET,
+        seriesIndex < 0 ? this.dimFn(text) : seriesColor(seriesIndex) + text + COLOR_RESET,
     });
     lines.push(...chart, "");
 
@@ -132,19 +102,13 @@ export class UsageChartCard implements Component {
         this.model.groupedTotal > 0
           ? ` ${this.dimFn(`${Math.round((s.total / this.model.groupedTotal) * 100)}%`)}`
           : "";
-      lines.push(
-        `  ${marker} ${padRightVis(s.label, 24)} ${padLeftVis(value, 8)}${pct}`,
-      );
+      lines.push(`  ${marker} ${padRightVis(s.label, 24)} ${padLeftVis(value, 8)}${pct}`);
     }
 
     const total = this.model.series.find((s) => s.key === TOTAL_SERIES_KEY);
     // One blank marker column keeps the row aligned with the series rows above.
     if (total)
-      lines.push(
-        this.dimFn(
-          `    ${padRightVis(total.label, 24)} ${padLeftVis(formatAxisCost(total.total), 8)}`,
-        ),
-      );
+      lines.push(this.dimFn(`    ${padRightVis(total.label, 24)} ${padLeftVis(formatAxisCost(total.total), 8)}`));
 
     return lines.map((line) => truncateToWidth(line, width, ""));
   }
@@ -158,9 +122,7 @@ export function tildify(path: string): string {
   const home = homedir();
   // A boundary check, not a bare prefix check: "/Users/alice-backup" is a
   // sibling of "/Users/alice", not a path under it.
-  return path === home || path.startsWith(`${home}/`)
-    ? `~${path.slice(home.length)}`
-    : path;
+  return path === home || path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
 }
 
 function truncateLeft(text: string, max: number): string {
@@ -168,13 +130,8 @@ function truncateLeft(text: string, max: number): string {
 }
 
 /** Keep only resolver candidates whose non-empty content Pi actually injected. */
-export function includedContextFiles(
-  contextFiles: ContextFile[],
-  systemPrompt: string,
-): ContextFile[] {
-  return contextFiles.filter(
-    (file) => file.content.length > 0 && systemPrompt.includes(file.content),
-  );
+export function includedContextFiles(contextFiles: ContextFile[], systemPrompt: string): ContextFile[] {
+  return contextFiles.filter((file) => file.content.length > 0 && systemPrompt.includes(file.content));
 }
 
 /** Path-only welcome detail: enough to establish context without duplicating /context. */
@@ -193,10 +150,7 @@ export function welcomeContextInfo(
   const paths = loaded.map((file) => `- \`${tildify(file.path)}\``);
   return {
     workingDirectory: `*${truncateLeft(tildify(cwd), 60)}*`,
-    contextFiles:
-      paths.length > 0
-        ? ["**📦 Context files**", ...paths].join("\n")
-        : undefined,
+    contextFiles: paths.length > 0 ? ["**📦 Context files**", ...paths].join("\n") : undefined,
   };
 }
 
@@ -244,20 +198,11 @@ function listPrompts(dir: string): string[] {
 /** What this bundle registers, read live from its own package.json. */
 function loadBundleResources(): BundleResources {
   try {
-    const pkg = JSON.parse(
-      readFileSync(join(BUNDLE_ROOT, "package.json"), "utf8"),
-    );
+    const pkg = JSON.parse(readFileSync(join(BUNDLE_ROOT, "package.json"), "utf8"));
     const cfg = pkg?.pi ?? {};
-    const extensions: string[] = (cfg.extensions ?? [])
-      .map(extensionName)
-      .filter(Boolean)
-      .sort();
-    const skills: string[] = (cfg.skills ?? [])
-      .flatMap((dir: string) => listSkills(join(BUNDLE_ROOT, dir)))
-      .sort();
-    const prompts: string[] = (cfg.prompts ?? [])
-      .flatMap((dir: string) => listPrompts(join(BUNDLE_ROOT, dir)))
-      .sort();
+    const extensions: string[] = (cfg.extensions ?? []).map(extensionName).filter(Boolean).sort();
+    const skills: string[] = (cfg.skills ?? []).flatMap((dir: string) => listSkills(join(BUNDLE_ROOT, dir))).sort();
+    const prompts: string[] = (cfg.prompts ?? []).flatMap((dir: string) => listPrompts(join(BUNDLE_ROOT, dir))).sort();
     return { extensions, skills, prompts };
   } catch {
     return { extensions: [], skills: [], prompts: [] };
@@ -276,8 +221,7 @@ interface AgentStatusUpdate {
 
 /** Read display-only card content from a context-free custom entry. */
 function entryText(data: unknown): string {
-  return typeof (data as Partial<DashboardEntryData> | undefined)?.content ===
-    "string"
+  return typeof (data as Partial<DashboardEntryData> | undefined)?.content === "string"
     ? (data as DashboardEntryData).content
     : "";
 }
@@ -303,8 +247,7 @@ function themedMarkdown(theme: Theme, text: string): Markdown {
       italic: (value) => theme.italic(value),
       strikethrough: (value) => value,
       underline: (value) => theme.underline(value),
-      highlightCode: (code) =>
-        code.split("\n").map((line) => theme.fg("mdCodeBlock", line)),
+      highlightCode: (code) => code.split("\n").map((line) => theme.fg("mdCodeBlock", line)),
     },
     { color: (value) => theme.fg("customMessageText", value) },
   );
@@ -329,12 +272,8 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
         return;
       }
       const beforeChart = trimmed.slice(0, chartStart).trim();
-      const json = trimmed
-        .slice(chartStart + USAGE_CHART_START.length, chartEnd)
-        .trim();
-      const afterChart = trimmed
-        .slice(chartEnd + USAGE_CHART_END.length)
-        .trim();
+      const json = trimmed.slice(chartStart + USAGE_CHART_START.length, chartEnd).trim();
+      const afterChart = trimmed.slice(chartEnd + USAGE_CHART_END.length).trim();
       if (beforeChart) contentBox.addChild(markdown(beforeChart));
       try {
         const model = JSON.parse(json) as GraphModel;
@@ -367,14 +306,11 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
   });
 
   // /help renders as markdown inside the same themed box as the banner.
-  pi.registerEntryRenderer(
-    "session-dashboard-help",
-    (entry, _options, theme) => {
-      const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
-      box.addChild(themedMarkdown(theme, entryText(entry.data)));
-      return box;
-    },
-  );
+  pi.registerEntryRenderer("session-dashboard-help", (entry, _options, theme) => {
+    const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
+    box.addChild(themedMarkdown(theme, entryText(entry.data)));
+    return box;
+  });
 
   pi.registerCommand("help", {
     description: "List the bundle's extensions, commands, and shortcuts",
@@ -392,13 +328,11 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
     box.addChild(themedMarkdown(theme, entryText(data)));
     return box;
   };
-  pi.registerEntryRenderer(
-    "session-dashboard-context",
-    (entry, _options, theme) => renderContextCard(entry.data, theme),
+  pi.registerEntryRenderer("session-dashboard-context", (entry, _options, theme) =>
+    renderContextCard(entry.data, theme),
   );
-  pi.registerEntryRenderer(
-    "session-dashboard-context-reminder",
-    (entry, _options, theme) => renderContextCard(entry.data, theme),
+  pi.registerEntryRenderer("session-dashboard-context-reminder", (entry, _options, theme) =>
+    renderContextCard(entry.data, theme),
   );
 
   function contextBreakdownContent(
@@ -419,8 +353,7 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
   }
 
   pi.registerCommand("context", {
-    description:
-      "Break the context window down by source: prompt, context files, skills, tools, conversation",
+    description: "Break the context window down by source: prompt, context files, skills, tools, conversation",
     handler: async (_args, ctx) => {
       const options = ctx.getSystemPromptOptions();
       const entries = ctx.sessionManager.buildContextEntries();
@@ -441,12 +374,7 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
   let wasWorking = false;
   pi.events?.on?.("agent-status:update", (value: unknown) => {
     const status = value as AgentStatusUpdate;
-    if (
-      status.working === false &&
-      wasWorking &&
-      status.mode === "vibe" &&
-      (status.contextUsed ?? 0) > 10_000
-    ) {
+    if (status.working === false && wasWorking && status.mode === "vibe" && (status.contextUsed ?? 0) > 10_000) {
       pi.appendEntry("session-dashboard-context-reminder", {
         content: `Context is ${Math.round(status.contextUsed! / 1_000)}k. Run \`/context\` to decide whether large contributors are justified.`,
       } satisfies DashboardEntryData);
@@ -458,9 +386,7 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
     // Purely decorative banner: in headless/print mode it would land after the
     // prompt and trigger a spurious extra turn, so interactive sessions only.
     if (!ctx.hasUI) return;
-    ctx.ui.setWidget("session-dashboard-loading", [
-      "Preparing session dashboard…",
-    ]);
+    ctx.ui.setWidget("session-dashboard-loading", ["Preparing session dashboard…"]);
     try {
       const cwd = ctx.cwd;
       // The chart and memory inspection are independent. Start both at once, then
@@ -495,17 +421,13 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
       // their content against the assembled prompt confirms what it did load.
       const contextInfo = welcomeContextInfo(cwd, ctx.getSystemPrompt());
 
-      const showMemoryNotice = memoryStatus
-        ? await claimProjectMemoryReminder(memoryStatus).catch(() => false)
-        : false;
+      const showMemoryNotice = memoryStatus ? await claimProjectMemoryReminder(memoryStatus).catch(() => false) : false;
       const welcomeText = renderWelcomeText({
         usageChart,
         workingDirectory: contextInfo.workingDirectory,
         contextFiles: contextInfo.contextFiles,
         tip: "> 🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`",
-        memoryNotice: showMemoryNotice
-          ? `> ⚠️ ${memoryStatusNotice()}`
-          : undefined,
+        memoryNotice: showMemoryNotice ? `> ⚠️ ${memoryStatusNotice()}` : undefined,
       });
 
       // Custom entries persist and render in the transcript without entering

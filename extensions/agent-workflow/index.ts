@@ -9,34 +9,14 @@
  */
 
 import { writeFile } from "node:fs/promises";
-import type {
-  ExtensionAPI,
-  ExtensionCommandContext,
-  ExtensionContext,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { registerCheckpointInputResolution } from "./checkpoint.js";
 import { openHandoffSession } from "./handoff.js";
-import {
-  deriveWorkflowMode,
-  recordWorkflowMode,
-  workflowModePrompt,
-  type WorkflowMode,
-} from "./mode.js";
-import {
-  applyMode,
-  openModePicker,
-  registerModePicker,
-} from "./mode-picker.js";
+import { deriveWorkflowMode, recordWorkflowMode, workflowModePrompt, type WorkflowMode } from "./mode.js";
+import { applyMode, openModePicker, registerModePicker } from "./mode-picker.js";
 import { registerWorkflowNotices } from "./notice.js";
 import { registerQuestionnaire } from "./questionnaire.js";
-import {
-  autoSlug,
-  ensurePiState,
-  listPlanNames,
-  planPath,
-  PLAN_TEMPLATE,
-  registerTaskManagement,
-} from "./task.js";
+import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, registerTaskManagement } from "./task.js";
 
 /** Constant contract; the selected mode is injected separately. */
 const WORKFLOW_STEPS = `
@@ -146,16 +126,9 @@ export default function createExtension(pi: ExtensionAPI): void {
   // Last, so any handler that settles first has already run.
   registerModePicker(pi);
 
-  const setModeCommand =
-    (mode: WorkflowMode) =>
-    async (_args: string, ctx: ExtensionCommandContext) => {
-      await applyMode(
-        pi,
-        ctx,
-        mode,
-        deriveWorkflowMode(ctx.sessionManager.getBranch()),
-      );
-    };
+  const setModeCommand = (mode: WorkflowMode) => async (_args: string, ctx: ExtensionCommandContext) => {
+    await applyMode(pi, ctx, mode, deriveWorkflowMode(ctx.sessionManager.getBranch()));
+  };
   pi.registerCommand("ask", {
     description: "Align and decide before any work in this session",
     handler: setModeCommand("ask"),
@@ -174,8 +147,7 @@ export default function createExtension(pi: ExtensionAPI): void {
   });
 
   pi.registerCommand("handoff", {
-    description:
-      "Checkpoint the artifact and continue it in a fresh session: /handoff [session-name]",
+    description: "Checkpoint the artifact and continue it in a fresh session: /handoff [session-name]",
     getArgumentCompletions: (prefix: string) => {
       const last = prefix.trim();
       return listPlanNames(process.cwd())
@@ -205,10 +177,7 @@ export default function createExtension(pi: ExtensionAPI): void {
 }
 
 /** A session starts in Ask; nothing else ever selects a mode for the User. */
-async function ensureWorkflowMode(
-  pi: ExtensionAPI,
-  ctx: ExtensionContext,
-): Promise<WorkflowMode> {
+async function ensureWorkflowMode(pi: ExtensionAPI, ctx: ExtensionContext): Promise<WorkflowMode> {
   const existing = deriveWorkflowMode(ctx.sessionManager.getBranch());
   if (existing) return existing;
   recordWorkflowMode(pi, "ask");
@@ -216,23 +185,15 @@ async function ensureWorkflowMode(
 }
 
 /** Best-effort scaffold so timing and handoff have a durable file immediately. */
-async function scaffoldPlan(
-  pi: ExtensionAPI,
-  ctx: ExtensionContext,
-  prompt: string,
-): Promise<void> {
+async function scaffoldPlan(pi: ExtensionAPI, ctx: ExtensionContext, prompt: string): Promise<void> {
   if (pi.getSessionName()) return;
   const name = autoSlug(prompt, new Date());
   try {
     await ensurePiState(ctx.cwd);
-    await writeFile(
-      planPath(ctx.cwd, name),
-      PLAN_TEMPLATE.replace("<session-name>", name),
-      {
-        encoding: "utf8",
-        flag: "wx",
-      },
-    );
+    await writeFile(planPath(ctx.cwd, name), PLAN_TEMPLATE.replace("<session-name>", name), {
+      encoding: "utf8",
+      flag: "wx",
+    });
   } catch {
     return;
   }

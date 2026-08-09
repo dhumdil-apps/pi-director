@@ -24,6 +24,7 @@
 ## Verification
 
 ```bash
+npm run format:check
 npm run typecheck # tsc --noEmit (must pass with 0 errors)
 git diff --check
 ```

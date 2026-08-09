@@ -8,29 +8,29 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 function emitProvider(pi: ExtensionAPI, ctx: ExtensionContext): void {
-	const model = ctx.model;
-	if (!model) return;
+  const model = ctx.model;
+  if (!model) return;
 
-	pi.events.emit("powerbar:update", {
-		id: "provider",
-		text: model.provider,
-		color: "dim",
-		row: 1,
-	});
+  pi.events.emit("powerbar:update", {
+    id: "provider",
+    text: model.provider,
+    color: "dim",
+    row: 1,
+  });
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
-	pi.events.emit("powerbar:register-segment", { id: "provider", label: "Provider", row: 1 });
+  pi.events.emit("powerbar:register-segment", { id: "provider", label: "Provider", row: 1 });
 
-	pi.on("session_start", async (_event, ctx) => {
-		emitProvider(pi, ctx);
-	});
+  pi.on("session_start", async (_event, ctx) => {
+    emitProvider(pi, ctx);
+  });
 
-	pi.on("model_select", async (_event, ctx) => {
-		emitProvider(pi, ctx);
-	});
+  pi.on("model_select", async (_event, ctx) => {
+    emitProvider(pi, ctx);
+  });
 
-	pi.on("turn_start", async (_event, ctx) => {
-		emitProvider(pi, ctx);
-	});
+  pi.on("turn_start", async (_event, ctx) => {
+    emitProvider(pi, ctx);
+  });
 }

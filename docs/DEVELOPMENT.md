@@ -40,11 +40,12 @@ the conflict-free way to run unpublished code.
 Run the retained automated checks before committing:
 
 ```bash
+npm run format:check
 npm run typecheck
 git diff --check
 ```
 
-`npm run typecheck` checks every vendored TypeScript extension and must exit zero.
+Use `npm run format` to apply the repository style. `npm run typecheck` checks every vendored TypeScript extension and must exit zero.
 Interactive review still belongs to visual or lifecycle changes: Status Bar
 rendering, the above-editor indicator, the mode picker, and session dashboard.
 

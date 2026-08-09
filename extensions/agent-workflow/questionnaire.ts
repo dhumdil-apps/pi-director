@@ -1,7 +1,4 @@
-import type {
-  ExtensionAPI,
-  ExtensionContext,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
@@ -104,8 +101,7 @@ function pickerLabel(option: QuestionnaireOption): string {
 
 function resultText(details: QuestionnaireDetails): string {
   const answers = details.answers.map(
-    (answer) =>
-      `${answer.id}: ${answer.wasCustom ? "User wrote" : "User selected"}: ${answer.label}`,
+    (answer) => `${answer.id}: ${answer.wasCustom ? "User wrote" : "User selected"}: ${answer.label}`,
   );
   if (details.cancelled) {
     answers.push(
@@ -121,8 +117,7 @@ export function registerQuestionnaire(pi: ExtensionAPI): void {
     label: "Questionnaire",
     description:
       "Ask the User 1-4 related alignment questions through native option pickers. Use in Ask when concrete answers are possible; explain trade-offs and mark exactly one recommendation per question. Answers return in the same turn.",
-    promptSnippet:
-      "Ask focused alignment questions with recommended selectable answers",
+    promptSnippet: "Ask focused alignment questions with recommended selectable answers",
     promptGuidelines: [
       "In Ask mode, use questionnaire instead of ending with prose questions when concrete possible answers can be offered; explain trade-offs and mark one recommendation per question.",
     ],
@@ -130,13 +125,7 @@ export function registerQuestionnaire(pi: ExtensionAPI): void {
     // Native dialogs own input while open and must not race sibling tool calls.
     executionMode: "sequential",
 
-    async execute(
-      _toolCallId,
-      params: QuestionnaireInput,
-      _signal,
-      _onUpdate,
-      ctx: ExtensionContext,
-    ) {
+    async execute(_toolCallId, params: QuestionnaireInput, _signal, _onUpdate, ctx: ExtensionContext) {
       if (!ctx.hasUI) {
         throw new Error("Questionnaire requires an interactive UI.");
       }
@@ -147,10 +136,7 @@ export function registerQuestionnaire(pi: ExtensionAPI): void {
       try {
         for (const [index, question] of params.questions.entries()) {
           const options = orderedOptions(question);
-          const labels = [
-            ...options.map(pickerLabel),
-            WRITE_CUSTOM_ANSWER,
-          ];
+          const labels = [...options.map(pickerLabel), WRITE_CUSTOM_ANSWER];
           const title =
             params.questions.length === 1
               ? question.prompt
@@ -158,9 +144,7 @@ export function registerQuestionnaire(pi: ExtensionAPI): void {
 
           let answered = false;
           while (!answered) {
-            const choice = await duringUserWait(pi, "question", () =>
-              ctx.ui.select(title, labels),
-            );
+            const choice = await duringUserWait(pi, "question", () => ctx.ui.select(title, labels));
             if (choice === undefined) {
               const details: QuestionnaireDetails = {
                 answers,
@@ -190,9 +174,7 @@ export function registerQuestionnaire(pi: ExtensionAPI): void {
               continue;
             }
 
-            const selected = options.find(
-              (option) => pickerLabel(option) === choice,
-            );
+            const selected = options.find((option) => pickerLabel(option) === choice);
             if (!selected) continue;
             answers.push({
               id: question.id,
@@ -221,23 +203,14 @@ export function registerQuestionnaire(pi: ExtensionAPI): void {
     },
 
     renderCall(args, theme) {
-      const questions = Array.isArray(args.questions)
-        ? (args.questions as QuestionnaireInput["questions"])
-        : [];
+      const questions = Array.isArray(args.questions) ? (args.questions as QuestionnaireInput["questions"]) : [];
       const lines = [theme.fg("toolTitle", theme.bold("questionnaire"))];
       for (const [index, question] of questions.entries()) {
         lines.push(theme.fg("text", `${index + 1}. ${question.prompt ?? ""}`));
         if (question.context) lines.push(theme.fg("muted", `   ${question.context}`));
-        const options = Array.isArray(question.options)
-          ? orderedOptions(question)
-          : [];
+        const options = Array.isArray(question.options) ? orderedOptions(question) : [];
         for (const option of options) {
-          lines.push(
-            theme.fg(
-              "accent",
-              `   • ${option.label}${option.recommended ? RECOMMENDED_SUFFIX : ""}`,
-            ),
-          );
+          lines.push(theme.fg("accent", `   • ${option.label}${option.recommended ? RECOMMENDED_SUFFIX : ""}`));
           if (option.description) {
             lines.push(theme.fg("muted", `     ${option.description}`));
           }
