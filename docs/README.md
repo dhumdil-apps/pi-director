@@ -11,12 +11,12 @@ Use this page as the navigation map for the `pi-director` package and developmen
 
 ## Maintainer & Developer Guides
 
-- **[Development & Maintenance](DEVELOPMENT.md)** — Local development, testing, & release
+- **[Development & Maintenance](DEVELOPMENT.md)** — Local development, verification, & release
 - **[Upstream Inventory](../UPSTREAM.md)** — Upstream snapshots & license notices
 
 ## Source-of-Truth Boundaries
 
-- **Git Repository**: Source for extensions, prompts, themes, tests, and documentation.
+- **Git Repository**: Source for extensions, prompts, themes, and documentation.
 - **`~/.pi/agent/settings.json`**: Machine-local source for selected model, theme, and package source.
 - **`~/.pi/agent/settings-extensions.json`**: Global extension preferences configured via `/extension-settings`.
 - **Project Files**: User-owned `.pi/MEMORY.md`, `.pi/plan/` plans, and local configuration.

@@ -1,6 +1,6 @@
 # Development and maintenance
 
-Guide for maintainers developing, testing, and updating `pi-director`.
+Guide for maintainers developing, verifying, and updating `pi-director`.
 
 ## Maintainer Setup
 
@@ -37,42 +37,20 @@ the conflict-free way to run unpublished code.
 
 ## Verification
 
-Run typecheck and test suite before committing:
+Run the retained automated checks before committing:
 
 ```bash
-npm test
 npm run typecheck
 git diff --check
 ```
 
 `npm run typecheck` checks every vendored TypeScript extension and must exit zero.
-
-Smoke the working copy headlessly. Headless sessions deliberately get no injected
-contract, no scaffold, and no picker, so this only proves the bundle loads:
-
-```bash
-pi -p -ne -e ~/GitHub/dev/pi-stack/pi-director --tools '' --no-session "Reply exactly HEADLESS_OK"
-```
-
-Session-boundary changes need a scratch project with a seeded plan
-(`.pi/plan/demo-task.md`) and a session directory to inspect afterwards:
-
-```bash
-pi -p -ne -e ~/GitHub/dev/pi-stack/pi-director --tools '' --session-dir ./sessions "/handoff demo-task"
-```
-
-`/handoff` first drives a checkpoint turn that updates the plan file, then
-spawns. The newest file under `./sessions` must contain, in order: the checkpoint
-request naming the plan path, the `parentSession` link, an `agent-workflow:mode`
-entry, a `session_info` entry naming the task, and the kickoff user message
-carrying the real plan path.
-
-Interactive checks still belong to visual or lifecycle changes: Status Bar
+Interactive review still belongs to visual or lifecycle changes: Status Bar
 rendering, the above-editor indicator, the mode picker, and session dashboard.
 
 ## After publishing
 
-Push, then refresh and smoke the managed copy consumers actually run:
+Push, then refresh the managed copy consumers actually run:
 
 ```bash
 pi update --extension https://github.com/dhumdil-apps/pi-director && pi list
@@ -83,11 +61,10 @@ pi update --extension https://github.com/dhumdil-apps/pi-director && pi list
 1. Identify the owning repository, run `git status --short`, inspect relevant diffs, and classify matching continuation versus separate completed or unfinished work before planning changes.
 2. Read the relevant focused guide and upstream README/source.
 3. Keep extension imports compatible with the active `@earendil-works/pi-*` packages.
-4. Add focused tests for extracted state/persistence/safety logic.
-5. Update documentation whenever behavior, commands, settings, or paths change.
-6. Run full verification (`npm test`, `npm run typecheck`, headless load).
-7. Propose clear, concise commit messages. Do not commit secrets or runtime session data.
-8. Update `UPSTREAM.md` when importing or updating vendored components.
+4. Update documentation whenever behavior, commands, settings, or paths change.
+5. Run the retained automated checks and perform focused interactive review when relevant.
+6. Propose clear, concise commit messages. Do not commit secrets or runtime session data.
+7. Update `UPSTREAM.md` when importing or updating vendored components.
 
 ## Updating vendored components
 
@@ -97,7 +74,7 @@ Treat an upstream update as a merge, not a blind overwrite:
 2. Inspect the upstream changelog/source and license.
 3. Import into a temporary location or compare before replacing files.
 4. Reapply local compatibility and workflow changes deliberately.
-5. Run the component's checks plus bundle tests and load smoke.
+5. Run the retained automated checks and review the component interactively when relevant.
 6. Update its snapshot in `UPSTREAM.md`.
 
 High-risk local behavior to preserve includes explicit plan approval (save before presenting), plan-backed project-memory promotion at close-out, and `/init` remaining the only writer of review provenance.

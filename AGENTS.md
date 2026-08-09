@@ -7,7 +7,7 @@
 
 ## Focused exploration
 
-- Start with an exact source search and read the owning implementation plus its focused test before expanding to surrounding documentation. For dashboard, workflow, or extension behavior, this repository is the source of truth; consult Pi-core docs only for unresolved host API behavior or when higher-priority instructions require them.
+- Start with an exact source search and read the owning implementation plus directly relevant local evidence before expanding to surrounding documentation. For dashboard, workflow, or extension behavior, this repository is the source of truth; consult Pi-core docs only for unresolved host API behavior or when higher-priority instructions require them.
 - Keep tool output proportional to the task: bound reads to relevant sections, exclude `node_modules` and generated files from discovery, and do not repeat output already in the transcript.
 - Use `git diff --stat` before reviewing a diff, then name only task-owned paths. Do not inspect lockfiles or generated artifacts unless the task explicitly changes them.
 - After completing a task, use a fresh session or `/handoff` for independent follow-up work when context is already substantial.
@@ -24,8 +24,8 @@
 ## Verification
 
 ```bash
-npm test                          # Vitest extension unit tests
-npm run typecheck                 # tsc --noEmit (must pass with 0 errors)
-npx vitest run <test-file>        # a single test file
-pi -p --no-session --tools '' "Reply exactly HEADLESS_OK" # headless load smoke test
+npm run typecheck # tsc --noEmit (must pass with 0 errors)
+git diff --check
 ```
+
+Use focused interactive review for visual or lifecycle behavior.

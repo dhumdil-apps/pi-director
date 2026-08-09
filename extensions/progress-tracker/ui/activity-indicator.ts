@@ -16,9 +16,6 @@ import {
 } from "../../agent-workflow/plan-time.js";
 import type { WorkflowMode } from "../../agent-workflow/mode.js";
 
-// Re-exported so existing importers (and the widget's own test) keep a single entry point.
-export { contextUsageText } from "../../agent-workflow/context-usage.js";
-export { formatDuration } from "../../agent-workflow/plan-time.js";
 
 const PHASE_WIDGET_ID = "workflow-phase";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -47,17 +44,6 @@ export interface IndicatorExtras {
   now?: () => number;
 }
 
-const MODE_COLOR: Record<WorkflowMode, "dim" | "warning" | "accent"> = {
-  ask: "dim",
-  spec: "warning",
-  vibe: "accent",
-};
-
-function modeBadge(mode: WorkflowMode | undefined, theme: Theme): string {
-  if (!mode) return "";
-  return `${theme.fg(MODE_COLOR[mode], `[${mode.toUpperCase()}]`)} `;
-}
-
 /** Active shows time in this mode; idle shows age of the provider's prompt cache. */
 function durationMs(
   working: boolean,
@@ -78,7 +64,7 @@ function timerColor(
   working: boolean,
   elapsedMs: number,
 ): "accent" | "dim" | "warning" | "error" {
-  if (working) return "dim";
+  if (working) return "warning";
   if (elapsedMs >= CACHE_ERROR_IDLE_MS) return "error";
   if (elapsedMs >= CACHE_WARNING_IDLE_MS) return "warning";
   return "accent";
@@ -122,15 +108,15 @@ function modeBuckets(
   return `${separator}${ask}${separator}${spec}${separator}${vibe}`;
 }
 
-// The prompts describe the next useful User decision rather than restating the
-// mode name the badge already shows.
+// The prompts describe the next useful User decision without a separate mode
+// badge; the timing buckets keep the Ask/Spec/Vibe order visible.
 const MODE_PROMPTS: Record<WorkflowMode, string> = {
   ask: "What’s your goal?",
   spec: "Reviewing the plan",
   vibe: "What’s up next?",
 };
 
-/** Dim while aligning, accent once executing: the badge is always present. */
+/** Dim while aligning, accent once executing. */
 function modeText(mode: WorkflowMode | undefined, theme: Theme): string {
   const resolved: WorkflowMode = mode ?? "ask";
   return theme.fg(
@@ -202,10 +188,9 @@ export function updatePhaseIndicator(
                   }`,
                 );
           const buckets = modeBuckets(working, extras, now, theme);
-          const badge = modeBadge(extras?.mode, theme);
           const status = working
-            ? `${theme.fg("accent", badge ? `${marker} ` : marker)}${badge}${timer}${buckets}`
-            : `${theme.fg("accent", `${marker} `)}${badge}${modeText(extras?.mode, theme)}${timer}${buckets}`;
+            ? `${theme.fg("accent", marker)}${timer}${buckets}`
+            : `${theme.fg("accent", `${marker} `)}${modeText(extras?.mode, theme)}${timer}${buckets}`;
           return [truncateToWidth(status, width)];
         },
         invalidate: () => {},

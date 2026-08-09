@@ -6,8 +6,8 @@ remain visible in the transcript without participating in LLM context.
 
 The dashboard includes one concise quick reference: `🧠 /init · 📊 /usage · ⚙️
 /extension-settings · ❓ /help`. `extensions.ts` still supplies the grouped
-metadata and descriptions for `/help`; its focused test requires an exact
-one-to-one match with the active extension manifest.
+metadata and descriptions for `/help`; keep it synchronized one-to-one with the
+active extension manifest.
 
 When the low-noise project-memory cadence allows a reminder, the dashboard
 places its concise `/init` prompt last, after the context-file list. Uncommitted

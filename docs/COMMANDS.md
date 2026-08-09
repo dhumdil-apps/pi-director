@@ -6,9 +6,9 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
 
 ## Everyday commands
 
-- **`/ask`** / **`/spec`** / **`/vibe`** — Change the session mode for future work without triggering a model turn. The above-editor badge shows the active choice. Ask aligns, Spec researches and proposes, Vibe executes; only Vibe may change project files.
+- **`/ask`** / **`/spec`** / **`/vibe`** — Change the session mode for future work without triggering a model turn. Ask aligns, Spec researches and proposes, Vibe executes; the boundary is advisory.
 - **`/mode`** — Re-open the mode picker. It normally opens on its own after every settled turn, offering the recommended next step, the other two modes, a handoff, and a `Write your own...` escape hatch.
-- **`/handoff [session-name]`** — Continue the same artifact in a fresh session, carrying the current mode. It first drives one checkpoint turn that brings the plan file up to date, so nothing is lost at the boundary. Without a name it uses the current session plan, or the lone plan under `.pi/plan/`.
+- **`/handoff [session-name]`** — Continue the same artifact in a fresh session, starting in Ask mode so the next direction is aligned first. It first drives one checkpoint turn that brings the plan file up to date, so nothing is lost at the boundary. Without a name it uses the current session plan, or the lone plan under `.pi/plan/`.
 - **`/init [full]`** — Initializes or realigns tool-agnostic shared and Pi-local instruction layers, then refreshes project memory and review provenance. It proposes approval-gated drift repairs, incrementally audits memory since the hidden reviewed commit by default, and performs a repository-wide audit with `full`.
 - **`/help`** — Full reference: commands, shortcuts, and every active extension
 - **`/extension-settings`** — Edit registered global extension settings
@@ -16,8 +16,9 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
 
 ## User-facing tools
 
+- **`questionnaire`** (Agent Workflow) — Ask 1–4 related alignment questions through native option pickers, with possible answers, explicit trade-offs, and one marked recommendation each. Custom answers and selections return to Agent in the same turn, before the workflow mode picker appears.
 - **`start_task`** (Agent Workflow) — Name this session's one artifact from context, without another User prompt. A later call with a different name is refused; a new goal belongs in a fresh session.
-- **`save_plan`** (Agent Workflow) — Persist and echo the Spec proposal, then end the turn so the mode picker carries the decision. It replaces the draft until the session has entered Vibe, and appends dated revisions after. Ask and Vibe keep the artifact current by editing it directly.
+- **`save_plan`** (Agent Workflow) — Persist and echo the Spec proposal, then end the turn so the state-aware mode picker carries the decision. It replaces only an untouched pre-execution draft and appends dated revisions after execution history exists. Ask and Vibe keep the artifact current by editing it directly.
   Close-out has no tool: durable orientation or quirks captured in the artifact may be promoted into project memory, while only `/init` advances the review marker.
 
 ## Shell and keyboard reminders
@@ -30,4 +31,4 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
   them where `Shift+Enter` does not reach Pi — VS Code's terminal being the
   common case (see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
 - `Ctrl+C` clears/cancels; `Ctrl+D` exits from an empty prompt.
-- Spec blocks project `edit`/`write` calls until the current requested increment is approved. Shell and unknown custom mutation receive a warning because they cannot be classified reliably; action-specific permission remains conversational.
+- Ask/Spec/Vibe execution guidance is advisory; action-specific permission remains conversational.

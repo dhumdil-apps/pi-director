@@ -19,7 +19,6 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { appendHeadlessNotice } from "./notice.js";
 import {
-  deriveWorkflowMode,
   MODE_EVENT,
   MODE_LABEL,
   type ModeEvent,
@@ -50,7 +49,6 @@ export async function openHandoffSession(
   pi: ExtensionAPI,
   ctx: ExtensionCommandContext,
   taskName?: string,
-  requestedMode?: WorkflowMode,
 ): Promise<void> {
   const notify = (message: string, type: "info" | "warning") => {
     if (ctx.hasUI) ctx.ui.notify(message, type);
@@ -67,10 +65,8 @@ export async function openHandoffSession(
     return;
   }
 
-  const mode =
-    requestedMode ??
-    deriveWorkflowMode(ctx.sessionManager.getBranch()) ??
-    "ask";
+  // A fresh session must realign the next direction before it resumes work.
+  const mode: WorkflowMode = "ask";
 
   // pi.sendUserMessage only queues the turn, so waitForIdle is what guarantees
   // the artifact is written before the session is replaced.

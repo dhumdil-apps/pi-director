@@ -7,10 +7,8 @@
  * fully unit-testable.
  */
 
-// Explicit .ts extension so plain `node --test` (type stripping) can resolve
-// this module too; pi's extension loader accepts it as well.
-import type { HourlyCell, HourlyKey, PeriodBounds, TabName } from "./data.ts";
-import { splitHourlyKey } from "./data.ts";
+import type { HourlyCell, HourlyKey, PeriodBounds, TabName } from "./data.js";
+import { splitHourlyKey } from "./data.js";
 
 // =============================================================================
 // Options and model types

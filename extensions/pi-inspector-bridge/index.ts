@@ -81,5 +81,3 @@ function resolveEndpoint(env: NodeJS.ProcessEnv = process.env, discoveryPath?: s
 }
 
 function labelFor(cwd: string): string { return cwd.split(/[\\/]/).filter(Boolean).pop() || "agent"; }
-
-export const testing = { resolveEndpoint, labelFor };

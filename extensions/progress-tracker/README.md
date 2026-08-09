@@ -6,8 +6,7 @@ renders the one thing the transcript cannot show.
 
 ## User surface
 
-- Phase indicator — one line above the editor holds a persistent `VIBE` or `SPEC`
-  badge, the marker, and the idle
+- Phase indicator — one line above the editor holds the marker and the idle
   prompt or active timing. The marker swaps for a braille spinner while the
   agent works. The spinner advances every 120 ms only during active work and is
   cleared when Pi disposes the widget. Pi's own transient activity row stays
@@ -28,22 +27,22 @@ renders the one thing the transcript cannot show.
 - Idle prompt — `What’s your goal?` (dim) in Ask or Spec, or `What’s up next?`
   (accent) once execution settles in Vibe. The first invites the next goal; the
   second invites a review, a refinement, or a clean new session for the next
-  task. It is **display only**: the prompt and badge both follow the session's
+  task. It is **display only**: the prompt follows the session's
   workflow mode, which only the User changes through the mode picker, `/ask`,
   `/spec`, `/vibe`, or a handoff seed. Mode changes are persisted as custom
   session entries excluded from model context, and pre-rename `explore`, `plan`,
   and `execute` entries fold onto Spec, Spec, and Vibe. Reloads and tree changes
   read the latest entry. The large injected contract stays constant while only a
-  tiny mode marker varies.
+  tiny per-turn mode message varies.
 - Working state — while a run is in flight the idle prompt gives way to the
-  spinner and badge followed directly by timing.
-- Work/cache timer — one compact dim readout follows the active spinner and
-  counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
-  Explore or Execute begins rather than displaying grand-total task time.
+  spinner and warning-colored active timing.
+- Work/cache timer — one compact warning-colored readout follows the active
+  spinner and counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
+  Ask, Spec, or Vibe work begins rather than displaying grand-total task time.
   Accumulated totals follow it as
-  `· explore 5s · align 12s · execute 3s`: the current work mode is accent;
-  the other work mode and Align are dim. Explore and Execute are mutually
-  exclusive Agent-work buckets. Align is capped wall-clock latency while a
+  `· ask 5s · spec 12s · vibe 3s`: the current mode is accent and the other
+  modes are dim. Ask, Spec, and Vibe are mutually exclusive Agent-work buckets.
+  Ask also contains capped wall-clock picker latency while a
   checkpoint choice is unresolved, including User thinking or idle time, and is
   not a third work mode.
 

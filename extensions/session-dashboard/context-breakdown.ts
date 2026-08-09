@@ -55,7 +55,7 @@ export interface BreakdownInput {
 	/** Provider-reported total, or null right after compaction. */
 	totalTokens?: number | null;
 	contextWindow?: number;
-	/** Home directory, for tildifying context-file paths. Injected for tests. */
+	/** Home directory used to shorten context-file paths. */
 	home?: string;
 }
 

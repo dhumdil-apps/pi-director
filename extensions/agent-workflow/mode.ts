@@ -5,8 +5,8 @@
  * it is persisted when the User picks it and read back wherever the runtime needs
  * to know which block the Agent is bound to. A session starts in Ask.
  *
- * Mode is also the edit gate (authorization.ts) and the timing bucket
- * (plan-time.ts), so it is the one piece of workflow state worth persisting.
+ * Mode is persisted workflow state and the timing bucket (plan-time.ts), so it
+ * is the one piece of workflow state worth persisting.
  */
 
 import type {

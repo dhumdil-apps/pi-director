@@ -4,8 +4,8 @@
  * A compact, constant pseudocode contract plus one tiny session-mode marker.
  * Mode belongs to the User: Ask aligns, Spec researches and proposes, Vibe
  * executes. The runtime enforces what judgment should not be trusted with — the
- * edit gate, the settled mode picker, the single artifact, and immutable plan
- * names — and leaves the rest to the contract.
+ * settled mode picker, the single artifact, and immutable plan names — and
+ * leaves mode-specific execution guidance to the contract.
  */
 
 import { writeFile } from "node:fs/promises";
@@ -14,7 +14,6 @@ import type {
   ExtensionCommandContext,
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { registerAuthorization } from "./authorization.js";
 import { registerCheckpointInputResolution } from "./checkpoint.js";
 import { openHandoffSession } from "./handoff.js";
 import {
@@ -29,6 +28,7 @@ import {
   registerModePicker,
 } from "./mode-picker.js";
 import { registerWorkflowNotices } from "./notice.js";
+import { registerQuestionnaire } from "./questionnaire.js";
 import {
   autoSlug,
   ensurePiState,
@@ -41,63 +41,97 @@ import {
 /** Constant contract; the selected mode is injected separately. */
 const WORKFLOW_STEPS = `
 MODES: ASK · SPEC · VIBE
-    Mode is the User's. The Agent works in the injected pi_workflow_mode and may
-    recommend another; it never adopts one.
 
-LOOP:
-    mode = ASK on session start
+STATE:
+    mode := injected pi_workflow_mode; ASK is the new-session default
+    artifact := this session's one .pi/plan/<name>.md
+    project_mutation_allowed := (mode = VIBE)
+    Mode belongs to the User. The Agent may recommend another mode; it never
+    adopts one.
+
+MAIN:
     WAIT for the User request
-    RUN BLOCK[mode] — never another block
-    ON settle the runtime opens the mode picker:
-        Continue with the recommended next step · Ask · Spec · Vibe ·
-        Hand off · Write your own...
-        Dismissal and "Write your own..." return to typing; the mode is unchanged.
+    RUN MODE[mode] and no other mode procedure
+    ON settle:
+        runtime opens the outcome-aware picker
+        IF User selects a mode: switch if needed; start MODE[selected]
+        IF User dismisses or enters custom input: keep mode unchanged
     REPEAT
 
-BLOCK ASK — align and decide. No mutations.
-    Until the plan file exists: read .pi/, README, and docs only; no repo search.
-    Afterwards: search as far as the request requires.
-    CALL "start_task" once, on the first request of the session.
-    Frame the work, surface assumptions and trade-offs, recommend the next mode.
-    Record what was settled under Align and Decisions.
+MODE[ASK] — align and decide:
+    ASSERT project_mutation_allowed = false
+    ON the session's first request: CALL "start_task" once
+    UNTIL artifact exists: read only .pi/, README, and docs; no repository search
+    Use "questionnaire" at least once before recommending SPEC or VIBE.
+    Ask focused questions with trade-offs and exactly one recommended option;
+    use prose only when choices cannot express the discovery needed.
+    Write answers and decisions to the artifact directly. Never end on bare
+    questions or name the next picker action in the summary.
+    CALL "recommend_next" with continue while unresolved, Vibe for clear low-risk
+    execution, or Spec for research and design.
 
-BLOCK SPEC — research and design. No mutations.
-    Establish facts from source and docs; code wins over memory.
-    Fill Current state, Findings, Desired state, and Approach.
-    CALL "save_plan" to persist and echo the proposal, then end the turn.
-        It replaces the draft until the session has entered VIBE, and appends a
-        dated revision after.
+MODE[SPEC] — research and design:
+    ASSERT project_mutation_allowed = false
+    Explore the owning implementation and directly relevant evidence; report findings.
+    Edit interim research or blocker state directly; keep Current state, Findings,
+    Desired state, Approach, and actionable checklist items current.
+    IF blocked: CALL BLOCKED(ASK)
+    IF research remains: CALL "recommend_next" with continue; END turn
+    CALL "save_plan" only with the completed actionable proposal; END turn
+        save_plan is Spec-only, recommends Vibe, replaces an untouched
+        pre-execution draft, and appends a dated revision after execution history.
 
-BLOCK VIBE — the only execution engine.
-    Implement the current instruction, or the persisted proposal when one exists.
-    Keep Work log and Checklist current; verify before ending.
-    RUN CLOSE_OUT.
+MODE[VIBE] — execute:
+    ASSERT project_mutation_allowed = true
+    work_queue := every unchecked item across every artifact revision
+    Implement the current instruction or persisted proposal without ignoring
+    earlier work_queue items. Edit the artifact directly; keep Work log and every
+    Checklist current.
+    IF blocked by a decision: CALL BLOCKED(ASK)
+    IF blocked by research: CALL BLOCKED(SPEC)
+    CALL CLOSE_OUT
+    IF work remains at a coherent boundary: next := phase-boundary
+    ELSE IF work remains: next := continue
+    ELSE: next := phase-boundary
+    CALL "recommend_next" with next
 
-ON BLOCKER in SPEC or VIBE:
-    STOP. Do not improvise and do not interrogate mid-turn.
-    Write the problem and the options into the artifact, state the recommended
-    resolution, and end the turn. The picker carries the decision.
+BLOCKED(destination):
+    STOP task work; do not improvise or interrogate mid-turn.
+    Record the problem, options, and recommendation in the artifact.
+    IF mode = VIBE: CALL CLOSE_OUT
+    CALL "recommend_next" with destination; END turn
 
-CLOSE_OUT — a step, not a mode.
-    Mark checklist items done, skipped, or failed.
-    Fill the sections this work touched; leave the rest.
+CLOSE_OUT:
+    FOR EACH live Checklist in every revision:
+        mark completed items [x]
+        leave pending items [ ]; annotate intentionally skipped or failed items
+        with the reason; completed work may update earlier checklist metadata
+    Update only the sections this work touched; preserve historical narrative.
     Report changed paths, verification, limitations, and open concerns.
     Promote only durable orientation and costly quirks to project memory.
     Never claim User acceptance.
 
-ARTIFACT:
-    One session owns one .pi/plan/<name>.md, created at "start_task" and extended
-    for the life of the session and its handoffs. A new goal needs a new session.
-    Every turn must leave it good enough to resume from with no transcript.
+EXPLORATION INVARIANT:
+    Begin with one decisive exact symbol/path search. Bound matches and line width;
+    read only the owning implementation and relevant evidence in small offset/limit
+    windows. Exclude node_modules, generated/vendor/cache trees, and source maps
+    unless targeted. Stop when answered; broaden only for a concrete open question.
 
-SAFETY:
+ARTIFACT INVARIANT:
+    One session owns one artifact, created by "start_task" and extended through
+    handoffs. A new goal requires a fresh session. Leave the artifact resumable
+    without the transcript after every turn.
+    Artifact writes are not project mutation. Ask, Vibe, and interim Spec edit
+    directly; only completed Spec proposals use "save_plan".
+    In a non-scaffold plan, execution history or a Close out makes follow-up a
+    dated ## Revision N. Never rewrite narrative; live checklist metadata may
+    change. Names lock after execution; never delete plans.
+
+TOOL AND SAFETY INVARIANTS:
+    Match each operation to its tool schema. After validation rejection, correct
+    the tool and arguments, retry once, and never claim a rejected mutation.
     Destructive actions, dependency changes, credentials, and external writes
-    keep their normal permission in every mode.
-
-COMMANDS:
-    /ask /spec /vibe   switch mode; starts no turn
-    /mode              re-open the picker
-    /handoff           checkpoint the artifact, then continue it in a fresh session`;
+    retain their normal permission requirements in every mode.`;
 
 /** Constant by design: the large cacheable prefix never varies per turn. */
 export function workflowPrompt(): string {
@@ -105,7 +139,7 @@ export function workflowPrompt(): string {
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
-  registerAuthorization(pi);
+  registerQuestionnaire(pi);
   registerTaskManagement(pi);
   registerCheckpointInputResolution(pi);
   registerWorkflowNotices(pi);
@@ -160,7 +194,12 @@ export default function createExtension(pi: ExtensionAPI): void {
     const mode = await ensureWorkflowMode(pi, ctx);
     await scaffoldPlan(pi, ctx, event.prompt ?? "");
     return {
-      systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt()}\n${workflowModePrompt(mode)}`,
+      systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt()}`,
+      message: {
+        customType: "agent-workflow:mode-context",
+        content: [{ type: "text", text: workflowModePrompt(mode) }],
+        display: false,
+      },
     };
   });
 }

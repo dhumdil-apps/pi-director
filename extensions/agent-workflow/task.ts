@@ -23,12 +23,14 @@ import {
 
 /**
  * A session name is `[timestamp-][TICKET-N-]slug`. The timestamp segment is read
- * first and on its own: without it, `2026-07-24--13-05-01-…` parses as the ticket
- * ID `2026-07` and the rest as the slug.
+ * first and on its own: without it, `2026-07-24T13:05:01-…` parses as the ticket
+ * ID `2026-07` and the rest as the slug. The legacy transformed timestamp is
+ * still accepted so existing plan files remain resolvable.
  */
-const TIMESTAMP = /^(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:-|$)/;
+const TIMESTAMP =
+  /^(\d{4}-\d{2}-\d{2}(?:--\d{2}-\d{2}-\d{2}|T\d{2}:\d{2}:\d{2}))(?:-|$)/i;
 const SESSION_NAME =
-  /^(?:(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})-)?(?:([a-z0-9]+-\d+)-)?([a-z0-9]+(?:-[a-z0-9]+)*)$/i;
+  /^(?:(\d{4}-\d{2}-\d{2}(?:--\d{2}-\d{2}-\d{2}|T\d{2}:\d{2}:\d{2}))-)?(?:([a-z0-9]+-\d+)-)?([a-z0-9]+(?:-[a-z0-9]+)*)$/i;
 const TICKET_ID = /\b([a-z0-9]+-\d+)\b/i;
 const MAX_SLUG_WORDS = 4;
 const PLAN_FILE = /^(.+)\.md$/;
@@ -97,8 +99,9 @@ export const MEMORY_STUB = [
 ].join("\n");
 
 const HANDOFF_USAGE = "Usage: /handoff [session-name].";
+export const PLAN_SAVED_EVENT = "agent-workflow:plan-saved";
 
-const STOP_WORDS = new Set([
+const TASK_NAME_STOP_WORDS = new Set([
   "a",
   "an",
   "and",
@@ -126,6 +129,38 @@ const STOP_WORDS = new Set([
   "would",
 ]);
 
+/** Neutral words used only while a fresh session's task is still unknown. */
+const TEMPORARY_NAME_WORDS = [
+  "amber",
+  "cedar",
+  "cobalt",
+  "coral",
+  "drift",
+  "ember",
+  "frost",
+  "harbor",
+  "indigo",
+  "juniper",
+  "meadow",
+  "mist",
+  "north",
+  "orbit",
+  "pebble",
+  "pine",
+  "quartz",
+  "ripple",
+  "solar",
+  "stone",
+  "summit",
+  "thistle",
+  "tidal",
+  "velvet",
+  "willow",
+  "wren",
+  "zephyr",
+] as const;
+const TEMPORARY_NAME_WORD_COUNT = 2;
+
 const SavePlanParams = Type.Object({
   name: Type.String({
     description:
@@ -134,7 +169,7 @@ const SavePlanParams = Type.Object({
   plan: Type.Optional(
     Type.String({
       description:
-        "The proposal as Markdown under Goal, Current state, Findings, Decisions, Desired state, Approach, Quirks, and Checklist. It replaces the draft until the session has entered Vibe, and appends a dated revision after. Omit plan to present the on-disk proposal.",
+        "The proposal as Markdown under Goal, Current state, Findings, Decisions, Desired state, Approach, Quirks, and Checklist. It replaces only an untouched pre-execution draft, and appends a dated revision after execution history exists. Omit plan to present the on-disk proposal.",
     }),
   ),
 });
@@ -147,6 +182,24 @@ const StartTaskParams = Type.Object({
 });
 
 const REVISION_HEADING = /^## Revision (\d+)\b/gm;
+
+function hasExecutionHistory(existing: string): boolean {
+  if (
+    /^## Close out$/m.test(existing) ||
+    /^## Revision \d+\b/m.test(existing)
+  ) {
+    return true;
+  }
+  const workLogStart = existing.indexOf("## Work log");
+  if (workLogStart === -1) return false;
+  const bodyStart = workLogStart + "## Work log".length;
+  const nextSection = existing.indexOf("\n## ", bodyStart);
+  const workLog = existing.slice(
+    bodyStart,
+    nextSection === -1 ? existing.length : nextSection,
+  );
+  return workLog.replace("<requested increments and what landed>", "").trim() !== "";
+}
 
 function revisionStamp(now: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
@@ -162,10 +215,26 @@ export function isScaffold(existing: string): boolean {
   return !body.replace(/^#+ .*$/gm, "").trim();
 }
 
+/** Checklist boxes are live status metadata; open work remains actionable. */
+export function planHasOpenWork(existing: string): boolean {
+  return !/^## Close out$/m.test(existing) || /^- \[ \]/m.test(existing);
+}
+
+/** Resolve the current artifact's live status without assuming a lone plan file. */
+export async function currentPlanHasOpenWork(
+  cwd: string,
+  name: string | undefined,
+): Promise<boolean> {
+  if (!name) return true;
+  const existing = await readFile(planPath(cwd, name), "utf8").catch(() => "");
+  return !existing || planHasOpenWork(existing);
+}
+
 /**
- * Before approval, the plan is one proposal the User can read and correct, so
- * every save replaces it. Once execution starts, a changed plan becomes a dated
- * revision, preserving the approved proposal and the reason it changed.
+ * Before approval, an untouched draft is one proposal the User can read and
+ * correct, so every save replaces it. Once execution starts or the artifact has
+ * execution history, a changed plan becomes a dated revision, preserving the
+ * original proposal and the reason it changed.
  */
 export function composePlan(
   existing: string,
@@ -176,7 +245,8 @@ export function composePlan(
   const next = body.trim();
   const previous = existing.trim();
   if (!next) return `${previous}\n`;
-  if (!previous || isScaffold(previous) || !appendRevision) return `${next}\n`;
+  const preserveHistory = appendRevision || hasExecutionHistory(previous);
+  if (!previous || isScaffold(previous) || !preserveHistory) return `${next}\n`;
   // Already the tail of the file: a re-presentation, not a revision.
   if (previous.endsWith(next)) return `${previous}\n`;
   const count = previous.match(REVISION_HEADING)?.length ?? 0;
@@ -201,7 +271,7 @@ export function normalizeTaskName(
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .split(/\s+/)
-    .filter((word) => word && !STOP_WORDS.has(word))
+    .filter((word) => word && !TASK_NAME_STOP_WORDS.has(word))
     .slice(0, MAX_SLUG_WORDS);
   if (words.length === 0) words.push("task", "summary");
   if (words.length === 1) words.push("task");
@@ -225,26 +295,31 @@ export function timestampPrefix(name: string | undefined): string | undefined {
 
 function stamp(now: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
-  const date = [
-    now.getFullYear(),
-    pad(now.getMonth() + 1),
-    pad(now.getDate()),
-  ].join("-");
-  const time = [
-    pad(now.getHours()),
-    pad(now.getMinutes()),
-    pad(now.getSeconds()),
-  ].join("-");
-  return `${date}--${time}`;
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
 /**
  * The name a fresh session gets before anyone knows what the task really is:
- * the local timestamp keeps `.pi/plan/` lexically time-ordered, and the words
- * from the first prompt make the file recognisable until start_task renames it.
+ * the local timestamp keeps `.pi/plan/` lexically time-ordered, while the
+ * prepared words avoid leaking an unfinished prompt into the plan filename.
  */
-export function autoSlug(prompt: string, now: Date): string {
-  return `${stamp(now)}-${normalizeTaskName(prompt)}`;
+export function autoSlug(
+  prompt: string,
+  now: Date,
+  random: () => number = Math.random,
+): string {
+  const ticket = prompt.match(TICKET_ID)?.[1]?.toUpperCase();
+  const available = [...TEMPORARY_NAME_WORDS];
+  const words: string[] = [];
+  for (let i = 0; i < TEMPORARY_NAME_WORD_COUNT; i += 1) {
+    const index = Math.min(
+      available.length - 1,
+      Math.floor(random() * available.length),
+    );
+    words.push(available.splice(index, 1)[0]);
+  }
+  const ticketPart = ticket ? `-${ticket}` : "";
+  return `${stamp(now)}${ticketPart}-${words.join("-")}`;
 }
 
 /** Create `.pi/plan/` and, when absent, a `.pi/MEMORY.md` stub. Idempotent. */
@@ -480,7 +555,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
     name: "save_plan",
     label: "Save Plan",
     description:
-      "Persist and echo the Spec proposal at .pi/plan/<session-name>.md, then end the turn so the User's mode picker carries the decision. The proposal replaces the draft until the session has entered Vibe, and appends a dated revision after. Only Spec calls save_plan; Ask and Vibe keep the artifact current by editing it directly. Plan names are immutable once execution has begun, and plan files are never deleted.",
+      "Persist and echo the Spec proposal at .pi/plan/<session-name>.md, then end the turn so the User's mode picker carries the decision. It replaces only an untouched pre-execution draft, and appends a dated revision after execution history exists. Follow-up work after execution history or Close out belongs in a bottom revision; do not rewrite earlier narrative, while live checklist status may be updated. Only Spec calls save_plan; Ask and Vibe keep the artifact current by editing it directly. Plan names are immutable once execution has begun, and plan files are never deleted.",
     parameters: SavePlanParams,
     async execute(_toolCallId, params: SavePlanInput, _signal, _onUpdate, ctx) {
       const branch = ctx.sessionManager.getBranch();
@@ -553,6 +628,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
           isError: true,
         };
       }
+      pi.appendEntry(PLAN_SAVED_EVENT, { name });
       pi.setSessionName(name);
       return {
         // Echoed inline so the User reviews exactly what is on disk, directly

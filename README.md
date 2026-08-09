@@ -45,7 +45,7 @@ pi list
 
 ## Included Features
 
-- **agent-workflow** — Three modes the User owns: Ask aligns and decides, Spec researches and proposes with `save_plan`, and Vibe is the only mode that may change project files. The Agent never switches mode; a native picker opens after every settled turn offering the recommended next step, the other modes, a handoff, and a free-text escape hatch. Every session scaffolds one `.pi/plan/<timestamp-slug>.md` and extends it for life, including across `/handoff`, which checkpoints the file before spawning. The injected block is constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
+- **agent-workflow** — Three modes the User owns: Ask aligns through a native in-turn `questionnaire`, Spec researches and proposes with `save_plan`, and Vibe is the execution-oriented mode. The mode boundary is advisory; the Agent never switches mode, and a separate native picker opens after every settled turn offering the recommended next step, the other modes, a handoff, and a free-text escape hatch. Every session scaffolds one `.pi/plan/<timestamp-slug>.md` and extends it for life, including across `/handoff`, which checkpoints the file before spawning. The injected block is constant, so the prompt prefix stays cacheable; only a tiny per-turn mode message varies. See [the agent-workflow README](extensions/agent-workflow/README.md).
 - **project-memory** — Low-noise startup check for the hidden `memory-review` commit cursor. It ignores uncommitted work, gives relevant commits a one-day grace period, and suppresses repeated reminders until both `HEAD` changes and 24 hours pass; cooldown state stays outside the repository.
 - **progress-tracker** — Above-editor per-mode Ask/Spec/Vibe timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
 - **pi-inspector skill & bridge** — Detects an authorized Pi Inspector session for browser debugging and verification, while reporting Director mode and session context back to Inspector over its display-only channel.
@@ -63,4 +63,4 @@ pi list
 
 ## Contributing & Maintenance
 
-If you want to modify, test, or contribute to `pi-director` locally, see the [Development & Maintenance Guide](docs/DEVELOPMENT.md).
+If you want to modify, verify, or contribute to `pi-director` locally, see the [Development & Maintenance Guide](docs/DEVELOPMENT.md).

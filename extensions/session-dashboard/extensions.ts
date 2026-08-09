@@ -14,8 +14,7 @@ export const EXTENSION_GROUPS = [
 
 /**
  * User-facing descriptions for every extension registered by this bundle.
- * Keep this list in sync with the live manifest; the focused test enforces
- * a one-to-one match.
+ * Keep this list in sync with the live manifest.
  */
 export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
 	{

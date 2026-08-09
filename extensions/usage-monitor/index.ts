@@ -26,7 +26,7 @@ const global = globalThis as typeof globalThis & { __piUsage?: GlobalGuard };
 export default function createExtension(pi: ExtensionAPI, deps?: Dependencies): void {
 	const resolvedDeps = deps ?? createDefaultDependencies();
 	// Prevent double-init when bundled alongside other extensions.
-	// Skip the guard when deps are explicitly provided (test mode).
+	// Explicit dependency injection creates an isolated instance.
 	if (!deps && global.__piUsage?.active) return;
 	if (!deps) global.__piUsage = { active: true };
 

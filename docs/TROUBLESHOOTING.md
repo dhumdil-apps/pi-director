@@ -6,23 +6,20 @@
    `https://github.com/dhumdil-apps/pi-director`.
 2. Run `pi list`.
 3. Run `pi update --extensions`, then restart Pi.
-4. Run the headless smoke from [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## The agent edits before we agreed on a direction
 
-Check the mode badge first. Only Vibe may change project files, so `[VIBE]` means
-edits were authorized the moment you switched. Run `/ask` or `/spec` before the
-next request when you want alignment or a proposal instead; in both, project
-`edit` and `write` calls are blocked outright. Shell and unknown custom mutations
-can only be warned about because their effects are not generically classifiable;
-interrupt and switch back if one crosses the boundary.
+Ask and Spec are advisory alignment and planning modes; Vibe is the execution-
+oriented mode. The runtime does not block project edits by mode, so if the Agent
+acts too early, use `/ask` or `/spec` and state the desired boundary explicitly.
+Destructive and external-action consent remains conversational.
 
 ## The agent switched mode on its own
 
 It cannot. Mode changes only through the picker, `/ask`, `/spec`, `/vibe`, or a
-handoff seed. If the badge looks wrong, the likeliest cause is a picker answer
-that landed on a neighbouring option — run `/mode` and choose again, or use the
-commands directly.
+handoff seed. If the prompt or timing bucket looks wrong, the likeliest cause
+is a picker answer that landed on a neighbouring option — run `/mode` and choose
+again, or use the commands directly.
 
 ## Nothing prompts before destructive commands
 
