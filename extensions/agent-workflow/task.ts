@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
+import { deriveWorkflowMode, type WorkflowMode } from "./mode.js";
 import { hasApprovedPlan } from "./phase.js";
 import { EMPTY_PLAN_TIME, readPlanTiming, stripTimeSpent, timeSpentBlock, withPlanTiming, writePlanAtomically } from "./plan-time.js";
 
@@ -50,7 +51,8 @@ function template(metadata: ArtifactMetadata, sections: string[]): string {
 }
 
 const IMPLEMENTATION_SECTIONS = [
-	"## Current state", "<how it works today>", "", "## Align", "<questions asked and how they were answered>", "",
+	"## Goal", "<the outcome this work must achieve>", "", "## Current state", "<how it works today>", "",
+	"## Align", "<questions asked and how they were answered>", "", "## Decisions", "<consequential choices made with the User>", "",
 	"## Desired state", "<what it should do instead>", "", "## Approach", "<how to get from current to desired>", "",
 	"## Quirks", "<non-obvious constraints, gotchas, key paths>", "", "## Checklist", "- [ ] <task>", "",
 	"## Close out", "### PR summary", "<concise summary>", "", "### QA steps", "<checks run and results>",
@@ -63,8 +65,17 @@ const INVESTIGATION_SECTIONS = [
 	"## Checklist", "- [ ] <task>",
 ];
 
-function templateFor(metadata: ArtifactMetadata): string {
-	return template(metadata, metadata.kind === "investigation" ? INVESTIGATION_SECTIONS : IMPLEMENTATION_SECTIONS);
+const VIBE_IMPLEMENTATION_SECTIONS = [
+	"## Goal", "<the outcome this session is building>", "", "## Direction", "<the chosen interpretation or visual direction>", "",
+	"## Work log", "<requested increments and what landed>", "", "## Quirks", "<non-obvious constraints, gotchas, key paths>", "",
+	"## Checklist", "- [ ] <task>", "", "## Close out", "### PR summary", "<concise summary>", "", "### QA steps", "<checks run and results>",
+];
+
+function templateFor(metadata: ArtifactMetadata, mode: WorkflowMode = "spec"): string {
+	const sections = metadata.kind === "investigation"
+		? INVESTIGATION_SECTIONS
+		: mode === "vibe" ? VIBE_IMPLEMENTATION_SECTIONS : IMPLEMENTATION_SECTIONS;
+	return template(metadata, sections);
 }
 
 /** Scaffolded at session start; the topics mirror the implementation path. */
@@ -72,6 +83,9 @@ export const PLAN_TEMPLATE = templateFor({ kind: "implementation" });
 
 /** Read-only work keeps evidence and conclusions, not an execution proposal. */
 export const INVESTIGATION_TEMPLATE = templateFor({ kind: "investigation" });
+
+/** Lightweight execution record for a session whose User selected Vibe. */
+export const VIBE_PLAN_TEMPLATE = templateFor({ kind: "implementation" }, "vibe");
 
 /**
  * Scaffolded alongside the first plan. Orientation maps the project; quirks record
@@ -95,7 +109,12 @@ const STOP_WORDS = new Set([
 
 const SavePlanParams = Type.Object({
 	name: Type.String({ description: "The new session name: a concise 2–4 meaningful-word summary of the work, optionally prefixed with a ticket ID (e.g. TEST-1234)." }),
-	plan: Type.Optional(Type.String({ description: "The plan as Markdown, under the headings the plan file was scaffolded with: Current state, Align, Desired state, Approach, Quirks, Checklist. Before approval, provide the complete current proposal and it replaces the draft. After execution begins, pass only material re-plan changes; they append as a dated revision and reopen approval. Use the edit tool instead for routine checklist, Quirks, and completion updates, and do not call save_plan at close-out. Omit plan to present what the Agent already wrote there." })),
+	plan: Type.Optional(Type.String({ description: "The Spec plan as Markdown under Goal, Current state, Align, Decisions, Desired state, Approach, Quirks, and Checklist. Before approval, provide the complete proposal and replace the draft. After an approved run settles, every later User-requested mutation is a dated revision and reopens approval. During uninterrupted execution, edit routine checklist, Quirks, validation fixes, and completion updates directly. Do not call save_plan in Vibe or at close-out. Omit plan to present the on-disk proposal." })),
+});
+
+const StartTaskParams = Type.Object({
+	name: Type.String({ description: "A context-informed 2–4 word task name, optionally prefixed with a ticket ID." }),
+	intent: Type.Union([Type.Literal("implementation"), Type.Literal("investigation")], { description: "Whether the outcome changes the project or only investigates and reports." }),
 });
 
 const REVISION_HEADING = /^## Revision (\d+)\b/gm;
@@ -149,6 +168,7 @@ export function composePlan(existing: string, body: string, now: Date, appendRev
 }
 
 type SavePlanInput = Static<typeof SavePlanParams>;
+type StartTaskInput = Static<typeof StartTaskParams>;
 
 export function normalizeTaskName(summary: string, currentName?: string): string {
 	const suppliedTicket = summary.match(TICKET_ID)?.[1]?.toUpperCase();
@@ -192,7 +212,7 @@ function stamp(now: Date): string {
 /**
  * The name a fresh session gets before anyone knows what the task really is:
  * the local timestamp keeps `.pi/plan/` lexically time-ordered, and the words
- * from the first prompt make the file recognisable until save_plan renames it.
+ * from the first prompt make the file recognisable until start_task renames it.
  */
 export function autoSlug(prompt: string, now: Date): string {
 	return `${stamp(now)}-${normalizeTaskName(prompt)}`;
@@ -221,6 +241,7 @@ export interface BeginTaskResult {
 	name: string;
 	path: string;
 	metadata: ArtifactMetadata;
+	resetTiming: boolean;
 }
 
 /**
@@ -228,7 +249,13 @@ export interface BeginTaskResult {
  * A follow-up implementation preserves its source investigation as a separate
  * record; ordinary initial setup renames the temporary raw-prompt scaffold.
  */
-export async function beginTask(cwd: string, current: string | undefined, summary: string, intent: TaskIntent): Promise<BeginTaskResult> {
+export async function beginTask(
+	cwd: string,
+	current: string | undefined,
+	summary: string,
+	intent: TaskIntent,
+	mode: WorkflowMode = "spec",
+): Promise<BeginTaskResult> {
 	await ensurePiState(cwd);
 	const prefix = timestampPrefix(current);
 	const previous = prefix && current ? current.slice(prefix.length + 1) : current;
@@ -247,26 +274,52 @@ export async function beginTask(cwd: string, current: string | undefined, summar
 		? { kind: "implementation", source: current }
 		: { kind: intent };
 	const path = planPath(cwd, name);
+	const distinctExistingTask = Boolean(current && sourceContents && !isScaffold(sourceContents) && current !== name);
 
-	if (followsInvestigation) {
+	if (followsInvestigation || distinctExistingTask) {
 		if (existsSync(path)) throw new Error(`A plan named ${name} already exists`);
-		const contents = templateFor(metadata).replace("<session-name>", name);
+		const contents = templateFor(metadata, mode).replace("<session-name>", name);
 		await writeFile(path, contents, { encoding: "utf8", flag: "wx" });
-		return { name, path, metadata };
+		return { name, path, metadata, resetTiming: true };
 	}
 
 	if (current) await movePlan(cwd, current, name);
 	const existing = await readFile(path, "utf8").catch(() => "");
 	if (!existing || isScaffold(existing)) {
-		const base = intent === "investigation" ? INVESTIGATION_TEMPLATE : PLAN_TEMPLATE;
+		const base = intent === "investigation" ? INVESTIGATION_TEMPLATE : mode === "vibe" ? VIBE_PLAN_TEMPLATE : PLAN_TEMPLATE;
 		const timing = readPlanTiming(existing) ?? EMPTY_PLAN_TIME;
 		await writePlanAtomically(path, withPlanTiming(base.replace("<session-name>", name), name, timing));
 	}
-	return { name, path, metadata: readArtifactMetadata(await readFile(path, "utf8")) ?? metadata };
+	return { name, path, metadata: readArtifactMetadata(await readFile(path, "utf8")) ?? metadata, resetTiming: false };
 }
 
 export function planPath(cwd: string, name: string): string {
 	return join(cwd, CONFIG_DIR_NAME, "plan", `${name}.md`);
+}
+
+/** Record an explicit mode switch without adding a section the artifact kind does not own. */
+export async function recordModeTransition(
+	cwd: string,
+	name: string,
+	mode: WorkflowMode,
+	now = new Date(),
+): Promise<boolean> {
+	const path = planPath(cwd, name);
+	const existing = await readFile(path, "utf8").catch(() => "");
+	if (!existing) return false;
+	const section = existing.includes("## Work log")
+		? "Work log"
+		: existing.includes("## Decisions") ? "Decisions" : existing.includes("## Align") ? "Align" : undefined;
+	if (!section) return false;
+	const heading = `## ${section}`;
+	const bodyStart = existing.indexOf(heading) + heading.length;
+	const nextSection = existing.indexOf("\n## ", bodyStart);
+	const insertAt = nextSection === -1 ? existing.length : nextSection;
+	const before = existing.slice(0, insertAt).trimEnd();
+	const after = existing.slice(insertAt);
+	const entry = `- ${revisionStamp(now)} — Workflow mode changed to ${mode === "vibe" ? "Vibe" : "Spec"}.`;
+	await writePlanAtomically(path, `${before}\n\n${entry}\n${after}`);
+	return true;
 }
 
 /** Unique canonical session names that own a plan file under .pi/plan/. */
@@ -334,18 +387,60 @@ export function resolvePlanTask(cwd: string, requested: string | undefined, sess
 
 export function registerTaskManagement(pi: ExtensionAPI): void {
 	pi.registerTool({
+		name: "start_task",
+		label: "Start Task",
+		description: "Apply context-informed task identity without asking the User. Call once after the bounded orientation pass, and again only when a genuinely distinct goal or implementation following an investigation needs its own preserved artifact. The current session mode selects the implementation template.",
+		parameters: StartTaskParams,
+		async execute(_toolCallId, params: StartTaskInput, _signal, _onUpdate, ctx) {
+			try {
+				const mode = deriveWorkflowMode(ctx.sessionManager.getBranch()) ?? "spec";
+				const started = await beginTask(ctx.cwd, pi.getSessionName(), params.name, params.intent as TaskIntent, mode);
+				pi.setSessionName(started.name);
+				if (started.resetTiming) pi.events.emit?.(TASK_STARTED_EVENT, { resetTiming: true } satisfies TaskStartedEvent);
+				return {
+					content: [{ type: "text" as const, text: `Task started at ${started.path} as ${started.metadata.kind} in ${mode} mode.` }],
+					details: { ...started, mode },
+				};
+			} catch (error) {
+				return {
+					content: [{ type: "text" as const, text: `Error: could not start task: ${(error as Error).message}.` }],
+					details: { error: (error as Error).message },
+					isError: true,
+				};
+			}
+		},
+	});
+
+	pi.registerTool({
 		name: "save_plan",
 		label: "Save Plan",
-		description: "Present the plan at .pi/plan/<session-name>.md for the User's decision, renaming the session to a meaningful name — the leading timestamp is kept, so plans stay time-ordered. Before approval, a complete plan replaces the draft. After execution begins, call save_plan only for a material re-plan that needs renewed approval: passed changes append as a dated revision and reopen the approval picker. Directly edit routine checklist, Quirks, and completion updates; do not call save_plan at close-out. Omit plan to present what the Agent already wrote there. Plan files belong to the User: never delete one.",
+		description: "Present a Spec plan at .pi/plan/<session-name>.md for the User's decision. Before approval, a complete plan replaces the draft and the turn ends for Proceed, Handoff, or Revise. After an approved run settles, every later User-requested mutation is appended as a dated revision and reopens approval. During uninterrupted execution, directly edit routine checklist, Quirks, validation fixes, and completion updates. Vibe never calls save_plan. Approved plan names are immutable, close-out edits directly, and plan files are never deleted.",
 		parameters: SavePlanParams,
 		async execute(_toolCallId, params: SavePlanInput, _signal, _onUpdate, ctx) {
+			const branch = ctx.sessionManager.getBranch();
+			if ((deriveWorkflowMode(branch) ?? "spec") === "vibe") {
+				return {
+					content: [{ type: "text" as const, text: "Error: Vibe updates its work log directly and never presents save_plan approval." }],
+					details: { error: "save_plan is unavailable in Vibe mode" },
+					isError: true,
+				};
+			}
 			// The session is auto-named at start, so a rename swaps the slug and keeps
 			// the timestamp: plan files stay in the order their tasks were started.
 			const current = pi.getSessionName();
 			const prefix = timestampPrefix(current);
 			const previous = prefix && current ? current.slice(prefix.length + 1) : current;
 			const slug = normalizeTaskName(params.name, previous || undefined);
-			const name = prefix ? `${prefix}-${slug}` : slug;
+			const requestedName = prefix ? `${prefix}-${slug}` : slug;
+			const currentApproved = Boolean(current && hasApprovedPlan(branch, current));
+			if (currentApproved && current !== requestedName) {
+				return {
+					content: [{ type: "text" as const, text: `Error: approved plan names are immutable; keep ${current}.` }],
+					details: { name: current, error: "approved plan name is immutable" },
+					isError: true,
+				};
+			}
+			const name = currentApproved && current ? current : requestedName;
 
 			const path = planPath(ctx.cwd, name);
 			let contents: string;
@@ -356,7 +451,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 				const timing = readPlanTiming(existing) ?? EMPTY_PLAN_TIME;
 				const metadata = readArtifactMetadata(existing);
 				if (params.plan?.trim()) {
-					const approved = hasApprovedPlan(ctx.sessionManager.getBranch(), name);
+					const approved = hasApprovedPlan(branch, name);
 					const composed = composePlan(existing, params.plan, new Date(), approved);
 					contents = withPlanTiming(withArtifactMetadata(composed, metadata), name, timing);
 				} else {
@@ -374,13 +469,12 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
 			}
 			pi.setSessionName(name);
 			return {
-				// Echoed inline so the decision is made against exactly what is on disk,
-				// and closed with the one instruction that only lands at this exact point:
-				// the approval prompt fires when the turn settles, so the turn must end here.
+				// Echoed inline so the User reviews exactly what is on disk. The approval
+				// handler aborts the turn after this result and opens the picker on settlement.
 				content: [
 					{
 						type: "text" as const,
-						text: `Plan at ${path}:\n\n${contents.trim() || "(empty)"}\n\nPlan presented — the Agent ends its turn now and awaits the User's decision. Approval arrives as a message naming this plan path.`,
+						text: `Plan at ${path}:\n\n${contents.trim() || "(empty)"}\n\nPlan presented for review. The Agent stops here; the User's Proceed, Handoff, or Revise choice follows after the turn settles.`,
 					},
 				],
 				details: { name, path, ...(readArtifactMetadata(contents) ?? { kind: "implementation" as const }) },

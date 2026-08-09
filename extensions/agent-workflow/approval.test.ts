@@ -7,8 +7,8 @@ import { withTimeSpent } from "./plan-time.js";
 
 const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
-const PROCEED = "Proceed in this session (recommended)";
-const HANDOFF = "Handoff to a fresh session";
+const PROCEED = "Proceed — execute this plan (recommended)";
+const HANDOFF = "Handoff — execute in a fresh session";
 
 function harness(cwd: string, sessionName?: string) {
 	const handlers = new Map<string, Array<(event: any, ctx: any) => any>>();
@@ -42,6 +42,7 @@ function harness(cwd: string, sessionName?: string) {
 		const select = vi.fn(async (_title: string, _options: string[]) => choice);
 		const ctx = {
 			cwd,
+			abort: vi.fn(),
 			hasUI: options.hasUI ?? true,
 			mode: options.mode ?? (options.hasUI === false ? "print" : "tui"),
 			getContextUsage: () => options.usage,
@@ -73,7 +74,8 @@ describe("approval prompt", () => {
 
 	it("arms once for a task nobody has approved", async () => {
 		const h = harness(cwd);
-		const first = await h.offer("dashboard-polish", "Revise the plan");
+		const first = await h.offer("dashboard-polish", "Revise — return to Explore");
+		expect(first.ctx.abort).toHaveBeenCalledTimes(1);
 		expect(first.select).toHaveBeenCalledTimes(1);
 		expect(h.waits()).toEqual([
 			{ waiting: true, reason: "approval" },
@@ -146,36 +148,44 @@ describe("approval prompt", () => {
 		expect(untouched).not.toHaveBeenCalled();
 	});
 
-	it("Revise and a dismissed prompt approve nothing", async () => {
-		for (const choice of ["Revise the plan", undefined]) {
-			const h = harness(cwd);
-			const { notify, setEditorText } = await h.offer("dashboard-polish", choice as never);
-			expect(notify).toHaveBeenCalledWith(expect.stringContaining("Plan not approved"), "info");
-			expect(setEditorText).not.toHaveBeenCalled();
-			expect(h.approvedTasks()).toEqual([]);
-		}
+	it("Revise changes to Explore, while dismissal approves nothing and preserves phase", async () => {
+		const revised = harness(cwd);
+		const revisedResult = await revised.offer("dashboard-polish", "Revise — return to Explore");
+		expect(revisedResult.notify).toHaveBeenCalledWith(expect.stringContaining("Plan not approved"), "info");
+		expect(revised.phases()).toEqual(["explore"]);
+		expect(revised.approvedTasks()).toEqual([]);
+
+		const dismissed = harness(cwd);
+		const dismissedResult = await dismissed.offer("dashboard-polish", undefined);
+		expect(dismissedResult.notify).toHaveBeenCalledWith(expect.stringContaining("Plan review dismissed"), "info");
+		expect(dismissed.phases()).toEqual([]);
+		expect(dismissed.approvedTasks()).toEqual([]);
 	});
 
 	it("recommends Proceed on a lean context and Handoff on a loaded or investigation-derived plan", async () => {
 		const lean = harness(cwd);
 		const { select: leanSelect } = await lean.offer("dashboard-polish", undefined);
-		expect(leanSelect.mock.calls[0]![1][0]).toBe(PROCEED);
+		expect(leanSelect.mock.calls[0]![1]).toEqual([
+			PROCEED,
+			HANDOFF,
+			"Revise — return to Explore",
+		]);
 
 		const loaded = harness(cwd);
 		const { select: loadedSelect } = await loaded.offer("dashboard-polish", undefined, {
 			// Percentage alone decides: past the warning threshold a fresh session is the recommendation.
 			usage: { tokens: 250_000, contextWindow: 1_000_000, percent: 25 },
 		});
-		expect(loadedSelect.mock.calls[0]![1][0]).toBe("Handoff to a fresh session (recommended)");
+		expect(loadedSelect.mock.calls[0]![1][0]).toBe("Handoff — execute in a fresh session (recommended)");
 
 		const derived = harness(cwd);
 		const { select: derivedSelect } = await derived.offer("dashboard-polish", undefined, { source: "cache-audit" });
-		expect(derivedSelect.mock.calls[0]![1][0]).toBe("Handoff to a fresh session (recommended)");
+		expect(derivedSelect.mock.calls[0]![1][0]).toBe("Handoff — execute in a fresh session (recommended)");
 	});
 
 	it("warns once when the working tree changes before approval, and not after it", async () => {
 		const h = harness(cwd);
-		const { ctx, notify } = await h.offer("dashboard-polish", "Revise the plan");
+		const { ctx, notify } = await h.offer("dashboard-polish", "Revise — return to Explore");
 		const mutate = async (toolName: string) => {
 			await h.handlers.get("tool_execution_start")![0]({ toolName, args: {} }, ctx);
 		};
@@ -196,30 +206,32 @@ describe("approval prompt", () => {
 		expect(quiet).not.toHaveBeenCalled();
 	});
 
-	it("records only Explore and Execute across a revision cycle", async () => {
+	it("changes phases only through approval choices", async () => {
 		const h = harness(cwd);
 		const { ctx } = await h.offer("dashboard-polish", PROCEED);
 		expect(h.phases()).toEqual(["execute"]);
 
-		await h.handlers.get("input")![0]({ source: "interactive", text: "please refine it" }, ctx);
+		expect(h.handlers.has("input")).toBe(false);
+		expect(h.phases()).toEqual(["execute"]);
+
 		await writeFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), `${planText}\n## Revision 2 — later\n\nMore.\n`);
+		await h.offer("dashboard-polish", "Revise — return to Explore");
+		expect(h.phases()).toEqual(["execute", "explore"]);
+
 		await h.offer("dashboard-polish", PROCEED);
 		expect(h.phases()).toEqual(["execute", "explore", "execute"]);
 	});
 
-	it("does not mistake the extension approval kickoff for a new exploration cycle", async () => {
+	it("does not register an input phase transition handler", async () => {
 		const h = harness(cwd);
-		await h.handlers.get("input")![0](
-			{ source: "extension", text: "Execute the approved plan..." },
-			{ sessionManager: { getBranch: () => h.branch } },
-		);
+		expect(h.handlers.has("input")).toBe(false);
 		expect(h.phases()).toEqual([]);
 	});
 
-	it("keeps an unapproved revision in Explore", async () => {
+	it("puts a revised unapproved plan in Explore", async () => {
 		const revised = harness(cwd);
-		await revised.offer("dashboard-polish", "Revise the plan");
-		expect(revised.phases()).toEqual([]);
+		await revised.offer("dashboard-polish", "Revise — return to Explore");
+		expect(revised.phases()).toEqual(["explore"]);
 	});
 
 	it("does not offer execution for an investigation record", async () => {
@@ -230,7 +242,7 @@ describe("approval prompt", () => {
 
 	it("never arms on a failed save", async () => {
 		const h = harness(cwd);
-		const { select } = await h.offer("dashboard-polish", "Revise the plan", { isError: true });
+		const { select } = await h.offer("dashboard-polish", "Revise — return to Explore", { isError: true });
 		expect(select).not.toHaveBeenCalled();
 	});
 

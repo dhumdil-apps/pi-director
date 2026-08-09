@@ -2,12 +2,13 @@
 
 This is the short operational reference. Some vendored extensions expose more
 advanced commands; follow their linked README when needed. The working flow is
-one loop per task, described in [the agent-workflow README](../extensions/agent-workflow/README.md); there is no enforced state
-machine and no session modes.
+one loop per task, described in [the agent-workflow README](../extensions/agent-workflow/README.md), with a persisted Vibe or Spec session mode.
 
 ## Everyday commands
 
-- **`/handoff [session-name]`** — Human-only session boundary: spawns a fresh session seeded with the name and a kickoff naming the approved plan's path. Without a name it uses the current session's, or the lone plan under `.pi/plan/`; with several it asks which one. The approval picker (Proceed, handoff, or revise) prefills this command on Handoff
+- **`/vibe`** / **`/spec`** — Change the session workflow for future work without triggering a model turn. The above-editor badge shows the active choice.
+- **`/execute [session-name]`** — Resolve the current plan. Vibe continues its work log immediately; Spec opens Proceed/Handoff/Revise review.
+- **`/handoff [session-name]`** — Resolve the current plan in a fresh session. Vibe transfers directly; Spec opens review with Handoff recommended. Without a name both commands use the current session plan, or the lone plan under `.pi/plan/`.
 - **`/init [full]`** — Initializes or realigns tool-agnostic shared and Pi-local instruction layers, then refreshes project memory and review provenance. It proposes approval-gated drift repairs, incrementally audits memory since the hidden reviewed commit by default, and performs a repository-wide audit with `full`.
 - **`/help`** — Full reference: commands, shortcuts, and every active extension
 - **`/extension-settings`** — Edit registered global extension settings
@@ -15,9 +16,10 @@ machine and no session modes.
 
 ## User-facing tools
 
-- **`ask`** (Agent Workflow) — Put a choice to the user as a native picker: two to four options, each a headline plus a one-sentence description, recommendation first. The full question and descriptions print in the transcript; the picker lists the headlines, so answering is one keypress
-- **`save_plan`** (Agent Workflow) — Present the plan file for the user's decision and rename the session to a meaningful name (the leading timestamp is kept). Before approval, a complete passed plan replaces the draft; after execution starts, a passed change appends to `.pi/plan/<session-name>.md` as a dated revision. Omit it to present what the agent already wrote there; either way the file's content is echoed inline
-These two are the bundle's only workflow tools. Close-out has none: the outcome is reported in the turn, and durable orientation, work-arounds, or other quirks captured in the plan are promoted into project memory (`.pi/MEMORY.md` by default), which the agent writes directly. Only `/init` advances the review marker.
+- **`start_task`** (Agent Workflow) — Apply context-informed task naming and implementation/investigation classification without another User prompt.
+- **`ask`** (Agent Workflow) — Put a consequential choice to the User as a native recommendation-first picker.
+- **`save_plan`** (Agent Workflow) — Present a Spec proposal for approval. Before initial approval it replaces the draft; later requested changes append dated revisions. Vibe updates its compact log directly and cannot call this tool.
+Close-out has no tool: durable orientation or quirks captured in the artifact may be promoted into project memory, while only `/init` advances the review marker.
 
 ## Shell and keyboard reminders
 
@@ -29,5 +31,4 @@ These two are the bundle's only workflow tools. Close-out has none: the outcome 
   them where `Shift+Enter` does not reach Pi — VS Code's terminal being the
   common case (see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
 - `Ctrl+C` clears/cancels; `Ctrl+D` exits from an empty prompt.
-- The bundle intercepts no tool calls: agent-issued commands, writes, and `curl`
-  run without a permission prompt.
+- Spec blocks project `edit`/`write` calls until the current requested increment is approved. Shell and unknown custom mutation receive a warning because they cannot be classified reliably; action-specific permission remains conversational.

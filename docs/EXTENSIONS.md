@@ -8,12 +8,12 @@ extension.
 
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
-- **Agent Workflow** — One loop per task, plan persistence, durable project memory, and the approval prompt (`save_plan`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
+- **Agent Workflow** — Session-scoped Vibe/Spec workflow, implementation/investigation artifacts, plan persistence, and native Spec review (`start_task`, `ask`, `save_plan`, `/vibe`, `/spec`, `/execute`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
 - **Project Memory** — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
-- **Progress Tracker** — Above-editor Explore/Align/Execute timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
+- **Progress Tracker** — Persistent VIBE/SPEC badge, above-editor Explore/Align/Execute timing, and the configurable Status Bar context segment. No tool or command: it observes.
 - **Pi Inspector Bridge** — Reports display-only Director phase and session status whenever a local Inspector is discoverable
 - **Session Dashboard** — Pi-glyph welcome, project-memory freshness notice, 30-day per-model spend chart, and initial context-source snapshot
 
@@ -55,20 +55,16 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 - **No workflow skill.** The Align/Explore/Execute/Close-out workflow remains a
   constant injected contract. The optional Pi Inspector skill activates only for
   applicable local browser debugging and verification.
-- **No permission gate.** Tool calls are never intercepted; destructive-action
-  consent is conversational (see [the agent-workflow README](../extensions/agent-workflow/README.md)).
-- **No managed autonomous mode.** To run Pi unsupervised, start raw Pi with
-  `pi --no-extensions` — which drops all bundle guidance.
-- **No subagents and no state machine.** Single-agent by policy, guidance over
-  rules; `/handoff` is a human-only session boundary, not a phase machine.
+- **No general permission gate.** Spec blocks unapproved source edit/write calls,
+  while destructive-action and external-action consent remains conversational.
+- **No subagents.** Vibe and Spec are persisted workflow policies for the same
+  single agent; `/handoff` remains the human-controlled session boundary.
 - **No todo tool.** Pi ships none on purpose ("they confuse models"), and a
   structured list the agent must keep in sync is ceremony rather than progress.
   What the agent is doing is visible in the transcript.
-- **No derived loop position in the prompt.** The injected block is a constant,
-  so the whole prompt prefix stays cacheable; where the session stands is never
-  restated to the model. Progress Tracker's Explore/Execute state and Align
-  latency are display-only — they never enter model context or vary the injected
-  loop.
+- **No derived loop position in the prompt.** The large injected contract stays
+  constant and cacheable. Only a tiny Vibe/Spec marker varies; Explore/Execute
+  phase and Align latency remain display-only.
 
 [UPSTREAM.md](../UPSTREAM.md) records what was vendored, what was removed and
 when, plus versions and licenses.

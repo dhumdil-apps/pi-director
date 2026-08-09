@@ -1,131 +1,166 @@
 /**
  * Agent Workflow
  *
- * One loop per task — Align, Explore, Execute, and Close out — injected as a
- * flow contract rather than a rule list. Align is a short User-visible checkpoint,
- * while Explore and Execute are the only sustained work modes. Two guarantees
- * carry the weight: nothing changes before approval, and decisions stay cheap.
- * Craft advice
- * deliberately lives in the project's AGENTS.md instead, which the prompt points
- * at, so it is stated once.
- *
- * The injected block is a constant: no per-turn position, so the whole prefix
- * stays cacheable. Saving a plan for a task nobody has approved arms the
- * approval prompt (approval.ts); a flat plan file on disk carries the task
- * across sessions. Nothing here is enforced.
- *
- * The gate is delivered on agent_settled, so it only works if the agent yields
- * the turn after save_plan. That mechanism is stated in the loop rather than
- * implied by a prohibition, restated on the save_plan result itself (task.ts),
- * and — when it is missed anyway — surfaced as a warning rather than a refusal.
+ * A compact, constant workflow contract plus one tiny session-mode marker.
+ * Vibe delegates continuous implementation; Spec retains explicit review.
+ * Approval settlement, source edit/write blocking, immutable approved names,
+ * and persisted mode state are runtime-backed; judgment-heavy boundaries stay
+ * in the model contract.
  */
 
 import { writeFile } from "node:fs/promises";
 import type {
   ExtensionAPI,
+  ExtensionCommandContext,
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { registerApproval } from "./approval.js";
+import { registerAuthorization } from "./authorization.js";
+import { registerApproval, reviewPlan } from "./approval.js";
 import { registerAsk } from "./ask.js";
 import { registerCheckpointInputResolution } from "./checkpoint.js";
-import { openHandoffSession } from "./handoff.js";
+import { handoffKickoff, openHandoffSession } from "./handoff.js";
+import {
+  deriveWorkflowMode,
+  ensureWorkflowMode,
+  recordWorkflowMode,
+  workflowModePrompt,
+  type WorkflowMode,
+} from "./mode.js";
 import { registerWorkflowNotices } from "./notice.js";
+import { recordWorkflowPhase } from "./phase.js";
 import {
   autoSlug,
   ensurePiState,
   listPlanNames,
   planPath,
+  recordModeTransition,
+  resolvePlanTask,
   PLAN_TEMPLATE,
   registerTaskManagement,
+  VIBE_PLAN_TEMPLATE,
 } from "./task.js";
 
-/** The constant workflow contract: two work modes punctuated by Align checkpoints. */
+/** Constant contract; the selected mode is injected separately. */
 const WORKFLOW_STEPS = `
-Two actors run this loop: the User (the human) and the Agent (the llm).
-Name them instead of writing "you" or "I" to prevent confusion.
+The User is the human and the Agent is the llm. The injected pi_workflow_mode is session-wide and changes only through /vibe or /spec; switching keeps the current artifact and the next work records the transition. Artifact kind is independent: implementation changes the project; investigation only reports.
 
-The workflow is Context pass → Align → Explore ↔ Align → Execute ↔ Align → Close out.
-Explore and Execute are the sustained work modes.
-Align is a short User-visible checkpoint.
-Work is either implementation, which needs an approved plan, or investigation, which ends in a report without a meaningless execution gate.
+Run Context pass → Align → Explore ↔ Align → Execute ↔ Align → Close out.
 
-  1. Context pass and Initial Align
-  - Before the initial question, the Agent inspects only the request, loaded instructions, existing session context, applicable AGENTS files, one bounded project-memory read where required, and filenames or exact matches for likely relevant .pi/plan records. Task-source discovery still waits until Align resolves.
-  - From that context, the Agent classifies the requested outcome as implementation or investigation and derives a concise meaningful task name. The initial "ask" tool call includes that task name and intent so the temporary raw-prompt scaffold is immediately renamed and given the correct template.
-  - The Agent asks one compact, high-leverage scope question even when the goal appears clear. It confirms the smallest useful outcome against a plausible alternative instead of inventing implementation choices.
-  - Align exits when the Agent can state the goal, main in/out boundary, intended outcome, and what Explore must learn.
+1. Start and orient
+- Before source discovery, use only the request, loaded instructions, session context, bounded orientation memory, and exact likely historical-plan lookups. Call "start_task" with a context-informed name and implementation/investigation intent. A distinct goal gets a new preserved artifact but inherits the session mode.
+- Discover local facts instead of asking the User. Historical plans and memory are leads to verify; code wins.
 
-  2. Explore
-  - The Agent performs read-only discovery and proposal or report formation. Project memory and historical plans supply leads to verify, not durable facts; code wins and contradicted memory is corrected in the same turn.
-  - Recall under .pi/plan/ stays bounded: search filenames and exact terms first, then read only likely records and relevant sections. Never scan the full archive by default.
-  - Preserve explicit prior User or product decisions unless the current request reopens them or current evidence conflicts. Treat implementation claims and completed status as leads to verify, and cite each reused decision's source record.
-  - For Pi behavior, inspect local source and focused tests first; open Pi-core docs only for a named host-API question local evidence leaves unresolved.
-  - The Agent discovers facts rather than asking the User to guess them. Routine findings and reversible implementation details stay uninterrupted.
-  - Default to the smallest useful evidence and review diff. Changed files do not automatically require tests; integration and QA are alternatives, not mandatory compensation.
-  - Add a unit test only when it concisely documents a non-obvious rule, edge case, service contract, or known regression; a plausible implementation bug would fail it even after typechecking; it is not duplicate coverage; and it is materially smaller and clearer than integration or QA evidence.
-  - Treat tests that merely restate implementation, assert presentation details, duplicate another layer, or require broad mocks or stubs as low value. Extend the owning suite instead of creating a new test file or a test-only production export.
-  - Use an adaptive Align checkpoint only when a decision changes scope, ownership, acceptance criteria, or an irreversible choice, or when continuing risks substantial wasted context. Adaptive asks omit task identity because the current artifact remains authoritative.
-  - For an investigation, keep its record current under Question, Align, Scope, Findings, Conclusion, Quirks, and Checklist. Finish by reporting the conclusion directly; do not call "save_plan" or offer execution of a read-only report.
+2. Vibe
+- For implementation, keep the compact Goal, Direction, Work log, Quirks, Checklist, and Close out record current, then build and verify in the same turn. Never call "save_plan" and never pause for workflow approval.
+- Ask zero questions by default. Use at most one compact "ask" per work interval only when plausible directions materially change the visible outcome; otherwise use best judgment. Follow-ups remain Vibe regardless of size until /spec. Required destructive, dependency, credential, or external-action permission remains separate.
+- New User input starts Explore; the first mutation enters Execute automatically. /execute continues the current log and /handoff moves it to a lean Vibe session.
 
-  3. Pre-execution Align (implementation only)
-  - Keep the implementation plan current under Current state, Align, Desired state, Approach, Quirks, and Checklist. A one-line change gets a one-line plan.
-  - The Agent calls "save_plan" to present the evidence-backed proposal, then ends the turn. The approval picker decides Proceed, Handoff, or Revise after the turn settles.
-  - Before approval, corrections replace the complete proposal. After approval begins, material changes append a dated revision; the session keeps one immutable plan name.
-  - If the User requests implementation after an investigation report, start a new initial Align with a distinct implementation task name. Preserve the investigation record, create a separate plan that cites it, and recommend Handoff so execution starts in a fresh session.
+3. Spec
+- Perform one compact initial Align, then evidence-backed Discovery → Design → Refinement. Use adaptive "ask" only when a decision materially changes the next work interval, scope, ownership, acceptance, or an irreversible choice.
+- For implementation, keep Goal, Current state, Align, Decisions, Desired state, Approach, Quirks, Checklist, and Close out current. A one-line change gets a one-line plan.
+- Present the complete proposal with "save_plan" and stop. Only Proceed or an approved handoff authorizes project changes; Revise returns to Explore. Plan metadata may change before approval, project files may not.
+- After a Spec run settles, every later User-requested mutation needs a complete dated revision and fresh Proceed/Handoff/Revise approval, even small polish. Fixes discovered during uninterrupted execution that are necessary to meet the approved plan remain automatic. Approved plan names never change.
 
-  4. Execute
-  - Approval arrives as an automated message naming the plan path, or as clear agreement from the User. Until then the Agent keeps the working tree untouched: no edits, writes, or mutating commands.
-  - The Agent carries out the approved plan and keeps it current with direct edits: tick checklist items as they land and record costly surprises in Quirks. Routine progress and completion updates never use "save_plan".
-  - A blocker or invalidated approach triggers adaptive Align and a material re-plan; the Agent does not guess past it. Present that changed plan with "save_plan" for renewed approval, which reopens the approval picker. Routine validation fixes within the approved approach remain in Execute.
+4. Investigation and close out
+- Investigations in either mode maintain only Question, Align, Scope, Findings, Conclusion, Quirks, and Checklist; update directly, report, and never call "save_plan" or request execution approval. Later implementation gets a distinct artifact citing the investigation.
+- During Execute, keep the artifact current automatically. Stop only for a blocker, invalidated approach, or required action permission; in Spec, any changed requested outcome returns through approval.
+- At close out, directly finish every checklist item and implementation PR summary/QA steps; investigations instead finish findings and conclusion. Report changed paths, verification, limitations, and unresolved concerns without declaring User acceptance. Promote only durable orientation or quirks to memory.`;
 
-  5. Close out
-  - The Agent starts from the current artifact: directly edit it until every checklist item is ticked or marked skipped/failed, fill the implementation plan's PR summary and QA steps, and make the report match it. Do not call "save_plan" at close-out.
-  - For implementation, report changed paths, verification, and every skipped or failed check. For investigation, report findings, conclusion, evidence limits, and open questions.
-  - Promote only durable orientation or quirks into project memory without advancing its review marker. A follow-up goal starts a new initial Align.`;
-
-/** Constant by design: nothing varies per turn, so the whole prefix is cacheable. */
+/** Constant by design: the large cacheable prefix never varies per turn. */
 export function workflowPrompt(): string {
   return `<pi_workflow>\n${WORKFLOW_STEPS}\n</pi_workflow>`;
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
+  registerAuthorization(pi);
   registerTaskManagement(pi);
   registerCheckpointInputResolution(pi);
   registerAsk(pi);
   registerApproval(pi);
   registerWorkflowNotices(pi);
 
+  const setModeCommand = (mode: WorkflowMode) => async (_args: string, ctx: ExtensionCommandContext) => {
+    const previous = deriveWorkflowMode(ctx.sessionManager.getBranch()) ?? "spec";
+    recordWorkflowMode(pi, mode);
+    const name = pi.getSessionName();
+    if (previous !== mode && name) {
+      await recordModeTransition(ctx.cwd, name, mode).catch(() => {
+        if (ctx.hasUI) ctx.ui.notify("Workflow mode changed, but its artifact log could not be updated.", "warning");
+      });
+    }
+    if (ctx.hasUI) ctx.ui.notify(`${mode === "vibe" ? "Vibe" : "Spec"} mode will apply to future work in this session.`, "info");
+  };
+  pi.registerCommand("vibe", {
+    description: "Use automatic Vibe workflow for future work in this session",
+    handler: setModeCommand("vibe"),
+  });
+  pi.registerCommand("spec", {
+    description: "Use reviewed Spec workflow for future work in this session",
+    handler: setModeCommand("spec"),
+  });
+
+  const completions = (prefix: string) => {
+    const last = prefix.trim();
+    return listPlanNames(process.cwd())
+      .filter((name) => name.startsWith(last))
+      .map((name) => ({ value: name, label: name }));
+  };
+
+  const reviewCommand = (command: "execute" | "handoff") => async (args: string, ctx: ExtensionCommandContext) => {
+    const requested = args.trim() || undefined;
+    const { task, error } = resolvePlanTask(ctx.cwd, requested, ctx.sessionManager.getSessionName());
+    if (!task) {
+      if (ctx.hasUI) ctx.ui.notify(error ?? `Usage: /${command} [session-name].`, "warning");
+      return;
+    }
+
+    const mode = deriveWorkflowMode(ctx.sessionManager.getBranch()) ?? "spec";
+    if (mode === "vibe") {
+      if (command === "handoff") await openHandoffSession(pi, ctx, task.name, "vibe");
+      else {
+        recordWorkflowPhase(pi, "execute");
+        pi.sendUserMessage(handoffKickoff(task, "vibe"));
+      }
+      return;
+    }
+
+    await reviewPlan(pi, ctx, task, {
+      preferHandoff: command === "handoff",
+      recoveryCommand: `/${command} ${task.name}`,
+      onHandoff: () => openHandoffSession(pi, ctx, task.name, "spec"),
+    });
+  };
+  pi.registerCommand("execute", {
+    description: "Execute or review the current plan: /execute [session-name]",
+    getArgumentCompletions: completions,
+    handler: reviewCommand("execute"),
+  });
   pi.registerCommand("handoff", {
-    description:
-      "Hand the approved plan to a fresh session: /handoff [session-name]",
-    getArgumentCompletions: (prefix) => {
-      const last = prefix.trim();
-      return listPlanNames(process.cwd())
-        .filter((name) => name.startsWith(last))
-        .map((name) => ({ value: name, label: name }));
-    },
-    handler: async (args, ctx) => {
-      await openHandoffSession(pi, ctx, args.trim() || undefined);
-    },
+    description: "Continue the current plan in a fresh session: /handoff [session-name]",
+    getArgumentCompletions: completions,
+    handler: reviewCommand("handoff"),
+  });
+
+  // Human input starts an exploration interval. Extension-generated approval
+  // kickoffs retain Execute and do not revoke authorization.
+  pi.on("input", async (event) => {
+    if (event.source !== "extension") recordWorkflowPhase(pi, "explore");
   });
 
   pi.on("before_agent_start", async (event, ctx) => {
-    await scaffoldPlan(pi, ctx, event.prompt ?? "");
-    return { systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt()}` };
+    const freshSession = !pi.getSessionName();
+    const mode = await ensureWorkflowMode(pi, ctx, freshSession);
+    await scaffoldPlan(pi, ctx, event.prompt ?? "", mode);
+    return { systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt()}\n${workflowModePrompt(mode)}` };
   });
 }
 
-/**
- * Give the task a plan file from its very first message, so the agent has a
- * living document to keep current instead of one that appears at step 4. Only a
- * fresh, unnamed session is scaffolded: a resumed or /handoff-seeded session
- * already carries its session name. Best-effort — an unwritable cwd must not stop
- * the turn.
- */
+/** Best-effort scaffold so timing and handoff have a durable file immediately. */
 async function scaffoldPlan(
   pi: ExtensionAPI,
   ctx: ExtensionContext,
   prompt: string,
+  mode: WorkflowMode,
 ): Promise<void> {
   if (pi.getSessionName()) return;
   const name = autoSlug(prompt, new Date());
@@ -133,7 +168,7 @@ async function scaffoldPlan(
     await ensurePiState(ctx.cwd);
     await writeFile(
       planPath(ctx.cwd, name),
-      PLAN_TEMPLATE.replace("<session-name>", name),
+      (mode === "vibe" ? VIBE_PLAN_TEMPLATE : PLAN_TEMPLATE).replace("<session-name>", name),
       { encoding: "utf8", flag: "wx" },
     );
   } catch {

@@ -24,6 +24,20 @@ describe("phase indicator", () => {
 		expect(factory({ requestRender: () => {} }, theme).render(80)).toEqual(["[accent]› [dim]What’s your goal?"]);
 	});
 
+	it("keeps the sticky session mode visible while working and idle", () => {
+		let factory: any;
+		const ctx = {
+			ui: {
+				setWorkingVisible: () => {},
+				setWidget: (_id: string, nextFactory: unknown) => { factory = nextFactory; },
+			},
+		} as any;
+		updatePhaseIndicator(ctx, false, { mode: "vibe" });
+		expect(strip(factory({ requestRender: () => {} }, theme).render(120)[0])).toContain("[accent][VIBE]");
+		updatePhaseIndicator(ctx, true, { mode: "spec" });
+		expect(strip(factory({ requestRender: () => {} }, theme).render(120)[0])).toContain("[warning][SPEC]");
+	});
+
 	it.each([
 		[{ tokens: 84_000, contextWindow: 1_000_000, percent: 8.4 }, `[accent]Context window ${bar("▃    ")} [accent]84.0k / 1.0M`],
 		[{ tokens: 940, contextWindow: 200_000, percent: 0.47 }, `[accent]Context window ${bar("     ")} [accent]940 / 200.0k`],

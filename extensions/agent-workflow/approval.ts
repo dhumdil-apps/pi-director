@@ -11,10 +11,9 @@
  * second task, or a re-plan of the same immutable session name — gets its own
  * prompt. Keying on the name alone would offer exactly one decision per session.
  *
- * Because the prompt only lands when the turn settles, an agent that keeps
- * working through save_plan skips the gate silently. The mutating-tool warning
- * below makes that visible without refusing the call: the loop is a contract,
- * not a lock, and a wrong turn the user can see is one they can stop.
+ * The authorization layer blocks source edit/write calls before approval. The
+ * local warning below remains a compatibility back-stop for a save whose host
+ * continues into another mutating call before settlement.
  */
 
 import { createHash } from "node:crypto";
@@ -23,12 +22,12 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { isLeanContext } from "./context-usage.js";
 import { stripTimeSpent } from "./plan-time.js";
-import { planPath } from "./task.js";
 import { duringUserWait } from "./user-wait.js";
 import { handoffKickoff } from "./handoff.js";
 import { appendHeadlessNotice } from "./notice.js";
-import { derivePhaseFromBranch, recordWorkflowPhase } from "./phase.js";
-import { resolvePlanTask } from "./task.js";
+import { recordAuthorization } from "./authorization.js";
+import { recordWorkflowPhase } from "./phase.js";
+import { planPath, resolvePlanTask, type PlanTask } from "./task.js";
 
 /** Content identity of a plan file; a missing file hashes as empty, never throws. */
 async function planDigest(cwd: string, task: string): Promise<string> {
@@ -41,9 +40,10 @@ async function planDigest(cwd: string, task: string): Promise<string> {
 // worst and a destructive one is exactly what this exists to surface.
 const MUTATING_TOOLS = new Set(["edit", "write", "bash"]);
 
-const PROCEED = "Proceed in this session";
-const HANDOFF = "Handoff to a fresh session";
-const REVISE = "Revise the plan";
+const PROCEED = "Proceed — execute this plan";
+const HANDOFF = "Handoff — execute in a fresh session";
+const REVISE = "Revise — return to Explore";
+const PLAN_APPROVED_EVENT = "agent-workflow:plan-approved";
 
 /**
  * ui.select takes plain string options with no initial index, so the
@@ -54,6 +54,70 @@ export function approvalOptions(lean: boolean, preferHandoff = false): string[] 
 	return lean && !preferHandoff
 		? [`${PROCEED} (recommended)`, HANDOFF, REVISE]
 		: [`${HANDOFF} (recommended)`, PROCEED, REVISE];
+}
+
+export interface PlanReviewOptions {
+	preferHandoff?: boolean;
+	/** Command handlers can spawn a replacement session; normal saves cannot. */
+	onHandoff?: () => Promise<void>;
+	/** The useful recovery command for headless plan review. */
+	recoveryCommand?: string;
+}
+
+/**
+ * Show the one native approval picker used for a saved plan and manual command
+ * recovery. Commands supply onHandoff because only their context can replace a
+ * session; the normal save path instead prepares that command in the editor.
+ */
+export async function reviewPlan(
+	pi: ExtensionAPI,
+	ctx: ExtensionContext,
+	task: PlanTask,
+	options: PlanReviewOptions = {},
+): Promise<"proceed" | "handoff" | "revise" | "dismissed"> {
+	if (!ctx.hasUI) {
+		appendHeadlessNotice(pi, ctx.mode, `Plan ready — run ${options.recoveryCommand ?? `/handoff ${task.name}`} to review and execute it.`, "info");
+		return "dismissed";
+	}
+
+	const checkpoint = openCheckpoint(pi, "approval");
+	let choice: string | undefined;
+	try {
+		choice = await duringUserWait(pi, "approval", () =>
+			ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage()), options.preferHandoff)),
+		);
+	} catch (error) {
+		resolveCheckpoint(pi, checkpoint.id, "failure");
+		throw error;
+	}
+	if (choice?.startsWith(PROCEED)) {
+		resolveCheckpoint(pi, checkpoint.id, "proceed");
+		pi.events.emit?.(PLAN_APPROVED_EVENT, { task: task.name, digest: await planDigest(ctx.cwd, task.name) });
+		recordAuthorization(pi, "approved", task.name);
+		recordWorkflowPhase(pi, "execute");
+		proceed(pi, ctx, task.name);
+		return "proceed";
+	}
+	if (choice?.startsWith(HANDOFF)) {
+		resolveCheckpoint(pi, checkpoint.id, "handoff");
+		if (options.onHandoff) await options.onHandoff();
+		else {
+			const command = `/handoff ${task.name}`;
+			if (!ctx.ui.getEditorText().trim()) ctx.ui.setEditorText(command);
+			ctx.ui.notify(`Press Enter to run ${command} in a new session.`, "info");
+		}
+		return "handoff";
+	}
+	if (choice?.startsWith(REVISE)) {
+		resolveCheckpoint(pi, checkpoint.id, "revise");
+		recordAuthorization(pi, "required", task.name);
+		recordWorkflowPhase(pi, "explore");
+		ctx.ui.notify(`Plan not approved — revise and save again, or run /handoff ${task.name}.`, "info");
+		return "revise";
+	}
+	resolveCheckpoint(pi, checkpoint.id, "dismissed");
+	ctx.ui.notify(`Plan review dismissed — choose Revise or run /handoff ${task.name} when ready.`, "info");
+	return "dismissed";
 }
 
 export function registerApproval(pi: ExtensionAPI): void {
@@ -70,13 +134,13 @@ export function registerApproval(pi: ExtensionAPI): void {
 	let unapprovedTask: string | undefined;
 	let warnedTask: string | undefined;
 
-	// A new human turn after execution starts another workflow cycle. Extension
-	// input includes our approval kickoff, which must remain in execute.
-	pi.on("input", async (event, ctx) => {
-		if (event.source === "extension") return;
-		if (derivePhaseFromBranch(ctx.sessionManager.getBranch()) === "execute") {
-			recordWorkflowPhase(pi, "explore");
-		}
+	// Manual /execute recovery uses the same picker but bypasses save_plan's
+	// settlement handler, so it publishes approval through this context-free event.
+	pi.events.on?.(PLAN_APPROVED_EVENT, (value: unknown) => {
+		const approval = value as { task?: unknown; digest?: unknown };
+		if (typeof approval.task !== "string" || typeof approval.digest !== "string") return;
+		approved = { task: approval.task, digest: approval.digest };
+		if (unapprovedTask === approval.task) unapprovedTask = undefined;
 	});
 
 	pi.on("tool_execution_end", async (event, ctx) => {
@@ -87,6 +151,9 @@ export function registerApproval(pi: ExtensionAPI): void {
 		if (details.name === approved?.task && (await planDigest(ctx.cwd, details.name)) === approved.digest) return;
 		pendingOffer = { task: details.name, preferHandoff: typeof details.source === "string" };
 		unapprovedTask = details.name;
+		// The plan result is already persisted and visible. Abort now so the host
+		// reaches agent_settled and cannot let the model work past the approval gate.
+		ctx.abort();
 	});
 
 	// Soft back-stop: notify, never reject. Silence here is the failure mode worth
@@ -104,40 +171,16 @@ export function registerApproval(pi: ExtensionAPI): void {
 		pendingOffer = undefined;
 		const { task, preferHandoff } = offer;
 
-		if (!ctx.hasUI) {
-			appendHeadlessNotice(pi, ctx.mode, `Plan saved — run /handoff ${task} to execute it in a fresh session.`, "info");
-			return;
-		}
-
-		const checkpoint = openCheckpoint(pi, "approval");
-		let choice: string | undefined;
-		try {
-			choice = await duringUserWait(pi, "approval", () =>
-				ctx.ui.select("Proceed, handoff, or revise?", approvalOptions(isLeanContext(ctx.getContextUsage()), preferHandoff)),
-			);
-		} catch (error) {
-			resolveCheckpoint(pi, checkpoint.id, "failure");
-			throw error;
-		}
-		if (choice?.startsWith(PROCEED)) {
-			resolveCheckpoint(pi, checkpoint.id, "proceed");
+		const resolved = resolvePlanTask(ctx.cwd, task, ctx.sessionManager.getSessionName()).task;
+		if (!resolved) return;
+		const outcome = await reviewPlan(pi, ctx, resolved, {
+			preferHandoff,
+			recoveryCommand: `/handoff ${task}`,
+		});
+		if (outcome === "proceed") {
 			approved = { task, digest: await planDigest(ctx.cwd, task) };
 			unapprovedTask = undefined;
-			recordWorkflowPhase(pi, "execute");
-			proceed(pi, ctx, task);
-			return;
 		}
-		if (choice?.startsWith(HANDOFF)) {
-			resolveCheckpoint(pi, checkpoint.id, "handoff");
-			// Only a command handler can spawn a session, so the handoff path hands
-			// the user the exact command — naming the task, since .pi/plan/ accumulates.
-			const command = `/handoff ${task}`;
-			if (!ctx.ui.getEditorText().trim()) ctx.ui.setEditorText(command);
-			ctx.ui.notify(`Press Enter to run ${command} in a new session.`, "info");
-			return;
-		}
-		resolveCheckpoint(pi, checkpoint.id, choice?.startsWith(REVISE) ? "revise" : "dismissed");
-		ctx.ui.notify(`Plan not approved — revise and save again, or run /handoff ${task}.`, "info");
 	});
 }
 

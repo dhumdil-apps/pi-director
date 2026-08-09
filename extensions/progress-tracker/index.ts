@@ -14,6 +14,7 @@ import type { ExtensionAPI, ExtensionContext, MessageEndEvent, SessionEntry, The
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
 import { CHECKPOINT_EVENT, deriveOpenCheckpoint, type CheckpointEvent, type OpenCheckpoint } from "../agent-workflow/checkpoint.js";
 import { derivePhaseFromBranch, normalizeWorkflowPhase, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
+import { deriveWorkflowMode, isWorkflowMode, MODE_EVENT, type ModeEvent, type WorkflowMode } from "../agent-workflow/mode.js";
 import { addDecisionTime, addPhaseTime, EMPTY_PLAN_TIME, readPlanTime, updatePlanTime, type PlanTime } from "../agent-workflow/plan-time.js";
 import { planPath, TASK_STARTED_EVENT, type TaskStartedEvent } from "../agent-workflow/task.js";
 import { contextIndicatorText } from "../agent-workflow/context-usage.js";
@@ -44,6 +45,7 @@ export default function (pi: ExtensionAPI) {
   // Display only (see phase.ts). Live transitions update immediately; persisted
   // custom entries reconstruct the latest cycle across handoffs and reloads.
   let phase: WorkflowPhase | undefined;
+  let mode: WorkflowMode | undefined;
   // Run timing. The widget re-creates its factory every refresh, so the start
   // stamp has to live here or the counter would restart at each turn boundary.
   let runStartedAt: number | undefined;
@@ -65,6 +67,13 @@ export default function (pi: ExtensionAPI) {
     if (!next) return;
     accrueUntil(Date.now());
     phase = next;
+    refreshStatus();
+  });
+
+  pi.events.on?.(MODE_EVENT, (payload: unknown) => {
+    const next = (payload as ModeEvent | undefined)?.mode;
+    if (!isWorkflowMode(next)) return;
+    mode = next;
     refreshStatus();
   });
 
@@ -95,7 +104,7 @@ export default function (pi: ExtensionAPI) {
       lastUsage = undefined;
     }
     const indicatorWorking = working && !waitingForUser;
-    updatePhaseIndicator(currentCtx, indicatorWorking, { phase, runStartedAt, planTime, cacheStartedAt, checkpointOpenedAt: openCheckpoint?.openedAt });
+    updatePhaseIndicator(currentCtx, indicatorWorking, { mode, phase, runStartedAt, planTime, cacheStartedAt, checkpointOpenedAt: openCheckpoint?.openedAt });
     if (usage && usage.tokens != null && usage.contextWindow > 0) {
       const capturedUsage = usage;
       const capturedExtras = { lastUsage, firstTurnTokens };
@@ -111,6 +120,7 @@ export default function (pi: ExtensionAPI) {
     pi.events.emit?.("agent-status:update", {
       working,
       phase,
+      mode,
       sessionName: pi.getSessionName?.(),
       contextUsed: usage?.tokens ?? undefined,
       contextMax: usage?.contextWindow ?? undefined,
@@ -136,6 +146,7 @@ export default function (pi: ExtensionAPI) {
     try {
       const branch = ctx.sessionManager.getBranch();
       phase = derivePhaseFromBranch(branch);
+      mode = deriveWorkflowMode(branch) ?? "spec";
       openCheckpoint = deriveOpenCheckpoint(branch);
       cacheStartedAt = latestAssistantTimestamp(branch);
     } catch {
@@ -154,6 +165,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     firstTurnTokens = undefined;
     phase = undefined;
+    mode = undefined;
     runStartedAt = undefined;
     planTime = undefined;
     cacheStartedAt = undefined;

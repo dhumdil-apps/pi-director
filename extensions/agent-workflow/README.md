@@ -1,169 +1,127 @@
 # Agent Workflow
 
 The injected block in [`index.ts`](index.ts) is the behavior contract. This page
-only describes it; where they disagree, the block wins.
+describes its runtime surfaces and persistence; where they disagree, the block
+wins.
 
-## The loop
+## Two independent axes
 
-Injected into every turn: **Align → Explore ↔ Align → Execute ↔ Align → Close
-out**. Explore and Execute are the sustained work modes. Align is a short,
-User-visible checkpoint that confirms intent, records consequential decisions,
-and chooses the next mode. Two guarantees carry the loop — nothing in the
-working tree changes until the User has approved a plan, and decisions are
-cheap. It is scale-invariant: a one-line change gets a one-line plan.
-Nothing is enforced.
+The first prompt of a new interactive session opens a native mode picker:
 
-Execute keeps the plan file current rather than only the transcript: the Agent
-directly edits checklist boxes as they land and writes costly surprises into
-`## Quirks`, because the plan file is the only thing a `/handoff` or a later
-session carries. Routine progress and completion updates do not use `save_plan`.
-Only a material re-plan is presented with `save_plan` for renewed approval;
-changed content reopens the approval picker. Close-out directly edits the file
-until every box is ticked or marked skipped or failed, saying the same thing the
-report says, and does not call `save_plan`. Capturing surprises as they land keeps
-long context or compaction from erasing them.
+- **Vibe** builds continuously and keeps a compact work log. It has no workflow
+  approval step.
+- **Spec** explores and presents every requested implementation increment for
+  Proceed/Handoff/Revise approval.
 
-## Tools
+The choice is session-wide and survives reloads, forks, new goals, and handoffs.
+Only `/vibe` and `/spec` change it. Those commands update future behavior and
+the persistent activity badge without triggering a model turn. Dismissed,
+headless, and legacy mode-less sessions default to Spec.
 
-- `ask` (`ask.ts`) — the cheap initial or adaptive Align checkpoint. Before the
-  initial call, the Agent performs only a bounded workflow-context pass; task
-  source still waits. The initial call includes a context-informed name and
-  `implementation` or `investigation` intent, which renames the temporary
-  scaffold and selects its template. Adaptive calls omit task identity. The
-  tool offers two to four options, each a short headline plus a
-  one-sentence description, recommendation first. Presenting the picker opens a
-  context-free checkpoint entry; normal selection, dismissal, or failure closes
-  it. User response latency accrues to Align while active work is paused.
-  A final "Write custom answer..."
-  option is appended to the picker so the User can close it and type directly
-  without triggering a new model call. That checkpoint remains open until the
-  next human input supplies or cancels the answer, including after reload. The
-  full Q&A is printed in the transcript by `renderCall`; the dialog below is a
-  plain `ctx.ui.select` over the headlines alone, so answering is one keypress.
-  Headlines must be distinct — `ui.select` returns the label, not an index.
-  Dismissing is not an error; headless is refused before the dialog, since a
-  non-TUI `select()` resolves `undefined` and would look the same.
-- `save_plan` (`task.ts`) — presents the plan and renames the session, keeping
-  the leading timestamp so `.pi/plan/` stays time-ordered. Before approval, a
-  passed complete `plan` replaces the draft so the User always reviews one
-  coherent proposal. Once the approval kickoff appears on the session branch,
-  passed changes append under `## Revision <n> — <date>`, preserving the approved
-  plan and the material scope change. An empty file or pristine scaffold takes
-  the body outright, and an already-present approved revision changes nothing.
-  During Execute, use it only to present a material re-plan that needs renewed
-  approval; changed content reopens the approval picker. Routine checklist,
-  Quirks, and completion updates use direct `edit` instead. Omit `plan` to present
-  what the agent wrote there with `edit`; either way the content is echoed inline,
-  so the decision is made against exactly what is on disk.
+Mode is separate from artifact kind:
 
-Close-out has no tool and does not call `save_plan`. It promotes durable orientation and quirks captured in the
-plan into project memory, which the agent writes directly. Close-out consolidates;
-it does not try to recall a whole session at the end. A new fact replaces the entry
-it supersedes, so memory stays a map instead of growing into a changelog. Ordinary
-close-out never advances the hidden `memory-review` marker; only `/init` certifies
-a deliberate knowledge pass.
+- **Implementation** changes the project and has close-out PR/QA evidence.
+- **Investigation** maintains Question, Align, Scope, Findings, Conclusion,
+  Quirks, and Checklist, then reports without execution approval.
 
-## Starting from what is already known
+The common loop remains **Context pass → Align → Explore ↔ Align → Execute ↔
+Align → Close out**. Explore and Execute are work phases; Align is a timed
+User-visible checkpoint, not another mode.
 
-Before Initial Align, the Agent uses the request, loaded instructions, existing
-session context, applicable `AGENTS.md` files, at most one bounded project-memory
-read where required, and bounded filename or exact-term recall under `.pi/plan/`.
-This pass classifies the outcome and derives the artifact name; it does not open
-task source. Source discovery waits until the scope checkpoint resolves. Explore
-then verifies memory and historical records rather than starting from zero.
-Historical recall remains narrow: open only likely records and relevant sections,
-never the full accumulating archive. Explicit prior User or product decisions
-remain settled unless the current request reopens them or current evidence
-conflicts; implementation observations and completed checklist status remain
-leads to verify against current code. Every reused decision names its source
-record, making inherited context reviewable.
+## Starting and asking
 
-Project memory remains the cheap orientation layer; historical plans provide
-narrow task evidence that memory intentionally does not retain. For Pi behavior,
-Explore checks local source and focused tests before Pi-core documentation;
-opening host docs requires a named API question that local evidence did not
-answer. Memory and historical implementation claims are *leads to verify, not
-facts* and carry no per-entry confidence or staleness tags that can rot. The
-single hidden review marker has a narrower role: it records only a deliberate
-`/init` audit.
-The read-only project-memory extension ignores knowledge-only commits and warns
-when relevant Git state has moved. Code remains authoritative, and an entry
-disproved during ordinary work is corrected immediately rather than waiting for
-the next audit.
+Before source discovery, the Agent is limited to the request, loaded
+instructions, existing session context, bounded orientation memory, and exact
+likely historical-plan lookups. It then calls `start_task` with a
+context-informed name and implementation/investigation intent. The tool renames
+the temporary scaffold, applies the selected template, and preserves the prior
+artifact when a distinct goal starts. Implementation following an investigation
+keeps and cites the investigation as before.
 
-## Investigation and implementation paths
+`ask` owns consequential decisions only. It renders evidence, recommendation,
+why the choice matters, and two to four distinct options before opening a native
+headline picker. Vibe asks nothing by default and permits at most one direction
+question per work interval when the visible outcome would materially differ.
+Spec uses one compact initial Align and adaptive asks only when the next work
+interval, scope, ownership, acceptance, or an irreversible choice changes.
 
-Implementation artifacts retain Current state, Align, Desired state, Approach,
-Quirks, Checklist, and a concise Close out section with PR summary and QA steps.
-They go through `save_plan` approval before project changes.
-Investigation artifacts instead retain Question, Align, Scope, Findings,
-Conclusion, Quirks, and Checklist. They are updated directly during Explore and
-finish with a report; `save_plan` does not open an execution approval for them.
-If the User later requests changes, the next initial `ask` creates a distinct
-implementation plan, preserves and cites the investigation record, and makes
-Handoff the approval recommendation.
+Question, approval, and initial-mode pickers create persisted checkpoint events.
+Their User wait pauses active work and accrues capped Align latency. Custom
+answers remain open until the next human input.
 
-At close out, fill the implementation artifact's PR summary and QA steps,
-then report changed paths, verification, and any skipped or failed checks.
+## Vibe
 
-## Evidence and review diff
+Vibe implementation artifacts contain Goal, Direction, Work log, Quirks,
+Checklist, and Close out with PR summary and QA steps. The Agent edits this log
+directly, implements, verifies, and closes out in the same turn. It never calls
+`save_plan` and the tool rejects accidental Vibe use.
 
-Default to the smallest useful evidence and review diff. Changed files do not
-automatically require tests; integration and QA are alternatives, not mandatory
-compensation.
+Every later User request inherits Vibe regardless of size until `/spec`. Normal
+destructive-action, dependency, credential, or external-write permission still
+applies; it authorizes the action rather than changing workflow mode. Human
+input records Explore and the first edit/write records Execute.
 
-Add a unit test only when it concisely documents a non-obvious rule, edge case,
-service contract, or known regression; a plausible implementation bug would fail
-it even after typechecking; it is not duplicate coverage; and it is materially
-smaller and clearer than integration or QA evidence.
+In Vibe, `/execute [session-name]` immediately continues the resolved work log.
+`/handoff [session-name]` creates a fresh Vibe session with the same task name,
+log path, and Execute display phase. Neither command opens plan approval.
 
-Tests that merely restate implementation, assert presentation details, duplicate
-another layer, or require broad mocks or stubs are low value. Extend the owning
-suite instead of creating a new test file or a test-only production export.
+## Spec
 
-## Surfaces
+Spec implementation artifacts retain Goal, Current state, Align, Decisions,
+Desired state, Approach, Quirks, Checklist, and Close out. `save_plan` persists
+and echoes the complete proposal, aborts the Agent turn, and opens the settlement
+picker:
 
-- **Auto-scaffold** (`index.ts`) — an unnamed session's first turn creates a
-  temporary `.pi/plan/<timestamp>-<first-prompt-words>.md` and a `.pi/MEMORY.md`
-  stub, then names the session after it. The initial `ask` replaces that raw
-  prompt identity with its context-informed name and template. The artifact
-  includes a script-owned `time-spent` block below its title;
-  Progress Tracker updates exact Explore and Execute work plus aggregate capped
-  Align latency whenever a run settles or checkpoint resolves. The visible
-  block prints the same breakdown for human review. `save_plan` preserves that
-  block while replacing Agent-authored sections, and approval identity excludes
-  it so a timer tick cannot trigger a new decision. Historical `planMs` is folded
-  into Explore; legacy total-only blocks migrate into Unallocated; marker-free
-  plans start at zero when next saved or settled. The memory stub is written only
-  when absent, so an existing memory is never reshaped. Best-effort: an
-  unwritable cwd is ignored rather than failing the turn.
-- **The approval picker** (`approval.ts`) — a successful `save_plan` whose plan
-  file differs from the last approved contents arms it (a SHA-256 digest, since
-  the session name is immutable and keying on it would allow only one decision
-  per session; an unchanged re-save is a mid-implementation correction and stays
-  silent). Investigation records never arm it. It opens when the turn settles:
-  *Proceed, handoff, or revise?* Context load picks the recommendation (lean →
-  Proceed, loaded → Handoff), while a plan derived from an investigation always
-  recommends Handoff. Proceed kicks off execution; Handoff prefills
-  `/handoff <session-name>`; Revise or dismissing approves nothing. The picker
-  is an `approval` checkpoint with Proceed/Handoff/Revise/dismissed outcomes.
-  Headless sessions get a context-free notice entry naming the command instead,
-  also written to stderr in print mode. Which task was approved — and the digest
-  of what was approved — is held in memory only, so a reload costs one extra
-  prompt. Display mode is separate: post-execution human
-  input records `explore` and approval records `execute`; these are custom
-  session entries excluded from model context. Historical `plan` entries map to
-  Explore. Reloads recover the latest revision cycle rather than treating the
-  first approval as permanent.
-- `/handoff [session-name]` (`handoff.ts`) — spawns a fresh session seeded with
-  the name, a display-only `execute` phase entry, and a kickoff naming the plan
-  path. The phase is seeded before replacement-session extensions initialize;
-  the kickoff remains the model's instruction. Resolution: explicit name, then
-  session name, then a lone remaining plan — several mean it asks which. Headless
-  resolution errors use the same context-free notice path and print-mode stderr.
+- `Proceed — execute this plan` authorizes and executes in the current session.
+- `Handoff — execute in a fresh session` transfers the authorized plan and Spec
+  mode to a lean replacement session.
+- `Revise — return to Explore` keeps source changes blocked.
 
-Plan files are never deleted by the agent; `.pi/plan/` is the user's to keep,
-archive, or prune, and legacy `.pi/goal/` files are ignored and preserved.
+Every ordinary User input starts a new Spec authorization interval. Read-only
+exploration and direct `.pi/plan/` or `.pi/MEMORY.md` maintenance remain
+available, but project `edit` and `write` calls are blocked until the current
+proposal is approved. Shell or unknown custom mutation cannot be classified
+reliably, so it produces one visible warning per unapproved interval. The model
+contract remains the primary guard for those tools.
+
+After a Spec run settles, any later User-requested mutation—small polish
+included—must be a dated revision and receive fresh approval. Fixes found during
+the uninterrupted approved run that are necessary to satisfy its contract stay
+automatic. Once approved, a plan name is immutable in code; attempted renames
+fail before any file move or rewrite.
+
+`/execute` and `/handoff` reopen the same native review for Spec. The former
+recommends current-session Proceed when context is lean; the latter recommends
+Handoff. A loaded context or an implementation derived from an investigation
+also recommends Handoff.
+
+## Artifacts, timing, and memory
+
+An unnamed first turn creates a timestamped temporary plan plus `.pi/MEMORY.md`
+when absent. `start_task` replaces only an untouched scaffold; a genuinely
+distinct existing task stays in the accumulating User-owned `.pi/plan/` archive.
+Plan files are never deleted automatically.
+
+Each artifact includes a script-owned `time-spent` block. Progress Tracker
+records mutually exclusive Explore/Execute work and capped Align latency.
+`save_plan` and approval hashing exclude timing changes, so a timer write cannot
+reopen review. Starting a distinct artifact resets live timing while preserving
+the earlier file.
+
+Close-out edits the current artifact directly and never calls `save_plan`.
+Implementation fills PR summary and QA steps; investigation fills findings and
+conclusion. The final report names verification, limitations, unresolved
+concerns, and skipped or failed checks without deciding acceptance for the User.
+Only durable orientation or costly quirks are promoted to project memory, and
+ordinary close-out never advances the hidden `memory-review` marker.
+
+## Evidence policy
+
+Use the smallest useful evidence and review diff. Add tests when they protect a
+non-obvious externally observable rule or regression, not to restate prose or
+implementation details. Local source and focused tests lead; memory and
+historical plans are bounded leads to verify. Pi-core documentation is opened
+only for a named host-API question local evidence cannot answer.
 
 ## Origin
 

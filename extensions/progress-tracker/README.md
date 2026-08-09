@@ -6,7 +6,8 @@ renders the one thing the transcript cannot show.
 
 ## User surface
 
-- Phase indicator — one line above the editor holds the marker plus the idle
+- Phase indicator — one line above the editor holds a persistent `VIBE` or `SPEC`
+  badge, the marker, and the idle
   prompt or active timing. The marker swaps for a braille spinner while the
   agent works. The spinner advances every 120 ms only during active work and is
   cleared when Pi disposes the widget. Pi's own transient activity row stays
@@ -27,14 +28,17 @@ renders the one thing the transcript cannot show.
 - Idle prompt — `What’s your goal?` (dim) before approval, or `What’s up next?`
   (accent) after an approved execution settles. The first invites the next goal;
   the second invites a review, a refinement, or a clean new session for the next
-  task. It is **display only**: Agent Workflow emits `agent-workflow:phase` on
-  post-execution human input (`explore`) and approval (`execute`), persisting
-  each transition as a custom session entry excluded from model context.
+  task. It is **display only**: Agent Workflow records `explore` for every
+  non-extension User message, while approval-picker Revise also records
+  `explore`, Proceed records `execute`, and Handoff seeds `execute` in the
+  replacement session. Extension-generated approval kickoffs preserve Execute;
+  registered slash commands do not emit input. These transitions are persisted
+  as custom session entries excluded from model context.
   Historical `plan` entries map to Explore. Reloads and tree changes read the
   latest entry, and `/handoff` seeds `execute` before the replacement session
   initializes; older sessions still fall back to their kickoff message. This is
-  not the retired session-mode state machine — the injected loop is one constant
-  and never varies with the prompt.
+  separate from the session's Vibe/Spec policy; the large injected loop stays
+  constant while only a tiny mode marker varies.
 - Working phase — while a run is in flight the idle prompt gives way to the
   spinner followed directly by timing; no phase label is shown.
 - Work/cache timer — one compact dim readout follows the active spinner and
@@ -63,16 +67,16 @@ renders the one thing the transcript cannot show.
   colors without another Pi event until the cap.
 
   Active intervals accrue to Explore or Execute, splitting immediately when a
-  context-free mode event lands; an initial phase-less interval counts as
+  context-free phase event lands; an initial phase-less interval counts as
   Explore. On settlement the work buckets atomically update the named plan's
   script-owned `time-spent` block. Historical Plan work folds into Explore,
   total-only history migrates to Unallocated, and marker-free legacy plans stay
   byte-identical until their next settled run. Persistence is best-effort if the
   plan is unavailable. Normal row truncation protects narrow terminals.
-- `agent-status:update` event — `working`, `phase`, `sessionName`, `contextUsed`,
+- `agent-status:update` event — `working`, `mode`, `phase`, `sessionName`, `contextUsed`,
   `contextMax`, `cacheRead`, `cacheWrite`, `cacheHitRate`, `cwd`, for observers
-  such as Pi Inspector Bridge. Inspector displays phase/session context but
-  receives no control credentials, mode, or todo state.
+  such as Pi Inspector Bridge. Inspector receives display context but no control
+  credentials or todo state.
 
 ## No todo tool
 

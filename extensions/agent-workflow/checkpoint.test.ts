@@ -39,6 +39,12 @@ describe("alignment checkpoints", () => {
 		expect(deriveOpenCheckpoint(h.branch)).toMatchObject({ kind: "approval", openedAt: 2_000 });
 	});
 
+	it("tracks the initial session-mode picker as alignment", () => {
+		const h = harness();
+		openCheckpoint(h.pi as never, "mode", 1_000);
+		expect(deriveOpenCheckpoint(h.branch)).toMatchObject({ kind: "mode", openedAt: 1_000 });
+	});
+
 	it("ignores malformed lifecycle entries", () => {
 		const malformed = [
 			{ type: "custom", customType: CHECKPOINT_EVENT, data: { action: "open", id: "bad", kind: "other", timestamp: 1_000 } },

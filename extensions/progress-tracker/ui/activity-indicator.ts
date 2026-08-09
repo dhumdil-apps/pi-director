@@ -12,6 +12,7 @@ import type {
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { addDecisionTime, addPhaseTime, DECISION_CAP_MS, formatDuration, type PlanTime } from "../../agent-workflow/plan-time.js";
 import type { WorkflowPhase } from "../../agent-workflow/phase.js";
+import type { WorkflowMode } from "../../agent-workflow/mode.js";
 
 // Re-exported so existing importers (and the widget's own test) keep a single entry point.
 export { contextUsageText } from "../../agent-workflow/context-usage.js";
@@ -26,6 +27,8 @@ const CACHE_ERROR_IDLE_MS = 5 * 60_000;
 const IDLE_MARKER = "›";
 
 export interface IndicatorExtras {
+  /** Session-scoped collaboration/approval policy. */
+  mode?: WorkflowMode;
   /**
    * Which side of the approval gate the session is on. Undefined until a plan is
    * in play, so a session that never planned looks exactly as it did before.
@@ -45,6 +48,11 @@ export interface IndicatorExtras {
   cacheStartedAt?: number;
   /** Injectable clock, so the live counter is testable. */
   now?: () => number;
+}
+
+function modeBadge(mode: WorkflowMode | undefined, theme: Theme): string {
+  if (!mode) return "";
+  return `${theme.fg(mode === "vibe" ? "accent" : "warning", `[${mode.toUpperCase()}]`)} `;
 }
 
 /** Active shows time in this phase; idle shows age of the provider's prompt cache. */
@@ -173,9 +181,10 @@ export function updatePhaseIndicator(
                   }`,
                 );
           const buckets = phaseBuckets(working, extras, now, theme);
+          const badge = modeBadge(extras?.mode, theme);
           const status = working
-            ? `${theme.fg("accent", marker)}${timer}${buckets}`
-            : `${theme.fg("accent", `${marker} `)}${phaseText(extras?.phase, theme)}${timer}${buckets}`;
+            ? `${theme.fg("accent", badge ? `${marker} ` : marker)}${badge}${timer}${buckets}`
+            : `${theme.fg("accent", `${marker} `)}${badge}${phaseText(extras?.phase, theme)}${timer}${buckets}`;
           return [truncateToWidth(status, width)];
         },
         invalidate: () => {},

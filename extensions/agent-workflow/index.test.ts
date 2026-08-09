@@ -3,15 +3,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import createExtension, { workflowPrompt } from "./index.js";
+import { SPEC_OPTION, VIBE_OPTION } from "./mode.js";
 
 const planText = "## Current state\n\nA.\n\n## Desired state\n\nB.\n";
 
-function harness(cwd = "/pi-director-index-test-nonexistent") {
+function harness(cwd = "/pi-director-index-test-nonexistent", initialChoice = SPEC_OPTION) {
 	const handlers = new Map<string, Array<(event?: any, ctx?: any) => any>>();
 	const commands = new Map<string, { handler: (args: string, ctx: any) => Promise<void> }>();
 	const tools: any[] = [];
 	const branch: any[] = [];
+	const seeded: any[] = [];
 	const notify = vi.fn();
+	const select = vi.fn(async () => initialChoice);
 	let sessionName: string | undefined;
 	const pi = {
 		on: vi.fn((name: string, handler: (event?: any, ctx?: any) => any) => {
@@ -24,14 +27,23 @@ function harness(cwd = "/pi-director-index-test-nonexistent") {
 		setSessionName: vi.fn((name: string) => { sessionName = name; }),
 		sendMessage: vi.fn(),
 		sendUserMessage: vi.fn(),
-		appendEntry: vi.fn(),
+		appendEntry: vi.fn((customType: string, data: unknown) => branch.push({ type: "custom", customType, data })),
 		events: { emit: vi.fn(), on: vi.fn() },
 	};
 	createExtension(pi as any);
-	const newSession = vi.fn(async () => ({ cancelled: false }));
+	const next = { hasUI: true, sendUserMessage: vi.fn(async () => {}) };
+	const newSession = vi.fn(async (options: any) => {
+		await options.setup?.({
+			appendSessionInfo: (name: string) => { sessionName = name; },
+			appendCustomEntry: (customType: string, data: unknown) => seeded.push({ customType, data }),
+		});
+		await options.withSession?.(next);
+		return { cancelled: false };
+	});
 	const ctx = {
 		hasUI: true,
-		ui: { notify },
+		mode: "tui",
+		ui: { notify, select, getEditorText: () => "", setEditorText: vi.fn() },
 		cwd,
 		getContextUsage: () => undefined as any,
 		waitForIdle: vi.fn(async () => {}),
@@ -46,89 +58,138 @@ function harness(cwd = "/pi-director-index-test-nonexistent") {
 	const inject = async (prompt = "do the thing"): Promise<string> => {
 		const injectors = handlers.get("before_agent_start")!;
 		const result = await injectors[injectors.length - 1]({ systemPrompt: "base", prompt }, ctx);
-		// Collapsed to one line: the prose wraps, so assertions must not depend on where.
 		return (result.systemPrompt as string).replace(/\s+/g, " ").trim();
 	};
 
-	return { handlers, commands, tools, notify, inject, ctx, newSession, pi };
+	return { handlers, commands, tools, branch, notify, select, inject, ctx, newSession, next, seeded, pi };
 }
 
 describe("workflow prompt", () => {
-	it("appends one workflow block to the base prompt, and registers only /handoff", async () => {
+	it("registers the workflow surfaces and injects one constant contract", async () => {
 		const h = harness();
 		const prompt = await h.inject();
 		expect(prompt.startsWith("base")).toBe(true);
 		expect(prompt.match(/<pi_workflow>/g)).toHaveLength(1);
-		expect([...h.commands.keys()]).toEqual(["handoff"]);
-		expect(h.pi.registerEntryRenderer).toHaveBeenCalledWith("agent-workflow:notice", expect.any(Function));
-		// Input records the display-only explore phase; the approval prompt is
-		// armed by tool_execution_end and delivered by agent_settled.
-		expect(h.handlers.has("input")).toBe(true);
-		expect(h.handlers.has("agent_start")).toBe(false);
+		expect(prompt).toContain("<pi_workflow_mode>spec</pi_workflow_mode>");
+		expect([...h.commands.keys()]).toEqual(["vibe", "spec", "execute", "handoff"]);
+		expect(h.tools.map((tool) => tool.name)).toEqual(["start_task", "save_plan", "ask"]);
 		expect(h.handlers.has("agent_settled")).toBe(true);
 	});
 
-	it("names only tools that are actually registered", async () => {
-		// Derived from the prompt rather than copied from it, so renaming or
-		// retiring a tool without updating the workflow prompt fails here.
-		const h = harness();
-		const named = [...(await h.inject()).matchAll(/"([a-z_]+)" tool/g)].map((match) => match[1]);
-		expect(named.length).toBeGreaterThan(0);
-		const registered = h.tools.map((tool) => tool.name);
-		for (const name of named) expect(registered, name).toContain(name);
+	it("stays compact while preserving mode, artifact, and approval invariants", () => {
+		const prompt = workflowPrompt();
+		expect(prompt.length).toBeLessThanOrEqual(4_800);
+		expect(prompt).toContain("session-wide and changes only through /vibe or /spec");
+		expect(prompt).toContain("Artifact kind is independent");
+		expect(prompt).toContain("A one-line change gets a one-line plan");
+		expect(prompt).toContain("every later User-requested mutation needs");
+		expect(prompt).toContain("fresh Proceed/Handoff/Revise approval");
+		expect(prompt).toContain("Approved plan names never change");
 	});
 
-	it("is a constant, so the whole prefix stays cacheable", async () => {
-		// No argument to vary, and nothing derived per turn: byte-identical every call.
+	it("bounds orientation and branches investigation close-out correctly", () => {
+		const prompt = workflowPrompt();
+		expect(prompt).toContain("bounded orientation memory");
+		expect(prompt).toContain("exact likely historical-plan lookups");
+		expect(prompt).toContain("Before source discovery");
+		expect(prompt).toContain("Question, Align, Scope, Findings, Conclusion, Quirks, and Checklist");
+		expect(prompt).toContain("never call \"save_plan\" or request execution approval");
+		expect(prompt).toContain("implementation PR summary/QA steps; investigations instead finish findings and conclusion");
+	});
+
+	it("keeps Vibe automatic and questions interruption-aware", () => {
+		const prompt = workflowPrompt();
+		expect(prompt).toContain("Never call \"save_plan\"");
+		expect(prompt).toContain("at most one compact \"ask\"");
+		expect(prompt).toContain("materially changes the next work interval");
+	});
+
+	it("keeps the large contract byte-identical", () => {
 		expect(workflowPrompt()).toBe(workflowPrompt());
-		const first = await harness().inject("one thing");
-		const second = await harness().inject("a completely different thing");
-		expect(first.slice(first.indexOf("<pi_workflow>"))).toBe(second.slice(second.indexOf("<pi_workflow>")));
-	});
-
-	it("keeps plans scale-invariant and requires the initial Align fast path", () => {
-		expect(workflowPrompt()).toContain("A one-line change gets a one-line plan");
-		expect(workflowPrompt()).toContain("asks one compact, high-leverage scope question");
-		expect(workflowPrompt()).toContain("even when the goal appears clear");
-	});
-
-	it("uses bounded workflow context before Align without starting task-source discovery", () => {
-		expect(workflowPrompt()).toContain("applicable AGENTS files");
-		expect(workflowPrompt()).toContain("Task-source discovery still waits until Align resolves");
-		expect(workflowPrompt()).toContain("Recall under .pi/plan/ stays bounded");
-		expect(workflowPrompt()).toContain("Never scan the full archive by default");
-		expect(workflowPrompt()).toContain("completed status as leads to verify");
-	});
-
-	it("separates investigation reports from implementation approval", () => {
-		expect(workflowPrompt()).toContain("classifies the requested outcome as implementation or investigation");
-		expect(workflowPrompt()).toContain("do not call \"save_plan\"");
-		expect(workflowPrompt()).toContain("Preserve the investigation record, create a separate plan");
-		expect(workflowPrompt()).toContain("recommend Handoff");
-	});
-
-	it("uses direct plan edits for routine execution and save_plan only for material re-plans", () => {
-		expect(workflowPrompt()).toContain("Routine progress and completion updates never use \"save_plan\"");
-		expect(workflowPrompt()).toContain("Present that changed plan with \"save_plan\" for renewed approval");
-		expect(workflowPrompt()).toContain("reopens the approval picker");
-		expect(workflowPrompt()).toContain("Do not call \"save_plan\" at close-out");
 	});
 });
 
-describe("/handoff command", () => {
+describe("session mode", () => {
+	it("asks once before the first Agent call and reuses the persisted choice", async () => {
+		const h = harness("/unused", VIBE_OPTION);
+		const first = await h.inject("first request");
+		expect(first).toContain("<pi_workflow_mode>vibe</pi_workflow_mode>");
+		expect(h.select).toHaveBeenCalledTimes(1);
+		await h.inject("follow-up");
+		expect(h.select).toHaveBeenCalledTimes(1);
+	});
+
+	it("switches only through commands and does not trigger a turn", async () => {
+		const h = harness();
+		await h.commands.get("vibe")!.handler("", h.ctx);
+		expect(h.branch.at(-1)).toMatchObject({ customType: "agent-workflow:mode", data: { mode: "vibe" } });
+		expect(h.pi.sendUserMessage).not.toHaveBeenCalled();
+		await h.commands.get("spec")!.handler("", h.ctx);
+		expect(h.branch.at(-1)).toMatchObject({ customType: "agent-workflow:mode", data: { mode: "spec" } });
+	});
+
+	it("records an actual switch in the current artifact without triggering work", async () => {
+		const cwd = await mkdtemp(join(tmpdir(), "pi-index-mode-log-"));
+		try {
+			await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
+			await writeFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), "# dashboard-polish\n\n## Decisions\n\nInitial direction.\n\n## Checklist\n\n- [ ] Polish\n");
+			const h = harness(cwd);
+			h.pi.setSessionName("dashboard-polish");
+			await h.commands.get("vibe")!.handler("", h.ctx);
+			const artifact = await readFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), "utf8");
+			expect(artifact).toContain("Workflow mode changed to Vibe.");
+			expect(h.pi.sendUserMessage).not.toHaveBeenCalled();
+		} finally {
+			await rm(cwd, { recursive: true, force: true });
+		}
+	});
+});
+
+describe("manual execution commands", () => {
 	let cwd: string;
 	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-index-handoff-")); });
 	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
 
-	it("spawns the session for the resolved plan", async () => {
+	async function seed() {
 		await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
 		await writeFile(join(cwd, ".pi", "plan", "dashboard-polish.md"), planText);
+	}
+
+	it("reviews Spec execution in the current session", async () => {
+		await seed();
 		const h = harness(cwd);
-		await h.commands.get("handoff")!.handler("", h.ctx);
-		expect(h.newSession).toHaveBeenCalledTimes(1);
+		h.select.mockResolvedValueOnce("Proceed — execute this plan (recommended)");
+		await h.commands.get("execute")!.handler("", h.ctx);
+		expect(h.pi.sendUserMessage).toHaveBeenCalledWith("Execute the approved plan at .pi/plan/dashboard-polish.md.");
+		expect(h.newSession).not.toHaveBeenCalled();
 	});
 
-	it("warns instead of spawning when no plan exists", async () => {
+	it("reviews a Spec handoff and transfers mode plus authorization", async () => {
+		await seed();
+		const h = harness(cwd);
+		h.select.mockResolvedValueOnce("Handoff — execute in a fresh session (recommended)");
+		await h.commands.get("handoff")!.handler("", h.ctx);
+		expect(h.newSession).toHaveBeenCalledTimes(1);
+		expect(h.seeded).toContainEqual({ customType: "agent-workflow:mode", data: { mode: "spec" } });
+		expect(h.seeded).toContainEqual({ customType: "agent-workflow:authorization", data: { state: "approved", task: "dashboard-polish" } });
+	});
+
+	it("continues or hands off Vibe without approval", async () => {
+		await seed();
+		const current = harness(cwd);
+		await current.commands.get("vibe")!.handler("", current.ctx);
+		await current.commands.get("execute")!.handler("", current.ctx);
+		expect(current.select).not.toHaveBeenCalled();
+		expect(current.pi.sendUserMessage).toHaveBeenCalledWith("Continue the Vibe task from the work log at .pi/plan/dashboard-polish.md.");
+
+		const fresh = harness(cwd);
+		await fresh.commands.get("vibe")!.handler("", fresh.ctx);
+		await fresh.commands.get("handoff")!.handler("", fresh.ctx);
+		expect(fresh.select).not.toHaveBeenCalled();
+		expect(fresh.seeded).toContainEqual({ customType: "agent-workflow:mode", data: { mode: "vibe" } });
+	});
+
+	it("warns without spawning when no plan exists", async () => {
 		const h = harness(cwd);
 		await h.commands.get("handoff")!.handler("", h.ctx);
 		expect(h.notify).toHaveBeenCalledWith(expect.stringContaining("plan first"), "warning");
@@ -136,43 +197,53 @@ describe("/handoff command", () => {
 	});
 });
 
-describe("plan scaffolding", () => {
+describe("input and scaffolding", () => {
 	let cwd: string;
 	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-index-scaffold-")); });
 	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
 
-	const planFiles = async () => (await readdir(join(cwd, ".pi", "plan"))).sort();
-
-	it("names and scaffolds an unnamed session on its first turn", async () => {
+	it("records Explore for human input and ignores approval kickoffs", async () => {
 		const h = harness(cwd);
-		await h.inject("please fix the flaky login test");
-		const name = h.pi.setSessionName.mock.calls[0][0] as string;
-		expect(name).toMatch(/^\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2}-fix-flaky-login-test$/);
-		expect(await planFiles()).toEqual([`${name}.md`]);
-		const written = await readFile(join(cwd, ".pi", "plan", `${name}.md`), "utf8");
-		expect(written).toContain(`# ${name}`);
-		expect(written).toContain("<!-- time-spent:start total-ms=0 explore-ms=0 execute-ms=0 decision-ms=0 unallocated-ms=0 -->");
-		expect(written).toContain("**Time spent:** 0s");
-		expect(written).toContain("## Align");
-		expect(written).toContain("## Checklist");
-		expect(written).toContain("## Close out\n### PR summary");
-		expect(written).toContain("### QA steps");
-		// The MEMORY stub is part of the same bootstrap.
-		await expect(readFile(join(cwd, ".pi", "MEMORY.md"), "utf8")).resolves.toContain("#");
+		const input = h.handlers.get("input")!.at(-1)!;
+		await input({ source: "interactive" }, h.ctx);
+		expect(h.branch.at(-1)).toMatchObject({ customType: "agent-workflow:phase", data: { phase: "explore" } });
+		const entries = h.branch.length;
+		await input({ source: "extension" }, h.ctx);
+		expect(h.branch).toHaveLength(entries);
 	});
 
-	it("scaffolds once, leaving a named or resumed session untouched", async () => {
-		const h = harness(cwd);
-		await h.inject("first prompt about caching");
-		const name = h.pi.setSessionName.mock.calls[0][0] as string;
-		await h.inject("second prompt, same session");
-		expect(h.pi.setSessionName).toHaveBeenCalledTimes(1);
-		expect(await planFiles()).toEqual([`${name}.md`]);
+	it("scaffolds the selected mode once", async () => {
+		const spec = harness(cwd, SPEC_OPTION);
+		await spec.inject("please fix the flaky login test");
+		const specName = spec.pi.setSessionName.mock.calls[0][0] as string;
+		const specPlan = await readFile(join(cwd, ".pi", "plan", `${specName}.md`), "utf8");
+		expect(specPlan).toContain("## Decisions");
+
+		const vibeCwd = await mkdtemp(join(tmpdir(), "pi-index-vibe-"));
+		try {
+			const vibe = harness(vibeCwd, VIBE_OPTION);
+			await vibe.inject("polish the dashboard");
+			const vibeName = vibe.pi.setSessionName.mock.calls[0][0] as string;
+			const vibePlan = await readFile(join(vibeCwd, ".pi", "plan", `${vibeName}.md`), "utf8");
+			expect(vibePlan).toContain("## Direction");
+			expect(vibePlan).toContain("## Work log");
+			expect(vibePlan).not.toContain("## Decisions");
+		} finally {
+			await rm(vibeCwd, { recursive: true, force: true });
+		}
 	});
 
 	it("survives an unwritable cwd without failing the turn", async () => {
 		const h = harness("/pi-director-index-test-nonexistent");
 		expect(await h.inject("start something")).toContain("<pi_workflow>");
 		expect(h.pi.setSessionName).not.toHaveBeenCalled();
+	});
+
+	it("keeps the plan directory accumulative", async () => {
+		await mkdir(join(cwd, ".pi", "plan"), { recursive: true });
+		await writeFile(join(cwd, ".pi", "plan", "older-task.md"), planText);
+		const h = harness(cwd);
+		await h.inject("new task");
+		expect((await readdir(join(cwd, ".pi", "plan"))).length).toBe(2);
 	});
 });

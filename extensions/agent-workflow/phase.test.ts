@@ -45,4 +45,14 @@ describe("derivePhaseFromBranch", () => {
 		expect(hasApprovedPlan(entries, "x")).toBe(true);
 		expect(hasApprovedPlan(entries, "y")).toBe(false);
 	});
+
+	it("recognizes persisted Spec authorization as approval", () => {
+		const entries = [{
+			type: "custom",
+			customType: "agent-workflow:authorization",
+			data: { state: "approved", task: "x" },
+		}] as any;
+		expect(hasApprovedPlan(entries, "x")).toBe(true);
+		expect(hasApprovedPlan(entries, "y")).toBe(false);
+	});
 });

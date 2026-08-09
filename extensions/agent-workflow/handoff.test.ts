@@ -34,6 +34,7 @@ function makeHarness(cwd: string, options: CtxOptions = {}) {
 		return { cancelled: false };
 	});
 
+	const branch: any[] = [];
 	const ctx = {
 		cwd,
 		hasUI: options.hasUI ?? true,
@@ -42,13 +43,14 @@ function makeHarness(cwd: string, options: CtxOptions = {}) {
 		waitForIdle: vi.fn(async () => {}),
 		newSession,
 		sessionManager: {
+			getBranch: () => branch,
 			getSessionName: () => options.sessionName,
 			getSessionFile: () => "/sessions/current.jsonl",
 		},
 	};
 
-	const open = (taskName?: string) => openHandoffSession(pi as never, ctx as never, taskName);
-	return { open, notify, sent, entries, newSession, next, seeded };
+	const open = (taskName?: string, mode?: "vibe" | "spec") => openHandoffSession(pi as never, ctx as never, taskName, mode);
+	return { open, notify, sent, entries, newSession, next, seeded, branch };
 }
 
 async function seedPlan(cwd: string, name: string) {
@@ -69,12 +71,27 @@ describe("openHandoffSession", () => {
 		expect(newSession).toHaveBeenCalledWith(expect.objectContaining({ parentSession: "/sessions/current.jsonl" }));
 		// Display state is present before the replacement session is adopted.
 		expect(seeded.entries).toEqual([
+			{ customType: "agent-workflow:mode", data: { mode: "spec" } },
+			{ customType: "agent-workflow:authorization", data: { state: "approved", task: "dashboard-polish" } },
 			{ customType: "agent-workflow:phase", data: { phase: "execute" } },
 		]);
 		expect(seeded.names).toEqual(["dashboard-polish"]);
 		const [kickoff] = next.sendUserMessage.mock.calls[0];
 		expect(kickoff).toContain(".pi/plan/dashboard-polish.md");
 		expect(kickoff).toContain("approved");
+	});
+
+	it("hands Vibe work to a fresh Vibe session without claiming plan approval", async () => {
+		await seedPlan(cwd, "dashboard-polish");
+		const { open, seeded, next } = makeHarness(cwd);
+		await open(undefined, "vibe");
+		expect(seeded.entries).toEqual([
+			{ customType: "agent-workflow:mode", data: { mode: "vibe" } },
+			{ customType: "agent-workflow:phase", data: { phase: "execute" } },
+		]);
+		const [kickoff] = next.sendUserMessage.mock.calls[0];
+		expect(kickoff).toContain("Continue the Vibe task");
+		expect(kickoff).not.toContain("approved");
 	});
 
 	it("waits for the kickoff turn only when the new session has no UI", async () => {

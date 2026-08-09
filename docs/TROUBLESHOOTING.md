@@ -10,16 +10,18 @@
 
 ## The agent edits before we agreed on a direction
 
-The local-first flow is guidance, not enforcement (see [the agent-workflow README](../extensions/agent-workflow/README.md)).
-Say so in chat — "we haven't agreed on an approach yet" — and the agent should
-return to exploration. There are no hard gates — the bundle ships no permission
-gate, so nothing intercepts a tool call.
+Check the mode badge first. Vibe intentionally implements without workflow
+approval; run `/spec` before the next request when review is wanted. In Spec,
+project `edit` and `write` calls are blocked until the current plan increment is
+approved. Shell and unknown custom mutations can only be warned about because
+their effects are not generically classifiable; interrupt and return to review
+if one crosses the boundary.
 
 ## Nothing prompts before destructive commands
 
-Expected. The permission gate was removed on 2026-07-23; agent tool calls run
-ungated. If you want confirmation prompts back, use Pi's own permission
-configuration or run with a sandbox — this bundle no longer provides one.
+Expected. Spec approval is a workflow gate, not a general command permission
+system. Destructive and external-action consent remains conversational. Use
+Pi's permission configuration or a sandbox when every command needs enforcement.
 
 ## Shift+enter submits instead of inserting a newline
 

@@ -10,14 +10,18 @@
 
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { appendHeadlessNotice } from "./notice.js";
+import { AUTHORIZATION_EVENT, type AuthorizationEvent } from "./authorization.js";
+import { deriveWorkflowMode, MODE_EVENT, type ModeEvent, type WorkflowMode } from "./mode.js";
 import { PHASE_EVENT, type PhaseEvent } from "./phase.js";
 import { type PlanTask, resolvePlanTask } from "./task.js";
 
 const USAGE = "Usage: /handoff [session-name].";
 
 /** Executing from a handoff is auto-approved: the user approved the plan in the session that handed off. */
-export function handoffKickoff(task: PlanTask): string {
-	return `Execute the approved plan at ${task.planPath}.`;
+export function handoffKickoff(task: PlanTask, mode: WorkflowMode = "spec"): string {
+	return mode === "vibe"
+		? `Continue the Vibe task from the work log at ${task.planPath}.`
+		: `Execute the approved plan at ${task.planPath}.`;
 }
 
 /**
@@ -29,6 +33,7 @@ export async function openHandoffSession(
 	pi: ExtensionAPI,
 	ctx: ExtensionCommandContext,
 	taskName?: string,
+	requestedMode?: WorkflowMode,
 ): Promise<void> {
 	const notify = (message: string, type: "info" | "warning") => {
 		if (ctx.hasUI) ctx.ui.notify(message, type);
@@ -41,15 +46,18 @@ export async function openHandoffSession(
 		return;
 	}
 
-	const kickoff = handoffKickoff(task);
+	const mode = requestedMode ?? deriveWorkflowMode(ctx.sessionManager.getBranch()) ?? "spec";
+	const kickoff = handoffKickoff(task, mode);
 	await ctx.waitForIdle();
 	await ctx.newSession({
 		parentSession: ctx.sessionManager.getSessionFile(),
 		// Seed task identity and display phase before replacement-session
 		// extensions initialize; the kickoff separately instructs the model.
-		setup: async (sessionManager) => {
-			sessionManager.appendSessionInfo(task.name);
-			sessionManager.appendCustomEntry(PHASE_EVENT, { phase: "execute" } satisfies PhaseEvent);
+			setup: async (sessionManager) => {
+				sessionManager.appendSessionInfo(task.name);
+				sessionManager.appendCustomEntry(MODE_EVENT, { mode } satisfies ModeEvent);
+				if (mode === "spec") sessionManager.appendCustomEntry(AUTHORIZATION_EVENT, { state: "approved", task: task.name } satisfies AuthorizationEvent);
+				sessionManager.appendCustomEntry(PHASE_EVENT, { phase: "execute" } satisfies PhaseEvent);
 		},
 		withSession: async (next) => {
 			// sendUserMessage resolves only when the triggered turn ends: an

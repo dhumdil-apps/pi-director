@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readPlanTiming, readTimeSpent, withPlanTiming, withTimeSpent } from "./plan-time.js";
-import { autoSlug, beginTask, canonicalTaskName, composePlan, ensurePiState, INVESTIGATION_TEMPLATE, isScaffold, listPlanNames, MEMORY_STUB, movePlan, normalizeTaskName, PLAN_TEMPLATE, readArtifactMetadata, registerTaskManagement, resolvePlanTask, timestampPrefix } from "./task.js";
+import { autoSlug, beginTask, canonicalTaskName, composePlan, ensurePiState, INVESTIGATION_TEMPLATE, isScaffold, listPlanNames, MEMORY_STUB, movePlan, normalizeTaskName, PLAN_TEMPLATE, readArtifactMetadata, registerTaskManagement, resolvePlanTask, timestampPrefix, VIBE_PLAN_TEMPLATE } from "./task.js";
 
 function makeHarness(cwd: string, name?: string) {
 	let sessionName = name;
@@ -16,6 +16,7 @@ function makeHarness(cwd: string, name?: string) {
 		getSessionName: () => sessionName,
 		setSessionName: vi.fn((next: string) => { sessionName = next; }),
 		sendMessage: vi.fn((message: any) => sent.push(message)),
+		events: { emit: vi.fn() },
 	};
 	registerTaskManagement(pi as never);
 	const ctx = { cwd, sessionManager: { getBranch: () => branch } };
@@ -54,14 +55,15 @@ describe("save_plan", () => {
 	beforeEach(async () => { cwd = await mkdtemp(join(tmpdir(), "pi-task-management-")); });
 	afterEach(async () => { await rm(cwd, { recursive: true, force: true }); });
 
-	it("reserves post-approval saves for material re-plans", () => {
+	it("reserves post-settlement saves for every later requested mutation", () => {
 		const tool = makeHarness(cwd).getTool("save_plan");
-		expect(tool.description).toContain("only for a material re-plan that needs renewed approval");
-		expect(tool.description).toContain("reopen the approval picker");
-		expect(tool.description).toContain("Directly edit routine checklist, Quirks, and completion updates");
-		expect(tool.description).toContain("do not call save_plan at close-out");
-		expect(tool.parameters.properties.plan.description).toContain("pass only material re-plan changes");
-		expect(tool.parameters.properties.plan.description).toContain("Use the edit tool instead for routine checklist, Quirks, and completion updates");
+		expect(tool.description).toContain("every later User-requested mutation");
+		expect(tool.description).toContain("reopens approval");
+		expect(tool.description).toContain("During uninterrupted execution");
+		expect(tool.description).toContain("Vibe never calls save_plan");
+		expect(tool.parameters.properties.plan.description).toContain("Goal, Current state, Align, Decisions");
+		expect(tool.parameters.properties.plan.description).toContain("every later User-requested mutation");
+		expect(tool.parameters.properties.plan.description).toContain("During uninterrupted execution");
 	});
 
 	it("normalizes the name, writes the flat plan file, and names the session", async () => {
@@ -71,6 +73,14 @@ describe("save_plan", () => {
 		expect(saved.details).toEqual({ name: "SI-7-dashboard-polish", path, kind: "implementation" });
 		expect(await readFile(path, "utf8")).toBe(withTimeSpent(plan, "SI-7-dashboard-polish", 0));
 		expect(harness.getName()).toBe("SI-7-dashboard-polish");
+	});
+
+	it("refuses save_plan in Vibe mode", async () => {
+		const harness = makeHarness(cwd);
+		harness.branch.push({ type: "custom", customType: "agent-workflow:mode", data: { mode: "vibe" } });
+		const result = await harness.execute({ name: "dashboard polish", plan });
+		expect(result.isError).toBe(true);
+		expect(result.content[0].text).toContain("Vibe");
 	});
 
 	it("replaces a pre-approval draft with the current complete proposal", async () => {
@@ -91,6 +101,17 @@ describe("save_plan", () => {
 		expect(contents).toContain("A.");
 		expect(contents).toContain("D instead.");
 		expect(contents).toMatch(/## Revision 2 — \d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+	});
+
+	it("rejects an approved plan rename without moving or rewriting it", async () => {
+		await seedPlan(cwd, "approved-plan", plan);
+		const harness = makeHarness(cwd, "approved-plan");
+		harness.branch.push({ type: "message", message: { role: "user", content: "Execute the approved plan at .pi/plan/approved-plan.md." } });
+		const result = await harness.execute({ name: "renamed plan", plan: "Changed." });
+		expect(result.isError).toBe(true);
+		expect(result.content[0].text).toContain("immutable");
+		expect(await readdir(join(cwd, ".pi", "plan"))).toEqual(["approved-plan.md"]);
+		expect(await readFile(join(cwd, ".pi", "plan", "approved-plan.md"), "utf8")).toBe(plan);
 	});
 
 	it("replaces the untouched scaffold rather than revising it", async () => {
@@ -310,6 +331,28 @@ describe("context-informed task setup", () => {
 		expect(started.name).toBe("2026-07-31--12-00-00-fix-cache-recovery");
 		await expect(readFile(join(cwd, ".pi", "plan", `${investigation}.md`), "utf8")).resolves.toContain("Confirmed evidence.");
 		expect(readArtifactMetadata(await readFile(started.path, "utf8"))).toEqual({ kind: "implementation", source: investigation });
+	});
+
+	it("uses the compact Vibe template and preserves a distinct prior implementation", async () => {
+		const first = "2026-07-31--12-00-00-dashboard-polish";
+		await seedPlan(cwd, first, plan);
+		const started = await beginTask(cwd, first, "cache recovery", "implementation", "vibe");
+		expect(started.resetTiming).toBe(true);
+		expect(await readFile(join(cwd, ".pi", "plan", `${first}.md`), "utf8")).toBe(plan);
+		const next = await readFile(started.path, "utf8");
+		expect(next).toContain("## Direction");
+		expect(next).toContain("## Work log");
+		expect(next).not.toContain("## Decisions");
+	});
+});
+
+describe("Vibe plan template", () => {
+	it("keeps a compact implementation work log with close-out evidence", () => {
+		expect(VIBE_PLAN_TEMPLATE).toContain("## Goal");
+		expect(VIBE_PLAN_TEMPLATE).toContain("## Direction");
+		expect(VIBE_PLAN_TEMPLATE).toContain("## Work log");
+		expect(VIBE_PLAN_TEMPLATE).toContain("### PR summary");
+		expect(VIBE_PLAN_TEMPLATE).not.toContain("## Current state");
 	});
 });
 

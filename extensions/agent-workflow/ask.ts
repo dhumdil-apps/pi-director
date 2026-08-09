@@ -19,19 +19,14 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
-import { derivePhaseFromBranch, recordWorkflowPhase } from "./phase.js";
-import { beginTask, TASK_STARTED_EVENT, type TaskIntent, type TaskStartedEvent } from "./task.js";
 import { duringUserWait } from "./user-wait.js";
 
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 4;
 
 const AskParams = Type.Object({
+	context: Type.String({ description: "Current evidence, the Agent's recommendation, why this decision matters, and the consequence of each direction. Rendered before the question and options." }),
 	question: Type.String({ description: "The question, as one sentence." }),
-	task: Type.Optional(Type.Object({
-		name: Type.String({ description: "The context-informed 2–4 word task name. Required for the initial question or when starting a new task; omit for adaptive questions within the current task." }),
-		intent: Type.Union([Type.Literal("implementation"), Type.Literal("investigation")], { description: "Whether the requested outcome changes the project or only investigates and reports." }),
-	})),
 	options: Type.Array(
 		Type.Object({
 			headline: Type.String({ description: "The choice in 2-5 words. This is what the picker shows, so it must be distinct from the other headlines." }),
@@ -48,6 +43,7 @@ const AskParams = Type.Object({
 type AskInput = Static<typeof AskParams>;
 
 export interface AskDetails {
+	context: string;
 	question: string;
 	headlines: string[];
 	answer: string | null;
@@ -64,13 +60,13 @@ export function registerAsk(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "ask",
 		label: "Ask",
-		description: "Ask the User to choose between concrete options, in a native picker. On the initial question or when starting a new task, include the context-informed task name and whether its outcome is implementation or investigation; omit task for adaptive questions. Use at least once before every initial plan or re-plan, and whenever another choice would otherwise be made on the User's behalf; put the Agent's recommendation first.",
+		description: "Ask the User to choose between concrete consequential options in a native picker. Task identity is handled by start_task. Use for Spec alignment, a Vibe direction fork that materially changes the visible result, or an execution blocker; never for routine implementation choices. Put the Agent's recommendation first.",
 		parameters: AskParams,
 		// The dialog owns the screen while it is open, so it must not race another call.
 		executionMode: "sequential",
 		async execute(_toolCallId, params: AskInput, _signal, _onUpdate, ctx: ExtensionContext) {
 			const headlines = params.options.map((option) => option.headline);
-			const base: AskDetails = { question: params.question, headlines, answer: null, index: null };
+			const base: AskDetails = { context: params.context, question: params.question, headlines, answer: null, index: null };
 
 			// Non-TUI select() resolves undefined, which is indistinguishable from a
 			// dismissal — so headlessness is decided before the dialog, not after it.
@@ -80,18 +76,6 @@ export function registerAsk(pi: ExtensionAPI): void {
 			if (new Set(headlines).size !== headlines.length) {
 				return result("Error: option headlines must be distinct — the picker returns the headline, not an index.", base, true);
 			}
-			if (params.task) {
-				try {
-					const started = await beginTask(ctx.cwd, pi.getSessionName(), params.task.name, params.task.intent as TaskIntent);
-					pi.setSessionName(started.name);
-					if (started.metadata.source) {
-						pi.events.emit?.(TASK_STARTED_EVENT, { resetTiming: true } satisfies TaskStartedEvent);
-					}
-				} catch (error) {
-					return result(`Error: could not start task: ${(error as Error).message}.`, base, true);
-				}
-			}
-
 			const pickerHeadlines = [...headlines, WRITE_CUSTOM_OPTION];
 			const checkpoint = openCheckpoint(pi, "question");
 			let choice: string | undefined;
@@ -106,7 +90,6 @@ export function registerAsk(pi: ExtensionAPI): void {
 
 			if (choice === undefined) {
 				resolveCheckpoint(pi, checkpoint.id, "dismissed");
-				if (derivePhaseFromBranch(ctx.sessionManager.getBranch()) === "execute") recordWorkflowPhase(pi, "explore");
 				return result("The User dismissed the question without answering — the Agent asks in an ordinary message, or says which option it would take and why.", base);
 			}
 
@@ -131,7 +114,6 @@ export function registerAsk(pi: ExtensionAPI): void {
 			}
 
 			resolveCheckpoint(pi, checkpoint.id, "selected");
-			if (derivePhaseFromBranch(ctx.sessionManager.getBranch()) === "execute") recordWorkflowPhase(pi, "explore");
 			const chosen = params.options[index];
 			return result(
 				`The User selected: ${index + 1}. ${chosen.headline} — ${chosen.description}`,
@@ -139,10 +121,13 @@ export function registerAsk(pi: ExtensionAPI): void {
 			);
 		},
 
-		/** The Q&A the dialog cannot show: every headline with its full description. */
+		/** The context and Q&A the headline-only dialog cannot show. */
 		renderCall(args, theme) {
 			const options = Array.isArray(args.options) ? (args.options as AskInput["options"]) : [];
-			const lines = [theme.fg("toolTitle", theme.bold("ask ")) + theme.fg("text", String(args.question ?? ""))];
+			const lines = [theme.fg("toolTitle", theme.bold("ask"))];
+			const context = String(args.context ?? "").trim();
+			if (context) lines.push(theme.fg("muted", context));
+			lines.push(theme.fg("text", String(args.question ?? "")));
 			for (const [at, option] of options.entries()) {
 				lines.push(theme.fg("accent", `  ${at + 1}. ${option.headline}`));
 				if (option.description) lines.push(theme.fg("muted", `     ${option.description}`));

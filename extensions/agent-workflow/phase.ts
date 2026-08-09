@@ -1,8 +1,8 @@
 /**
  * The current workflow cycle phase — for display only.
  *
- * This is deliberately not the retired mode/loop state machine (mode.ts,
- * loop.ts): only context-free display state is written to the session, and
+ * This is separate from the session-scoped Vibe/Spec policy in mode.ts: only
+ * context-free display state is written to the session, and
  * nothing here reaches the model. The injected LOOP stays one byte-identical
  * constant and the phase only ever reaches display surfaces, so a wrong badge
  * misinforms the user for one turn
@@ -56,7 +56,12 @@ const KICKOFF_PATTERN = /^Execute the approved plan at .+\.md\./m;
 /** Whether this branch has crossed the approval gate for the named plan. */
 export function hasApprovedPlan(entries: SessionEntry[], task: string): boolean {
 	const kickoff = `Execute the approved plan at .pi/plan/${task}.md.`;
-	return entries.some((entry) => messageText(entry) === kickoff);
+	return entries.some((entry) => {
+		if (messageText(entry) === kickoff) return true;
+		if (entry.type !== "custom" || entry.customType !== "agent-workflow:authorization") return false;
+		const data = entry.data as { state?: unknown; task?: unknown } | undefined;
+		return data?.state === "approved" && data.task === task;
+	});
 }
 
 function messageText(entry: SessionEntry): string | undefined {

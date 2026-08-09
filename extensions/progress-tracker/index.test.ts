@@ -87,7 +87,7 @@ describe("progress tracker indicator", () => {
       "powerbar:register-segment",
       { id: "attention-span", label: "LLM Attention Span", row: 4 },
     ]);
-    expect(indicator(widgets).map(strip)).toEqual(["[accent]› [dim]What’s your goal?"]);
+    expect(indicator(widgets).map(strip)).toEqual(["[accent]› [warning][SPEC] [dim]What’s your goal?"]);
     expect(strip(attention(emitted)!)).toBe(
       `[accent]Context window ${bar("▃    ")} [accent]84.0k / 1.0M`,
     );
@@ -101,6 +101,16 @@ describe("progress tracker indicator", () => {
 
     listeners.get("agent-workflow:phase")![0]({ phase: "execute" });
     expect(strip(indicator(widgets)[0])).toContain("[accent]What’s up next?");
+  });
+
+  it("updates and reports the sticky workflow mode", async () => {
+    const { handlers, listeners, emitted } = harness();
+    const widgets: Array<[string, any]> = [];
+    await handlers.get("session_start")![0]({}, ctxWith(widgets));
+    listeners.get("agent-workflow:mode")![0]({ mode: "vibe" });
+    expect(strip(indicator(widgets)[0])).toContain("[accent][VIBE]");
+    const [, status] = emitted.findLast(([name]) => name === "agent-status:update")!;
+    expect(status.mode).toBe("vibe");
   });
 
   it("derives execute from the phase entry seeded before a handoff session starts", async () => {
@@ -130,7 +140,7 @@ describe("progress tracker indicator", () => {
 
     expect(strip(indicator(widgets)[0])).toContain("[dim]What’s your goal?");
     const [, status] = emitted.findLast(([name]) => name === "agent-status:update")!;
-    expect(status.phase).toBeUndefined();
+    expect(status).toMatchObject({ phase: undefined, mode: "spec" });
   });
 
   it("retains the provider-reported first-turn total alongside live context", async () => {
@@ -356,6 +366,6 @@ describe("progress tracker indicator", () => {
     await handlers.get("session_start")![0]({}, ctxWith([]));
 
     const [, status] = emitted.findLast(([name]) => name === "agent-status:update")!;
-    expect(status).toMatchObject({ contextUsed: 84_000, contextMax: 1_000_000, cwd: "/work", phase: undefined, sessionName: "debug-login" });
+    expect(status).toMatchObject({ contextUsed: 84_000, contextMax: 1_000_000, cwd: "/work", mode: "spec", phase: undefined, sessionName: "debug-login" });
   });
 });
