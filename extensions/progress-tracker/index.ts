@@ -10,16 +10,46 @@
  * much context is left.
  */
 
-import type { ExtensionAPI, ExtensionContext, MessageEndEvent, SessionEntry, Theme, TurnEndEvent } from "@earendil-works/pi-coding-agent";
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+  MessageEndEvent,
+  SessionEntry,
+  Theme,
+  TurnEndEvent,
+} from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
-import { CHECKPOINT_EVENT, deriveOpenCheckpoint, type CheckpointEvent, type OpenCheckpoint } from "../agent-workflow/checkpoint.js";
-import { derivePhaseFromBranch, normalizeWorkflowPhase, PHASE_EVENT, type PhaseEvent, type WorkflowPhase } from "../agent-workflow/phase.js";
-import { deriveWorkflowMode, isWorkflowMode, MODE_EVENT, type ModeEvent, type WorkflowMode } from "../agent-workflow/mode.js";
-import { addDecisionTime, addPhaseTime, EMPTY_PLAN_TIME, readPlanTime, updatePlanTime, type PlanTime } from "../agent-workflow/plan-time.js";
-import { planPath, TASK_STARTED_EVENT, type TaskStartedEvent } from "../agent-workflow/task.js";
+import {
+  CHECKPOINT_EVENT,
+  deriveOpenCheckpoint,
+  type CheckpointEvent,
+  type OpenCheckpoint,
+} from "../agent-workflow/checkpoint.js";
+import {
+  deriveWorkflowMode,
+  MODE_EVENT,
+  normalizeWorkflowMode,
+  type ModeEvent,
+  type WorkflowMode,
+} from "../agent-workflow/mode.js";
+import {
+  addDecisionTime,
+  addModeTime,
+  EMPTY_PLAN_TIME,
+  readPlanTime,
+  updatePlanTime,
+  type PlanTime,
+} from "../agent-workflow/plan-time.js";
+import { planPath } from "../agent-workflow/task.js";
 import { contextIndicatorText } from "../agent-workflow/context-usage.js";
-import { USER_WAIT_EVENT, type UserWaitEvent } from "../agent-workflow/user-wait.js";
-import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
+import {
+  USER_WAIT_EVENT,
+  type UserWaitEvent,
+} from "../agent-workflow/user-wait.js";
+import {
+  clearPhaseIndicator,
+  updatePhaseIndicator,
+} from "./ui/activity-indicator.js";
 
 /** Latest provider response on the active branch, used after reloads and handoffs. */
 function latestAssistantTimestamp(entries: SessionEntry[]): number | undefined {
@@ -27,7 +57,11 @@ function latestAssistantTimestamp(entries: SessionEntry[]): number | undefined {
     const entry = entries[index];
     if (entry?.type !== "message") continue;
     const message = entry.message as { role?: string; timestamp?: unknown };
-    if (message.role === "assistant" && typeof message.timestamp === "number" && Number.isFinite(message.timestamp)) {
+    if (
+      message.role === "assistant" &&
+      typeof message.timestamp === "number" &&
+      Number.isFinite(message.timestamp)
+    ) {
       return message.timestamp;
     }
   }
@@ -35,16 +69,19 @@ function latestAssistantTimestamp(entries: SessionEntry[]): number | undefined {
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.events.emit?.("powerbar:register-segment", { id: "attention-span", label: "LLM Attention Span", row: 4 });
+  pi.events.emit?.("powerbar:register-segment", {
+    id: "attention-span",
+    label: "LLM Attention Span",
+    row: 4,
+  });
 
   let currentCtx: ExtensionContext | undefined;
   let working = false;
   // The first provider response's reported aggregate usage. Read it from the
   // response itself: live context can already include tool results for the next request.
   let firstTurnTokens: number | undefined;
-  // Display only (see phase.ts). Live transitions update immediately; persisted
-  // custom entries reconstruct the latest cycle across handoffs and reloads.
-  let phase: WorkflowPhase | undefined;
+  // Display only. Live transitions update immediately; persisted custom entries
+  // reconstruct the current mode across handoffs and reloads.
   let mode: WorkflowMode | undefined;
   // Run timing. The widget re-creates its factory every refresh, so the start
   // stamp has to live here or the counter would restart at each turn boundary.
@@ -54,36 +91,43 @@ export default function (pi: ExtensionAPI) {
   let waitingForUser = false;
   let openCheckpoint: OpenCheckpoint | undefined;
 
-  // Close the current interval before changing phase. Undefined is the initial
-  // Explore state: the display can still ask for a goal while timing is precise.
+  // Close the current interval before changing mode. Undefined is the initial
+  // Ask state: the display can still ask for a goal while timing is precise.
   const accrueUntil = (now: number) => {
     if (runStartedAt == null) return;
-    planTime = addPhaseTime(planTime ?? EMPTY_PLAN_TIME, phase ?? "explore", Math.max(0, now - runStartedAt));
+    planTime = addModeTime(
+      planTime ?? EMPTY_PLAN_TIME,
+      mode ?? "ask",
+      Math.max(0, now - runStartedAt),
+    );
     runStartedAt = now;
   };
 
-  pi.events.on?.(PHASE_EVENT, (payload: unknown) => {
-    const next = normalizeWorkflowPhase((payload as PhaseEvent | undefined)?.phase);
+  pi.events.on?.(MODE_EVENT, (payload: unknown) => {
+    const next = normalizeWorkflowMode(
+      (payload as ModeEvent | undefined)?.mode,
+    );
     if (!next) return;
     accrueUntil(Date.now());
-    phase = next;
-    refreshStatus();
-  });
-
-  pi.events.on?.(MODE_EVENT, (payload: unknown) => {
-    const next = (payload as ModeEvent | undefined)?.mode;
-    if (!isWorkflowMode(next)) return;
     mode = next;
     refreshStatus();
   });
 
   pi.events.on?.(CHECKPOINT_EVENT, (payload: unknown) => {
     const event = payload as CheckpointEvent | undefined;
-    if (!event || (event.action !== "open" && event.action !== "resolve")) return;
+    if (!event || (event.action !== "open" && event.action !== "resolve"))
+      return;
     if (event.action === "open") {
-      openCheckpoint = { id: event.id, kind: event.kind, openedAt: event.timestamp };
+      openCheckpoint = {
+        id: event.id,
+        kind: event.kind,
+        openedAt: event.timestamp,
+      };
     } else if (openCheckpoint?.id === event.id) {
-      planTime = addDecisionTime(planTime ?? EMPTY_PLAN_TIME, event.timestamp - openCheckpoint.openedAt);
+      planTime = addDecisionTime(
+        planTime ?? EMPTY_PLAN_TIME,
+        event.timestamp - openCheckpoint.openedAt,
+      );
       openCheckpoint = undefined;
       void persistTiming();
     }
@@ -104,22 +148,33 @@ export default function (pi: ExtensionAPI) {
       lastUsage = undefined;
     }
     const indicatorWorking = working && !waitingForUser;
-    updatePhaseIndicator(currentCtx, indicatorWorking, { mode, phase, runStartedAt, planTime, cacheStartedAt, checkpointOpenedAt: openCheckpoint?.openedAt });
+    updatePhaseIndicator(currentCtx, indicatorWorking, {
+      mode,
+      runStartedAt,
+      planTime,
+      cacheStartedAt,
+      checkpointOpenedAt: openCheckpoint?.openedAt,
+    });
     if (usage && usage.tokens != null && usage.contextWindow > 0) {
       const capturedUsage = usage;
       const capturedExtras = { lastUsage, firstTurnTokens };
       pi.events.emit?.("powerbar:update", {
         id: "attention-span",
         row: 4,
-        render: (theme: Theme) => contextIndicatorText(capturedUsage, theme, capturedExtras),
+        render: (theme: Theme) =>
+          contextIndicatorText(capturedUsage, theme, capturedExtras),
       });
     } else {
-      pi.events.emit?.("powerbar:update", { id: "attention-span", text: undefined });
+      pi.events.emit?.("powerbar:update", {
+        id: "attention-span",
+        text: undefined,
+      });
     }
-    const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
+    const prompt = lastUsage
+      ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite
+      : 0;
     pi.events.emit?.("agent-status:update", {
       working,
-      phase,
       mode,
       sessionName: pi.getSessionName?.(),
       contextUsed: usage?.tokens ?? undefined,
@@ -134,7 +189,9 @@ export default function (pi: ExtensionAPI) {
   const persistTiming = async () => {
     const name = pi.getSessionName?.();
     if (!currentCtx || !name || planTime == null) return;
-    await updatePlanTime(planPath(currentCtx.cwd, name), name, planTime).catch(() => {});
+    await updatePlanTime(planPath(currentCtx.cwd, name), name, planTime).catch(
+      () => {},
+    );
   };
 
   const adopt = async (ctx: ExtensionContext) => {
@@ -145,8 +202,7 @@ export default function (pi: ExtensionAPI) {
     // and cache age from the active branch rather than trust the empty closure.
     try {
       const branch = ctx.sessionManager.getBranch();
-      phase = derivePhaseFromBranch(branch);
-      mode = deriveWorkflowMode(branch) ?? "spec";
+      mode = deriveWorkflowMode(branch);
       openCheckpoint = deriveOpenCheckpoint(branch);
       cacheStartedAt = latestAssistantTimestamp(branch);
     } catch {
@@ -164,7 +220,6 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("session_start", async (_event, ctx) => {
     firstTurnTokens = undefined;
-    phase = undefined;
     mode = undefined;
     runStartedAt = undefined;
     planTime = undefined;
@@ -173,7 +228,9 @@ export default function (pi: ExtensionAPI) {
     openCheckpoint = undefined;
     await adopt(ctx);
   });
-  pi.on("session_tree", async (_event, ctx) => { await adopt(ctx); });
+  pi.on("session_tree", async (_event, ctx) => {
+    await adopt(ctx);
+  });
 
   // Keep ctx reference fresh on every turn
   pi.on("input", async (_event, ctx) => {
@@ -211,9 +268,10 @@ export default function (pi: ExtensionAPI) {
     if (event.message.role !== "assistant") return;
     currentCtx = ctx;
     const timestamp = event.message.timestamp;
-    cacheStartedAt = typeof timestamp === "number" && Number.isFinite(timestamp)
-      ? timestamp
-      : Date.now();
+    cacheStartedAt =
+      typeof timestamp === "number" && Number.isFinite(timestamp)
+        ? timestamp
+        : Date.now();
     refreshStatus();
   });
 
@@ -221,22 +279,16 @@ export default function (pi: ExtensionAPI) {
     currentCtx = ctx;
     if (firstTurnTokens == null && event.message.role === "assistant") {
       const tokens = event.message.usage.totalTokens;
-      if (typeof tokens === "number" && Number.isFinite(tokens) && tokens >= 0) firstTurnTokens = tokens;
+      if (typeof tokens === "number" && Number.isFinite(tokens) && tokens >= 0)
+        firstTurnTokens = tokens;
     }
-    refreshStatus();
-  });
-
-  pi.events.on?.(TASK_STARTED_EVENT, (payload: unknown) => {
-    const next = payload as TaskStartedEvent | undefined;
-    if (!next?.resetTiming) return;
-    planTime = EMPTY_PLAN_TIME;
-    runStartedAt = working && !waitingForUser ? Date.now() : undefined;
     refreshStatus();
   });
 
   pi.events.on?.(USER_WAIT_EVENT, (payload: unknown) => {
     const next = payload as UserWaitEvent | undefined;
-    if (typeof next?.waiting !== "boolean" || next.waiting === waitingForUser) return;
+    if (typeof next?.waiting !== "boolean" || next.waiting === waitingForUser)
+      return;
     const now = Date.now();
     if (next.waiting) {
       if (working && runStartedAt != null) {
@@ -252,7 +304,10 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("session_shutdown", async (_event, ctx) => {
-    pi.events.emit?.("powerbar:update", { id: "attention-span", text: undefined });
+    pi.events.emit?.("powerbar:update", {
+      id: "attention-span",
+      text: undefined,
+    });
     clearPhaseIndicator(ctx);
     currentCtx = undefined;
     working = false;

@@ -1,56 +1,123 @@
 import { describe, expect, it, vi } from "vitest";
-import { deriveAuthorization, recordAuthorization, registerAuthorization } from "./authorization.js";
+import { registerAuthorization } from "./authorization.js";
 
-function harness(mode: "vibe" | "spec") {
-	const branch: any[] = [{ type: "custom", customType: "agent-workflow:mode", data: { mode } }];
-	const handlers = new Map<string, Array<(event: any, ctx: any) => any>>();
-	const emitted: Array<[string, unknown]> = [];
-	const notify = vi.fn();
-	const pi = {
-		on: vi.fn((name: string, handler: any) => handlers.set(name, [...(handlers.get(name) ?? []), handler])),
-		appendEntry: vi.fn((customType: string, data: unknown) => branch.push({ type: "custom", customType, data })),
-		events: { emit: vi.fn((name: string, data: unknown) => emitted.push([name, data])) },
-		getSessionName: () => "dashboard-polish",
-	};
-	registerAuthorization(pi as never);
-	const ctx = { cwd: "/work", hasUI: true, ui: { notify }, sessionManager: { getBranch: () => branch } };
-	return { pi, branch, handlers, emitted, notify, ctx };
+function harness(mode?: string, hasUI = true) {
+  const branch: any[] = mode
+    ? [{ type: "custom", customType: "agent-workflow:mode", data: { mode } }]
+    : [];
+  const handlers = new Map<string, (event?: any, ctx?: any) => any>();
+  const notify = vi.fn();
+  const pi = {
+    on: vi.fn((name: string, handler: any) => handlers.set(name, handler)),
+  };
+  registerAuthorization(pi as never);
+  const ctx = {
+    cwd: "/repo",
+    hasUI,
+    ui: { notify },
+    sessionManager: { getBranch: () => branch },
+  };
+  return {
+    notify,
+    branch,
+    call: (
+      toolName: string,
+      input: Record<string, unknown> = { path: "src/app.ts" },
+    ) => handlers.get("tool_call")!({ toolName, input }, ctx),
+    start: (toolName: string) =>
+      handlers.get("tool_execution_start")!({ toolName }, ctx),
+    input: (source: string) => handlers.get("input")!({ source }, ctx),
+  };
 }
 
-describe("workflow authorization", () => {
-	it("marks each Spec User interval as requiring approval", async () => {
-		const h = harness("spec");
-		await h.handlers.get("input")![0]({ source: "interactive" }, h.ctx);
-		expect(deriveAuthorization(h.branch)).toBe("required");
-		await h.handlers.get("input")![0]({ source: "extension" }, h.ctx);
-		expect(h.branch.filter((entry) => entry.customType === "agent-workflow:authorization")).toHaveLength(1);
-	});
+describe("mode as the edit gate", () => {
+  it.each(["edit", "write"])(
+    "blocks %s in Ask, including before any mode is recorded",
+    async (tool) => {
+      for (const mode of [undefined, "ask"]) {
+        const result = await harness(mode).call(tool);
+        expect(result).toMatchObject({ block: true, terminate: true });
+        expect(result.reason).toContain("Ask does not change project files");
+      }
+    },
+  );
 
-	it("blocks Spec source edits while allowing plan metadata", async () => {
-		const h = harness("spec");
-		await h.handlers.get("input")![0]({ source: "interactive" }, h.ctx);
-		const guard = h.handlers.get("tool_call")![0];
-		await expect(guard({ toolName: "edit", input: { path: "/work/src/app.ts" } }, h.ctx)).resolves.toMatchObject({ block: true, terminate: true });
-		await expect(guard({ toolName: "write", input: { path: "/work/.pi/plan/dashboard-polish.md" } }, h.ctx)).resolves.toBeUndefined();
+  it.each(["edit", "write"])("blocks %s in Spec", async (tool) => {
+    const result = await harness("spec").call(tool);
+    expect(result).toMatchObject({ block: true, terminate: true });
+    expect(result.reason).toContain("Spec does not change project files");
+  });
 
-		recordAuthorization(h.pi as never, "approved", "dashboard-polish");
-		await expect(guard({ toolName: "edit", input: { path: "/work/src/app.ts" } }, h.ctx)).resolves.toBeUndefined();
-	});
+  it.each(["edit", "write"])("allows %s in Vibe", async (tool) => {
+    expect(await harness("vibe").call(tool)).toBeUndefined();
+  });
 
-	it("warns once for an unapproved Spec shell interval", async () => {
-		const h = harness("spec");
-		await h.handlers.get("input")![0]({ source: "interactive" }, h.ctx);
-		const start = h.handlers.get("tool_execution_start")![0];
-		await start({ toolName: "bash" }, h.ctx);
-		await start({ toolName: "bash" }, h.ctx);
-		expect(h.notify).toHaveBeenCalledTimes(1);
-	});
+  it("never blocks a non-mutating tool", async () => {
+    expect(await harness("ask").call("read")).toBeUndefined();
+    expect(await harness("spec").call("grep")).toBeUndefined();
+  });
 
-	it("lets Vibe mutate and enters Execute automatically", async () => {
-		const h = harness("vibe");
-		await h.handlers.get("input")![0]({ source: "interactive" }, h.ctx);
-		expect(deriveAuthorization(h.branch)).toBeUndefined();
-		await h.handlers.get("tool_execution_start")![0]({ toolName: "edit" }, h.ctx);
-		expect(h.branch.at(-1)).toMatchObject({ customType: "agent-workflow:phase", data: { phase: "execute" } });
-	});
+  it.each([".pi/plan/dashboard-polish.md", ".pi/MEMORY.md"])(
+    "keeps %s writable in every mode",
+    async (path) => {
+      for (const mode of ["ask", "spec", "vibe"]) {
+        expect(await harness(mode).call("write", { path })).toBeUndefined();
+      }
+    },
+  );
+
+  it("resolves a legacy phase entry rather than falling back to Ask", async () => {
+    expect(await harness("execute").call("edit")).toBeUndefined();
+    expect(await harness("explore").call("edit")).toMatchObject({
+      block: true,
+    });
+  });
+});
+
+describe("unclassifiable mutation warning", () => {
+  it("warns once per interval outside Vibe, and again after new human input", async () => {
+    const h = harness("spec");
+    await h.start("bash");
+    await h.start("bash");
+    expect(h.notify).toHaveBeenCalledTimes(1);
+    expect(h.notify).toHaveBeenCalledWith(
+      expect.stringContaining("Spec does not execute"),
+      "warning",
+    );
+
+    await h.input("extension");
+    await h.start("bash");
+    expect(h.notify).toHaveBeenCalledTimes(1);
+
+    await h.input("interactive");
+    await h.start("bash");
+    expect(h.notify).toHaveBeenCalledTimes(2);
+  });
+
+  it("stays silent in Vibe, for safe tools, and for the already-blocked pair", async () => {
+    const vibe = harness("vibe");
+    await vibe.start("bash");
+    expect(vibe.notify).not.toHaveBeenCalled();
+
+    const spec = harness("spec");
+    for (const tool of [
+      "read",
+      "grep",
+      "find",
+      "ls",
+      "start_task",
+      "save_plan",
+      "edit",
+      "write",
+    ]) {
+      await spec.start(tool);
+    }
+    expect(spec.notify).not.toHaveBeenCalled();
+  });
+
+  it("does not notify without an interactive UI", async () => {
+    const h = harness("spec", false);
+    await h.start("bash");
+    expect(h.notify).not.toHaveBeenCalled();
+  });
 });

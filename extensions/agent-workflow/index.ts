@@ -1,11 +1,11 @@
 /**
  * Agent Workflow
  *
- * A compact, constant workflow contract plus one tiny session-mode marker.
- * Vibe delegates continuous implementation; Spec retains explicit review.
- * Approval settlement, source edit/write blocking, immutable approved names,
- * and persisted mode state are runtime-backed; judgment-heavy boundaries stay
- * in the model contract.
+ * A compact, constant pseudocode contract plus one tiny session-mode marker.
+ * Mode belongs to the User: Ask aligns, Spec researches and proposes, Vibe
+ * executes. The runtime enforces what judgment should not be trusted with — the
+ * edit gate, the settled mode picker, the single artifact, and immutable plan
+ * names — and leaves the rest to the contract.
  */
 
 import { writeFile } from "node:fs/promises";
@@ -15,56 +15,89 @@ import type {
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { registerAuthorization } from "./authorization.js";
-import { registerApproval, reviewPlan } from "./approval.js";
-import { registerAsk } from "./ask.js";
 import { registerCheckpointInputResolution } from "./checkpoint.js";
-import { handoffKickoff, openHandoffSession } from "./handoff.js";
+import { openHandoffSession } from "./handoff.js";
 import {
   deriveWorkflowMode,
-  ensureWorkflowMode,
   recordWorkflowMode,
   workflowModePrompt,
   type WorkflowMode,
 } from "./mode.js";
+import {
+  applyMode,
+  openModePicker,
+  registerModePicker,
+} from "./mode-picker.js";
 import { registerWorkflowNotices } from "./notice.js";
-import { recordWorkflowPhase } from "./phase.js";
 import {
   autoSlug,
   ensurePiState,
   listPlanNames,
   planPath,
-  recordModeTransition,
-  resolvePlanTask,
   PLAN_TEMPLATE,
   registerTaskManagement,
-  VIBE_PLAN_TEMPLATE,
 } from "./task.js";
 
 /** Constant contract; the selected mode is injected separately. */
 const WORKFLOW_STEPS = `
-The User is the human and the Agent is the llm. The injected pi_workflow_mode is session-wide and changes only through /vibe or /spec; switching keeps the current artifact and the next work records the transition. Artifact kind is independent: implementation changes the project; investigation only reports.
+MODES: ASK · SPEC · VIBE
+    Mode is the User's. The Agent works in the injected pi_workflow_mode and may
+    recommend another; it never adopts one.
 
-Run Context pass → Align → Explore ↔ Align → Execute ↔ Align → Close out.
+LOOP:
+    mode = ASK on session start
+    WAIT for the User request
+    RUN BLOCK[mode] — never another block
+    ON settle the runtime opens the mode picker:
+        Continue with the recommended next step · Ask · Spec · Vibe ·
+        Hand off · Write your own...
+        Dismissal and "Write your own..." return to typing; the mode is unchanged.
+    REPEAT
 
-1. Start and orient
-- Before source discovery, use only the request, loaded instructions, session context, bounded orientation memory, and exact likely historical-plan lookups. Call "start_task" with a context-informed name and implementation/investigation intent. A distinct goal gets a new preserved artifact but inherits the session mode.
-- Discover local facts instead of asking the User. Historical plans and memory are leads to verify; code wins.
+BLOCK ASK — align and decide. No mutations.
+    Until the plan file exists: read .pi/, README, and docs only; no repo search.
+    Afterwards: search as far as the request requires.
+    CALL "start_task" once, on the first request of the session.
+    Frame the work, surface assumptions and trade-offs, recommend the next mode.
+    Record what was settled under Align and Decisions.
 
-2. Vibe
-- For implementation, keep the compact Goal, Direction, Work log, Quirks, Checklist, and Close out record current, then build and verify in the same turn. Never call "save_plan" and never pause for workflow approval.
-- Ask zero questions by default. Use at most one compact "ask" per work interval only when plausible directions materially change the visible outcome; otherwise use best judgment. Follow-ups remain Vibe regardless of size until /spec. Required destructive, dependency, credential, or external-action permission remains separate.
-- New User input starts Explore; the first mutation enters Execute automatically. /execute continues the current log and /handoff moves it to a lean Vibe session.
+BLOCK SPEC — research and design. No mutations.
+    Establish facts from source and docs; code wins over memory.
+    Fill Current state, Findings, Desired state, and Approach.
+    CALL "save_plan" to persist and echo the proposal, then end the turn.
+        It replaces the draft until the session has entered VIBE, and appends a
+        dated revision after.
 
-3. Spec
-- Perform one compact initial Align, then evidence-backed Discovery → Design → Refinement. Use adaptive "ask" only when a decision materially changes the next work interval, scope, ownership, acceptance, or an irreversible choice.
-- For implementation, keep Goal, Current state, Align, Decisions, Desired state, Approach, Quirks, Checklist, and Close out current. A one-line change gets a one-line plan.
-- Present the complete proposal with "save_plan" and stop. Only Proceed or an approved handoff authorizes project changes; Revise returns to Explore. Plan metadata may change before approval, project files may not.
-- After a Spec run settles, every later User-requested mutation needs a complete dated revision and fresh Proceed/Handoff/Revise approval, even small polish. Fixes discovered during uninterrupted execution that are necessary to meet the approved plan remain automatic. Approved plan names never change.
+BLOCK VIBE — the only execution engine.
+    Implement the current instruction, or the persisted proposal when one exists.
+    Keep Work log and Checklist current; verify before ending.
+    RUN CLOSE_OUT.
 
-4. Investigation and close out
-- Investigations in either mode maintain only Question, Align, Scope, Findings, Conclusion, Quirks, and Checklist; update directly, report, and never call "save_plan" or request execution approval. Later implementation gets a distinct artifact citing the investigation.
-- During Execute, keep the artifact current automatically. Stop only for a blocker, invalidated approach, or required action permission; in Spec, any changed requested outcome returns through approval.
-- At close out, directly finish every checklist item and implementation PR summary/QA steps; investigations instead finish findings and conclusion. Report changed paths, verification, limitations, and unresolved concerns without declaring User acceptance. Promote only durable orientation or quirks to memory.`;
+ON BLOCKER in SPEC or VIBE:
+    STOP. Do not improvise and do not interrogate mid-turn.
+    Write the problem and the options into the artifact, state the recommended
+    resolution, and end the turn. The picker carries the decision.
+
+CLOSE_OUT — a step, not a mode.
+    Mark checklist items done, skipped, or failed.
+    Fill the sections this work touched; leave the rest.
+    Report changed paths, verification, limitations, and open concerns.
+    Promote only durable orientation and costly quirks to project memory.
+    Never claim User acceptance.
+
+ARTIFACT:
+    One session owns one .pi/plan/<name>.md, created at "start_task" and extended
+    for the life of the session and its handoffs. A new goal needs a new session.
+    Every turn must leave it good enough to resume from with no transcript.
+
+SAFETY:
+    Destructive actions, dependency changes, credentials, and external writes
+    keep their normal permission in every mode.
+
+COMMANDS:
+    /ask /spec /vibe   switch mode; starts no turn
+    /mode              re-open the picker
+    /handoff           checkpoint the artifact, then continue it in a fresh session`;
 
 /** Constant by design: the large cacheable prefix never varies per turn. */
 export function workflowPrompt(): string {
@@ -75,84 +108,72 @@ export default function createExtension(pi: ExtensionAPI): void {
   registerAuthorization(pi);
   registerTaskManagement(pi);
   registerCheckpointInputResolution(pi);
-  registerAsk(pi);
-  registerApproval(pi);
   registerWorkflowNotices(pi);
+  // Last, so any handler that settles first has already run.
+  registerModePicker(pi);
 
-  const setModeCommand = (mode: WorkflowMode) => async (_args: string, ctx: ExtensionCommandContext) => {
-    const previous = deriveWorkflowMode(ctx.sessionManager.getBranch()) ?? "spec";
-    recordWorkflowMode(pi, mode);
-    const name = pi.getSessionName();
-    if (previous !== mode && name) {
-      await recordModeTransition(ctx.cwd, name, mode).catch(() => {
-        if (ctx.hasUI) ctx.ui.notify("Workflow mode changed, but its artifact log could not be updated.", "warning");
-      });
-    }
-    if (ctx.hasUI) ctx.ui.notify(`${mode === "vibe" ? "Vibe" : "Spec"} mode will apply to future work in this session.`, "info");
-  };
-  pi.registerCommand("vibe", {
-    description: "Use automatic Vibe workflow for future work in this session",
-    handler: setModeCommand("vibe"),
+  const setModeCommand =
+    (mode: WorkflowMode) =>
+    async (_args: string, ctx: ExtensionCommandContext) => {
+      await applyMode(
+        pi,
+        ctx,
+        mode,
+        deriveWorkflowMode(ctx.sessionManager.getBranch()),
+      );
+    };
+  pi.registerCommand("ask", {
+    description: "Align and decide before any work in this session",
+    handler: setModeCommand("ask"),
   });
   pi.registerCommand("spec", {
-    description: "Use reviewed Spec workflow for future work in this session",
+    description: "Research and propose before any change in this session",
     handler: setModeCommand("spec"),
   });
-
-  const completions = (prefix: string) => {
-    const last = prefix.trim();
-    return listPlanNames(process.cwd())
-      .filter((name) => name.startsWith(last))
-      .map((name) => ({ value: name, label: name }));
-  };
-
-  const reviewCommand = (command: "execute" | "handoff") => async (args: string, ctx: ExtensionCommandContext) => {
-    const requested = args.trim() || undefined;
-    const { task, error } = resolvePlanTask(ctx.cwd, requested, ctx.sessionManager.getSessionName());
-    if (!task) {
-      if (ctx.hasUI) ctx.ui.notify(error ?? `Usage: /${command} [session-name].`, "warning");
-      return;
-    }
-
-    const mode = deriveWorkflowMode(ctx.sessionManager.getBranch()) ?? "spec";
-    if (mode === "vibe") {
-      if (command === "handoff") await openHandoffSession(pi, ctx, task.name, "vibe");
-      else {
-        recordWorkflowPhase(pi, "execute");
-        pi.sendUserMessage(handoffKickoff(task, "vibe"));
-      }
-      return;
-    }
-
-    await reviewPlan(pi, ctx, task, {
-      preferHandoff: command === "handoff",
-      recoveryCommand: `/${command} ${task.name}`,
-      onHandoff: () => openHandoffSession(pi, ctx, task.name, "spec"),
-    });
-  };
-  pi.registerCommand("execute", {
-    description: "Execute or review the current plan: /execute [session-name]",
-    getArgumentCompletions: completions,
-    handler: reviewCommand("execute"),
+  pi.registerCommand("vibe", {
+    description: "Execute the current instruction or proposal in this session",
+    handler: setModeCommand("vibe"),
   });
+  pi.registerCommand("mode", {
+    description: "Re-open the mode picker",
+    handler: async (_args, ctx) => openModePicker(pi, ctx),
+  });
+
   pi.registerCommand("handoff", {
-    description: "Continue the current plan in a fresh session: /handoff [session-name]",
-    getArgumentCompletions: completions,
-    handler: reviewCommand("handoff"),
-  });
-
-  // Human input starts an exploration interval. Extension-generated approval
-  // kickoffs retain Execute and do not revoke authorization.
-  pi.on("input", async (event) => {
-    if (event.source !== "extension") recordWorkflowPhase(pi, "explore");
+    description:
+      "Checkpoint the artifact and continue it in a fresh session: /handoff [session-name]",
+    getArgumentCompletions: (prefix: string) => {
+      const last = prefix.trim();
+      return listPlanNames(process.cwd())
+        .filter((name) => name.startsWith(last))
+        .map((name) => ({ value: name, label: name }));
+    },
+    handler: async (args: string, ctx: ExtensionCommandContext) => {
+      await openHandoffSession(pi, ctx, args.trim() || undefined);
+    },
   });
 
   pi.on("before_agent_start", async (event, ctx) => {
-    const freshSession = !pi.getSessionName();
-    const mode = await ensureWorkflowMode(pi, ctx, freshSession);
-    await scaffoldPlan(pi, ctx, event.prompt ?? "", mode);
-    return { systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt()}\n${workflowModePrompt(mode)}` };
+    // Headless runs have no picker and no gate to answer, so the contract would
+    // describe a workflow that cannot happen. Leave those sessions alone.
+    if (!ctx.hasUI) return;
+    const mode = await ensureWorkflowMode(pi, ctx);
+    await scaffoldPlan(pi, ctx, event.prompt ?? "");
+    return {
+      systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt()}\n${workflowModePrompt(mode)}`,
+    };
   });
+}
+
+/** A session starts in Ask; nothing else ever selects a mode for the User. */
+async function ensureWorkflowMode(
+  pi: ExtensionAPI,
+  ctx: ExtensionContext,
+): Promise<WorkflowMode> {
+  const existing = deriveWorkflowMode(ctx.sessionManager.getBranch());
+  if (existing) return existing;
+  recordWorkflowMode(pi, "ask");
+  return "ask";
 }
 
 /** Best-effort scaffold so timing and handoff have a durable file immediately. */
@@ -160,7 +181,6 @@ async function scaffoldPlan(
   pi: ExtensionAPI,
   ctx: ExtensionContext,
   prompt: string,
-  mode: WorkflowMode,
 ): Promise<void> {
   if (pi.getSessionName()) return;
   const name = autoSlug(prompt, new Date());
@@ -168,8 +188,11 @@ async function scaffoldPlan(
     await ensurePiState(ctx.cwd);
     await writeFile(
       planPath(ctx.cwd, name),
-      (mode === "vibe" ? VIBE_PLAN_TEMPLATE : PLAN_TEMPLATE).replace("<session-name>", name),
-      { encoding: "utf8", flag: "wx" },
+      PLAN_TEMPLATE.replace("<session-name>", name),
+      {
+        encoding: "utf8",
+        flag: "wx",
+      },
     );
   } catch {
     return;

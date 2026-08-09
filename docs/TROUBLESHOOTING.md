@@ -10,17 +10,24 @@
 
 ## The agent edits before we agreed on a direction
 
-Check the mode badge first. Vibe intentionally implements without workflow
-approval; run `/spec` before the next request when review is wanted. In Spec,
-project `edit` and `write` calls are blocked until the current plan increment is
-approved. Shell and unknown custom mutations can only be warned about because
-their effects are not generically classifiable; interrupt and return to review
-if one crosses the boundary.
+Check the mode badge first. Only Vibe may change project files, so `[VIBE]` means
+edits were authorized the moment you switched. Run `/ask` or `/spec` before the
+next request when you want alignment or a proposal instead; in both, project
+`edit` and `write` calls are blocked outright. Shell and unknown custom mutations
+can only be warned about because their effects are not generically classifiable;
+interrupt and switch back if one crosses the boundary.
+
+## The agent switched mode on its own
+
+It cannot. Mode changes only through the picker, `/ask`, `/spec`, `/vibe`, or a
+handoff seed. If the badge looks wrong, the likeliest cause is a picker answer
+that landed on a neighbouring option — run `/mode` and choose again, or use the
+commands directly.
 
 ## Nothing prompts before destructive commands
 
-Expected. Spec approval is a workflow gate, not a general command permission
-system. Destructive and external-action consent remains conversational. Use
+Expected. The mode gate covers project file edits, not general command
+permission. Destructive and external-action consent remains conversational. Use
 Pi's permission configuration or a sandbox when every command needs enforcement.
 
 ## Shift+enter submits instead of inserting a newline

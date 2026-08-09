@@ -37,7 +37,7 @@ extension with its complete description.
 The help document is built by `help.ts` from the same
 `EXTENSION_PRESENTATIONS` manifest and rendered in the banner's themed box.
 
-The dashboard does not duplicate the Progress Tracker phase ribbon.
+The dashboard does not duplicate the Progress Tracker mode ribbon.
 
 ## Context breakdown
 

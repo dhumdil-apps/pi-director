@@ -1,6 +1,6 @@
 ---
 name: pi-inspector
-description: Debug and verify a local web application through a human-authorized or explicitly plan-approved full-auto Pi Inspector session using semantic app state, captured evidence, screenshots, and replayable flows. Use for local SPA/browser debugging, reproducing UI bugs, validating browser-facing changes, or collecting evidence after implementation. Do not use for ordinary code-only tests or when no browser behavior is involved.
+description: Debug and verify a local web application through a human-authorized or explicitly Spec-accepted full-auto Pi Inspector session using semantic app state, captured evidence, screenshots, and replayable flows. Use for local SPA/browser debugging, reproducing UI bugs, validating browser-facing changes, or collecting evidence after implementation. Do not use for ordinary code-only tests or when no browser behavior is involved.
 ---
 
 # Pi Inspector
@@ -11,10 +11,11 @@ code, backend, and process truth.
 ## Workflow
 
 1. Establish authorization.
-   - If the approved implementation plan explicitly includes full-auto browser work,
-     start the target first with its documented repository shell command, then run
-     `pi-inspector launch --full-auto --project <id>`. The launcher must start the
-     source-beta GUI and return a fresh session without a human click.
+   - If the Spec proposal the User accepted by switching to Vibe explicitly includes
+     full-auto browser work, start the target first with its documented repository
+     shell command, then run `pi-inspector launch --full-auto --project <id>`. The
+     launcher must start the source-beta GUI and return a fresh session without a
+     human click.
    - Otherwise, run `pi-inspector session status`. On exit `3`, ask the human to start
      Pi Inspector and enable Agent Mode; do not launch it autonomously.
    - Exit `4`: the Kill switch was activated. Stop and wait for a new prompt; never relaunch

@@ -3,10 +3,10 @@
 > π Measure twice, cut once.
 
 A [Pi](https://pi.dev) package that directs deliberate coding sessions through
-Align checkpoints, read-only Explore, approved Execute, and Close out, with
-durable memory, handoffs, and visible status. When a human-authorized Pi
-Inspector session is available, Director can verify browser behavior through
-shared semantic state and flows.
+three modes the human owns — Ask to align, Spec to research and propose, Vibe to
+execute — with durable memory, checkpointing handoffs, and visible status. When a
+human-authorized Pi Inspector session is available, Director can verify browser
+behavior through shared semantic state and flows.
 
 ## Quick Start
 
@@ -45,10 +45,10 @@ pi list
 
 ## Included Features
 
-- **agent-workflow** — One loop per task: Align → Explore ↔ Align → Execute ↔ Align → Close out. Explore and Execute are the sustained work modes; Align is a short User-visible checkpoint. Every session scaffolds `.pi/plan/<timestamp-slug>.md` as the living document; `ask` provides initial or adaptive alignment, while `save_plan` arms the Proceed/Handoff/Revise approval checkpoint. `/handoff` spawns a fresh seeded session. The injected block is constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
+- **agent-workflow** — Three modes the User owns: Ask aligns and decides, Spec researches and proposes with `save_plan`, and Vibe is the only mode that may change project files. The Agent never switches mode; a native picker opens after every settled turn offering the recommended next step, the other modes, a handoff, and a free-text escape hatch. Every session scaffolds one `.pi/plan/<timestamp-slug>.md` and extends it for life, including across `/handoff`, which checkpoints the file before spawning. The injected block is constant, so the prompt prefix stays cacheable. See [the agent-workflow README](extensions/agent-workflow/README.md).
 - **project-memory** — Low-noise startup check for the hidden `memory-review` commit cursor. It ignores uncommitted work, gives relevant commits a one-day grace period, and suppresses repeated reminders until both `HEAD` changes and 24 hours pass; cooldown state stays outside the repository.
-- **progress-tracker** — Above-editor Explore/Align/Execute timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
-- **pi-inspector skill & bridge** — Detects an authorized Pi Inspector session for browser debugging and verification, while reporting Director phase and session context back to Inspector over its display-only channel.
+- **progress-tracker** — Above-editor per-mode Ask/Spec/Vibe timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
+- **pi-inspector skill & bridge** — Detects an authorized Pi Inspector session for browser debugging and verification, while reporting Director mode and session context back to Inspector over its display-only channel.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).
 - **bundled themes** — `dark` and `github-dark`.

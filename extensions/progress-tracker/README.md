@@ -25,22 +25,18 @@ renders the one thing the transcript cannot show.
   percentage. The readout refreshes at turn boundaries and is colored accent /
   warning / error: warning above 20% full and error above 40% full. The bar
   carries the proportion, so the percentage is not printed.
-- Idle prompt — `What’s your goal?` (dim) before approval, or `What’s up next?`
-  (accent) after an approved execution settles. The first invites the next goal;
-  the second invites a review, a refinement, or a clean new session for the next
-  task. It is **display only**: Agent Workflow records `explore` for every
-  non-extension User message, while approval-picker Revise also records
-  `explore`, Proceed records `execute`, and Handoff seeds `execute` in the
-  replacement session. Extension-generated approval kickoffs preserve Execute;
-  registered slash commands do not emit input. These transitions are persisted
-  as custom session entries excluded from model context.
-  Historical `plan` entries map to Explore. Reloads and tree changes read the
-  latest entry, and `/handoff` seeds `execute` before the replacement session
-  initializes; older sessions still fall back to their kickoff message. This is
-  separate from the session's Vibe/Spec policy; the large injected loop stays
-  constant while only a tiny mode marker varies.
-- Working phase — while a run is in flight the idle prompt gives way to the
-  spinner followed directly by timing; no phase label is shown.
+- Idle prompt — `What’s your goal?` (dim) in Ask or Spec, or `What’s up next?`
+  (accent) once execution settles in Vibe. The first invites the next goal; the
+  second invites a review, a refinement, or a clean new session for the next
+  task. It is **display only**: the prompt and badge both follow the session's
+  workflow mode, which only the User changes through the mode picker, `/ask`,
+  `/spec`, `/vibe`, or a handoff seed. Mode changes are persisted as custom
+  session entries excluded from model context, and pre-rename `explore`, `plan`,
+  and `execute` entries fold onto Spec, Spec, and Vibe. Reloads and tree changes
+  read the latest entry. The large injected contract stays constant while only a
+  tiny mode marker varies.
+- Working state — while a run is in flight the idle prompt gives way to the
+  spinner and badge followed directly by timing.
 - Work/cache timer — one compact dim readout follows the active spinner and
   counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
   Explore or Execute begins rather than displaying grand-total task time.
@@ -66,14 +62,16 @@ renders the one thing the transcript cannot show.
   it across reloads and handoffs. A slow idle repaint advances the age and its
   colors without another Pi event until the cap.
 
-  Active intervals accrue to Explore or Execute, splitting immediately when a
-  context-free phase event lands; an initial phase-less interval counts as
-  Explore. On settlement the work buckets atomically update the named plan's
-  script-owned `time-spent` block. Historical Plan work folds into Explore,
-  total-only history migrates to Unallocated, and marker-free legacy plans stay
-  byte-identical until their next settled run. Persistence is best-effort if the
-  plan is unavailable. Normal row truncation protects narrow terminals.
-- `agent-status:update` event — `working`, `mode`, `phase`, `sessionName`, `contextUsed`,
+  Active intervals accrue to Ask, Spec, or Vibe, splitting immediately when a
+  mode event lands; an initial mode-less interval counts as Ask. On settlement
+  the buckets atomically update the named plan's script-owned `time-spent` block.
+  Pre-rename explore/execute/decision markers migrate to Spec/Vibe/Ask, older
+  Plan work folds into Spec, total-only history migrates to Unallocated, and
+  marker-free legacy plans stay byte-identical until their next settled run.
+  Persistence is best-effort if the plan is unavailable. Normal row truncation
+  protects narrow terminals.
+
+- `agent-status:update` event — `working`, `mode`, `sessionName`, `contextUsed`,
   `contextMax`, `cacheRead`, `cacheWrite`, `cacheHitRate`, `cwd`, for observers
   such as Pi Inspector Bridge. Inspector receives display context but no control
   credentials or todo state.

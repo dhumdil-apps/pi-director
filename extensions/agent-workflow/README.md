@@ -4,116 +4,111 @@ The injected block in [`index.ts`](index.ts) is the behavior contract. This page
 describes its runtime surfaces and persistence; where they disagree, the block
 wins.
 
-## Two independent axes
+## Three modes, chosen by the User
 
-The first prompt of a new interactive session opens a native mode picker:
+- **Ask** aligns and decides. It reads, answers, frames the work, and recommends
+  what should happen next. It changes no project files.
+- **Spec** researches and designs. It establishes facts, fills the artifact, and
+  presents a proposal with `save_plan`. It changes no project files.
+- **Vibe** executes. It is the only mode that may edit or write project files.
 
-- **Vibe** builds continuously and keeps a compact work log. It has no workflow
-  approval step.
-- **Spec** explores and presents every requested implementation increment for
-  Proceed/Handoff/Revise approval.
+A session starts in Ask. Nothing in the bundle ever selects a mode on the Agent's
+behalf — there is no promotion, escalation, or fallback. The Agent may recommend
+a mode; only the User adopts one. The choice survives reloads, forks, and
+handoffs, and pre-rename sessions that persisted a phase or a two-value mode fold
+onto these three on read.
 
-The choice is session-wide and survives reloads, forks, new goals, and handoffs.
-Only `/vibe` and `/spec` change it. Those commands update future behavior and
-the persistent activity badge without triggering a model turn. Dismissed,
-headless, and legacy mode-less sessions default to Spec.
+Close out is a step at the end of a turn, not a fourth mode.
 
-Mode is separate from artifact kind:
+## The mode picker
 
-- **Implementation** changes the project and has close-out PR/QA evidence.
-- **Investigation** maintains Question, Align, Scope, Findings, Conclusion,
-  Quirks, and Checklist, then reports without execution approval.
+The picker is the single decision surface, and it is owned by the runtime rather
+than by a tool, so the Agent cannot skip it by forgetting a call. It opens on
+every settled turn:
 
-The common loop remains **Context pass → Align → Explore ↔ Align → Execute ↔
-Align → Close out**. Explore and Execute are work phases; Align is a timed
-User-visible checkpoint, not another mode.
+- `Continue with the recommended next step` keeps the mode and sends a short
+  kickoff. The recommendation itself is the Agent message directly above.
+- `Switch to Ask` / `Switch to Spec` / `Switch to Vibe` persist the choice, log
+  it in the artifact, and start no turn — the User types the next request.
+- `Hand off to a fresh session` prepares `/handoff <name>` in the editor. It
+  leads and is marked recommended once the context is no longer lean.
+- `Write your own...` and dismissal are the same escape hatch: control returns to
+  the editor with the mode untouched.
 
-## Starting and asking
+`/ask`, `/spec`, and `/vibe` switch mode directly when the picker itself is
+unavailable, and `/mode` re-opens it. None of them start a turn.
 
-Before source discovery, the Agent is limited to the request, loaded
-instructions, existing session context, bounded orientation memory, and exact
-likely historical-plan lookups. It then calls `start_task` with a
-context-informed name and implementation/investigation intent. The tool renames
-the temporary scaffold, applies the selected template, and preserves the prior
-artifact when a distinct goal starts. Implementation following an investigation
-keeps and cites the investigation as before.
+Because the picker is always one turn away, a blocker never needs a mid-turn
+dialog. Spec and Vibe stop, write the problem and the recommended resolution into
+the artifact, and let the picker carry the decision. There is no `ask` tool.
 
-`ask` owns consequential decisions only. It renders evidence, recommendation,
-why the choice matters, and two to four distinct options before opening a native
-headline picker. Vibe asks nothing by default and permits at most one direction
-question per work interval when the visible outcome would materially differ.
-Spec uses one compact initial Align and adaptive asks only when the next work
-interval, scope, ownership, acceptance, or an irreversible choice changes.
+Picker latency accrues as capped Align time through the checkpoint events, and a
+custom answer stays open until the next human input.
 
-Question, approval, and initial-mode pickers create persisted checkpoint events.
-Their User wait pauses active work and accrues capped Align latency. Custom
-answers remain open until the next human input.
+## Mode as the edit gate
 
-## Vibe
+`edit` and `write` are blocked unless the mode is Vibe. This is what makes "the
+Agent never switches mode" enforceable rather than advisory: reaching execution
+takes a User choice, not a model decision. Reads and `.pi/plan/` or `.pi/MEMORY.md`
+maintenance stay available in every mode.
 
-Vibe implementation artifacts contain Goal, Direction, Work log, Quirks,
-Checklist, and Close out with PR summary and QA steps. The Agent edits this log
-directly, implements, verifies, and closes out in the same turn. It never calls
-`save_plan` and the tool rejects accidental Vibe use.
+Shell and unknown custom tools cannot be classified reliably, so running one
+outside Vibe produces one visible warning per interval. The contract remains the
+primary guard for those tools.
 
-Every later User request inherits Vibe regardless of size until `/spec`. Normal
-destructive-action, dependency, credential, or external-write permission still
-applies; it authorizes the action rather than changing workflow mode. Human
-input records Explore and the first edit/write records Execute.
+There is no separate plan-approval gate. Switching to Vibe is the approval, which
+is why `save_plan` persists and echoes rather than interrupting the turn.
 
-In Vibe, `/execute [session-name]` immediately continues the resolved work log.
-`/handoff [session-name]` creates a fresh Vibe session with the same task name,
-log path, and Execute display phase. Neither command opens plan approval.
+## Artifacts
 
-## Spec
+An unnamed first turn creates a timestamped plan from the flat template plus
+`.pi/MEMORY.md` when absent. `start_task` then renames that scaffold once.
 
-Spec implementation artifacts retain Goal, Current state, Align, Decisions,
-Desired state, Approach, Quirks, Checklist, and Close out. `save_plan` persists
-and echoes the complete proposal, aborts the Agent turn, and opens the settlement
-picker:
+**One session owns one plan file.** A later `start_task` with a different name is
+refused rather than starting a second record, so the initial goal and every
+revision stay in one place across the whole session and its handoffs. A genuinely
+new goal belongs in a fresh session. Plan files are never deleted automatically
+and `.pi/plan/` accumulates.
 
-- `Proceed — execute this plan` authorizes and executes in the current session.
-- `Handoff — execute in a fresh session` transfers the authorized plan and Spec
-  mode to a lean replacement session.
-- `Revise — return to Explore` keeps source changes blocked.
+The template is flat — Goal, Align, Current state, Findings, Decisions, Desired
+state, Approach, Work log, Quirks, Checklist, and Close out with PR summary and
+QA steps. Sections stay stubbed until the mode that owns them fills one, so a
+session that only ever researched simply never grows a work log.
 
-Every ordinary User input starts a new Spec authorization interval. Read-only
-exploration and direct `.pi/plan/` or `.pi/MEMORY.md` maintenance remain
-available, but project `edit` and `write` calls are blocked until the current
-proposal is approved. Shell or unknown custom mutation cannot be classified
-reliably, so it produces one visible warning per unapproved interval. The model
-contract remains the primary guard for those tools.
+`save_plan` belongs to Spec. It replaces the draft until the session has entered
+Vibe, and appends a dated revision after; once execution has begun, the plan name
+is immutable in code and an attempted rename fails before any file move.
 
-After a Spec run settles, any later User-requested mutation—small polish
-included—must be a dated revision and receive fresh approval. Fixes found during
-the uninterrupted approved run that are necessary to satisfy its contract stay
-automatic. Once approved, a plan name is immutable in code; attempted renames
-fail before any file move or rewrite.
+## Handoffs
 
-`/execute` and `/handoff` reopen the same native review for Spec. The former
-recommends current-session Proceed when context is lean; the latter recommends
-Handoff. A loaded context or an implementation derived from an investigation
-also recommends Handoff.
+`/handoff [session-name]` continues the same artifact in a fresh session, seeded
+with the task name and the current mode.
 
-## Artifacts, timing, and memory
+The replacement session inherits the artifact and nothing else, so `/handoff`
+first drives one checkpoint turn in the outgoing session and waits for it. That
+turn brings the plan file up to date with everything learned so far. Without it,
+a handoff would discard exactly the context it exists to preserve. The picker
+suppresses itself for that settlement.
 
-An unnamed first turn creates a timestamped temporary plan plus `.pi/MEMORY.md`
-when absent. `start_task` replaces only an untouched scaffold; a genuinely
-distinct existing task stays in the accumulating User-owned `.pi/plan/` archive.
-Plan files are never deleted automatically.
+## Timing
 
-Each artifact includes a script-owned `time-spent` block. Progress Tracker
-records mutually exclusive Explore/Execute work and capped Align latency.
-`save_plan` and approval hashing exclude timing changes, so a timer write cannot
-reopen review. Starting a distinct artifact resets live timing while preserving
-the earlier file.
+Each artifact carries a script-owned `time-spent` block with one bucket per mode:
+Ask, Spec, and Vibe, plus unallocated history. Ask holds both Agent work in Ask
+mode and capped picker latency. Progress Tracker accrues the active bucket and
+closes the interval the moment the mode changes, so a switch mid-run splits the
+time correctly.
 
-Close-out edits the current artifact directly and never calls `save_plan`.
-Implementation fills PR summary and QA steps; investigation fills findings and
-conclusion. The final report names verification, limitations, unresolved
-concerns, and skipped or failed checks without deciding acceptance for the User.
-Only durable orientation or costly quirks are promoted to project memory, and
-ordinary close-out never advances the hidden `memory-review` marker.
+Markers written before the rename migrate one-to-one — explore becomes Spec,
+execute becomes Vibe, decision becomes Ask — so no existing plan loses time.
+`stripTimeSpent` excludes the block from plan identity, so a timer write cannot
+disturb revision detection.
+
+## Headless
+
+Non-interactive sessions have no picker to answer and no gate to satisfy, so the
+contract would describe a workflow that cannot happen. `before_agent_start`
+returns the system prompt untouched when there is no UI: no injection, no
+scaffold, no picker.
 
 ## Evidence policy
 

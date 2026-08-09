@@ -5,13 +5,15 @@
  * It replaces pi's transient working row, so it owns setWorkingVisible.
  */
 
-import type {
-  ExtensionContext,
-  Theme,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
-import { addDecisionTime, addPhaseTime, DECISION_CAP_MS, formatDuration, type PlanTime } from "../../agent-workflow/plan-time.js";
-import type { WorkflowPhase } from "../../agent-workflow/phase.js";
+import {
+  addDecisionTime,
+  addModeTime,
+  DECISION_CAP_MS,
+  formatDuration,
+  type PlanTime,
+} from "../../agent-workflow/plan-time.js";
 import type { WorkflowMode } from "../../agent-workflow/mode.js";
 
 // Re-exported so existing importers (and the widget's own test) keep a single entry point.
@@ -27,22 +29,17 @@ const CACHE_ERROR_IDLE_MS = 5 * 60_000;
 const IDLE_MARKER = "›";
 
 export interface IndicatorExtras {
-  /** Session-scoped collaboration/approval policy. */
+  /** Which block the Agent is bound to, and which timing bucket is accruing. */
   mode?: WorkflowMode;
-  /**
-   * Which side of the approval gate the session is on. Undefined until a plan is
-   * in play, so a session that never planned looks exactly as it did before.
-   */
-  phase?: WorkflowPhase;
   /**
    * When the in-flight run started, as epoch ms. Held by the extension rather
    * than the widget: pi re-creates the factory on every turn boundary, so a
    * closure-local start would restart the counter mid-run.
    */
   runStartedAt?: number;
-  /** Settled Explore/Execute work plus capped Align latency. */
+  /** Settled Ask/Spec/Vibe work, including capped picker latency in Ask. */
   planTime?: PlanTime;
-  /** When the current Align choice was presented, for live checkpoint latency. */
+  /** When the current picker was presented, for live checkpoint latency. */
   checkpointOpenedAt?: number;
   /** When the latest provider response completed, as epoch ms, for cache age. */
   cacheStartedAt?: number;
@@ -50,12 +47,18 @@ export interface IndicatorExtras {
   now?: () => number;
 }
 
+const MODE_COLOR: Record<WorkflowMode, "dim" | "warning" | "accent"> = {
+  ask: "dim",
+  spec: "warning",
+  vibe: "accent",
+};
+
 function modeBadge(mode: WorkflowMode | undefined, theme: Theme): string {
   if (!mode) return "";
-  return `${theme.fg(mode === "vibe" ? "accent" : "warning", `[${mode.toUpperCase()}]`)} `;
+  return `${theme.fg(MODE_COLOR[mode], `[${mode.toUpperCase()}]`)} `;
 }
 
-/** Active shows time in this phase; idle shows age of the provider's prompt cache. */
+/** Active shows time in this mode; idle shows age of the provider's prompt cache. */
 function durationMs(
   working: boolean,
   extras: IndicatorExtras | undefined,
@@ -81,45 +84,58 @@ function timerColor(
   return "accent";
 }
 
-/** Accumulated work-mode and Align accounting stays visible while idle. */
-function phaseBuckets(
+/** Accumulated per-mode accounting stays visible while idle. */
+function modeBuckets(
   working: boolean,
   extras: IndicatorExtras | undefined,
   now: number,
   theme: Theme,
 ): string {
   if (extras?.planTime == null) return "";
-  const currentPhase = extras.phase ?? "explore";
-  let time = working && extras.runStartedAt != null
-    ? addPhaseTime(extras.planTime, currentPhase, Math.max(0, now - extras.runStartedAt))
-    : extras.planTime;
-  const openDecisionMs = extras.checkpointOpenedAt == null ? 0 : Math.max(0, now - extras.checkpointOpenedAt);
+  const currentMode = extras.mode ?? "ask";
+  let time =
+    working && extras.runStartedAt != null
+      ? addModeTime(
+          extras.planTime,
+          currentMode,
+          Math.max(0, now - extras.runStartedAt),
+        )
+      : extras.planTime;
+  const openDecisionMs =
+    extras.checkpointOpenedAt == null
+      ? 0
+      : Math.max(0, now - extras.checkpointOpenedAt);
   if (openDecisionMs > 0) time = addDecisionTime(time, openDecisionMs);
-  const explore = theme.fg(currentPhase === "explore" ? "accent" : "dim", `explore ${formatDuration(time.exploreMs)}`);
-  const align = theme.fg("dim", `align ${formatDuration(time.decisionMs)}${openDecisionMs >= DECISION_CAP_MS ? "+" : ""}`);
-  const execute = theme.fg(currentPhase === "execute" ? "accent" : "dim", `execute ${formatDuration(time.executeMs)}`);
   const separator = theme.fg("dim", " · ");
-  return `${separator}${explore}${separator}${align}${separator}${execute}`;
+  const ask = theme.fg(
+    currentMode === "ask" ? "accent" : "dim",
+    `ask ${formatDuration(time.askMs)}${openDecisionMs >= DECISION_CAP_MS ? "+" : ""}`,
+  );
+  const spec = theme.fg(
+    currentMode === "spec" ? "accent" : "dim",
+    `spec ${formatDuration(time.specMs)}`,
+  );
+  const vibe = theme.fg(
+    currentMode === "vibe" ? "accent" : "dim",
+    `vibe ${formatDuration(time.vibeMs)}`,
+  );
+  return `${separator}${ask}${separator}${spec}${separator}${vibe}`;
 }
 
-// The two prompts describe the next useful user decision rather than exposing
-// the workflow's internal phase names. The execute prompt is idle-only: it
-// appears after approved work settles, when reviewing or starting fresh fits.
-const PHASE_LABELS: Record<WorkflowPhase, string> = {
-  explore: "What’s your goal?",
-  execute: "What’s up next?",
+// The prompts describe the next useful User decision rather than restating the
+// mode name the badge already shows.
+const MODE_PROMPTS: Record<WorkflowMode, string> = {
+  ask: "What’s your goal?",
+  spec: "Reviewing the plan",
+  vibe: "What’s up next?",
 };
 
-/**
- * Dim while exploring, accent after approval: a session with no plan yet gets
- * the goal prompt, while a settled approved task gets a review-or-fresh-start
- * prompt. The badge is always present even though the underlying phase is not.
- */
-function phaseText(phase: WorkflowPhase | undefined, theme: Theme): string {
-  const resolved: WorkflowPhase = phase ?? "explore";
+/** Dim while aligning, accent once executing: the badge is always present. */
+function modeText(mode: WorkflowMode | undefined, theme: Theme): string {
+  const resolved: WorkflowMode = mode ?? "ask";
   return theme.fg(
-    resolved === "execute" ? "accent" : "dim",
-    PHASE_LABELS[resolved],
+    resolved === "vibe" ? "accent" : "dim",
+    MODE_PROMPTS[resolved],
   );
 }
 
@@ -147,8 +163,12 @@ export function updatePhaseIndicator(
       // beyond five minutes another ticking counter conveys no useful signal.
       let idleTimer: ReturnType<typeof setInterval> | undefined;
       const clock = extras?.now ?? Date.now;
-      const decisionStillLive = () => extras?.checkpointOpenedAt != null && clock() - extras.checkpointOpenedAt < DECISION_CAP_MS;
-      const cacheStillLive = () => extras?.cacheStartedAt != null && (durationMs(false, extras, clock()) ?? 0) < CACHE_ERROR_IDLE_MS;
+      const decisionStillLive = () =>
+        extras?.checkpointOpenedAt != null &&
+        clock() - extras.checkpointOpenedAt < DECISION_CAP_MS;
+      const cacheStillLive = () =>
+        extras?.cacheStartedAt != null &&
+        (durationMs(false, extras, clock()) ?? 0) < CACHE_ERROR_IDLE_MS;
       if (!working && (cacheStillLive() || decisionStillLive())) {
         idleTimer = setInterval(() => {
           if (!cacheStillLive() && !decisionStillLive()) {
@@ -170,7 +190,8 @@ export function updatePhaseIndicator(
           const elapsed = durationMs(working, extras, now);
           // Active work rides the spinner; idle refreshes the cache-age timer.
           const timer =
-            elapsed === undefined || (!working && elapsed < CACHE_WARNING_IDLE_MS)
+            elapsed === undefined ||
+            (!working && elapsed < CACHE_WARNING_IDLE_MS)
               ? ""
               : theme.fg(
                   timerColor(working, elapsed),
@@ -180,11 +201,11 @@ export function updatePhaseIndicator(
                       : formatDuration(elapsed)
                   }`,
                 );
-          const buckets = phaseBuckets(working, extras, now, theme);
+          const buckets = modeBuckets(working, extras, now, theme);
           const badge = modeBadge(extras?.mode, theme);
           const status = working
             ? `${theme.fg("accent", badge ? `${marker} ` : marker)}${badge}${timer}${buckets}`
-            : `${theme.fg("accent", `${marker} `)}${badge}${phaseText(extras?.phase, theme)}${timer}${buckets}`;
+            : `${theme.fg("accent", `${marker} `)}${badge}${modeText(extras?.mode, theme)}${timer}${buckets}`;
           return [truncateToWidth(status, width)];
         },
         invalidate: () => {},

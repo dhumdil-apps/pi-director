@@ -47,11 +47,11 @@ git diff --check
 
 `npm run typecheck` checks every vendored TypeScript extension and must exit zero.
 
-Smoke the working copy headlessly — the bundle loads and the loop guidance is
-injected:
+Smoke the working copy headlessly. Headless sessions deliberately get no injected
+contract, no scaffold, and no picker, so this only proves the bundle loads:
 
 ```bash
-pi -p -ne -e ~/GitHub/dev/pi-stack/pi-director --tools '' --no-session "Reply with exactly one word: the first step of the workflow loop in your instructions."
+pi -p -ne -e ~/GitHub/dev/pi-stack/pi-director --tools '' --no-session "Reply exactly HEADLESS_OK"
 ```
 
 Session-boundary changes need a scratch project with a seeded plan
@@ -61,13 +61,14 @@ Session-boundary changes need a scratch project with a seeded plan
 pi -p -ne -e ~/GitHub/dev/pi-stack/pi-director --tools '' --session-dir ./sessions "/handoff demo-task"
 ```
 
-The newest file under `./sessions` must contain, in order: the `parentSession`
-link, the hidden `agent-workflow:approved` fact naming the task, a
-`session_info` entry naming the task, and the kickoff user message carrying the
-real plan path.
+`/handoff` first drives a checkpoint turn that updates the plan file, then
+spawns. The newest file under `./sessions` must contain, in order: the checkpoint
+request naming the plan path, the `parentSession` link, an `agent-workflow:mode`
+entry, a `session_info` entry naming the task, and the kickoff user message
+carrying the real plan path.
 
 Interactive checks still belong to visual or lifecycle changes: Status Bar
-rendering, the above-editor indicator, session dashboard, and workflow prompts.
+rendering, the above-editor indicator, the mode picker, and session dashboard.
 
 ## After publishing
 

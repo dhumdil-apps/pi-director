@@ -2,29 +2,68 @@ import { readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getAgentDir, loadProjectContextFiles, type ContextUsage, type ExtensionAPI, type SessionEntry, type Theme } from "@earendil-works/pi-coding-agent";
-import { Box, type Component, Container, Markdown, Spacer, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { buildContextBreakdown, type ContextFile } from "./context-breakdown.js";
+import {
+  getAgentDir,
+  loadProjectContextFiles,
+  type ContextUsage,
+  type ExtensionAPI,
+  type SessionEntry,
+  type Theme,
+} from "@earendil-works/pi-coding-agent";
+import {
+  Box,
+  type Component,
+  Container,
+  Markdown,
+  Spacer,
+  truncateToWidth,
+  visibleWidth,
+} from "@earendil-works/pi-tui";
+import {
+  buildContextBreakdown,
+  type ContextFile,
+} from "./context-breakdown.js";
 import { renderHelp } from "./help.js";
 import { collectUsageData } from "../usage-history/data.js";
-import { buildGraphModel, type GraphModel, renderChart, TOTAL_SERIES_KEY } from "../usage-history/graph.js";
-import { COLOR_RESET, formatAxisCost, seriesColor } from "../usage-history/index.js";
-import { claimProjectMemoryReminder, inspectProjectMemory, memoryStatusNotice } from "../project-memory/index.js";
-import { USAGE_CHART_END, USAGE_CHART_START, renderWelcomeText } from "./welcome.js";
+import {
+  buildGraphModel,
+  type GraphModel,
+  renderChart,
+  TOTAL_SERIES_KEY,
+} from "../usage-history/graph.js";
+import {
+  COLOR_RESET,
+  formatAxisCost,
+  seriesColor,
+} from "../usage-history/index.js";
+import {
+  claimProjectMemoryReminder,
+  inspectProjectMemory,
+  memoryStatusNotice,
+} from "../project-memory/index.js";
+import {
+  USAGE_CHART_END,
+  USAGE_CHART_START,
+  renderWelcomeText,
+} from "./welcome.js";
 
-const BUNDLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const BUNDLE_ROOT = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+);
 
 const USAGE_CHART_MAX_WIDTH = 72;
 const USAGE_CHART_HEIGHT = 8;
 
 function padRightVis(text: string, len: number): string {
-	const pad = len - visibleWidth(text);
-	return pad > 0 ? text + " ".repeat(pad) : text;
+  const pad = len - visibleWidth(text);
+  return pad > 0 ? text + " ".repeat(pad) : text;
 }
 
 function padLeftVis(text: string, len: number): string {
-	const pad = len - visibleWidth(text);
-	return pad > 0 ? " ".repeat(pad) + text : text;
+  const pad = len - visibleWidth(text);
+  return pad > 0 ? " ".repeat(pad) + text : text;
 }
 
 /**
@@ -36,367 +75,446 @@ function padLeftVis(text: string, len: number): string {
  * a narrow pane degrades gracefully instead of word-wrapping the braille rows.
  */
 export class UsageChartCard implements Component {
-	constructor(
-		private readonly model: GraphModel,
-		private readonly titleFn: (text: string) => string,
-		private readonly mutedFn: (text: string) => string,
-		private readonly dimFn: (text: string) => string,
-	) {}
+  constructor(
+    private readonly model: GraphModel,
+    private readonly titleFn: (text: string) => string,
+    private readonly mutedFn: (text: string) => string,
+    private readonly dimFn: (text: string) => string,
+  ) {}
 
-	render(width: number): string[] {
-		if (width <= 0) return [];
-		const lines: string[] = [this.titleFn("Last 30 Days") + this.mutedFn(" · Per bucket cost · by model")];
+  render(width: number): string[] {
+    if (width <= 0) return [];
+    const lines: string[] = [
+      this.titleFn("Last 30 Days") +
+        this.mutedFn(" · Per bucket cost · by model"),
+    ];
 
-		if (this.model.groupedTotal === 0) {
-			lines.push(this.dimFn("  No usage in the last 30 days"));
-			return lines.map((line) => truncateToWidth(line, width, ""));
-		}
+    if (this.model.groupedTotal === 0) {
+      lines.push(this.dimFn("  No usage in the last 30 days"));
+      return lines.map((line) => truncateToWidth(line, width, ""));
+    }
 
-		const spanMs = this.model.domainEndMs - this.model.domainStartMs;
-		const formatTime = (ms: number): string => {
-			const d = new Date(ms);
-			const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-			// Short spans use times or weekday + time so ticks stay distinct.
-			// The 30-day dashboard uses dates.
-			if (spanMs <= 26 * 3_600_000) return hm;
-			if (spanMs <= 8 * 24 * 3_600_000) return `${d.toLocaleDateString(undefined, { weekday: "short" })} ${hm}`;
-			return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
-		};
+    const spanMs = this.model.domainEndMs - this.model.domainStartMs;
+    const formatTime = (ms: number): string => {
+      const d = new Date(ms);
+      const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      // Short spans use times or weekday + time so ticks stay distinct.
+      // The 30-day dashboard uses dates.
+      if (spanMs <= 26 * 3_600_000) return hm;
+      if (spanMs <= 8 * 24 * 3_600_000)
+        return `${d.toLocaleDateString(undefined, { weekday: "short" })} ${hm}`;
+      return d.toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+      });
+    };
 
-		const chart = renderChart(this.model, {
-			width: Math.max(Math.min(width, USAGE_CHART_MAX_WIDTH), 30),
-			height: USAGE_CHART_HEIGHT,
-			formatValue: formatAxisCost,
-			formatTime,
-			colorize: (seriesIndex, text) => (seriesIndex < 0 ? this.dimFn(text) : seriesColor(seriesIndex) + text + COLOR_RESET),
-		});
-		lines.push(...chart, "");
+    const chart = renderChart(this.model, {
+      width: Math.max(Math.min(width, USAGE_CHART_MAX_WIDTH), 30),
+      height: USAGE_CHART_HEIGHT,
+      formatValue: formatAxisCost,
+      formatTime,
+      colorize: (seriesIndex, text) =>
+        seriesIndex < 0
+          ? this.dimFn(text)
+          : seriesColor(seriesIndex) + text + COLOR_RESET,
+    });
+    lines.push(...chart, "");
 
-		// Total is excluded from the chart (see the build site) — keep it out of the
-		// series legend too, and close with it as a dim summary row instead.
-		for (let i = 0; i < this.model.series.length; i++) {
-			const s = this.model.series[i]!;
-			if (s.key === TOTAL_SERIES_KEY) continue;
-			const marker = seriesColor(i) + "●" + COLOR_RESET;
-			const value = formatAxisCost(s.total);
-			const pct =
-				this.model.groupedTotal > 0 ? ` ${this.dimFn(`${Math.round((s.total / this.model.groupedTotal) * 100)}%`)}` : "";
-			lines.push(`  ${marker} ${padRightVis(s.label, 24)} ${padLeftVis(value, 8)}${pct}`);
-		}
+    // Total is excluded from the chart (see the build site) — keep it out of the
+    // series legend too, and close with it as a dim summary row instead.
+    for (let i = 0; i < this.model.series.length; i++) {
+      const s = this.model.series[i]!;
+      if (s.key === TOTAL_SERIES_KEY) continue;
+      const marker = seriesColor(i) + "●" + COLOR_RESET;
+      const value = formatAxisCost(s.total);
+      const pct =
+        this.model.groupedTotal > 0
+          ? ` ${this.dimFn(`${Math.round((s.total / this.model.groupedTotal) * 100)}%`)}`
+          : "";
+      lines.push(
+        `  ${marker} ${padRightVis(s.label, 24)} ${padLeftVis(value, 8)}${pct}`,
+      );
+    }
 
-		const total = this.model.series.find((s) => s.key === TOTAL_SERIES_KEY);
-		// One blank marker column keeps the row aligned with the series rows above.
-		if (total) lines.push(this.dimFn(`    ${padRightVis(total.label, 24)} ${padLeftVis(formatAxisCost(total.total), 8)}`));
+    const total = this.model.series.find((s) => s.key === TOTAL_SERIES_KEY);
+    // One blank marker column keeps the row aligned with the series rows above.
+    if (total)
+      lines.push(
+        this.dimFn(
+          `    ${padRightVis(total.label, 24)} ${padLeftVis(formatAxisCost(total.total), 8)}`,
+        ),
+      );
 
-		return lines.map((line) => truncateToWidth(line, width, ""));
-	}
+    return lines.map((line) => truncateToWidth(line, width, ""));
+  }
 
-	invalidate(): void {
-		// Stateless: theme callbacks and renderChart run on every render.
-	}
+  invalidate(): void {
+    // Stateless: theme callbacks and renderChart run on every render.
+  }
 }
 
 export function tildify(path: string): string {
-	const home = homedir();
-	// A boundary check, not a bare prefix check: "/Users/alice-backup" is a
-	// sibling of "/Users/alice", not a path under it.
-	return path === home || path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
+  const home = homedir();
+  // A boundary check, not a bare prefix check: "/Users/alice-backup" is a
+  // sibling of "/Users/alice", not a path under it.
+  return path === home || path.startsWith(`${home}/`)
+    ? `~${path.slice(home.length)}`
+    : path;
 }
 
 function truncateLeft(text: string, max: number): string {
-	return text.length <= max ? text : `…${text.slice(text.length - max + 1)}`;
+  return text.length <= max ? text : `…${text.slice(text.length - max + 1)}`;
 }
 
 /** Keep only resolver candidates whose non-empty content Pi actually injected. */
-export function includedContextFiles(contextFiles: ContextFile[], systemPrompt: string): ContextFile[] {
-	return contextFiles.filter((file) => file.content.length > 0 && systemPrompt.includes(file.content));
+export function includedContextFiles(
+  contextFiles: ContextFile[],
+  systemPrompt: string,
+): ContextFile[] {
+  return contextFiles.filter(
+    (file) => file.content.length > 0 && systemPrompt.includes(file.content),
+  );
 }
 
 /** Path-only welcome detail: enough to establish context without duplicating /context. */
-export function welcomeContextInfo(cwd: string, systemPrompt: string): { workingDirectory: string; contextFiles?: string } {
-	let contextFiles: ContextFile[] = [];
-	try {
-		contextFiles = loadProjectContextFiles({ cwd, agentDir: getAgentDir() });
-	} catch {
-		// A context-discovery problem should not suppress the rest of the welcome.
-	}
+export function welcomeContextInfo(
+  cwd: string,
+  systemPrompt: string,
+): { workingDirectory: string; contextFiles?: string } {
+  let contextFiles: ContextFile[] = [];
+  try {
+    contextFiles = loadProjectContextFiles({ cwd, agentDir: getAgentDir() });
+  } catch {
+    // A context-discovery problem should not suppress the rest of the welcome.
+  }
 
-	const loaded = includedContextFiles(contextFiles, systemPrompt);
-	const paths = loaded.map((file) => `- \`${tildify(file.path)}\``);
-	return {
-		workingDirectory: `*${truncateLeft(tildify(cwd), 60)}*`,
-		contextFiles: paths.length > 0 ? ["**📦 Context files**", ...paths].join("\n") : undefined,
-	};
+  const loaded = includedContextFiles(contextFiles, systemPrompt);
+  const paths = loaded.map((file) => `- \`${tildify(file.path)}\``);
+  return {
+    workingDirectory: `*${truncateLeft(tildify(cwd), 60)}*`,
+    contextFiles:
+      paths.length > 0
+        ? ["**📦 Context files**", ...paths].join("\n")
+        : undefined,
+  };
 }
 
 interface BundleResources {
-	extensions: string[];
-	skills: string[];
-	prompts: string[];
+  extensions: string[];
+  skills: string[];
+  prompts: string[];
 }
 
 /** Name an extension entry like "./extensions/agent-workflow/index.ts" → "agent-workflow". */
 function extensionName(entry: string): string {
-	const parts = entry.split("/").filter((p) => p && p !== ".");
-	const idx = parts.indexOf("extensions");
-	return idx >= 0 && parts[idx + 1] ? parts[idx + 1] : (parts[0] ?? "");
+  const parts = entry.split("/").filter((p) => p && p !== ".");
+  const idx = parts.indexOf("extensions");
+  return idx >= 0 && parts[idx + 1] ? parts[idx + 1] : (parts[0] ?? "");
 }
 
 function listSkills(dir: string): string[] {
-	try {
-		return readdirSync(dir, { withFileTypes: true })
-			.filter((e) => e.isDirectory())
-			.map((e) => e.name)
-			.filter((name) => {
-				try {
-					readFileSync(join(dir, name, "SKILL.md"));
-					return true;
-				} catch {
-					return false;
-				}
-			});
-	} catch {
-		return [];
-	}
+  try {
+    return readdirSync(dir, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .filter((name) => {
+        try {
+          readFileSync(join(dir, name, "SKILL.md"));
+          return true;
+        } catch {
+          return false;
+        }
+      });
+  } catch {
+    return [];
+  }
 }
 
 function listPrompts(dir: string): string[] {
-	try {
-		return readdirSync(dir)
-			.filter((f) => f.endsWith(".md"))
-			.map((f) => `/${basename(f, ".md")}`);
-	} catch {
-		return [];
-	}
+  try {
+    return readdirSync(dir)
+      .filter((f) => f.endsWith(".md"))
+      .map((f) => `/${basename(f, ".md")}`);
+  } catch {
+    return [];
+  }
 }
 
 /** What this bundle registers, read live from its own package.json. */
 function loadBundleResources(): BundleResources {
-	try {
-		const pkg = JSON.parse(readFileSync(join(BUNDLE_ROOT, "package.json"), "utf8"));
-		const cfg = pkg?.pi ?? {};
-		const extensions: string[] = (cfg.extensions ?? []).map(extensionName).filter(Boolean).sort();
-		const skills: string[] = (cfg.skills ?? [])
-			.flatMap((dir: string) => listSkills(join(BUNDLE_ROOT, dir)))
-			.sort();
-		const prompts: string[] = (cfg.prompts ?? [])
-			.flatMap((dir: string) => listPrompts(join(BUNDLE_ROOT, dir)))
-			.sort();
-		return { extensions, skills, prompts };
-	} catch {
-		return { extensions: [], skills: [], prompts: [] };
-	}
+  try {
+    const pkg = JSON.parse(
+      readFileSync(join(BUNDLE_ROOT, "package.json"), "utf8"),
+    );
+    const cfg = pkg?.pi ?? {};
+    const extensions: string[] = (cfg.extensions ?? [])
+      .map(extensionName)
+      .filter(Boolean)
+      .sort();
+    const skills: string[] = (cfg.skills ?? [])
+      .flatMap((dir: string) => listSkills(join(BUNDLE_ROOT, dir)))
+      .sort();
+    const prompts: string[] = (cfg.prompts ?? [])
+      .flatMap((dir: string) => listPrompts(join(BUNDLE_ROOT, dir)))
+      .sort();
+    return { extensions, skills, prompts };
+  } catch {
+    return { extensions: [], skills: [], prompts: [] };
+  }
 }
 
 interface DashboardEntryData {
-	content: string;
+  content: string;
 }
 
 interface AgentStatusUpdate {
-	working?: boolean;
-	phase?: string;
-	contextUsed?: number;
+  working?: boolean;
+  mode?: string;
+  contextUsed?: number;
 }
 
 /** Read display-only card content from a context-free custom entry. */
 function entryText(data: unknown): string {
-	return typeof (data as Partial<DashboardEntryData> | undefined)?.content === "string"
-		? (data as DashboardEntryData).content
-		: "";
+  return typeof (data as Partial<DashboardEntryData> | undefined)?.content ===
+    "string"
+    ? (data as DashboardEntryData).content
+    : "";
 }
 
 /** Markdown component wired to the interactive theme, shared by the banner and /help. */
 function themedMarkdown(theme: Theme, text: string): Markdown {
-	return new Markdown(text, 0, 0, {
-		heading: (value) => theme.fg("mdHeading", value),
-		link: (value) => theme.fg("mdLink", value),
-		linkUrl: (value) => theme.fg("mdLinkUrl", value),
-		code: (value) => theme.fg("mdCode", value),
-		codeBlock: (value) => theme.fg("mdCodeBlock", value),
-		codeBlockBorder: (value) => theme.fg("mdCodeBlockBorder", value),
-		quote: (value) => theme.fg("mdQuote", value),
-		quoteBorder: (value) => theme.fg("mdQuoteBorder", value),
-		hr: (value) => theme.fg("mdHr", value),
-		listBullet: (value) => theme.fg("mdListBullet", value),
-		bold: (value) => theme.bold(value),
-		italic: (value) => theme.italic(value),
-		strikethrough: (value) => value,
-		underline: (value) => theme.underline(value),
-		highlightCode: (code) => code.split("\n").map((line) => theme.fg("mdCodeBlock", line)),
-	}, { color: (value) => theme.fg("customMessageText", value) });
+  return new Markdown(
+    text,
+    0,
+    0,
+    {
+      heading: (value) => theme.fg("mdHeading", value),
+      link: (value) => theme.fg("mdLink", value),
+      linkUrl: (value) => theme.fg("mdLinkUrl", value),
+      code: (value) => theme.fg("mdCode", value),
+      codeBlock: (value) => theme.fg("mdCodeBlock", value),
+      codeBlockBorder: (value) => theme.fg("mdCodeBlockBorder", value),
+      quote: (value) => theme.fg("mdQuote", value),
+      quoteBorder: (value) => theme.fg("mdQuoteBorder", value),
+      hr: (value) => theme.fg("mdHr", value),
+      listBullet: (value) => theme.fg("mdListBullet", value),
+      bold: (value) => theme.bold(value),
+      italic: (value) => theme.italic(value),
+      strikethrough: (value) => value,
+      underline: (value) => theme.underline(value),
+      highlightCode: (code) =>
+        code.split("\n").map((line) => theme.fg("mdCodeBlock", line)),
+    },
+    { color: (value) => theme.fg("customMessageText", value) },
+  );
 }
 
 export default function sessionDashboardExtension(pi: ExtensionAPI): void {
-	pi.registerEntryRenderer("session-dashboard", (entry, _options, theme) => {
-		const content = entryText(entry.data);
-		const markdown = (text: string) => themedMarkdown(theme, text);
-		const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
-		const contentBox = new Container();
+  pi.registerEntryRenderer("session-dashboard", (entry, _options, theme) => {
+    const content = entryText(entry.data);
+    const markdown = (text: string) => themedMarkdown(theme, text);
+    const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
+    const contentBox = new Container();
 
-		// Render a text segment, swapping any usage-chart marker block for a live
-		// UsageChartCard and rendering the surrounding text as markdown.
-		const addSegment = (segment: string) => {
-			const trimmed = segment.trim();
-			if (!trimmed) return;
-			const chartStart = trimmed.indexOf(USAGE_CHART_START);
-			const chartEnd = trimmed.indexOf(USAGE_CHART_END);
-			if (chartStart < 0 || chartEnd < chartStart) {
-				if (trimmed) contentBox.addChild(markdown(trimmed));
-				return;
-			}
-			const beforeChart = trimmed.slice(0, chartStart).trim();
-			const json = trimmed.slice(chartStart + USAGE_CHART_START.length, chartEnd).trim();
-			const afterChart = trimmed.slice(chartEnd + USAGE_CHART_END.length).trim();
-			if (beforeChart) contentBox.addChild(markdown(beforeChart));
-			try {
-				const model = JSON.parse(json) as GraphModel;
-				contentBox.addChild(new Spacer(1));
-				contentBox.addChild(new UsageChartCard(
-					model,
-					(line) => theme.fg("mdHeading", theme.bold(line)),
-					(line) => theme.fg("muted", line),
-					(line) => theme.fg("dim", line),
-				));
-			} catch {
-				// Malformed model: skip the panel rather than dumping raw JSON.
-			}
-			if (afterChart) {
-				// The chart is a component, so the blank line the source text puts
-				// before the context tail gets trimmed — re-add it as a Spacer so the
-				// tail is not jammed against the chart legend.
-				contentBox.addChild(new Spacer(1));
-				contentBox.addChild(markdown(afterChart));
-			}
-		};
+    // Render a text segment, swapping any usage-chart marker block for a live
+    // UsageChartCard and rendering the surrounding text as markdown.
+    const addSegment = (segment: string) => {
+      const trimmed = segment.trim();
+      if (!trimmed) return;
+      const chartStart = trimmed.indexOf(USAGE_CHART_START);
+      const chartEnd = trimmed.indexOf(USAGE_CHART_END);
+      if (chartStart < 0 || chartEnd < chartStart) {
+        if (trimmed) contentBox.addChild(markdown(trimmed));
+        return;
+      }
+      const beforeChart = trimmed.slice(0, chartStart).trim();
+      const json = trimmed
+        .slice(chartStart + USAGE_CHART_START.length, chartEnd)
+        .trim();
+      const afterChart = trimmed
+        .slice(chartEnd + USAGE_CHART_END.length)
+        .trim();
+      if (beforeChart) contentBox.addChild(markdown(beforeChart));
+      try {
+        const model = JSON.parse(json) as GraphModel;
+        contentBox.addChild(new Spacer(1));
+        contentBox.addChild(
+          new UsageChartCard(
+            model,
+            (line) => theme.fg("mdHeading", theme.bold(line)),
+            (line) => theme.fg("muted", line),
+            (line) => theme.fg("dim", line),
+          ),
+        );
+      } catch {
+        // Malformed model: skip the panel rather than dumping raw JSON.
+      }
+      if (afterChart) {
+        // The chart is a component, so the blank line the source text puts
+        // before the context tail gets trimmed — re-add it as a Spacer so the
+        // tail is not jammed against the chart legend.
+        contentBox.addChild(new Spacer(1));
+        contentBox.addChild(markdown(afterChart));
+      }
+    };
 
-		// The whole banner is markdown plus the usage-chart marker block, which
-		// addSegment swaps for the live UsageChartCard.
-		addSegment(content);
-		box.addChild(contentBox);
-		return box;
-	});
+    // The whole banner is markdown plus the usage-chart marker block, which
+    // addSegment swaps for the live UsageChartCard.
+    addSegment(content);
+    box.addChild(contentBox);
+    return box;
+  });
 
-	// /help renders as markdown inside the same themed box as the banner.
-	pi.registerEntryRenderer("session-dashboard-help", (entry, _options, theme) => {
-		const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
-		box.addChild(themedMarkdown(theme, entryText(entry.data)));
-		return box;
-	});
+  // /help renders as markdown inside the same themed box as the banner.
+  pi.registerEntryRenderer(
+    "session-dashboard-help",
+    (entry, _options, theme) => {
+      const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
+      box.addChild(themedMarkdown(theme, entryText(entry.data)));
+      return box;
+    },
+  );
 
-	pi.registerCommand("help", {
-		description: "List the bundle's extensions, commands, and shortcuts",
-		handler: async () => {
-			const bundle = loadBundleResources();
-			pi.appendEntry("session-dashboard-help", { content: renderHelp(bundle.extensions) } satisfies DashboardEntryData);
-		},
-	});
+  pi.registerCommand("help", {
+    description: "List the bundle's extensions, commands, and shortcuts",
+    handler: async () => {
+      const bundle = loadBundleResources();
+      pi.appendEntry("session-dashboard-help", {
+        content: renderHelp(bundle.extensions),
+      } satisfies DashboardEntryData);
+    },
+  });
 
-	// /context and its lightweight close-out reminder share the themed box.
-	const renderContextCard = (data: unknown, theme: Theme) => {
-		const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
-		box.addChild(themedMarkdown(theme, entryText(data)));
-		return box;
-	};
-	pi.registerEntryRenderer("session-dashboard-context", (entry, _options, theme) => renderContextCard(entry.data, theme));
-	pi.registerEntryRenderer("session-dashboard-context-reminder", (entry, _options, theme) => renderContextCard(entry.data, theme));
+  // /context and its lightweight close-out reminder share the themed box.
+  const renderContextCard = (data: unknown, theme: Theme) => {
+    const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
+    box.addChild(themedMarkdown(theme, entryText(data)));
+    return box;
+  };
+  pi.registerEntryRenderer(
+    "session-dashboard-context",
+    (entry, _options, theme) => renderContextCard(entry.data, theme),
+  );
+  pi.registerEntryRenderer(
+    "session-dashboard-context-reminder",
+    (entry, _options, theme) => renderContextCard(entry.data, theme),
+  );
 
-	function contextBreakdownContent(
-		systemPrompt: string,
-		contextFiles: ContextFile[],
-		usage: ContextUsage | undefined,
-		entries: SessionEntry[],
-	): string {
-		return buildContextBreakdown({
-			systemPrompt,
-			contextFiles,
-			tools: pi.getAllTools(),
-			entries,
-			totalTokens: usage?.tokens,
-			contextWindow: usage?.contextWindow,
-			home: homedir(),
-		});
-	}
+  function contextBreakdownContent(
+    systemPrompt: string,
+    contextFiles: ContextFile[],
+    usage: ContextUsage | undefined,
+    entries: SessionEntry[],
+  ): string {
+    return buildContextBreakdown({
+      systemPrompt,
+      contextFiles,
+      tools: pi.getAllTools(),
+      entries,
+      totalTokens: usage?.tokens,
+      contextWindow: usage?.contextWindow,
+      home: homedir(),
+    });
+  }
 
-	pi.registerCommand("context", {
-		description: "Break the context window down by source: prompt, context files, skills, tools, conversation",
-		handler: async (_args, ctx) => {
-			const options = ctx.getSystemPromptOptions();
-			const entries = ctx.sessionManager.buildContextEntries();
-			const content = contextBreakdownContent(ctx.getSystemPrompt(), options.contextFiles ?? [], ctx.getContextUsage(), entries);
-			pi.appendEntry("session-dashboard-context", {
-				content: content || "*No context measured yet.*",
-			} satisfies DashboardEntryData);
-		},
-	});
+  pi.registerCommand("context", {
+    description:
+      "Break the context window down by source: prompt, context files, skills, tools, conversation",
+    handler: async (_args, ctx) => {
+      const options = ctx.getSystemPromptOptions();
+      const entries = ctx.sessionManager.buildContextEntries();
+      const content = contextBreakdownContent(
+        ctx.getSystemPrompt(),
+        options.contextFiles ?? [],
+        ctx.getContextUsage(),
+        entries,
+      );
+      pi.appendEntry("session-dashboard-context", {
+        content: content || "*No context measured yet.*",
+      } satisfies DashboardEntryData);
+    },
+  });
 
-	// Progress Tracker can emit several settled-state refreshes. Only the working
-	// edge closes a run, so one execution close-out produces one context-free hint.
-	let wasWorking = false;
-	pi.events?.on?.("agent-status:update", (value: unknown) => {
-		const status = value as AgentStatusUpdate;
-		if (status.working === false && wasWorking && status.phase === "execute" && (status.contextUsed ?? 0) > 10_000) {
-			pi.appendEntry("session-dashboard-context-reminder", {
-				content: `Context is ${Math.round(status.contextUsed! / 1_000)}k. Run \`/context\` to decide whether large contributors are justified.`,
-			} satisfies DashboardEntryData);
-		}
-		wasWorking = status.working === true;
-	});
+  // Progress Tracker can emit several settled-state refreshes. Only the working
+  // edge closes a run, so one execution close-out produces one context-free hint.
+  let wasWorking = false;
+  pi.events?.on?.("agent-status:update", (value: unknown) => {
+    const status = value as AgentStatusUpdate;
+    if (
+      status.working === false &&
+      wasWorking &&
+      status.mode === "vibe" &&
+      (status.contextUsed ?? 0) > 10_000
+    ) {
+      pi.appendEntry("session-dashboard-context-reminder", {
+        content: `Context is ${Math.round(status.contextUsed! / 1_000)}k. Run \`/context\` to decide whether large contributors are justified.`,
+      } satisfies DashboardEntryData);
+    }
+    wasWorking = status.working === true;
+  });
 
-	pi.on("session_start", async (_event, ctx) => {
-		// Purely decorative banner: in headless/print mode it would land after the
-		// prompt and trigger a spurious extra turn, so interactive sessions only.
-		if (!ctx.hasUI) return;
-		ctx.ui.setWidget("session-dashboard-loading", ["Preparing session dashboard…"]);
-		try {
-			const cwd = ctx.cwd;
-			// The chart and memory inspection are independent. Start both at once, then
-			// render one complete card so a warning cannot race the dashboard into the
-			// transcript. Usage can still take longer on a cold cache.
-			const [usage, memoryStatus] = await Promise.all([
-				collectUsageData().catch(() => null),
-				inspectProjectMemory(cwd).catch(() => undefined),
-			]);
+  pi.on("session_start", async (_event, ctx) => {
+    // Purely decorative banner: in headless/print mode it would land after the
+    // prompt and trigger a spurious extra turn, so interactive sessions only.
+    if (!ctx.hasUI) return;
+    ctx.ui.setWidget("session-dashboard-loading", [
+      "Preparing session dashboard…",
+    ]);
+    try {
+      const cwd = ctx.cwd;
+      // The chart and memory inspection are independent. Start both at once, then
+      // render one complete card so a warning cannot race the dashboard into the
+      // transcript. Usage can still take longer on a cold cache.
+      const [usage, memoryStatus] = await Promise.all([
+        collectUsageData().catch(() => null),
+        inspectProjectMemory(cwd).catch(() => undefined),
+      ]);
 
-			let usageChart: string | undefined;
-			if (usage) {
-				// Same model the /usage Graphs view builds for Last 30 Days · Per bucket
-				// cost · by model. GraphModel is plain arrays/objects, so it serializes
-				// cleanly into the banner text and is rebuilt by the message renderer.
-				// Total is hidden here (unlike /usage, where the legend can toggle it):
-				// renderChart draws it last so it wins contested cells, which on this
-				// small card overdraws the very per-model lines it summarizes. Hiding it
-				// at build time also keeps it out of the serialized model's yMax.
-				const model = buildGraphModel(usage.hourly, {
-					period: "last30Days",
-					metric: "cost",
-					groupBy: "model",
-					cumulative: false,
-					hidden: new Set([TOTAL_SERIES_KEY]),
-					bounds: usage.bounds,
-				});
-				usageChart = JSON.stringify(model);
-			}
+      let usageChart: string | undefined;
+      if (usage) {
+        // Same model the /usage Graphs view builds for Last 30 Days · Per bucket
+        // cost · by model. GraphModel is plain arrays/objects, so it serializes
+        // cleanly into the banner text and is rebuilt by the message renderer.
+        // Total is hidden here (unlike /usage, where the legend can toggle it):
+        // renderChart draws it last so it wins contested cells, which on this
+        // small card overdraws the very per-model lines it summarizes. Hiding it
+        // at build time also keeps it out of the serialized model's yMax.
+        const model = buildGraphModel(usage.hourly, {
+          period: "last30Days",
+          metric: "cost",
+          groupBy: "model",
+          cumulative: false,
+          hidden: new Set([TOTAL_SERIES_KEY]),
+          bounds: usage.bounds,
+        });
+        usageChart = JSON.stringify(model);
+      }
 
-			// The standard resolver supplies only the files Pi would load; matching
-			// their content against the assembled prompt confirms what it did load.
-			const contextInfo = welcomeContextInfo(cwd, ctx.getSystemPrompt());
+      // The standard resolver supplies only the files Pi would load; matching
+      // their content against the assembled prompt confirms what it did load.
+      const contextInfo = welcomeContextInfo(cwd, ctx.getSystemPrompt());
 
-			const showMemoryNotice = memoryStatus
-				? await claimProjectMemoryReminder(memoryStatus).catch(() => false)
-				: false;
-			const welcomeText = renderWelcomeText({
-				usageChart,
-				workingDirectory: contextInfo.workingDirectory,
-				contextFiles: contextInfo.contextFiles,
-				tip: "> 🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`",
-				memoryNotice: showMemoryNotice ? `> ⚠️ ${memoryStatusNotice()}` : undefined,
-			});
+      const showMemoryNotice = memoryStatus
+        ? await claimProjectMemoryReminder(memoryStatus).catch(() => false)
+        : false;
+      const welcomeText = renderWelcomeText({
+        usageChart,
+        workingDirectory: contextInfo.workingDirectory,
+        contextFiles: contextInfo.contextFiles,
+        tip: "> 🧠 `/init` · 📊 `/usage` · ⚙️ `/extension-settings` · ❓ `/help`",
+        memoryNotice: showMemoryNotice
+          ? `> ⚠️ ${memoryStatusNotice()}`
+          : undefined,
+      });
 
-			// Custom entries persist and render in the transcript without entering
-			// LLM context; sendMessage would make the serialized chart part of every turn.
-			pi.appendEntry("session-dashboard", { content: welcomeText } satisfies DashboardEntryData);
-		} finally {
-			ctx.ui.setWidget("session-dashboard-loading", undefined);
-		}
-	});
+      // Custom entries persist and render in the transcript without entering
+      // LLM context; sendMessage would make the serialized chart part of every turn.
+      pi.appendEntry("session-dashboard", {
+        content: welcomeText,
+      } satisfies DashboardEntryData);
+    } finally {
+      ctx.ui.setWidget("session-dashboard-loading", undefined);
+    }
+  });
 }

@@ -8,13 +8,13 @@ extension.
 
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
-- **Agent Workflow** — Session-scoped Vibe/Spec workflow, implementation/investigation artifacts, plan persistence, and native Spec review (`start_task`, `ask`, `save_plan`, `/vibe`, `/spec`, `/execute`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
+- **Agent Workflow** — User-owned Ask/Spec/Vibe session modes, a single plan artifact per session, mode-gated project edits, and the native mode picker that opens on every settled turn (`start_task`, `save_plan`, `/ask`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
 - **Project Memory** — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
-- **Progress Tracker** — Persistent VIBE/SPEC badge, above-editor Explore/Align/Execute timing, and the configurable Status Bar context segment. No tool or command: it observes.
-- **Pi Inspector Bridge** — Reports display-only Director phase and session status whenever a local Inspector is discoverable
+- **Progress Tracker** — Persistent ASK/SPEC/VIBE badge, above-editor per-mode timing, and the configurable Status Bar context segment. No tool or command: it observes.
+- **Pi Inspector Bridge** — Reports display-only Director mode and session status whenever a local Inspector is discoverable
 - **Session Dashboard** — Pi-glyph welcome, project-memory freshness notice, 30-day per-model spend chart, and initial context-source snapshot
 
 ## Supporting resources
@@ -57,14 +57,14 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
   applicable local browser debugging and verification.
 - **No general permission gate.** Spec blocks unapproved source edit/write calls,
   while destructive-action and external-action consent remains conversational.
-- **No subagents.** Vibe and Spec are persisted workflow policies for the same
-  single agent; `/handoff` remains the human-controlled session boundary.
+- **No subagents.** Ask, Spec, and Vibe are persisted modes for the same single
+  agent; `/handoff` remains the human-controlled session boundary.
 - **No todo tool.** Pi ships none on purpose ("they confuse models"), and a
   structured list the agent must keep in sync is ceremony rather than progress.
   What the agent is doing is visible in the transcript.
 - **No derived loop position in the prompt.** The large injected contract stays
-  constant and cacheable. Only a tiny Vibe/Spec marker varies; Explore/Execute
-  phase and Align latency remain display-only.
+  constant and cacheable. Only a tiny mode marker varies; per-mode timing and
+  picker latency remain display-only.
 
 [UPSTREAM.md](../UPSTREAM.md) records what was vendored, what was removed and
 when, plus versions and licenses.

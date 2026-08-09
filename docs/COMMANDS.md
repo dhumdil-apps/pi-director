@@ -2,13 +2,13 @@
 
 This is the short operational reference. Some vendored extensions expose more
 advanced commands; follow their linked README when needed. The working flow is
-one loop per task, described in [the agent-workflow README](../extensions/agent-workflow/README.md), with a persisted Vibe or Spec session mode.
+one loop per task, described in [the agent-workflow README](../extensions/agent-workflow/README.md), with a persisted Ask, Spec, or Vibe session mode the User owns.
 
 ## Everyday commands
 
-- **`/vibe`** / **`/spec`** — Change the session workflow for future work without triggering a model turn. The above-editor badge shows the active choice.
-- **`/execute [session-name]`** — Resolve the current plan. Vibe continues its work log immediately; Spec opens Proceed/Handoff/Revise review.
-- **`/handoff [session-name]`** — Resolve the current plan in a fresh session. Vibe transfers directly; Spec opens review with Handoff recommended. Without a name both commands use the current session plan, or the lone plan under `.pi/plan/`.
+- **`/ask`** / **`/spec`** / **`/vibe`** — Change the session mode for future work without triggering a model turn. The above-editor badge shows the active choice. Ask aligns, Spec researches and proposes, Vibe executes; only Vibe may change project files.
+- **`/mode`** — Re-open the mode picker. It normally opens on its own after every settled turn, offering the recommended next step, the other two modes, a handoff, and a `Write your own...` escape hatch.
+- **`/handoff [session-name]`** — Continue the same artifact in a fresh session, carrying the current mode. It first drives one checkpoint turn that brings the plan file up to date, so nothing is lost at the boundary. Without a name it uses the current session plan, or the lone plan under `.pi/plan/`.
 - **`/init [full]`** — Initializes or realigns tool-agnostic shared and Pi-local instruction layers, then refreshes project memory and review provenance. It proposes approval-gated drift repairs, incrementally audits memory since the hidden reviewed commit by default, and performs a repository-wide audit with `full`.
 - **`/help`** — Full reference: commands, shortcuts, and every active extension
 - **`/extension-settings`** — Edit registered global extension settings
@@ -16,10 +16,9 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
 
 ## User-facing tools
 
-- **`start_task`** (Agent Workflow) — Apply context-informed task naming and implementation/investigation classification without another User prompt.
-- **`ask`** (Agent Workflow) — Put a consequential choice to the User as a native recommendation-first picker.
-- **`save_plan`** (Agent Workflow) — Present a Spec proposal for approval. Before initial approval it replaces the draft; later requested changes append dated revisions. Vibe updates its compact log directly and cannot call this tool.
-Close-out has no tool: durable orientation or quirks captured in the artifact may be promoted into project memory, while only `/init` advances the review marker.
+- **`start_task`** (Agent Workflow) — Name this session's one artifact from context, without another User prompt. A later call with a different name is refused; a new goal belongs in a fresh session.
+- **`save_plan`** (Agent Workflow) — Persist and echo the Spec proposal, then end the turn so the mode picker carries the decision. It replaces the draft until the session has entered Vibe, and appends dated revisions after. Ask and Vibe keep the artifact current by editing it directly.
+  Close-out has no tool: durable orientation or quirks captured in the artifact may be promoted into project memory, while only `/init` advances the review marker.
 
 ## Shell and keyboard reminders
 
