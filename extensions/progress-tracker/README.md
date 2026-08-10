@@ -41,22 +41,20 @@ renders the one thing the transcript cannot show.
   Ask, Spec, or Vibe work begins rather than displaying grand-total task time.
   Accumulated totals follow it as
   `· ask 5s · spec 12s · vibe 3s`: the current mode is accent and the other
-  modes are dim. Ask, Spec, and Vibe are mutually exclusive Agent-work buckets.
-  Ask also contains capped wall-clock picker latency while a
-  checkpoint choice is unresolved, including User thinking or idle time, and is
-  not a third work mode.
+  modes are dim. Ask, Spec, and Vibe are mutually exclusive Agent-work buckets;
+  human latency never enters them.
 
   Native question and approval dialogs pause active work while the UI belongs to
-  the User. Separate persisted checkpoint events measure Align, keep a custom
-  answer open until the next human input, and reconstruct unresolved choices
-  after reload. The live Align bucket advances to a five-minute per-checkpoint
-  cap and adds `+` once capped. Resolving a checkpoint persists its capped latency
-  best-effort.
+  the User, and the picker opens after settlement, so time spent choosing or
+  typing is accrued nowhere. Persisted checkpoint events still keep a custom
+  answer open until the next human input and reconstruct unresolved choices after
+  reload; they no longer carry timing.
 
   In the leading timer position, idle or waiting shows age from the latest
   provider response: hidden below 1 minute, warning from 1 minute, and error from
-  5 minutes as prompt-cache miss risk increases. At that boundary the readout
-  stays red at `5m+` and its repaint timer stops. `message_end` starts cache age
+  5 minutes as prompt-cache miss risk increases. This readout is the one place
+  idle time is visible; it displays risk and accrues nothing. At that boundary the
+  readout stays red at `5m+` and its repaint timer stops. `message_end` starts cache age
   before tool execution, and the latest timestamped assistant message restores
   it across reloads and handoffs. A slow idle repaint advances the age and its
   colors without another Pi event until the cap.
@@ -64,7 +62,8 @@ renders the one thing the transcript cannot show.
   Active intervals accrue to Ask, Spec, or Vibe, splitting immediately when a
   mode event lands; an initial mode-less interval counts as Ask. On settlement
   the buckets atomically update the named plan's script-owned `time-spent` block.
-  Pre-rename explore/execute/decision markers migrate to Spec/Vibe/Ask, older
+  Pre-rename explore/execute markers migrate to Spec/Vibe and their retired
+  decision bucket folds into Unallocated, older
   Plan work folds into Spec, total-only history migrates to Unallocated, and
   marker-free legacy plans stay byte-identical until their next settled run.
   Persistence is best-effort if the plan is unavailable. Normal row truncation

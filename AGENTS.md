@@ -1,32 +1,36 @@
-# AGENTS.md — Pi Director
+# Contribution guide
 
-- Ask before destructive or irreversible actions.
-- Avoid using markdown tables in `.md` files; prefer simple lists for better readability and cleaner diffs.
-- **Workflow**: three User-owned modes in [`extensions/agent-workflow/`](extensions/agent-workflow/README.md) — Ask aligns, Spec researches and proposes, Vibe executes. Only Vibe may change project files, and only the User switches mode. The injected block in its `index.ts` is the contract.
-- **User options**: prefer native Pi dialogs (`ctx.ui.select`) over custom `ui.custom` overlays.
+## Project
 
-## Focused exploration
+This repository is a private TypeScript extension bundle. `package.json` is the
+manifest for extensions, prompts, skills, and themes. Runtime source is under
+`extensions/`; maintainer documentation is under `docs/`.
 
-- Start with an exact source search and read the owning implementation plus directly relevant local evidence before expanding to surrounding documentation. For dashboard, workflow, or extension behavior, this repository is the source of truth; consult Pi-core docs only for unresolved host API behavior or when higher-priority instructions require them.
-- Keep tool output proportional to the task: bound reads to relevant sections, exclude `node_modules` and generated files from discovery, and do not repeat output already in the transcript.
-- Use `git diff --stat` before reviewing a diff, then name only task-owned paths. Do not inspect lockfiles or generated artifacts unless the task explicitly changes them.
-- After completing a task, use a fresh session or `/handoff` for independent follow-up work when context is already substantial.
+## Development
 
-## Project memory
+- Use Node LTS and npm.
+- Keep TypeScript strict and ESM-compatible with the repository configuration.
+- Read `docs/DEVELOPMENT.md` for setup, local maintenance, and release guidance.
+- Update focused documentation when behavior, commands, settings, or paths change.
+- Keep imported upstream components aligned with `UPSTREAM.md`.
 
-`.pi/MEMORY.md` is user-owned and gitignored. It contains orientation (what this repo is, where behavior lives, how to verify) and quirks (non-obvious constraints, work-arounds, and hidden breakage) — never a task log. Read it before broad exploration and verify every entry against its named path, symbol, or command; code wins, and a contradicted entry is corrected in the same turn.
+## Validation
 
-- Record a fact only when rediscovering it would cost the next agent more than reading it costs every agent. Each entry names what breaks and the lead that re-establishes it.
-- Capture a costly surprise in the current plan's `## Quirks` when it lands. At close-out, promote only durable orientation or quirks, replacing what they supersede and deleting what stopped being true.
-- The hidden `memory-review` marker certifies a deliberate `/init` audit. Ordinary close-out may revise visible entries but never advances that marker.
-- Reusable cross-project environment gotchas go to `~/Github/.pi/MEMORY.md`; do not restate them here.
-
-## Verification
+Run these checks from the repository root before sharing changes:
 
 ```bash
 npm run format:check
-npm run typecheck # tsc --noEmit (must pass with 0 errors)
+npm run typecheck
 git diff --check
 ```
 
-Use focused interactive review for visual or lifecycle behavior.
+There is currently no executable test script or checked-in `*.test.ts` suite;
+use focused source or interactive review for behavior that the retained checks
+do not cover.
+
+## Safety and Git
+
+- Inspect status and task-owned diffs before editing, and preserve unrelated user changes.
+- Do not commit secrets, runtime session data, or generated artifacts.
+- Keep commits focused and reviewable when commits are requested.
+- Never rewrite shared history or force-push.

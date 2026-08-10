@@ -126,7 +126,7 @@ function defaultRecommendation(
   planSaved: boolean,
   explicit?: NextStepRecommendation,
 ): Recommendation {
-  if (!openWork) return current === "ask" ? "spec" : "ask";
+  if (!openWork) return "ask";
   if (explicit === "phase-boundary") {
     return current === "vibe" && !lean ? "handoff" : "continue";
   }

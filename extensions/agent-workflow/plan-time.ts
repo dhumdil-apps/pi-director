@@ -12,10 +12,8 @@ const LEGACY_WORKFLOW_TIME =
 const LEGACY_PHASE_TIME =
   /^<!-- time-spent:start total-ms=(\d+) explore-ms=(\d+) plan-ms=(\d+) execute-ms=(\d+) unallocated-ms=(\d+) -->/m;
 
-export const DECISION_CAP_MS = 5 * 60_000;
-
 export interface PlanTime {
-  /** Aligning: Agent work in Ask mode plus capped wall time at the picker. */
+  /** Agent work in Ask mode. Human latency at a picker is never billed here. */
   askMs: number;
   specMs: number;
   vibeMs: number;
@@ -42,14 +40,6 @@ export function addModeTime(time: PlanTime, mode: WorkflowMode, ms: number): Pla
   const next = { ...time };
   next[`${mode}Ms` as const] += exactMs(ms);
   return next;
-}
-
-/** Picker latency is wall time, capped independently for every checkpoint. */
-export function addDecisionTime(time: PlanTime, elapsedMs: number): PlanTime {
-  return {
-    ...time,
-    askMs: time.askMs + Math.min(exactMs(elapsedMs), DECISION_CAP_MS),
-  };
 }
 
 /** The same coarse duration shown by Progress Tracker. */
@@ -99,11 +89,13 @@ export function readPlanTiming(contents: string): PlanTime | undefined {
   const workflow = contents.match(LEGACY_WORKFLOW_TIME);
   if (workflow) {
     const [, declaredTotal, explore, execute, decision, unallocated] = workflow.map(Number);
+    // The retired decision bucket was human picker latency, not Agent work, so it
+    // lands in unallocated rather than Ask. The sum is preserved either way.
     const timing = {
-      askMs: decision!,
+      askMs: 0,
       specMs: explore!,
       vibeMs: execute!,
-      unallocatedMs: unallocated!,
+      unallocatedMs: unallocated! + decision!,
     };
     if (Object.values(timing).every(Number.isSafeInteger) && totalTimeSpent(timing) === declaredTotal) return timing;
     return undefined;

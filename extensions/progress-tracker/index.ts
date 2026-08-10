@@ -20,12 +20,6 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
 import {
-  CHECKPOINT_EVENT,
-  deriveOpenCheckpoint,
-  type CheckpointEvent,
-  type OpenCheckpoint,
-} from "../agent-workflow/checkpoint.js";
-import {
   deriveWorkflowMode,
   MODE_EVENT,
   normalizeWorkflowMode,
@@ -33,7 +27,6 @@ import {
   type WorkflowMode,
 } from "../agent-workflow/mode.js";
 import {
-  addDecisionTime,
   addModeTime,
   EMPTY_PLAN_TIME,
   readPlanTime,
@@ -79,7 +72,6 @@ export default function (pi: ExtensionAPI) {
   let planTime: PlanTime | undefined;
   let cacheStartedAt: number | undefined;
   let waitingForUser = false;
-  let openCheckpoint: OpenCheckpoint | undefined;
 
   // Close the current interval before changing mode. Undefined is the initial
   // Ask state: the display can still ask for a goal while timing is precise.
@@ -94,23 +86,6 @@ export default function (pi: ExtensionAPI) {
     if (!next) return;
     accrueUntil(Date.now());
     mode = next;
-    refreshStatus();
-  });
-
-  pi.events.on?.(CHECKPOINT_EVENT, (payload: unknown) => {
-    const event = payload as CheckpointEvent | undefined;
-    if (!event || (event.action !== "open" && event.action !== "resolve")) return;
-    if (event.action === "open") {
-      openCheckpoint = {
-        id: event.id,
-        kind: event.kind,
-        openedAt: event.timestamp,
-      };
-    } else if (openCheckpoint?.id === event.id) {
-      planTime = addDecisionTime(planTime ?? EMPTY_PLAN_TIME, event.timestamp - openCheckpoint.openedAt);
-      openCheckpoint = undefined;
-      void persistTiming();
-    }
     refreshStatus();
   });
 
@@ -133,7 +108,6 @@ export default function (pi: ExtensionAPI) {
       runStartedAt,
       planTime,
       cacheStartedAt,
-      checkpointOpenedAt: openCheckpoint?.openedAt,
     });
     if (usage && usage.tokens != null && usage.contextWindow > 0) {
       const capturedUsage = usage;
@@ -178,7 +152,6 @@ export default function (pi: ExtensionAPI) {
     try {
       const branch = ctx.sessionManager.getBranch();
       mode = deriveWorkflowMode(branch);
-      openCheckpoint = deriveOpenCheckpoint(branch);
       cacheStartedAt = latestAssistantTimestamp(branch);
     } catch {
       // A branch that cannot be read is not worth a missing indicator.
@@ -200,7 +173,6 @@ export default function (pi: ExtensionAPI) {
     planTime = undefined;
     cacheStartedAt = undefined;
     waitingForUser = false;
-    openCheckpoint = undefined;
     await adopt(ctx);
   });
   pi.on("session_tree", async (_event, ctx) => {

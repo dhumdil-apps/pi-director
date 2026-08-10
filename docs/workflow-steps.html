@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pi Workflow State Machine</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --panel: #121a2e;
+        --panel-strong: #18243d;
+        --border: #2a3a5c;
+        --muted: #91a0bd;
+        --text: #edf3ff;
+        --ask: #58b7ff;
+        --spec: #b98cff;
+        --vibe: #42d6a4;
+        --shared: #f0b56b;
+        --danger: #ff7b91;
+        --shadow: 0 18px 45px rgb(0 0 0 / 24%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background:
+          radial-gradient(circle at 12% 0%, rgb(62 104 188 / 20%), transparent 33rem),
+          radial-gradient(circle at 90% 8%, rgb(127 72 180 / 16%), transparent 30rem), var(--bg);
+        color: var(--text);
+        font:
+          15px/1.5 Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      header,
+      main {
+        width: min(1440px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+      header {
+        padding: 42px 0 24px;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+      h1 {
+        font-size: clamp(28px, 4vw, 48px);
+        letter-spacing: -0.04em;
+      }
+      h1 span {
+        color: var(--ask);
+      }
+      header p {
+        max-width: 760px;
+        color: var(--muted);
+        margin-top: 10px;
+        font-size: 16px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+        margin-top: 22px;
+        color: var(--muted);
+      }
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .dot.ask {
+        background: var(--ask);
+      }
+      .dot.spec {
+        background: var(--spec);
+      }
+      .dot.vibe {
+        background: var(--vibe);
+      }
+      .dot.shared {
+        background: var(--shared);
+      }
+
+      .diagram-shell,
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: rgb(18 26 46 / 86%);
+        box-shadow: var(--shadow);
+      }
+
+      .diagram-shell {
+        overflow: hidden;
+      }
+      .diagram-toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+      .diagram-toolbar p {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      button {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 7px 11px;
+        background: var(--panel-strong);
+        color: var(--text);
+        cursor: pointer;
+      }
+      button:hover,
+      button:focus-visible {
+        border-color: var(--ask);
+        outline: none;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-height: 680px;
+        background: linear-gradient(180deg, rgb(24 36 61 / 25%), transparent 46%);
+      }
+
+      .lane {
+        fill: rgb(255 255 255 / 2%);
+        stroke: var(--border);
+        stroke-width: 1;
+        stroke-dasharray: 5 7;
+      }
+      .lane-label {
+        fill: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .node {
+        cursor: pointer;
+      }
+      .node rect {
+        fill: var(--panel-strong);
+        stroke: var(--border);
+        stroke-width: 2;
+        transition:
+          filter 0.18s,
+          stroke 0.18s,
+          fill 0.18s;
+      }
+      .node:hover rect,
+      .node:focus rect,
+      .node.selected rect {
+        filter: drop-shadow(0 0 12px rgb(88 183 255 / 28%));
+        stroke: var(--ask);
+      }
+      .node.ask rect {
+        stroke: var(--ask);
+      }
+      .node.spec rect {
+        stroke: var(--spec);
+      }
+      .node.vibe rect {
+        stroke: var(--vibe);
+      }
+      .node.shared rect {
+        stroke: var(--shared);
+      }
+      .node.danger rect {
+        stroke: var(--danger);
+      }
+      .node-title {
+        fill: var(--text);
+        font-size: 16px;
+        font-weight: 750;
+      }
+      .node-copy {
+        fill: var(--muted);
+        font-size: 12px;
+      }
+      .node-badge {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .node.ask .node-badge {
+        fill: var(--ask);
+      }
+      .node.spec .node-badge {
+        fill: var(--spec);
+      }
+      .node.vibe .node-badge {
+        fill: var(--vibe);
+      }
+      .node.shared .node-badge {
+        fill: var(--shared);
+      }
+      .node.danger .node-badge {
+        fill: var(--danger);
+      }
+      .edge {
+        fill: none;
+        stroke: #6e81a8;
+        stroke-width: 2;
+        marker-end: url(#arrow);
+      }
+      .edge.recommend {
+        stroke: var(--ask);
+        stroke-dasharray: 7 5;
+      }
+      .edge.blocked {
+        stroke: var(--danger);
+        stroke-dasharray: 5 5;
+      }
+      .edge-label {
+        fill: var(--muted);
+        font-size: 12px;
+        font-weight: 650;
+      }
+      .edge-label.recommend {
+        fill: var(--ask);
+      }
+      .edge-label.blocked {
+        fill: var(--danger);
+      }
+      .start-dot {
+        fill: var(--ask);
+      }
+
+      .details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 20px;
+      }
+      .card {
+        padding: 22px;
+      }
+      .card h2 {
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+      .card h3 {
+        color: var(--ask);
+        font-size: 15px;
+        margin: 18px 0 4px;
+      }
+      .card p,
+      .card li {
+        color: var(--muted);
+      }
+      .card ul {
+        padding-left: 20px;
+        margin: 8px 0 0;
+      }
+      .card li + li {
+        margin-top: 5px;
+      }
+      code {
+        color: #d5e3ff;
+        background: rgb(255 255 255 / 7%);
+        border-radius: 5px;
+        padding: 2px 5px;
+      }
+      .selected-state {
+        color: var(--text);
+        min-height: 112px;
+      }
+      .selected-state strong {
+        color: var(--ask);
+      }
+      .rule-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin: 20px 0 42px;
+      }
+      .rule-grid .card {
+        min-height: 170px;
+      }
+      .rule-grid h2 {
+        font-size: 16px;
+      }
+      .rule-grid h2::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin: 0 8px 2px 0;
+        border-radius: 50%;
+        background: var(--shared);
+      }
+
+      @media (max-width: 900px) {
+        header,
+        main {
+          width: min(100% - 24px, 720px);
+        }
+        svg {
+          min-width: 1000px;
+        }
+        .diagram-shell {
+          overflow-x: auto;
+        }
+        .details,
+        .rule-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Pi <span>Workflow</span> State Machine</h1>
+      <p>
+        An interactive visualization of <code>WORKFLOW_STEPS</code>. Click a state to inspect its contract. The User
+        owns mode changes; the Agent only recommends what should happen after the turn settles.
+      </p>
+      <div class="legend" aria-label="Diagram legend">
+        <span class="legend-item"><i class="dot ask"></i> Ask / user alignment</span>
+        <span class="legend-item"><i class="dot spec"></i> Spec / research</span>
+        <span class="legend-item"><i class="dot vibe"></i> Vibe / execution</span>
+        <span class="legend-item"><i class="dot shared"></i> Shared lifecycle</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="diagram-shell" aria-labelledby="diagram-title">
+        <div class="diagram-toolbar">
+          <div>
+            <h2 id="diagram-title">Turn lifecycle</h2>
+            <p>Solid arrows are control flow. Dashed arrows are Agent recommendations or blocked exits.</p>
+          </div>
+          <button id="reset" type="button">Reset selection</button>
+        </div>
+
+        <svg viewBox="0 0 1400 1060" role="img" aria-labelledby="svg-title svg-desc">
+          <title id="svg-title">Pi workflow state machine</title>
+          <desc id="svg-desc">
+            A flow from Ask alignment through optional Spec planning or Vibe execution, with a user-owned mode picker
+            after every settled turn.
+          </desc>
+          <defs>
+            <marker
+              id="arrow"
+              markerWidth="10"
+              markerHeight="10"
+              refX="9"
+              refY="5"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <path d="M0,0 L10,5 L0,10 z" fill="#6e81a8" />
+            </marker>
+          </defs>
+
+          <rect class="lane" x="35" y="40" width="1330" height="220" rx="18" />
+          <rect class="lane" x="35" y="290" width="1330" height="330" rx="18" />
+          <rect class="lane" x="35" y="650" width="1330" height="180" rx="18" />
+          <rect class="lane" x="35" y="860" width="1330" height="160" rx="18" />
+          <text class="lane-label" x="62" y="70">Session state</text>
+          <text class="lane-label" x="62" y="320">Agent turn</text>
+          <text class="lane-label" x="62" y="680">Settlement</text>
+          <text class="lane-label" x="62" y="890">Persistent context</text>
+
+          <circle class="start-dot" cx="105" cy="152" r="9" />
+          <path class="edge" d="M114 152 H155" />
+
+          <g class="node ask" tabindex="0" role="button" data-state="start" transform="translate(155 105)">
+            <rect width="190" height="94" rx="12" />
+            <text class="node-badge" x="18" y="25">START</text>
+            <text class="node-title" x="18" y="51">Session begins</text>
+            <text class="node-copy" x="18" y="73">mode := ASK</text>
+          </g>
+          <path class="edge" d="M345 152 H390" />
+
+          <g class="node ask" tabindex="0" role="button" data-state="ask" transform="translate(390 90)">
+            <rect width="260" height="124" rx="12" />
+            <text class="node-badge" x="18" y="25">MODE[ASK]</text>
+            <text class="node-title" x="18" y="53">Align and decide</text>
+            <text class="node-copy" x="18" y="76">Clarify goal and trade-offs</text>
+            <text class="node-copy" x="18" y="96">Use questionnaire when needed</text>
+          </g>
+          <path class="edge recommend" d="M650 125 C720 82 750 82 815 125" />
+          <text class="edge-label recommend" x="706" y="96">clear + low-risk</text>
+          <path class="edge recommend" d="M650 180 C720 225 750 225 815 180" />
+          <text class="edge-label recommend" x="705" y="221">research needed</text>
+
+          <g class="node vibe" tabindex="0" role="button" data-state="vibe" transform="translate(815 90)">
+            <rect width="240" height="124" rx="12" />
+            <text class="node-badge" x="18" y="25">MODE[VIBE]</text>
+            <text class="node-title" x="18" y="53">Execute</text>
+            <text class="node-copy" x="18" y="76">Implement accepted scope</text>
+            <text class="node-copy" x="18" y="96">Mutate files only in Vibe</text>
+          </g>
+          <g class="node spec" tabindex="0" role="button" data-state="spec" transform="translate(1090 90)">
+            <rect width="240" height="124" rx="12" />
+            <text class="node-badge" x="18" y="25">MODE[SPEC]</text>
+            <text class="node-title" x="18" y="53">Research &amp; propose</text>
+            <text class="node-copy" x="18" y="76">Explore source and evidence</text>
+            <text class="node-copy" x="18" y="96">Save a completed proposal</text>
+          </g>
+          <path class="edge" d="M1055 152 H1090" />
+          <text class="edge-label" x="1059" y="140">User selects</text>
+
+          <path class="edge" d="M510 214 V350" />
+          <path class="edge" d="M1210 214 V350" />
+          <path class="edge" d="M935 214 V350" />
+
+          <g class="node ask" tabindex="0" role="button" data-state="ask-turn" transform="translate(390 350)">
+            <rect width="240" height="104" rx="12" />
+            <text class="node-badge" x="18" y="25">ASK TURN</text>
+            <text class="node-title" x="18" y="52">Goal unresolved?</text>
+            <text class="node-copy" x="18" y="75">Keep aligning until clear</text>
+          </g>
+          <path class="edge recommend" d="M390 402 H305 Q275 402 275 432 V478 Q275 508 305 508 H390" />
+          <text class="edge-label recommend" x="172" y="463">yes → continue</text>
+          <path class="edge" d="M630 402 H700" />
+          <text class="edge-label" x="645" y="391">no</text>
+
+          <g class="node spec" tabindex="0" role="button" data-state="spec-turn" transform="translate(700 350)">
+            <rect width="250" height="104" rx="12" />
+            <text class="node-badge" x="18" y="25">SPEC TURN</text>
+            <text class="node-title" x="18" y="52">Research &amp; design</text>
+            <text class="node-copy" x="18" y="75">Update the living artifact</text>
+          </g>
+          <path class="edge recommend" d="M825 454 V506" />
+          <text class="edge-label recommend" x="844" y="486">research remains</text>
+          <path class="edge blocked" d="M700 402 H665 Q640 402 640 430 V540 Q640 570 670 570 H700" />
+          <text class="edge-label blocked" x="523" y="558">blocked → Ask</text>
+
+          <g class="node shared" tabindex="0" role="button" data-state="save" transform="translate(700 506)">
+            <rect width="250" height="104" rx="12" />
+            <text class="node-badge" x="18" y="25">SPEC OUTPUT</text>
+            <text class="node-title" x="18" y="52">save_plan</text>
+            <text class="node-copy" x="18" y="75">Present proposal, then settle</text>
+          </g>
+          <path class="edge" d="M950 558 H1010" />
+          <path class="edge" d="M935 454 V470 Q935 482 1010 482 V506" />
+
+          <g class="node vibe" tabindex="0" role="button" data-state="execute" transform="translate(1010 350)">
+            <rect width="250" height="104" rx="12" />
+            <text class="node-badge" x="18" y="25">VIBE TURN</text>
+            <text class="node-title" x="18" y="52">Implement &amp; verify</text>
+            <text class="node-copy" x="18" y="75">Resolve research in place</text>
+          </g>
+          <path class="edge blocked" d="M1135 454 V506" />
+          <text class="edge-label blocked" x="1153" y="486">blocked → Ask</text>
+          <path class="edge" d="M1135 454 V578" />
+
+          <g class="node shared" tabindex="0" role="button" data-state="closeout" transform="translate(1010 578)">
+            <rect width="250" height="104" rx="12" />
+            <text class="node-badge" x="18" y="25">CLOSE OUT</text>
+            <text class="node-title" x="18" y="52">Report &amp; record</text>
+            <text class="node-copy" x="18" y="75">Verify, update checklist</text>
+          </g>
+          <path class="edge" d="M825 610 V716 H700" />
+          <text class="edge-label" x="708" y="700">proposal settled</text>
+          <path class="edge" d="M1135 682 V716 H1010" />
+          <text class="edge-label" x="1148" y="704">turn settled</text>
+
+          <g class="node shared" tabindex="0" role="button" data-state="picker" transform="translate(700 716)">
+            <rect width="310" height="92" rx="12" />
+            <text class="node-badge" x="18" y="25">RUNTIME</text>
+            <text class="node-title" x="18" y="52">Settlement mode picker</text>
+            <text class="node-copy" x="18" y="73">User owns the next mode</text>
+          </g>
+          <path class="edge" d="M700 762 H575 Q545 762 545 792 V824" />
+          <path class="edge" d="M855 808 V824" />
+          <path class="edge" d="M1010 762 H1135 Q1165 762 1165 792 V824" />
+          <text class="edge-label" x="560" y="781">Ask</text>
+          <text class="edge-label" x="865" y="822">Spec / Vibe</text>
+          <text class="edge-label" x="1138" y="781">handoff</text>
+
+          <g class="node ask" tabindex="0" role="button" data-state="new-ask" transform="translate(420 824)">
+            <rect width="250" height="88" rx="12" />
+            <text class="node-badge" x="18" y="25">USER CHOICE</text>
+            <text class="node-title" x="18" y="52">Continue / new Ask</text>
+            <text class="node-copy" x="18" y="72">Mode stays or becomes Ask</text>
+          </g>
+          <g class="node vibe" tabindex="0" role="button" data-state="new-vibe" transform="translate(730 824)">
+            <rect width="250" height="88" rx="12" />
+            <text class="node-badge" x="18" y="25">USER CHOICE</text>
+            <text class="node-title" x="18" y="52">Start Vibe</text>
+            <text class="node-copy" x="18" y="72">Begin the approved execution</text>
+          </g>
+          <g class="node shared" tabindex="0" role="button" data-state="handoff" transform="translate(1040 824)">
+            <rect width="250" height="88" rx="12" />
+            <text class="node-badge" x="18" y="25">USER CHOICE</text>
+            <text class="node-title" x="18" y="52">Handoff next phase</text>
+            <text class="node-copy" x="18" y="72">Checkpoint artifact, fresh Ask</text>
+          </g>
+
+          <path class="edge" d="M545 912 V948 H175 V978" />
+          <path class="edge" d="M855 912 V978" />
+          <path class="edge" d="M1165 912 V948 H1225 V978" />
+          <g class="node shared" tabindex="0" role="button" data-state="artifact" transform="translate(35 952)">
+            <rect width="280" height="68" rx="12" />
+            <text class="node-badge" x="18" y="25">ARTIFACT</text>
+            <text class="node-title" x="18" y="50">.pi/plan/&lt;name&gt;.md</text>
+          </g>
+          <g class="node shared" tabindex="0" role="button" data-state="next-turn" transform="translate(715 952)">
+            <rect width="280" height="68" rx="12" />
+            <text class="node-badge" x="18" y="25">NEXT TURN</text>
+            <text class="node-title" x="18" y="50">RUN only MODE[mode]</text>
+          </g>
+          <g class="node ask" tabindex="0" role="button" data-state="new-session" transform="translate(1085 952)">
+            <rect width="280" height="68" rx="12" />
+            <text class="node-badge" x="18" y="25">FRESH SESSION</text>
+            <text class="node-title" x="18" y="50">Starts in ASK</text>
+          </g>
+        </svg>
+      </section>
+
+      <section class="details">
+        <article class="card">
+          <h2>Selected state</h2>
+          <p id="state-detail" class="selected-state" aria-live="polite">
+            <strong>Session begins:</strong> Every interactive session starts in Ask. The User owns every later mode
+            change.
+          </p>
+        </article>
+        <article class="card">
+          <h2>Contract invariants</h2>
+          <ul>
+            <li>The Agent ends each turn with <code>recommend_next</code>, never by changing mode.</li>
+            <li>The runtime opens the picker after settlement; the User selects the next mode.</li>
+            <li>Only Vibe is the execution mode for project-file mutations.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="rule-grid" aria-label="Shared workflow rules">
+        <article class="card">
+          <h2>ALWAYS</h2>
+          <p>
+            Size the work to the change, lead with the result, name paths and symbols, and never claim an unchecked
+            result.
+          </p>
+        </article>
+        <article class="card">
+          <h2>ARTIFACT</h2>
+          <p>
+            One session owns one plan. Keep it resumable, preserve history, and update checklist status at close-out.
+          </p>
+        </article>
+        <article class="card">
+          <h2>EXPLORATION</h2>
+          <p>
+            Search one decisive source first, read bounded sections, exclude generated trees, and stop when answered.
+          </p>
+        </article>
+        <article class="card">
+          <h2>BLOCKED</h2>
+          <p>Stop without improvising, record the problem and recommendation in the artifact, then route to Ask.</p>
+        </article>
+        <article class="card">
+          <h2>SAFETY</h2>
+          <p>
+            Match operations to their tool schemas and preserve safeguards for destructive actions, dependencies,
+            credentials, and external writes.
+          </p>
+        </article>
+        <article class="card">
+          <h2>CLOSE OUT</h2>
+          <p>Report changed paths, verification, limitations, and open concerns. Never claim User acceptance.</p>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const details = {
+        start:
+          "<strong>Session begins:</strong> Every interactive session starts in Ask. The User owns every later mode change.",
+        ask: "<strong>Ask:</strong> Align and decide. Ask focused questions, use the native questionnaire for consequential choices, and write decisions to the artifact.",
+        vibe: "<strong>Vibe:</strong> Execute the current instruction or accepted proposal. This is the only mode intended for project-file mutations.",
+        spec: "<strong>Spec:</strong> Research and propose. Explore the source, keep the artifact current, and save a completed actionable plan before settlement.",
+        "ask-turn":
+          "<strong>Ask decision:</strong> If the goal is still unclear, recommend continuing alignment. Once execution is clear, recommend Vibe; otherwise recommend Spec.",
+        "spec-turn":
+          "<strong>Spec turn:</strong> Research per the exploration rules and update Current state, Findings, Desired state, Approach, and Checklist in the living artifact.",
+        save: "<strong>save_plan:</strong> Spec presents a completed proposal and ends the turn. The picker then offers approval to start Vibe.",
+        execute:
+          "<strong>Vibe turn:</strong> Resolve implementation research in place, implement the scope, and verify with the repository's checks.",
+        closeout:
+          "<strong>Close out:</strong> Mark completed checklist items, report paths and verification, preserve historical narrative, and leave the artifact handoff-ready.",
+        picker:
+          "<strong>Mode picker:</strong> The runtime opens after settlement. It recommends an action, but only the User can adopt the next mode.",
+        "new-ask":
+          "<strong>User choice:</strong> Continue alignment or start a new Ask direction. Ask returns to the editor and waits for input.",
+        "new-vibe":
+          "<strong>User choice:</strong> Approve the proposal or start execution. The next turn runs only the selected Vibe mode.",
+        handoff:
+          "<strong>Handoff:</strong> The artifact is checkpointed and continued in a fresh session, which starts in Ask.",
+        artifact:
+          "<strong>Artifact:</strong> The session's single <code>.pi/plan/&lt;name&gt;.md</code> records decisions, research, work, checklist status, and close-out.",
+        "next-turn":
+          "<strong>Next turn:</strong> The Agent runs only the mode currently injected as <code>pi_workflow_mode</code>.",
+        "new-session":
+          "<strong>Fresh session:</strong> A handoff replacement starts in Ask so the User can align the next phase.",
+      };
+
+      const nodes = document.querySelectorAll(".node");
+      const detail = document.querySelector("#state-detail");
+      const select = (node) => {
+        nodes.forEach((item) => item.classList.remove("selected"));
+        node.classList.add("selected");
+        detail.innerHTML = details[node.dataset.state] || "No detail available.";
+      };
+
+      nodes.forEach((node) => {
+        node.addEventListener("click", () => select(node));
+        node.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            select(node);
+          }
+        });
+      });
+
+      document.querySelector("#reset").addEventListener("click", () => {
+        nodes.forEach((node) => node.classList.remove("selected"));
+        detail.innerHTML = details.start;
+      });
+    </script>
+  </body>
+</html>

@@ -2,13 +2,13 @@
 
 The injected block in [`index.ts`](index.ts) is the behavior contract. This page
 describes its runtime surfaces and persistence; where they disagree, the block
-wins.
+wins. For an interactive view of the contract, open the [workflow state machine](../../docs/workflow-steps.html).
 
 ## Three modes, chosen by the User
 
-- **Ask** aligns and decides. For every new task it uses the native
-  `questionnaire` tool at least once to establish consequential choices before
-  recommending Spec or Vibe. It changes no project files.
+- **Ask** aligns and decides. It uses the native `questionnaire` tool whenever a
+  consequential choice is open, and settles the choice before recommending Spec
+  or Vibe. It changes no project files.
 - **Spec** researches and designs. It establishes facts, fills the artifact, and
   presents a proposal with `save_plan`. It changes no project files.
 - **Vibe** executes. It is the mode intended for edits and writes; the boundary
@@ -46,8 +46,8 @@ one action explicit and recommended:
 - `Hand off to a fresh session` remains available while work is open and prepares
   `/handoff <name>` in the editor. Handoff still requires Enter and starts the
   replacement session in Ask mode.
-- After closeout, Continue and Handoff are omitted; the picker recommends a new
-  Ask or Spec direction.
+- After closeout, Continue and Handoff are omitted; the picker recommends starting
+  a new direction in Ask. Spec remains available as an explicit secondary choice.
 - `Write your own...` and dismissal are the same escape hatch: control returns to
   the editor with the mode untouched.
 
@@ -66,8 +66,8 @@ recommended resolution into the artifact, record Ask as the next step, and let
 the picker carry the decision. Vibe resolves implementation research in place rather than
 treating Spec as an execution prerequisite.
 
-Picker and questionnaire latency accrue as capped Align time through checkpoint
-events.
+Picker and questionnaire latency is the User's time: it pauses the active mode
+clock and accrues to no bucket.
 
 ## Mode as execution guidance
 
@@ -123,13 +123,14 @@ suppresses itself for that settlement.
 ## Timing
 
 Each artifact carries a script-owned `time-spent` block with one bucket per mode:
-Ask, Spec, and Vibe, plus unallocated history. Ask holds both Agent work in Ask
-mode and capped picker latency. Progress Tracker accrues the active bucket and
-closes the interval the moment the mode changes, so a switch mid-run splits the
-time correctly.
+Ask, Spec, and Vibe, plus unallocated history. Every bucket is Agent work only;
+time spent waiting on the User is never billed to a mode. Progress Tracker accrues
+the active bucket and closes the interval the moment the mode changes, so a switch
+mid-run splits the time correctly.
 
-Markers written before the rename migrate one-to-one — explore becomes Spec,
-execute becomes Vibe, decision becomes Ask — so no existing plan loses time.
+Markers written before the rename migrate one-to-one — explore becomes Spec and
+execute becomes Vibe — while the retired decision bucket folds into unallocated,
+so no existing plan loses time.
 `stripTimeSpent` excludes the block from plan identity, so a timer write cannot
 disturb revision detection.
 

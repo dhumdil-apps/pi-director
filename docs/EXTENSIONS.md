@@ -52,7 +52,7 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 
 ## Deliberately absent
 
-- **No workflow skill.** The Align/Explore/Execute/Close-out workflow remains a
+- **No workflow skill.** The Ask/Spec/Vibe workflow and its close-out step remain a
   constant injected contract. The optional Pi Inspector skill activates only for
   applicable local browser debugging and verification.
 - **No general permission gate.** Ask/Spec/Vibe execution boundaries are
@@ -64,7 +64,7 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
   What the agent is doing is visible in the transcript.
 - **No derived loop position in the prompt.** The large injected contract stays
   constant and cacheable. Only a tiny per-turn mode message varies; per-mode
-  timing and picker latency remain display-only.
+  timing is display-only, and picker latency is not tracked at all.
 
 [UPSTREAM.md](../UPSTREAM.md) records what was vendored, what was removed and
 when, plus versions and licenses.

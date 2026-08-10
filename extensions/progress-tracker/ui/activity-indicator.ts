@@ -7,13 +7,7 @@
 
 import type { ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
-import {
-  addDecisionTime,
-  addModeTime,
-  DECISION_CAP_MS,
-  formatDuration,
-  type PlanTime,
-} from "../../agent-workflow/plan-time.js";
+import { addModeTime, formatDuration, type PlanTime } from "../../agent-workflow/plan-time.js";
 import type { WorkflowMode } from "../../agent-workflow/mode.js";
 
 const PHASE_WIDGET_ID = "workflow-phase";
@@ -33,10 +27,8 @@ export interface IndicatorExtras {
    * closure-local start would restart the counter mid-run.
    */
   runStartedAt?: number;
-  /** Settled Ask/Spec/Vibe work, including capped picker latency in Ask. */
+  /** Settled Ask/Spec/Vibe Agent work. */
   planTime?: PlanTime;
-  /** When the current picker was presented, for live checkpoint latency. */
-  checkpointOpenedAt?: number;
   /** When the latest provider response completed, as epoch ms, for cache age. */
   cacheStartedAt?: number;
   /** Injectable clock, so the live counter is testable. */
@@ -62,17 +54,14 @@ function timerColor(working: boolean, elapsedMs: number): "accent" | "dim" | "wa
 function modeBuckets(working: boolean, extras: IndicatorExtras | undefined, now: number, theme: Theme): string {
   if (extras?.planTime == null) return "";
   const currentMode = extras.mode ?? "ask";
-  let time =
+  // Buckets are Agent work only: an open picker or question is the User's time,
+  // and the leading cache-age readout already shows that idle risk.
+  const time =
     working && extras.runStartedAt != null
       ? addModeTime(extras.planTime, currentMode, Math.max(0, now - extras.runStartedAt))
       : extras.planTime;
-  const openDecisionMs = extras.checkpointOpenedAt == null ? 0 : Math.max(0, now - extras.checkpointOpenedAt);
-  if (openDecisionMs > 0) time = addDecisionTime(time, openDecisionMs);
   const separator = theme.fg("dim", " · ");
-  const ask = theme.fg(
-    currentMode === "ask" ? "accent" : "dim",
-    `ask ${formatDuration(time.askMs)}${openDecisionMs >= DECISION_CAP_MS ? "+" : ""}`,
-  );
+  const ask = theme.fg(currentMode === "ask" ? "accent" : "dim", `ask ${formatDuration(time.askMs)}`);
   const spec = theme.fg(currentMode === "spec" ? "accent" : "dim", `spec ${formatDuration(time.specMs)}`);
   const vibe = theme.fg(currentMode === "vibe" ? "accent" : "dim", `vibe ${formatDuration(time.vibeMs)}`);
   return `${separator}${ask}${separator}${spec}${separator}${vibe}`;
@@ -112,13 +101,11 @@ export function updatePhaseIndicator(ctx: ExtensionContext, working: boolean, ex
       // beyond five minutes another ticking counter conveys no useful signal.
       let idleTimer: ReturnType<typeof setInterval> | undefined;
       const clock = extras?.now ?? Date.now;
-      const decisionStillLive = () =>
-        extras?.checkpointOpenedAt != null && clock() - extras.checkpointOpenedAt < DECISION_CAP_MS;
       const cacheStillLive = () =>
         extras?.cacheStartedAt != null && (durationMs(false, extras, clock()) ?? 0) < CACHE_ERROR_IDLE_MS;
-      if (!working && (cacheStillLive() || decisionStillLive())) {
+      if (!working && cacheStillLive()) {
         idleTimer = setInterval(() => {
-          if (!cacheStillLive() && !decisionStillLive()) {
+          if (!cacheStillLive()) {
             const expiredTimer = idleTimer;
             idleTimer = undefined;
             if (expiredTimer) clearInterval(expiredTimer);

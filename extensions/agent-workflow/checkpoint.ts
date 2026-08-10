@@ -23,7 +23,7 @@ function publish(pi: CheckpointPi, event: CheckpointEvent): void {
   pi.events.emit?.(CHECKPOINT_EVENT, event);
 }
 
-/** Open immediately before presenting a choice so Align latency has an observable boundary. */
+/** Open immediately before presenting a choice so an unresolved align choice is reconstructible after reload. */
 export function openCheckpoint(pi: CheckpointPi, kind: CheckpointKind, now: number = Date.now()): OpenCheckpoint {
   const checkpoint = { id: randomUUID(), kind, openedAt: now };
   publish(pi, { action: "open", id: checkpoint.id, kind, timestamp: now });
