@@ -401,8 +401,8 @@
             <rect width="260" height="124" rx="12" />
             <text class="node-badge" x="18" y="25">MODE[ASK]</text>
             <text class="node-title" x="18" y="53">Align and decide</text>
-            <text class="node-copy" x="18" y="76">Clarify goal and trade-offs</text>
-            <text class="node-copy" x="18" y="96">Use questionnaire when needed</text>
+            <text class="node-copy" x="18" y="76">Interactive goal and scope Q&amp;A</text>
+            <text class="node-copy" x="18" y="96">Bounded orientation only</text>
           </g>
           <path class="edge recommend" d="M650 125 C720 82 750 82 815 125" />
           <text class="edge-label recommend" x="706" y="96">clear + low-risk</text>
@@ -595,11 +595,11 @@
       const details = {
         start:
           "<strong>Session begins:</strong> Every interactive session starts in Ask. The User owns every later mode change.",
-        ask: "<strong>Ask:</strong> Align and decide. Ask focused questions, use the native questionnaire for consequential choices, and write decisions to the artifact.",
+        ask: "<strong>Ask / Align:</strong> Use interactive goal, scope, constraint, and trade-off Q&amp;A. Use the native questionnaire when needed; defer source research and results to Spec.",
         vibe: "<strong>Vibe:</strong> Execute the current instruction or accepted proposal. This is the only mode intended for project-file mutations.",
         spec: "<strong>Spec:</strong> Research and propose. Explore the source, keep the artifact current, and save a completed actionable plan before settlement.",
         "ask-turn":
-          "<strong>Ask decision:</strong> If the goal is still unclear, recommend continuing alignment. Once execution is clear, recommend Vibe; otherwise recommend Spec.",
+          "<strong>Ask / Align turn:</strong> Ask focused questions, listen, explain trade-offs, and refine direction. Recommend Spec or Vibe only when alignment is sufficiently clear.",
         "spec-turn":
           "<strong>Spec turn:</strong> Research per the exploration rules and update Current state, Findings, Desired state, Approach, and Checklist in the living artifact.",
         save: "<strong>save_plan:</strong> Spec presents a completed proposal and ends the turn. The picker then offers approval to start Vibe.",
@@ -610,7 +610,7 @@
         picker:
           "<strong>Mode picker:</strong> The runtime opens after settlement. It recommends an action, but only the User can adopt the next mode.",
         "new-ask":
-          "<strong>User choice:</strong> Continue alignment or start a new Ask direction. Ask returns to the editor and waits for input.",
+          "<strong>User choice:</strong> Continue targeted Ask Q&amp;A or start a new Ask direction. Ask returns to the editor and waits for input when no targeted prompt exists.",
         "new-vibe":
           "<strong>User choice:</strong> Approve the proposal or start execution. The next turn runs only the selected Vibe mode.",
         handoff:

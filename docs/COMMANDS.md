@@ -6,7 +6,7 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
 
 ## Everyday commands
 
-- **`/ask`** / **`/spec`** / **`/vibe`** — Change the session mode for future work without triggering a model turn. Ask aligns, Spec researches and proposes, Vibe executes; the boundary is advisory.
+- **`/ask`** / **`/spec`** / **`/vibe`** — Change the session mode for future work without triggering a model turn. Ask is interactive alignment and Q&A, Spec researches and proposes, Vibe executes; the boundary is advisory.
 - **`/mode`** — Re-open the mode picker. It normally opens on its own after every settled turn, offering the recommended next step, the other two modes, a handoff, and a `Write your own...` escape hatch.
 - **`/handoff [session-name]`** — Continue the same artifact in a fresh session, starting in Ask mode so the next direction is aligned first. It first drives one checkpoint turn that brings the plan file up to date, so nothing is lost at the boundary. Without a name it uses the current session plan, or the lone plan under `.pi/plan/`.
 - **`/init [full]`** — Initializes or realigns tool-agnostic shared and Pi-local instruction layers, then refreshes project memory and review provenance. It proposes approval-gated drift repairs, incrementally audits memory since the hidden reviewed commit by default, and performs a repository-wide audit with `full`.

@@ -37,8 +37,8 @@ STATE:
     mode := injected pi_workflow_mode, owned by the User;
     artifact := this session's one .pi/plan/<name>.md;
     scope := the current instruction plus the accepted proposal it belongs to;
-    RECOMMEND(x) := CALL "recommend_next" with x IN { continue, ask, spec, vibe, phase-boundary };
-    MUTATE project files ONLY IF mode = VIBE;
+    RECOMMEND(x, prompt?) := CALL "recommend_next" with x IN { continue, ask, spec, vibe, phase-boundary } and optional targeted prompt;
+    MUTATE project source files ONLY IF mode = VIBE;
 
 TURN:
     RUN only MODE[mode] on the User's request;
@@ -55,20 +55,27 @@ ALWAYS:
     DO NOT name the next picker action;
     NEVER CLAIM a check you did not run or a mutation a tool rejected;
 
-MODE[ASK] — align and decide:
+MODE[ASK] — align through interactive Q&A:
     ON first request of session DO
         CALL "start_task" once;
+        STATE the understood goal and scope;
+        ASK one concise direction-check question;
+        WRITE the direction check to the artifact;
+        RECOMMEND(continue, targeted Q&A prompt);
+        END turn;
     END ON
-    WHILE the goal is unclear DO
-        READ .pi/, README, and docs without searching code;
-    END WHILE
-    ASK focused questions with trade-offs and exactly one recommended option;
+    TREAT Ask as Align: ask, listen, explain trade-offs, and refine the shared direction;
+    REMAIN in Ask while alignment questions remain; an artifact update is not permission to leave;
+    ASK focused goal, scope, constraint, and outcome questions before proposing execution;
     CALL "questionnaire" whenever a consequential choice is open;
-    USE prose ONLY IF choices cannot express the needed discovery;
+    IF bounded orientation is needed to clarify direction THEN
+        READ only the relevant .pi/, README, or docs;
+    END IF
+    DO NOT search source or gather research results in Ask;
     WRITE answers and decisions to the artifact;
-    DO NOT end on bare questions;
+    END each unresolved turn with a concise targeted question or Q&A prompt;
     IF unresolved THEN
-        RECOMMEND(continue);
+        RECOMMEND(continue, targeted Q&A prompt);
     ELSE IF execution is clear AND low-risk THEN
         RECOMMEND(vibe);
     ELSE

@@ -6,9 +6,10 @@ wins. For an interactive view of the contract, open the [workflow state machine]
 
 ## Three modes, chosen by the User
 
-- **Ask** aligns and decides. It uses the native `questionnaire` tool whenever a
-  consequential choice is open, and settles the choice before recommending Spec
-  or Vibe. It changes no project files.
+- **Ask** is Align: an interactive Q&A loop for clarifying goal, scope,
+  constraints, trade-offs, and direction. It uses the native `questionnaire` tool
+  whenever a consequential choice is open, permits only bounded orientation reads,
+  and defers source research and results to Spec. It changes no project files.
 - **Spec** researches and designs. It establishes facts, fills the artifact, and
   presents a proposal with `save_plan`. It changes no project files.
 - **Vibe** executes. It is the mode intended for edits and writes; the boundary
@@ -33,16 +34,19 @@ mode. The runtime combines that outcome with live plan and context state to make
 one action explicit and recommended:
 
 - Ask offers `Continue alignment`, `Proceed to Spec`, or `Start Vibe` according
-  to whether questions remain and the aligned task's risk and uncertainty.
+  to whether questions remain and the aligned task's risk and uncertainty. When
+  Ask is recommended with unresolved questions, `recommend_next` can carry a
+  targeted prompt into the continuation instead of using a generic kickoff.
 - Spec offers `Continue research and planning` or `Return to Ask`; a successful
   `save_plan` offers `Approve plan and start Vibe`.
 - Vibe offers `Continue implementation`, `Return to Ask`, or `Proceed to Spec`.
   A marked phase boundary becomes `Hand off next phase` only when checklist work
   remains and context is loaded; context pressure alone never leads to handoff.
 - Selecting any cross-mode action persists the User's mode choice. Spec and Vibe
-  destinations immediately send their kickoff; Ask returns to the editor and
-  waits for input. Secondary actions use `Start Ask` / `Start Spec` / `Start Vibe`
-  labels to make the destination explicit.
+  destinations immediately send their kickoff; cross-mode Ask returns to the
+  editor and waits for input. Ask continuation sends only its targeted prompt,
+  when one exists; otherwise it sends nothing. Secondary actions use `Start Ask` /
+  `Start Spec` / `Start Vibe` labels to make the destination explicit.
 - `Hand off to a fresh session` remains available while work is open and prepares
   `/handoff <name>` in the editor. Handoff still requires Enter and starts the
   replacement session in Ask mode.
@@ -52,8 +56,9 @@ one action explicit and recommended:
   the editor with the mode untouched.
 
 If the Agent omits `recommend_next`, the runtime still opens the picker and
-conservatively recommends continuing the current mode. Recommendations expire at
-the next User message and never carry into a later turn.
+conservatively recommends continuing the current mode. Ask still sends no
+synthetic kickoff without a targeted prompt. Recommendations expire at the next
+User message and never carry into a later turn.
 
 `/ask`, `/spec`, and `/vibe` switch mode directly when the picker itself is
 unavailable, and `/mode` re-opens it. None of them start a turn.
@@ -61,6 +66,8 @@ unavailable, and `/mode` re-opens it. None of them start a turn.
 The mode picker routes work after a turn; `questionnaire` gathers Ask alignment
 inside a turn. It presents 1–4 native option pickers, shows the Agent's recommended
 answer first, and returns selections or custom input to the Agent before settlement.
+Ask should keep this exchange conversational and question-first; a mode recommendation
+is guidance only, not permission to skip unresolved alignment.
 Spec blockers and Vibe decision blockers still stop, write the problem and
 recommended resolution into the artifact, record Ask as the next step, and let
 the picker carry the decision. Vibe resolves implementation research in place rather than
