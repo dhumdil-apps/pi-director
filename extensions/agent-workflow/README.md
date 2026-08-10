@@ -29,36 +29,44 @@ Close out is a step at the end of a turn, not a fourth mode.
 
 The picker is the single decision surface, and it is owned by the runtime rather
 than by a tool, so the Agent cannot skip it by forgetting a call. Before settling,
-the Agent can use `recommend_next` to record the turn's outcome without changing
-mode. The runtime combines that outcome with live plan and context state to make
-one action explicit and recommended:
+the Agent can use `recommend_next` to record the turn's outcome, a concise reason,
+and optional custom kickoff without changing mode. The runtime combines that
+outcome with live plan and context state to make one action explicit and recommended:
 
-- Ask offers `Continue alignment`, `Proceed to Spec`, or `Start Vibe` according
-  to whether questions remain and the aligned task's risk and uncertainty. When
-  Ask is recommended with unresolved questions, `recommend_next` can carry a
-  targeted prompt into the continuation instead of using a generic kickoff.
-- Spec offers `Continue research and planning` or `Return to Ask`; a successful
-  `save_plan` offers `Approve plan and start Vibe`.
-- Vibe offers `Continue implementation`, `Return to Ask`, or `Proceed to Spec`.
-  A marked phase boundary becomes `Hand off next phase` only when checklist work
-  remains and context is loaded; context pressure alone never leads to handoff.
+- Ask offers `Ask — Keep clarifying the direction`, `Spec — Research the open
+questions`, or `Vibe — Start implementing the request` according to whether
+  questions remain and the aligned task's risk and uncertainty. When Ask is
+  recommended with unresolved questions, `recommend_next` can carry a targeted
+  prompt into the continuation instead of using a generic kickoff.
+- Spec offers `Spec — Keep researching the plan` or `Ask — Clarify the next
+decision`; a successful `save_plan` offers `Vibe — Start implementing the plan`.
+  Spec transitions use the Agent's custom kickoff when supplied, so the next turn
+  starts with the specific research already identified.
+- Vibe offers `Vibe — Keep implementing`, `Ask — Clarify the next decision`, or
+  `Spec — Research the remaining questions`. A marked phase boundary becomes
+  `Hand off next phase` when checklist work remains and context is loaded; high
+  context can also recommend handoff.
 - Selecting any cross-mode action persists the User's mode choice. Spec and Vibe
-  destinations immediately send their kickoff; cross-mode Ask returns to the
-  editor and waits for input. Ask continuation sends only its targeted prompt,
-  when one exists; otherwise it sends nothing. Secondary actions use `Start Ask` /
-  `Start Spec` / `Start Vibe` labels to make the destination explicit.
+  destinations immediately send their custom kickoff when supplied, otherwise the
+  static fallback; cross-mode Ask returns to the editor and waits for input. Ask
+  continuation sends its targeted prompt when one exists. Secondary actions use
+  mode-prefixed plain-language labels to make the destination explicit.
 - `Hand off to a fresh session` remains available while work is open and prepares
-  `/handoff <name>` in the editor. Handoff still requires Enter and starts the
-  replacement session in Ask mode.
-- After closeout, Continue and Handoff are omitted; the picker recommends starting
-  a new direction in Ask. Spec remains available as an explicit secondary choice.
+  `/handoff <name>` in the editor. Handoff still requires Enter, checkpoints the
+  artifact, waits for completion, and starts the replacement session in Ask mode.
+- After closeout, Continue and Handoff are omitted; the picker offers `Ask — Start
+a new direction` without marking it recommended because no task-specific next
+  step exists. Spec remains available as an explicit secondary choice.
 - `Write your own...` and dismissal are the same escape hatch: control returns to
   the editor with the mode untouched.
 
-If the Agent omits `recommend_next`, the runtime still opens the picker and
-conservatively recommends continuing the current mode. Ask still sends no
-synthetic kickoff without a targeted prompt. Recommendations expire at the next
-User message and never carry into a later turn.
+Recommended options use a mode-prefixed plain-language action and may include the
+Agent's concise reason, such as `Vibe — Start implementing the plan — verify the
+API`, with the recommendation marker appended. If the Agent omits `recommend_next`,
+the runtime uses the first pending cumulative checklist item as context when
+available; otherwise it conservatively recommends continuing the current mode while
+work is open. When no work remains, no generic action is marked recommended.
+Recommendations expire at the next User message and never carry into a later turn.
 
 `/ask`, `/spec`, and `/vibe` switch mode directly when the picker itself is
 unavailable, and `/mode` re-opens it. None of them start a turn.
@@ -104,9 +112,12 @@ state, Approach, Work log, Quirks, Checklist, and Close out with PR summary and
 QA steps. Sections stay stubbed until the mode that owns them fills one, so a
 session that only ever researched simply never grows a work log.
 
-Checklist boxes are live completion metadata: closeout updates every completed
-box, including boxes in earlier revisions, while historical narrative remains
-append-only.
+Checklist boxes are cumulative live completion metadata: repeated task text is
+one task, the latest checkbox state wins, and unique pending tasks from older
+revisions remain actionable. Keep checklist labels verbatim when changing only
+completion state; do not rename or split a pending item without explicitly
+resolving the original. Closeout updates completed boxes across revisions while
+historical narrative remains append-only.
 
 `save_plan` belongs to Spec. It replaces only an untouched pre-execution draft
 and appends a dated revision after execution history exists. Once a plan has

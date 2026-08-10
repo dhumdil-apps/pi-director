@@ -185,9 +185,33 @@ export function isScaffold(existing: string): boolean {
   return !body.replace(/^#+ .*$/gm, "").trim();
 }
 
-/** Checklist boxes are live status metadata; open work remains actionable. */
+/**
+ * Checklist status is cumulative across revisions. Repeated task text is one live
+ * task, and the latest checkbox state wins so a resolved task is not resurrected
+ * by an older revision. Labels are the identity, so status-only updates must keep
+ * them verbatim across revisions.
+ */
+export function pendingChecklistItems(existing: string): string[] {
+  const tasks = new Map<string, { label: string; completed: boolean }>();
+  const sections = [...existing.matchAll(/^## Checklist\s*$/gm)];
+  for (const section of sections) {
+    const start = (section.index ?? 0) + section[0].length;
+    const nextSection = existing.slice(start).search(/^## /m);
+    const end = nextSection === -1 ? existing.length : start + nextSection;
+    for (const match of existing.slice(start, end).matchAll(/^\s*- \[([ xX])\] (.+?)\s*$/gm)) {
+      const label = match[2].replace(/\s+/g, " ").trim();
+      if (!label || /^<[^>]+>$/.test(label)) continue;
+      const key = label.toLocaleLowerCase();
+      tasks.delete(key);
+      tasks.set(key, { label, completed: match[1].toLowerCase() === "x" });
+    }
+  }
+  return [...tasks.values()].filter((task) => !task.completed).map((task) => task.label);
+}
+
+/** Checklist-free revisions are narrative; every cumulative pending task is live work. */
 export function planHasOpenWork(existing: string): boolean {
-  return !/^## Close out$/m.test(existing) || /^- \[ \]/m.test(existing);
+  return !/^## Close out$/m.test(existing) || pendingChecklistItems(existing).length > 0;
 }
 
 /** Resolve the current artifact's live status without assuming a lone plan file. */
@@ -195,6 +219,17 @@ export async function currentPlanHasOpenWork(cwd: string, name: string | undefin
   if (!name) return true;
   const existing = await readFile(planPath(cwd, name), "utf8").catch(() => "");
   return !existing || planHasOpenWork(existing);
+}
+
+/** Surface the first pending task across all revisions as picker context. */
+export function firstOpenChecklistItem(existing: string): string | undefined {
+  return pendingChecklistItems(existing)[0];
+}
+
+export async function currentPlanNextAction(cwd: string, name: string | undefined): Promise<string | undefined> {
+  if (!name) return undefined;
+  const existing = await readFile(planPath(cwd, name), "utf8").catch(() => "");
+  return firstOpenChecklistItem(existing);
 }
 
 /**
