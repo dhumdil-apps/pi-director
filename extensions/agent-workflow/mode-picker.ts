@@ -6,8 +6,8 @@
  * opens on every settled turn with state-aware options, which is why a blocker
  * in Spec or Vibe can stop instead of interrogating the User mid-turn.
  *
- * Every mode selection starts the selected block immediately, so the picker is
- * the only transition action the User needs to take.
+ * Cross-mode Spec and Vibe selections start the selected block immediately.
+ * Cross-mode Ask selections only switch mode and wait for the User's next input.
  */
 
 import { type Static, Type } from "@sinclair/typebox";
@@ -64,9 +64,9 @@ const CONTINUE_LABELS: Record<WorkflowMode, string> = {
 };
 
 const CONTINUE_KICKOFFS: Record<WorkflowMode, string> = {
-  ask: "Continue aligning the goal, constraints, and definition of done. Use questionnaire at least once for every new task. When alignment is complete, update the artifact and call recommend_next with Spec or Vibe.",
-  spec: "Continue exploring the owning implementation and directly relevant evidence. Present an actionable proposal with save_plan when ready, or record a blocker and call recommend_next with Ask when a User decision is required.",
-  vibe: "Continue implementing the current plan, reconcile every open checklist item, and close out with verification.",
+  ask: "Align the task, update the artifact, then recommend Spec or Vibe.",
+  spec: "Research the task, update the artifact, then save the actionable plan.",
+  vibe: "Execute the current work, update the artifact, and close out with verification.",
 };
 
 /** Everything the picker needs, so a command context can open it too. */
@@ -97,7 +97,7 @@ function currentTurnSignal<T>(
 ): T | undefined {
   for (let index = entries.length - 1; index >= 0; index -= 1) {
     const entry = entries[index];
-    if (entry?.type === "message") return undefined;
+    if (entry?.type === "message" && entry.message.role === "user") return undefined;
     if (entry?.type !== "custom") continue;
     if (entry.customType === customType) return read(entry);
     if (entry.customType === MODE_EVENT) return undefined;
@@ -272,7 +272,7 @@ export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext): Prom
 
   resolveCheckpoint(pi, checkpoint.id, action.mode);
   await applyMode(pi, ctx, action.mode, current);
-  pi.sendUserMessage(continueKickoff(action.mode));
+  if (action.mode !== "ask") pi.sendUserMessage(continueKickoff(action.mode));
 }
 
 export function registerModePicker(pi: ExtensionAPI): void {

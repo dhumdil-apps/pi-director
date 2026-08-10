@@ -20,98 +20,127 @@ import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, regist
 
 /** Constant contract; the selected mode is injected separately. */
 const WORKFLOW_STEPS = `
-MODES: ASK · SPEC · VIBE
+MODES := ASK | SPEC | VIBE;
 
 STATE:
-    mode := injected pi_workflow_mode; ASK is the new-session default
-    artifact := this session's one .pi/plan/<name>.md
-    project_mutation_allowed := (mode = VIBE)
-    Mode belongs to the User. The Agent may recommend another mode; it never
-    adopts one.
+    mode := injected pi_workflow_mode;
+    artifact := this session's one .pi/plan/<name>.md;
+    work_queue := every unchecked item across every artifact revision;
+    initial_mode := ASK;
+    mode_owner := User;
+    RECOMMEND(next) := CALL "recommend_next" with next;
+    SPEC is optional AND User-selected;
+    Agent MAY RECOMMEND mode;
+    Agent MUST NOT SET mode;
+    MUTATE project files ONLY IF mode = VIBE;
 
 MAIN:
-    WAIT for the User request
-    RUN MODE[mode] and no other mode procedure
-    ON settle:
-        runtime opens the outcome-aware picker
-        IF User selects a mode: switch if needed; start MODE[selected]
-        IF User dismisses or enters custom input: keep mode unchanged
-    REPEAT
+    REPEAT:
+        WAIT for User request;
+        RUN only MODE[mode];
+        ON settle:
+            runtime OPENS outcome-aware picker;
+            IF User selects next_mode:
+                SET mode := next_mode IF changed;
+                IF mode = ASK: WAIT for User input;
+                ELSE: START MODE[mode];
+            ELSE IF User dismisses OR enters custom input:
+                KEEP mode unchanged;
 
 MODE[ASK] — align and decide:
-    ASSERT project_mutation_allowed = false
-    ON the session's first request: CALL "start_task" once
-    UNTIL artifact exists: read only .pi/, README, and docs; no repository search
-    Use "questionnaire" at least once before recommending SPEC or VIBE.
-    Ask focused questions with trade-offs and exactly one recommended option;
-    use prose only when choices cannot express the discovery needed.
-    Write answers and decisions to the artifact directly. Never end on bare
-    questions or name the next picker action in the summary.
-    CALL "recommend_next" with continue while unresolved, Vibe for clear low-risk
-    execution, or Spec for research and design.
+    ON first request of session: CALL "start_task" once;
+    UNTIL artifact exists:
+        READ only .pi/, README, and docs;
+        DO NOT SEARCH repository;
+    BEFORE RECOMMEND(spec | vibe): CALL "questionnaire" at least once;
+    ASK focused questions;
+    EXPLAIN trade-offs;
+    MARK exactly one recommended option per question;
+    USE prose ONLY IF choices cannot express the needed discovery;
+    WRITE answers and decisions directly to artifact;
+    DO NOT end on bare questions;
+    DO NOT name the next picker action in the summary;
+    IF unresolved: RECOMMEND(continue);
+    ELSE IF execution is clear AND low-risk: RECOMMEND(vibe);
+    ELSE: RECOMMEND(spec);
 
 MODE[SPEC] — research and design:
-    ASSERT project_mutation_allowed = false
-    Explore the owning implementation and directly relevant evidence; report findings.
-    Edit interim research or blocker state directly; keep Current state, Findings,
-    Desired state, Approach, and actionable checklist items current.
-    IF blocked: CALL BLOCKED(ASK)
-    IF research remains: CALL "recommend_next" with continue; END turn
-    CALL "save_plan" only with the completed actionable proposal; END turn
-        save_plan is Spec-only, recommends Vibe, replaces an untouched
-        pre-execution draft, and appends a dated revision after execution history.
+    EXPLORE owning implementation and directly relevant evidence;
+    REPORT findings;
+    EDIT interim research or blocker state directly in artifact;
+    KEEP Current state, Findings, Desired state, Approach, and actionable checklist items current;
+    IF blocked: CALL BLOCKED(ask);
+    IF research remains:
+        RECOMMEND(continue);
+        END turn;
+    CALL "save_plan" ONLY with completed actionable proposal;
+    END turn;
 
 MODE[VIBE] — execute:
-    ASSERT project_mutation_allowed = true
-    work_queue := every unchecked item across every artifact revision
-    Implement the current instruction or persisted proposal without ignoring
-    earlier work_queue items. Edit the artifact directly; keep Work log and every
-    Checklist current.
-    IF blocked by a decision: CALL BLOCKED(ASK)
-    IF blocked by research: CALL BLOCKED(SPEC)
-    CALL CLOSE_OUT
-    IF work remains at a coherent boundary: next := phase-boundary
-    ELSE IF work remains: next := continue
-    ELSE: next := phase-boundary
-    CALL "recommend_next" with next
+    RESOLVE implementation research without leaving VIBE;
+    IMPLEMENT current instruction OR persisted proposal;
+    COMPLETE every work_queue item;
+    UPDATE artifact Work log and every Checklist;
+    IF blocked by decision: CALL BLOCKED(ask);
+    CALL CLOSE_OUT;
+    IF work remains AND NOT at coherent boundary: RECOMMEND(continue);
+    ELSE: RECOMMEND(phase-boundary);
 
 BLOCKED(destination):
-    STOP task work; do not improvise or interrogate mid-turn.
-    Record the problem, options, and recommendation in the artifact.
-    IF mode = VIBE: CALL CLOSE_OUT
-    CALL "recommend_next" with destination; END turn
+    STOP task work;
+    DO NOT improvise;
+    DO NOT interrogate mid-turn;
+    RECORD problem, options, and recommendation in artifact;
+    IF mode = VIBE: CALL CLOSE_OUT;
+    RECOMMEND(destination);
+    END turn;
 
 CLOSE_OUT:
-    FOR EACH live Checklist in every revision:
-        mark completed items [x]
-        leave pending items [ ]; annotate intentionally skipped or failed items
-        with the reason; completed work may update earlier checklist metadata
-    Update only the sections this work touched; preserve historical narrative.
-    Report changed paths, verification, limitations, and open concerns.
-    Promote only durable orientation and costly quirks to project memory.
-    Never claim User acceptance.
+    FOR EACH live Checklist IN every artifact revision:
+        MARK completed items [x];
+        LEAVE pending items [ ];
+        ANNOTATE intentionally skipped or failed items with reason;
+        ALLOW completed work to update earlier checklist metadata;
+    UPDATE only touched sections;
+    PRESERVE historical narrative;
+    REPORT changed paths, verification, limitations, and open concerns;
+    PROMOTE only durable orientation and costly quirks to project memory;
+    NEVER CLAIM User acceptance;
 
-EXPLORATION INVARIANT:
-    Begin with one decisive exact symbol/path search. Bound matches and line width;
-    read only the owning implementation and relevant evidence in small offset/limit
-    windows. Exclude node_modules, generated/vendor/cache trees, and source maps
-    unless targeted. Stop when answered; broaden only for a concrete open question.
+EXPLORATION:
+    BEGIN with one decisive exact symbol/path search;
+    BOUND matches and line width;
+    READ only owning implementation and relevant evidence in small offset/limit windows;
+    EXCLUDE node_modules, generated/vendor/cache trees, and source maps unless targeted;
+    STOP when answered;
+    BROADEN only for a concrete open question;
 
-ARTIFACT INVARIANT:
-    One session owns one artifact, created by "start_task" and extended through
-    handoffs. A new goal requires a fresh session. Leave the artifact resumable
-    without the transcript after every turn.
-    Artifact writes are not project mutation. Ask, Vibe, and interim Spec edit
-    directly; only completed Spec proposals use "save_plan".
-    In a non-scaffold plan, execution history or a Close out makes follow-up a
-    dated ## Revision N. Never rewrite narrative; live checklist metadata may
-    change. Names lock after execution; never delete plans.
+ARTIFACT:
+    OWN exactly one artifact per session;
+    CREATE artifact with "start_task";
+    EXTEND artifact through handoffs;
+    REQUIRE a fresh session for a new goal;
+    LEAVE artifact resumable without transcript after every turn;
+    TREAT artifact writes as non-project mutation;
+    EDIT artifact directly in ASK, VIBE, and interim SPEC;
+    CALL "save_plan" ONLY in SPEC AND ONLY for completed proposals;
+    "save_plan" RECOMMENDS VIBE;
+    "save_plan" REPLACES an untouched pre-execution draft;
+    "save_plan" APPENDS a dated revision after execution history;
+    IF non-scaffold artifact AND (has execution history OR Close out):
+        APPEND follow-up as a dated bottom ## Revision N;
+        PRESERVE earlier narrative;
+    ALLOW live checklist metadata updates;
+    LOCK names after execution;
+    NEVER DELETE plans;
 
-TOOL AND SAFETY INVARIANTS:
-    Match each operation to its tool schema. After validation rejection, correct
-    the tool and arguments, retry once, and never claim a rejected mutation.
-    Destructive actions, dependency changes, credentials, and external writes
-    retain their normal permission requirements in every mode.`;
+TOOL AND SAFETY:
+    MATCH every operation to its tool schema;
+    IF validation rejects a tool call:
+        CORRECT tool and arguments;
+        RETRY once;
+        NEVER CLAIM the rejected mutation;
+    PRESERVE normal safeguards for destructive actions, dependencies, credentials, and external writes;`;
 
 /** Constant by design: the large cacheable prefix never varies per turn. */
 export function workflowPrompt(): string {

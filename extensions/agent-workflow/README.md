@@ -14,9 +14,11 @@ wins.
 - **Vibe** executes. It is the mode intended for edits and writes; the boundary
   is advisory rather than a runtime permission gate.
 
-A session starts in Ask. Nothing in the bundle ever selects a mode on the Agent's
-behalf — there is no promotion, escalation, or fallback. The Agent may recommend
-a mode; only the User adopts one. The choice survives reloads, forks, and
+A session starts in Ask. Ask may proceed directly to Vibe after alignment; Spec
+is optional and starts only when the User chooses research or design. Nothing in
+the bundle ever selects a mode on the Agent's behalf — there is no promotion,
+escalation, or fallback. The Agent may recommend a mode; only the User adopts
+one. The choice survives reloads, forks, and
 handoffs, and pre-rename sessions that persisted a phase or a two-value mode fold
 onto these three on read.
 
@@ -37,9 +39,10 @@ one action explicit and recommended:
 - Vibe offers `Continue implementation`, `Return to Ask`, or `Proceed to Spec`.
   A marked phase boundary becomes `Hand off next phase` only when checklist work
   remains and context is loaded; context pressure alone never leads to handoff.
-- Selecting any cross-mode action persists the User's mode choice and immediately
-  sends that mode's kickoff. Secondary actions use `Start Ask` / `Start Spec` /
-  `Start Vibe` labels to make that behavior explicit.
+- Selecting any cross-mode action persists the User's mode choice. Spec and Vibe
+  destinations immediately send their kickoff; Ask returns to the editor and
+  waits for input. Secondary actions use `Start Ask` / `Start Spec` / `Start Vibe`
+  labels to make the destination explicit.
 - `Hand off to a fresh session` remains available while work is open and prepares
   `/handoff <name>` in the editor. Handoff still requires Enter and starts the
   replacement session in Ask mode.
@@ -58,9 +61,10 @@ unavailable, and `/mode` re-opens it. None of them start a turn.
 The mode picker routes work after a turn; `questionnaire` gathers Ask alignment
 inside a turn. It presents 1–4 native option pickers, shows the Agent's recommended
 answer first, and returns selections or custom input to the Agent before settlement.
-Spec and Vibe blockers still stop, write the problem and recommended resolution
-into the artifact, record Ask or Spec as the next step, and let the picker carry
-the decision.
+Spec blockers and Vibe decision blockers still stop, write the problem and
+recommended resolution into the artifact, record Ask as the next step, and let
+the picker carry the decision. Vibe resolves implementation research in place rather than
+treating Spec as an execution prerequisite.
 
 Picker and questionnaire latency accrue as capped Align time through checkpoint
 events.
