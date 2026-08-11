@@ -46,6 +46,11 @@ git diff --check
 ```
 
 Use `npm run format` to apply the repository style. `npm run typecheck` checks every vendored TypeScript extension and must exit zero.
+
+When `extensions/agent-workflow/workflow-steps.md` changes, regenerate its embedded
+reference with `npm run docs:workflow`; `npm run docs:workflow:check` fails when
+`docs/workflow-steps.html` is stale.
+
 Interactive review still belongs to visual or lifecycle changes: Status Bar
 rendering, the above-editor indicator, the mode picker, and session dashboard.
 

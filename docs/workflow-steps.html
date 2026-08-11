@@ -292,17 +292,17 @@ flowchart TB
         </p>
         <details>
           <summary class="reference-header">Show the complete workflow pseudocode</summary>
-          <pre><code>MODES := QUESTIONNAIRE | SPEC | VIBE;
+          <pre><code><!-- workflow-reference:start -->MODES := QUESTIONNAIRE | SPEC | VIBE;
 
 STATE:
     mode := latest persisted MODE_EVENT, owned by the User and reflected by the injected pi_workflow_mode marker;
-    artifact := this session&#x27;s one .pi/plan/&lt;name&gt;.md;
+    artifact := this session's one .pi/plan/&lt;name&gt;.md;
     scope := the immutable initial goal plus every accepted follow-up outcome; pending outcomes remain in scope until explicitly resolved;
-    RECOMMEND(x, reason?, prompt?) := CALL &quot;recommend_next&quot; with x valid for the current mode, an optional concise picker reason, and custom prompt only for Agent-starting Spec/Vibe actions; omit prompt for Q&amp;A and phase-boundary handoff;
+    RECOMMEND(x, reason?, prompt?) := CALL "recommend_next" with x valid for the current mode, an optional concise picker reason, and custom prompt only for Agent-starting Spec/Vibe actions; omit prompt for Q&amp;A and phase-boundary handoff;
     MUTATE project source files ONLY IF mode = VIBE;
 
 TURN:
-    RUN only MODE[mode] on the User&#x27;s request;
+    RUN only MODE[mode] on the User's request;
     END the turn with a RECOMMEND when a next action exists; otherwise end as complete without a recommendation;
     ON settle the runtime opens its picker and the User owns the next mode;
     A session starts in QUESTIONNAIRE with SPEC optional and User-selected;
@@ -319,7 +319,7 @@ ALWAYS:
 
 MODE[QUESTIONNAIRE] — align through interactive Q&amp;A:
     ON first request of session DO
-        CALL &quot;start_task&quot; once;
+        CALL "start_task" once;
         STATE the understood goal and scope;
         ASK one concise direction-check question;
         WRITE the answer and direction check to the artifact;
@@ -335,8 +335,9 @@ MODE[QUESTIONNAIRE] — align through interactive Q&amp;A:
             DO NOT rewrite or remove the initial Goal or a pending checklist item;
         END IF
     END ON
-    CALL &quot;ask&quot; whenever a consequential choice is open; the tool is mode-neutral and never changes the User-owned workflow mode;
-    BATCH only independent questions whose wording and options remain valid regardless of sibling answers; issue a fresh &quot;ask&quot; call for dependent follow-ups after incorporating the earlier answer;
+    CALL "ask" whenever a consequential choice is open; the tool is mode-neutral and never changes the User-owned workflow mode;
+    WHEN an answer needs a user-supplied value, direct the User to ask's built-in Write a custom answer entry; do not offer a selectable “specify” option that cannot collect the value;
+    BATCH only independent questions whose wording and options remain valid regardless of sibling answers; issue a fresh "ask" call for dependent follow-ups after incorporating the earlier answer;
     IF bounded orientation is needed to clarify direction THEN
         READ only the relevant .pi/, README, or docs;
     END IF
@@ -355,7 +356,7 @@ MODE[QUESTIONNAIRE] — align through interactive Q&amp;A:
     ELSE
         RECOMMEND(spec, reason);
     END IF
-    IF the User selects ask&#x27;s direct Spec/Vibe route THEN
+    IF the User selects ask's direct Spec/Vibe route THEN
         LET ask terminate Q&amp;A and start the selected mode;
         IN the target turn, RECORD every accepted recommended answer before research or implementation;
     END IF
@@ -371,17 +372,17 @@ MODE[SPEC] — research and design:
         RECOMMEND(continue, reason);
         END turn;
     END IF
-    CALL &quot;save_plan&quot; with the completed actionable proposal, then END turn;
+    CALL "save_plan" with the completed actionable proposal, then END turn;
 
 MODE[VIBE] — execute:
     RESOLVE implementation research without leaving VIBE;
     IMPLEMENT scope;
-    VERIFY with the repository&#x27;s own checks before claiming done;
+    VERIFY with the repository's own checks before claiming done;
     REPORT a pre-existing failure instead of widening scope;
     UPDATE the artifact Work log and every cumulative checklist item in scope;
     TREAT checklist items across revisions as cumulative, with latest status winning;
-    WHEN a reversible, low-risk, in-scope implementation choice is already implied by the task, Vibe MAY decide it without interrupting the User, then MUST CALL &quot;record_auto_decision&quot; with its context, rationale, impact, and verification status;
-    DO NOT use autonomous decisions for consequential, ambiguous, irreversible, product-facing, or out-of-scope choices; CALL &quot;ask&quot; or recommend User-selected Q&amp;A instead;
+    WHEN a reversible, low-risk, in-scope implementation choice is already implied by the task, Vibe MAY decide it without interrupting the User, then MUST CALL "record_auto_decision" with its context, rationale, impact, and verification status;
+    DO NOT use autonomous decisions for consequential, ambiguous, irreversible, product-facing, or out-of-scope choices; CALL "ask" or recommend User-selected Q&amp;A instead;
     IF blocked by a decision THEN
         CALL BLOCKED(questionnaire);
     END IF
@@ -393,7 +394,7 @@ MODE[VIBE] — execute:
             RECOMMEND(phase-boundary, reason);
         END IF
     ELSE
-        DO NOT CALL &quot;recommend_next&quot;; the task is complete.
+        DO NOT CALL "recommend_next"; the task is complete.
     END IF
 
 BLOCKED(destination):
@@ -411,7 +412,7 @@ CLOSE_OUT:
     IF any requested outcome is missing or unresolved THEN
         LEAVE it [ ] and DO NOT present the work as complete;
     END IF
-    MARK finished checklist items [x], including earlier revisions&#x27;;
+    MARK finished checklist items [x], including earlier revisions';
     PRESERVE checklist item labels verbatim across revisions when changing completion state; do not rename or split a pending item without explicitly resolving the original;
     LEAVE pending items [ ] and ANNOTATE skipped or failed ones with the reason;
     UPDATE only touched sections and PRESERVE historical narrative;
@@ -428,13 +429,13 @@ EXPLORATION:
 ARTIFACT:
     OWN exactly one artifact per session, so a new goal needs a fresh session;
     PRESERVE the initial Goal and every accepted outcome as historical scope; a follow-up may add or explicitly resolve work but may not silently erase it;
-    &quot;start_task&quot; creates it, handoffs extend it, and plans are never deleted;
+    "start_task" creates it, handoffs extend it, and plans are never deleted;
     TREAT artifact writes as non-project mutation;
     LEAVE it resumable without the transcript after every turn;
     TREAT checklist items across revisions as cumulative, with latest status winning;
     EDIT it directly in QUESTIONNAIRE and VIBE and during interim SPEC research;
-    CALL &quot;save_plan&quot; ONLY in SPEC and ONLY for a completed proposal;
-    &quot;save_plan&quot; REPLACES an untouched pre-execution draft, otherwise APPENDS a dated bottom &quot;## Revision N&quot; preserving earlier narrative;
+    CALL "save_plan" ONLY in SPEC and ONLY for a completed proposal;
+    "save_plan" REPLACES an untouched pre-execution draft, otherwise APPENDS a dated bottom "## Revision N" preserving earlier narrative;
     LOCK the name once execution has begun;
 
 TOOL AND SAFETY:
@@ -443,7 +444,7 @@ TOOL AND SAFETY:
         CORRECT it, RETRY once, then report;
     END IF
     PRESERVE safeguards for destructive actions, dependencies, credentials, and external writes;
-</code></pre>
+<!-- workflow-reference:end --></code></pre>
         </details>
       </section>
     </main>
