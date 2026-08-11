@@ -8,7 +8,7 @@
 import type { ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { addModeTime, formatDuration, type PlanTime } from "../../agent-workflow/plan-time.js";
-import type { WorkflowMode } from "../../agent-workflow/mode.js";
+import { MODE_LABEL, type WorkflowMode } from "../../agent-workflow/mode.js";
 
 const PHASE_WIDGET_ID = "workflow-phase";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -27,7 +27,7 @@ export interface IndicatorExtras {
    * closure-local start would restart the counter mid-run.
    */
   runStartedAt?: number;
-  /** Settled Ask/Spec/Vibe Agent work. */
+  /** Settled Q&A/Spec/Vibe Agent work. */
   planTime?: PlanTime;
   /** When the latest provider response completed, as epoch ms, for cache age. */
   cacheStartedAt?: number;
@@ -44,7 +44,7 @@ function durationMs(working: boolean, extras: IndicatorExtras | undefined, now: 
 }
 
 function timerColor(working: boolean, elapsedMs: number): "accent" | "dim" | "warning" | "error" {
-  if (working) return "warning";
+  if (working) return "accent";
   if (elapsedMs >= CACHE_ERROR_IDLE_MS) return "error";
   if (elapsedMs >= CACHE_WARNING_IDLE_MS) return "warning";
   return "accent";
@@ -53,7 +53,7 @@ function timerColor(working: boolean, elapsedMs: number): "accent" | "dim" | "wa
 /** Accumulated per-mode accounting stays visible while idle. */
 function modeBuckets(working: boolean, extras: IndicatorExtras | undefined, now: number, theme: Theme): string {
   if (extras?.planTime == null) return "";
-  const currentMode = extras.mode ?? "ask";
+  const currentMode = extras.mode ?? "questionnaire";
   // Buckets are Agent work only: an open picker or question is the User's time,
   // and the leading cache-age readout already shows that idle risk.
   const time =
@@ -61,24 +61,33 @@ function modeBuckets(working: boolean, extras: IndicatorExtras | undefined, now:
       ? addModeTime(extras.planTime, currentMode, Math.max(0, now - extras.runStartedAt))
       : extras.planTime;
   const separator = theme.fg("dim", " · ");
-  const ask = theme.fg(currentMode === "ask" ? "accent" : "dim", `ask ${formatDuration(time.askMs)}`);
-  const spec = theme.fg(currentMode === "spec" ? "accent" : "dim", `spec ${formatDuration(time.specMs)}`);
-  const vibe = theme.fg(currentMode === "vibe" ? "accent" : "dim", `vibe ${formatDuration(time.vibeMs)}`);
-  return `${separator}${ask}${separator}${spec}${separator}${vibe}`;
+  const questionnaire = theme.fg(
+    currentMode === "questionnaire" ? "warning" : "dim",
+    `${MODE_LABEL.questionnaire} ${formatDuration(time.questionnaireMs)}`,
+  );
+  const spec = theme.fg(
+    currentMode === "spec" ? "warning" : "dim",
+    `${MODE_LABEL.spec} ${formatDuration(time.specMs)}`,
+  );
+  const vibe = theme.fg(
+    currentMode === "vibe" ? "warning" : "dim",
+    `${MODE_LABEL.vibe} ${formatDuration(time.vibeMs)}`,
+  );
+  return `${separator}${questionnaire}${separator}${spec}${separator}${vibe}`;
 }
 
 // The prompts describe the next useful User decision without a separate mode
-// badge; the timing buckets keep the Ask/Spec/Vibe order visible.
+// badge; the timing buckets keep the Q&A/Spec/Vibe order visible.
 const MODE_PROMPTS: Record<WorkflowMode, string> = {
-  ask: "What’s your goal?",
+  questionnaire: "What’s your goal?",
   spec: "Reviewing the plan",
   vibe: "What’s up next?",
 };
 
-/** Dim while aligning, accent once executing. */
+/** Dim while aligning, warning once executing. */
 function modeText(mode: WorkflowMode | undefined, theme: Theme): string {
-  const resolved: WorkflowMode = mode ?? "ask";
-  return theme.fg(resolved === "vibe" ? "accent" : "dim", MODE_PROMPTS[resolved]);
+  const resolved: WorkflowMode = mode ?? "questionnaire";
+  return theme.fg(resolved === "vibe" ? "warning" : "dim", MODE_PROMPTS[resolved]);
 }
 
 /** Replace pi's transient working row with a persistent workflow indicator. */

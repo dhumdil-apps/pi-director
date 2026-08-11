@@ -8,7 +8,7 @@ extension.
 
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
-- **Agent Workflow** — User-owned Ask/Spec/Vibe session modes, a native in-turn `questionnaire` for Ask alignment, a single plan artifact per session, advisory mode guidance, and the native mode picker that opens on every settled turn (`questionnaire`, `start_task`, `save_plan`, `/ask`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
+- **Agent Workflow** — User-owned Q&A/Spec/Vibe session modes, a native in-turn `ask` tool with direct recommended-answer routes, a single plan artifact per session, advisory mode guidance, tailored post-settlement routing, and actionable fresh-session handoffs (`ask`, `start_task`, `save_plan`, `/questionnaire`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
 - **Project Memory** — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
@@ -33,11 +33,12 @@ agent, with the plan file on disk as the only thing carried across.
 
 ## Extension Preferences registry
 
-Status Bar is the only registrant, and everything it exposes is layout: a
-`Line gap` on/off setting plus `line1-left`, `line1-right` … `line4-right`, eight
-ordered segment pickers. The visual style is fixed on purpose — separator, bar
-style, bar width, and placement were configurable, and were either inert or
-actively misleading.
+Status Bar is the only registrant. It exposes a `Working days per week` number
+setting (default `5`, valid `1`–`7`) plus layout settings: a `Line gap` on/off
+setting and `line1-left`, `line1-right` … `line4-right`, eight ordered segment
+pickers. Weekly values of `6`–`7` include weekends in subscription-bar pacing.
+The visual style is fixed on purpose — separator, bar style, bar width, and
+placement were configurable, and were either inert or actively misleading.
 
 Defaults reproduce the previous fixed rows: `git-branch,session-name` /
 `provider,model` on line 1, `agent-stats,tokens` on line 2,
@@ -52,12 +53,12 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 
 ## Deliberately absent
 
-- **No workflow skill.** The Ask/Spec/Vibe workflow and its close-out step remain a
+- **No workflow skill.** The Q&A/Spec/Vibe workflow and its close-out step remain a
   constant injected contract. The optional Pi Inspector skill activates only for
   applicable local browser debugging and verification.
-- **No general permission gate.** Ask/Spec/Vibe execution boundaries are
+- **No general permission gate.** Q&A/Spec/Vibe execution boundaries are
   advisory; destructive-action and external-action consent remains conversational.
-- **No subagents.** Ask, Spec, and Vibe are persisted modes for the same single
+- **No subagents.** Q&A, Spec, and Vibe are persisted modes for the same single
   agent; `/handoff` remains the human-controlled session boundary.
 - **No todo tool.** Pi ships none on purpose ("they confuse models"), and a
   structured list the agent must keep in sync is ceremony rather than progress.

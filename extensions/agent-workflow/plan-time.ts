@@ -6,15 +6,15 @@ const TIME_SPENT_BLOCK =
   /^<!-- time-spent:start[^\r\n]* -->\r?\n\*\*Time spent:\*\*[^\r\n]*\r?\n(?:- [^\r\n]*\r?\n)*<!-- time-spent:end -->$/m;
 const LEGACY_TIME = /^<!-- time-spent:start ms=(\d+) -->/m;
 const MODE_TIME =
-  /^<!-- time-spent:start total-ms=(\d+) ask-ms=(\d+) spec-ms=(\d+) vibe-ms=(\d+) unallocated-ms=(\d+) -->/m;
+  /^<!-- time-spent:start total-ms=(\d+) questionnaire-ms=(\d+) spec-ms=(\d+) vibe-ms=(\d+) unallocated-ms=(\d+) -->/m;
 const LEGACY_WORKFLOW_TIME =
   /^<!-- time-spent:start total-ms=(\d+) explore-ms=(\d+) execute-ms=(\d+) decision-ms=(\d+) unallocated-ms=(\d+) -->/m;
 const LEGACY_PHASE_TIME =
   /^<!-- time-spent:start total-ms=(\d+) explore-ms=(\d+) plan-ms=(\d+) execute-ms=(\d+) unallocated-ms=(\d+) -->/m;
 
 export interface PlanTime {
-  /** Agent work in Ask mode. Human latency at a picker is never billed here. */
-  askMs: number;
+  /** Agent work in Q&A mode. Human latency at a picker is never billed here. */
+  questionnaireMs: number;
   specMs: number;
   vibeMs: number;
   /** Time persisted before mode tracking existed. */
@@ -22,7 +22,7 @@ export interface PlanTime {
 }
 
 export const EMPTY_PLAN_TIME: PlanTime = {
-  askMs: 0,
+  questionnaireMs: 0,
   specMs: 0,
   vibeMs: 0,
   unallocatedMs: 0,
@@ -33,7 +33,7 @@ function exactMs(value: number): number {
 }
 
 export function totalTimeSpent(time: PlanTime): number {
-  return exactMs(time.askMs) + exactMs(time.specMs) + exactMs(time.vibeMs) + exactMs(time.unallocatedMs);
+  return exactMs(time.questionnaireMs) + exactMs(time.specMs) + exactMs(time.vibeMs) + exactMs(time.unallocatedMs);
 }
 
 export function addModeTime(time: PlanTime, mode: WorkflowMode, ms: number): PlanTime {
@@ -55,15 +55,15 @@ export function formatDuration(ms: number): string {
 
 export function timeSpentBlock(value: PlanTime | number): string {
   const time = typeof value === "number" ? { ...EMPTY_PLAN_TIME, unallocatedMs: exactMs(value) } : value;
-  const askMs = exactMs(time.askMs);
+  const questionnaireMs = exactMs(time.questionnaireMs);
   const specMs = exactMs(time.specMs);
   const vibeMs = exactMs(time.vibeMs);
   const unallocatedMs = exactMs(time.unallocatedMs);
-  const totalMs = askMs + specMs + vibeMs + unallocatedMs;
+  const totalMs = questionnaireMs + specMs + vibeMs + unallocatedMs;
   const lines = [
-    `<!-- time-spent:start total-ms=${totalMs} ask-ms=${askMs} spec-ms=${specMs} vibe-ms=${vibeMs} unallocated-ms=${unallocatedMs} -->`,
+    `<!-- time-spent:start total-ms=${totalMs} questionnaire-ms=${questionnaireMs} spec-ms=${specMs} vibe-ms=${vibeMs} unallocated-ms=${unallocatedMs} -->`,
     `**Time spent:** ${formatDuration(totalMs)}`,
-    `- Ask: ${formatDuration(askMs)}`,
+    `- Q&A: ${formatDuration(questionnaireMs)}`,
     `- Spec: ${formatDuration(specMs)}`,
     `- Vibe: ${formatDuration(vibeMs)}`,
   ];
@@ -76,9 +76,9 @@ export function timeSpentBlock(value: PlanTime | number): string {
 export function readPlanTiming(contents: string): PlanTime | undefined {
   const current = contents.match(MODE_TIME);
   if (current) {
-    const [, declaredTotal, ask, spec, vibe, unallocated] = current.map(Number);
+    const [, declaredTotal, questionnaire, spec, vibe, unallocated] = current.map(Number);
     const timing = {
-      askMs: ask!,
+      questionnaireMs: questionnaire!,
       specMs: spec!,
       vibeMs: vibe!,
       unallocatedMs: unallocated!,
@@ -90,9 +90,9 @@ export function readPlanTiming(contents: string): PlanTime | undefined {
   if (workflow) {
     const [, declaredTotal, explore, execute, decision, unallocated] = workflow.map(Number);
     // The retired decision bucket was human picker latency, not Agent work, so it
-    // lands in unallocated rather than Ask. The sum is preserved either way.
+    // lands in unallocated rather than Q&A. The sum is preserved either way.
     const timing = {
-      askMs: 0,
+      questionnaireMs: 0,
       specMs: explore!,
       vibeMs: execute!,
       unallocatedMs: unallocated! + decision!,
@@ -104,7 +104,7 @@ export function readPlanTiming(contents: string): PlanTime | undefined {
   if (phase) {
     const [, declaredTotal, explore, plan, execute, unallocated] = phase.map(Number);
     const timing = {
-      askMs: 0,
+      questionnaireMs: 0,
       specMs: explore! + plan!,
       vibeMs: execute!,
       unallocatedMs: unallocated!,

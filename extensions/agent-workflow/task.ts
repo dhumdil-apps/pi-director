@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
-import { deriveWorkflowMode, hasEnteredVibe, MODE_LABEL, type WorkflowMode } from "./mode.js";
+import { hasEnteredVibe, MODE_LABEL, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
 import {
   EMPTY_PLAN_TIME,
   readPlanTiming,
@@ -59,6 +59,12 @@ const SECTIONS = [
   "- [ ] <task>",
   "",
   "## Close out",
+  "### Status",
+  "<complete only after reconciling every requested outcome>",
+  "",
+  "### Auto-mode decisions",
+  "<none unless Vibe recorded an autonomous decision>",
+  "",
   "### PR summary",
   "<concise summary>",
   "",
@@ -138,6 +144,17 @@ const TEMPORARY_NAME_WORDS = [
 ] as const;
 const TEMPORARY_NAME_WORD_COUNT = 2;
 
+export const AUTO_DECISION_EVENT = "agent-workflow:auto-decision";
+
+const AutoDecisionParams = Type.Object({
+  decision: Type.String({ description: "The bounded, reversible implementation choice made in Vibe." }),
+  context: Type.String({ description: "The in-scope implementation context that required the choice." }),
+  rationale: Type.String({ description: "Why this choice is the safest option already implied by the task." }),
+  impact: Type.String({ description: "Affected behavior, files, or compatibility surface." }),
+  verificationStatus: Type.Union([Type.Literal("pending"), Type.Literal("verified"), Type.Literal("not-applicable")]),
+  verificationDetails: Type.String({ description: "Checks run, or why verification is not applicable." }),
+});
+
 const SavePlanParams = Type.Object({
   name: Type.String({
     description:
@@ -209,9 +226,91 @@ export function pendingChecklistItems(existing: string): string[] {
   return [...tasks.values()].filter((task) => !task.completed).map((task) => task.label);
 }
 
-/** Checklist-free revisions are narrative; every cumulative pending task is live work. */
+function currentPlanSegmentStart(existing: string): number {
+  const revisions = [...existing.matchAll(/^## Revision \d+\b[^\r\n]*$/gm)];
+  const latest = revisions.at(-1);
+  return latest && latest.index !== undefined ? latest.index + latest[0].length : 0;
+}
+
+function currentPlanSegment(existing: string): string {
+  return existing.slice(currentPlanSegmentStart(existing));
+}
+
+/** Read only the latest close-out status; an older revision cannot close new work. */
+export function currentCloseoutStatus(existing: string): "complete" | undefined {
+  const segment = currentPlanSegment(existing);
+  const closeouts = [...segment.matchAll(/^## Close out\s*$/gm)];
+  const closeout = closeouts.at(-1);
+  if (!closeout || closeout.index === undefined) return undefined;
+
+  const closeoutBody = segment.slice(closeout.index + closeout[0].length);
+  const statuses = [...closeoutBody.matchAll(/^### Status\s*$/gm)];
+  const status = statuses.at(-1);
+  if (!status || status.index === undefined) return undefined;
+  const valueStart = status.index + status[0].length;
+  const nextSubsection = closeoutBody.slice(valueStart).search(/^### /m);
+  const value = closeoutBody.slice(
+    valueStart,
+    nextSubsection === -1 ? closeoutBody.length : valueStart + nextSubsection,
+  );
+  return value.trim().toLocaleLowerCase() === "complete" ? "complete" : undefined;
+}
+
+function oneLine(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function autoDecisionEntry(decision: AutoDecision): string {
+  return [
+    `- **Decision:** ${oneLine(decision.decision)}`,
+    `  - Context: ${oneLine(decision.context)}`,
+    `  - Rationale: ${oneLine(decision.rationale)}`,
+    `  - Impact: ${oneLine(decision.impact)}`,
+    `  - Verification: ${decision.verificationStatus} — ${oneLine(decision.verificationDetails)}`,
+  ].join("\n");
+}
+
+function appendAutoDecisionSection(existing: string, entry: string): string {
+  const segmentStart = currentPlanSegmentStart(existing);
+  const segment = existing.slice(segmentStart);
+  const closeout = [...segment.matchAll(/^## Close out\s*$/gm)].at(-1);
+  if (!closeout || closeout.index === undefined) {
+    return `${existing.trimEnd()}\n\n## Close out\n\n### Auto-mode decisions\n${entry}\n`;
+  }
+
+  const closeoutBodyStart = segmentStart + closeout.index + closeout[0].length;
+  const closeoutBody = existing.slice(closeoutBodyStart);
+  const autoSection = [...closeoutBody.matchAll(/^### Auto-mode decisions\s*$/gm)].at(-1);
+  if (!autoSection || autoSection.index === undefined) {
+    const firstSubsection = closeoutBody.search(/^### /m);
+    const insertAt = closeoutBodyStart + (firstSubsection === -1 ? closeoutBody.length : firstSubsection);
+    return `${existing.slice(0, insertAt)}\n### Auto-mode decisions\n${entry}\n${existing.slice(insertAt)}`;
+  }
+
+  const bodyStart = closeoutBodyStart + autoSection.index + autoSection[0].length;
+  const remaining = existing.slice(bodyStart);
+  const nextSubsection = remaining.search(/^### /m);
+  const bodyEnd = nextSubsection === -1 ? existing.length : bodyStart + nextSubsection;
+  const currentBody = existing
+    .slice(bodyStart, bodyEnd)
+    .replace(/^\s*<none unless Vibe recorded an autonomous decision>\s*$/m, "")
+    .trim();
+  const nextBody = `${currentBody ? `${currentBody}\n` : ""}${entry}\n`;
+  return `${existing.slice(0, bodyStart)}\n${nextBody}${existing.slice(bodyEnd)}`;
+}
+
+/** Append one structured autonomous-decision record without rewriting the plan history. */
+export async function appendAutoDecision(path: string, decision: AutoDecision): Promise<boolean> {
+  const existing = await readFile(path, "utf8").catch(() => "");
+  if (!existing) return false;
+  await writePlanAtomically(path, appendAutoDecisionSection(existing, autoDecisionEntry(decision)));
+  return true;
+}
+
+/** A scaffold still needs alignment; after that, pending checklist items are live work. */
 export function planHasOpenWork(existing: string): boolean {
-  return !/^## Close out$/m.test(existing) || pendingChecklistItems(existing).length > 0;
+  if (currentCloseoutStatus(existing) === "complete") return false;
+  return isScaffold(existing) || pendingChecklistItems(existing).length > 0;
 }
 
 /** Resolve the current artifact's live status without assuming a lone plan file. */
@@ -223,6 +322,7 @@ export async function currentPlanHasOpenWork(cwd: string, name: string | undefin
 
 /** Surface the first pending task across all revisions as picker context. */
 export function firstOpenChecklistItem(existing: string): string | undefined {
+  if (currentCloseoutStatus(existing) === "complete") return undefined;
   return pendingChecklistItems(existing)[0];
 }
 
@@ -250,8 +350,11 @@ export function composePlan(existing: string, body: string, now: Date, appendRev
   return `${previous}\n\n---\n\n## Revision ${count + 2} — ${revisionStamp(now)}\n\n${next}\n`;
 }
 
+type AutoDecisionInput = Static<typeof AutoDecisionParams>;
 type SavePlanInput = Static<typeof SavePlanParams>;
 type StartTaskInput = Static<typeof StartTaskParams>;
+
+export type AutoDecision = AutoDecisionInput;
 
 export function normalizeTaskName(summary: string, currentName?: string): string {
   const suppliedTicket = summary.match(TICKET_ID)?.[1]?.toUpperCase();
@@ -500,20 +603,81 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
   });
 
   pi.registerTool({
+    name: "record_auto_decision",
+    label: "Record Auto-mode Decision",
+    description:
+      "Record a bounded Vibe-only implementation decision in the current artifact. Use only for reversible, low-risk, in-scope choices already implied by the task; use ask or recommend User-selected Q&A for consequential, ambiguous, irreversible, product-facing, or out-of-scope choices. Include the decision, context, rationale, affected behavior/files, and verification status/details. This records an audit trail, not User approval.",
+    parameters: AutoDecisionParams,
+    executionMode: "sequential",
+    async execute(_toolCallId, params: AutoDecisionInput, _signal, _onUpdate, ctx) {
+      const mode = resolveWorkflowMode(ctx.sessionManager.getBranch());
+      const values = [params.decision, params.context, params.rationale, params.impact, params.verificationDetails];
+      if (mode !== "vibe") {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: record_auto_decision belongs to Vibe; persisted runtime mode is ${MODE_LABEL[mode]}. Use ask or a User-selected Q&A transition for decisions outside bounded implementation work.`,
+            },
+          ],
+          details: { mode, error: "auto-decision recording is Vibe-only" },
+          isError: true,
+        };
+      }
+      if (values.some((value) => !value.trim())) {
+        return {
+          content: [
+            { type: "text" as const, text: "Error: every auto-decision field must contain a non-empty value." },
+          ],
+          details: { mode, error: "empty auto-decision field" },
+          isError: true,
+        };
+      }
+      const name = pi.getSessionName() ?? ctx.sessionManager.getSessionName?.();
+      if (!name) {
+        return {
+          content: [
+            { type: "text" as const, text: "Error: no current plan is available for the auto-decision audit." },
+          ],
+          details: { mode, error: "missing plan name" },
+          isError: true,
+        };
+      }
+      const recorded = await appendAutoDecision(planPath(ctx.cwd, name), params).catch(() => false);
+      if (!recorded) {
+        return {
+          content: [
+            { type: "text" as const, text: `Error: could not append the auto-decision to .pi/plan/${name}.md.` },
+          ],
+          details: { mode, name, error: "plan write failed" },
+          isError: true,
+        };
+      }
+      const event = { ...params, name };
+      pi.appendEntry(AUTO_DECISION_EVENT, event);
+      pi.events.emit?.(AUTO_DECISION_EVENT, event);
+      return {
+        content: [{ type: "text" as const, text: "Recorded the Vibe auto-mode decision in the current artifact." }],
+        details: { mode, name, ...params },
+      };
+    },
+  });
+
+  pi.registerTool({
     name: "save_plan",
     label: "Save Plan",
     description:
-      "Persist and echo the Spec proposal at .pi/plan/<session-name>.md, then end the turn so the User's mode picker carries the decision. It replaces only an untouched pre-execution draft, and appends a dated revision after execution history exists. Follow-up work after execution history or Close out belongs in a bottom revision; do not rewrite earlier narrative, while live checklist status may be updated. Only Spec calls save_plan; Ask and Vibe keep the artifact current by editing it directly. Plan names are immutable once execution has begun, and plan files are never deleted.",
+      "Persist and echo the Spec proposal at .pi/plan/<session-name>.md, then end the turn so the User's mode picker carries the decision. It replaces only an untouched pre-execution draft, and appends a dated revision after execution history exists. Follow-up work after execution history or Close out belongs in a bottom revision; do not rewrite earlier narrative, while live checklist status may be updated. Only Spec calls save_plan; Q&A and Vibe keep the artifact current by editing it directly. Plan names are immutable once execution has begun, and plan files are never deleted.",
     parameters: SavePlanParams,
     async execute(_toolCallId, params: SavePlanInput, _signal, _onUpdate, ctx) {
       const branch = ctx.sessionManager.getBranch();
-      const mode = deriveWorkflowMode(branch) ?? "ask";
+      const mode = resolveWorkflowMode(branch);
       if (mode !== "spec") {
         return {
           content: [
             {
               type: "text" as const,
-              text: `Error: save_plan belongs to Spec; ${MODE_LABEL[mode]} keeps the artifact current by editing it directly.`,
+              text: `Error: save_plan belongs to Spec; persisted runtime mode is ${MODE_LABEL[mode]}. ${MODE_LABEL[mode]} keeps the artifact current by editing it directly.`,
             },
           ],
           details: {

@@ -9,14 +9,14 @@
 
 ## The agent edits before we agreed on a direction
 
-Ask and Spec are advisory alignment and planning modes; Vibe is the execution-
+Q&A and Spec are advisory alignment and planning modes; Vibe is the execution-
 oriented mode. The runtime does not block project edits by mode, so if the Agent
-acts too early, use `/ask` or `/spec` and state the desired boundary explicitly.
+acts too early, use `/questionnaire` or `/spec` and state the desired boundary explicitly.
 Destructive and external-action consent remains conversational.
 
 ## The agent switched mode on its own
 
-It cannot. Mode changes only through the picker, `/ask`, `/spec`, `/vibe`, or a
+It cannot. Mode changes only through the picker, `/questionnaire`, `/spec`, `/vibe`, or a
 handoff seed. If the prompt or timing bucket looks wrong, the likeliest cause
 is a picker answer that landed on a neighbouring option — run `/mode` and choose
 again, or use the commands directly.

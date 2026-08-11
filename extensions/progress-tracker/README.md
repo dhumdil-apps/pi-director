@@ -24,24 +24,25 @@ renders the one thing the transcript cannot show.
   percentage. The readout refreshes at turn boundaries and is colored accent /
   warning / error: warning above 20% full and error above 40% full. The bar
   carries the proportion, so the percentage is not printed.
-- Idle prompt — `What’s your goal?` (dim) in Ask or Spec, or `What’s up next?`
-  (accent) once execution settles in Vibe. The first invites the next goal; the
+- Idle prompt — `What’s your goal?` (dim) in Q&A or Spec, or `What’s up next?`
+  (warning) once execution settles in Vibe. The first invites the next goal; the
   second invites a review, a refinement, or a clean new session for the next
   task. It is **display only**: the prompt follows the session's
-  workflow mode, which only the User changes through the mode picker, `/ask`,
-  `/spec`, `/vibe`, or a handoff seed. Mode changes are persisted as custom
+  workflow mode, which only the User changes through the mode picker, `/questionnaire`,
+  `/spec`, `/vibe`, or a handoff seed. `/questionnaire` changes mode without starting Agent
+  work; `/spec` and `/vibe` start a continuation, matching picker transitions. Mode changes are persisted as custom
   session entries excluded from model context, and pre-rename `explore`, `plan`,
   and `execute` entries fold onto Spec, Spec, and Vibe. Reloads and tree changes
   read the latest entry. The large injected contract stays constant while only a
   tiny per-turn mode message varies.
 - Working state — while a run is in flight the idle prompt gives way to the
-  spinner and warning-colored active timing.
-- Work/cache timer — one compact warning-colored readout follows the active
+  spinner and accent-colored active timing.
+- Work/cache timer — one compact accent-colored readout follows the active
   spinner and counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
-  Ask, Spec, or Vibe work begins rather than displaying grand-total task time.
+  Q&A, Spec, or Vibe work begins rather than displaying grand-total task time.
   Accumulated totals follow it as
-  `· ask 5s · spec 12s · vibe 3s`: the current mode is accent and the other
-  modes are dim. Ask, Spec, and Vibe are mutually exclusive Agent-work buckets;
+  `· ❓ Q&A 5s · 🔎 Spec 12s · 🚀 Vibe 3s`: the current mode is warning and the
+  other modes are dim. Q&A, Spec, and Vibe are mutually exclusive Agent-work buckets;
   human latency never enters them.
 
   Native question and approval dialogs pause active work while the UI belongs to
@@ -59,8 +60,8 @@ renders the one thing the transcript cannot show.
   it across reloads and handoffs. A slow idle repaint advances the age and its
   colors without another Pi event until the cap.
 
-  Active intervals accrue to Ask, Spec, or Vibe, splitting immediately when a
-  mode event lands; an initial mode-less interval counts as Ask. On settlement
+  Active intervals accrue to Q&A, Spec, or Vibe, splitting immediately when a
+  mode event lands; an initial mode-less interval counts as Q&A. On settlement
   the buckets atomically update the named plan's script-owned `time-spent` block.
   Pre-rename explore/execute markers migrate to Spec/Vibe and their retired
   decision bucket folds into Unallocated, older

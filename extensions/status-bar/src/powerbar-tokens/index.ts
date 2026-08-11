@@ -51,7 +51,7 @@ function emitSessionStats(pi: ExtensionAPI, ctx: ExtensionContext): void {
 
   pi.events.emit("powerbar:update", {
     id: "agent-stats",
-    text: `msgs ${formatTokens(messages)} · user ${formatTokens(user)} · agent ${formatTokens(agent)} · tools ${formatTokens(tools)}`,
+    text: `💬 ${formatTokens(messages)} · 👤 ${formatTokens(user)} · 🤖 ${formatTokens(agent)} · 🛠️ ${formatTokens(tools)}`,
     color: "dim",
     row: 2,
   });

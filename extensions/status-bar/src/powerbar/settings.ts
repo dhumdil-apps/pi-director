@@ -1,9 +1,9 @@
 /**
  * Settings for the powerbar via pi-extension-settings.
  *
- * The only thing configurable is the layout: which segments sit on which line,
- * on which side, in which order. Everything visual is locked (see the constants
- * below) — those knobs existed, were either inert or wrong, and are gone.
+ * Configurable behavior is limited to layout and weekly subscription pacing.
+ * Everything visual is locked (see the constants below) — those knobs existed,
+ * were either inert or wrong, and are gone.
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -20,6 +20,11 @@ export const BAR_WIDTH = 10;
 export const PLACEMENT = "belowEditor" as const;
 /** Hard limit on rendered lines. */
 export const MAX_LINES = 4;
+
+export const WORKING_DAYS_SETTING_ID = "working-days-per-week";
+export const DEFAULT_WORKING_DAYS_PER_WEEK = 5;
+const MIN_WORKING_DAYS_PER_WEEK = 1;
+const MAX_WORKING_DAYS_PER_WEEK = 7;
 
 export type LineNumber = 1 | 2 | 3 | 4;
 export type Side = "left" | "right";
@@ -74,6 +79,21 @@ const LEGACY_ROW: Record<string, LineNumber> = {
 
 export const LINES: readonly LineNumber[] = [1, 2, 3, 4];
 
+/** Normalize free-form settings input before it reaches pacing arithmetic. */
+export function parseWorkingDaysPerWeek(value: string | undefined): number {
+  const parsed = Number(value?.trim());
+  if (!Number.isInteger(parsed) || parsed < MIN_WORKING_DAYS_PER_WEEK || parsed > MAX_WORKING_DAYS_PER_WEEK) {
+    return DEFAULT_WORKING_DAYS_PER_WEEK;
+  }
+  return parsed;
+}
+
+export function loadWorkingDaysPerWeek(): number {
+  return parseWorkingDaysPerWeek(
+    getSetting(EXTENSION_NAME, WORKING_DAYS_SETTING_ID, String(DEFAULT_WORKING_DAYS_PER_WEEK)),
+  );
+}
+
 function parseList(value: string | undefined): string[] {
   return (value ?? "")
     .split(",")
@@ -89,6 +109,12 @@ export function registerSettings(pi: ExtensionAPI, segmentOptions: OrderedListOp
       description: "Insert one blank row between each rendered Status Bar line.",
       defaultValue: "off",
       values: ["off", "on"],
+    },
+    {
+      id: WORKING_DAYS_SETTING_ID,
+      label: "Working days per week",
+      description: "Days used to pace weekly subscription bars. Enter an integer from 1 to 7; 6–7 include weekends.",
+      defaultValue: String(DEFAULT_WORKING_DAYS_PER_WEEK),
     },
   ];
   for (const line of LINES) {

@@ -1,21 +1,24 @@
 # Agent Workflow
 
-The injected block in [`index.ts`](index.ts) is the behavior contract. This page
-describes its runtime surfaces and persistence; where they disagree, the block
-wins. For an interactive view of the contract, open the [workflow state machine](../../docs/workflow-steps.html).
+The injected contract in [`workflow-steps.md`](workflow-steps.md) is the behavior
+contract. [`index.ts`](index.ts) loads it as a package-local asset and injects it.
+This page describes its runtime surfaces and persistence; persisted runtime mode
+is authoritative when a marker or display is stale. For an interactive view of the contract, open the [workflow state machine](../../docs/workflow-steps.html).
 
 ## Three modes, chosen by the User
 
-- **Ask** is Align: an interactive Q&A loop for clarifying goal, scope,
-  constraints, trade-offs, and direction. It uses the native `questionnaire` tool
+- **Q&A** is Align: an interactive loop for clarifying goal, scope, constraints,
+  trade-offs, and direction. It uses the native `ask` tool
   whenever a consequential choice is open, permits only bounded orientation reads,
-  and defers source research and results to Spec. It changes no project files.
+  and defers source research and results to Spec. When direction changes, it keeps
+  the initial goal and pending outcomes visible until the User explicitly resolves
+  them. It changes no project files.
 - **Spec** researches and designs. It establishes facts, fills the artifact, and
   presents a proposal with `save_plan`. It changes no project files.
 - **Vibe** executes. It is the mode intended for edits and writes; the boundary
   is advisory rather than a runtime permission gate.
 
-A session starts in Ask. Ask may proceed directly to Vibe after alignment; Spec
+A session starts in Q&A. Q&A may proceed directly to Vibe after alignment; Spec
 is optional and starts only when the User chooses research or design. Nothing in
 the bundle ever selects a mode on the Agent's behalf — there is no promotion,
 escalation, or fallback. The Agent may recommend a mode; only the User adopts
@@ -27,69 +30,97 @@ Close out is a step at the end of a turn, not a fourth mode.
 
 ## The mode picker
 
-The picker is the single decision surface, and it is owned by the runtime rather
-than by a tool, so the Agent cannot skip it by forgetting a call. Before settling,
-the Agent can use `recommend_next` to record the turn's outcome, a concise reason,
-and optional custom kickoff without changing mode. The runtime combines that
+The picker is the post-turn decision surface, and it is owned by the runtime
+rather than by a tool, so the Agent cannot skip a needed route by forgetting a
+call. Before settling, the Agent can use `recommend_next` to record the turn's
+outcome and a concise reason without changing mode. Spec/Vibe actions may also
+carry a custom kickoff when they start an Agent turn. The runtime combines that
 outcome with live plan and context state to make one action explicit and recommended:
 
-- Ask offers `Ask — Keep clarifying the direction`, `Spec — Research the open
-questions`, or `Vibe — Start implementing the request` according to whether
-  questions remain and the aligned task's risk and uncertainty. When Ask is
-  recommended with unresolved questions, `recommend_next` can carry a targeted
-  prompt into the continuation instead of using a generic kickoff.
-- Spec offers `Spec — Keep researching the plan` or `Ask — Clarify the next
-decision`; a successful `save_plan` offers `Vibe — Start implementing the plan`.
+- Q&A asks every unresolved question in the current turn through `ask`; unresolved
+  or cancelled alignment settles directly back to the editor without a redundant
+  Q&A-to-Q&A picker. Once alignment is complete, `recommend_next` opens tailored
+  `🔎 Spec — Research the open questions` or `🚀 Vibe — Start implementing the request`
+  routing. Explicit `/mode` remains available and leaves Q&A unmarked when there
+  is no task-specific route.
+- Spec offers `🔎 Spec — Keep researching the plan` or `❓ Q&A — Clarify the next
+decision`; a successful `save_plan` offers `🚀 Vibe — Start implementing the plan`.
   Spec transitions use the Agent's custom kickoff when supplied, so the next turn
   starts with the specific research already identified.
-- Vibe offers `Vibe — Keep implementing`, `Ask — Clarify the next decision`, or
-  `Spec — Research the remaining questions`. A marked phase boundary becomes
-  `Hand off next phase` when checklist work remains and context is loaded; high
-  context can also recommend handoff.
+- Vibe offers `🚀 Vibe — Keep implementing`, `❓ Q&A — Clarify the next decision`, or
+  `🔎 Spec — Research the remaining questions`. A marked phase boundary becomes
+  `🤝 Hand off next phase` from Q&A, Spec, or Vibe when checklist work remains;
+  context pressure can also recommend the User-selected handoff from any mode.
 - Selecting any cross-mode action persists the User's mode choice. Spec and Vibe
-  destinations immediately send their custom kickoff when supplied, otherwise the
-  static fallback; cross-mode Ask returns to the editor and waits for input. Ask
-  continuation sends its targeted prompt when one exists. Secondary actions use
-  mode-prefixed plain-language labels to make the destination explicit.
-- `Hand off to a fresh session` remains available while work is open and prepares
-  `/handoff <name>` in the editor. Handoff still requires Enter, checkpoints the
-  artifact, waits for completion, and starts the replacement session in Ask mode.
-- After closeout, Continue and Handoff are omitted; the picker offers `Ask — Start
-a new direction` without marking it recommended because no task-specific next
-  step exists. Spec remains available as an explicit secondary choice.
-- `Write your own...` and dismissal are the same escape hatch: control returns to
-  the editor with the mode untouched.
+  destinations trigger an extension-generated continuation; an Agent-authored
+  kickoff is included when supplied, otherwise the runtime derives an
+  option-aligned kickoff from the selected mode and the first pending artifact
+  item. Cross-mode Q&A returns to the editor and waits for input without a hidden
+  kickoff. Continuing Q&A does the same. Secondary actions use emoji-prefixed,
+  plan-aware labels that include the first pending checklist item.
+- `🤝 Hand off to a fresh session` remains available while work is open and prepares
+  `/handoff <name>` in the editor. Handoff still requires Enter and checkpoints
+  the artifact before replacement. It then inherits the selected action: an
+  explicit Spec/Vibe route wins, a just-saved Spec plan advances to Vibe, and
+  in-progress Spec or Vibe continues in place with the latest pending item.
+- After all cumulative checklist items are complete, Continue and Handoff are
+  omitted; the picker offers only cross-mode new-direction routes without marking
+  one recommended because no task-specific next step exists. `📝 Write a custom
+answer... (🚀 Vibe)` is the only same-mode path: it returns to the editor with the
+  mode untouched so the User can tailor the next instruction. While work remains,
+  its suffix includes the active continuation intent, such as `(🔎 Spec — Keep
+researching the plan)`.
+- The contextual `📝 Write a custom answer...` option and dismissal are the same
+  escape hatch: control returns to the editor with the mode untouched.
 
 Recommended options use a mode-prefixed plain-language action and may include the
-Agent's concise reason, such as `Vibe — Start implementing the plan — verify the
+Agent's concise reason, such as `🚀 Vibe — Start implementing the plan — verify the
 API`, with the recommendation marker appended. If the Agent omits `recommend_next`,
 the runtime uses the first pending cumulative checklist item as context when
-available; otherwise it conservatively recommends continuing the current mode while
-work is open. When no work remains, no generic action is marked recommended.
-Recommendations expire at the next User message and never carry into a later turn.
+available; otherwise it conservatively recommends continuing Spec or Vibe while
+work is open. Q&A requires an explicit completed-alignment route. When no work
+remains, no generic action is marked recommended. Recommendations expire at the
+next User message and never carry into a later turn.
 
-`/ask`, `/spec`, and `/vibe` switch mode directly when the picker itself is
-unavailable, and `/mode` re-opens it. None of them start a turn.
+`/questionnaire`, `/spec`, and `/vibe` switch mode directly when the picker itself is
+unavailable, and `/mode` re-opens it. `/questionnaire` waits for the next User input;
+`/spec` and `/vibe` start the same extension-generated continuation as picker transitions.
 
-The mode picker routes work after a turn; `questionnaire` gathers Ask alignment
-inside a turn. It presents 1–4 native option pickers, shows the Agent's recommended
-answer first, and returns selections or custom input to the Agent before settlement.
-Ask should keep this exchange conversational and question-first; a mode recommendation
-is guidance only, not permission to skip unresolved alignment.
+The mode picker routes work after a turn; `ask` gathers concrete alignment
+questions inside a turn from any interactive mode. It presents 1–4 native option
+pickers, shows the Agent's recommended answer first, and identifies its displayed
+choices as A, B, C, or D in that order. Ordinary selections retain their stable
+values and original labels; custom input includes the displayed letter-to-label key
+so the Agent can interpret references such as “combine A and B” before settlement.
+When a decision needs a user-supplied value, authors direct the User to the built-in
+`📝 Write a custom answer...` entry rather than adding a selectable “specify” option
+that cannot open an input field. The public schema requires
+`recommended: true` on exactly one option per question and permits omission on the
+others. Every picker also offers `Use recommended → Spec` and `Use recommended →
+Vibe`. Either explicit User action preserves prior manual answers, accepts the
+remaining recommendations, persists the selected mode, and queues a target-mode
+turn that records the accepted decisions before working. Batch only independent
+questions whose wording and options remain valid regardless of sibling answers;
+dependent follow-ups require a fresh `ask` call after the earlier answer. Q&A
+should keep this exchange conversational and question-first; a recommendation is
+guidance only, not permission to skip unresolved alignment.
 Spec blockers and Vibe decision blockers still stop, write the problem and
-recommended resolution into the artifact, record Ask as the next step, and let
+recommended resolution into the artifact, record Q&A as the next step, and let
 the picker carry the decision. Vibe resolves implementation research in place rather than
 treating Spec as an execution prerequisite.
 
-Picker and questionnaire latency is the User's time: it pauses the active mode
+Picker and native ask-tool latency is the User's time: it pauses the active mode
 clock and accrues to no bucket.
 
 ## Mode as execution guidance
 
-Ask and Spec describe read-only work, while Vibe is the mode for execution. This
+Q&A and Spec describe read-only work, while Vibe is the mode for execution. This
 boundary is advisory: the runtime does not block `edit`/`write` calls or warn
 about shell and custom tools based on mode. The User still owns the mode choice,
-and the injected contract remains the primary behavioral guide.
+and the injected contract remains the primary behavioral guide. Vibe may use
+`record_auto_decision` only for reversible, low-risk, in-scope choices already
+implied by the task; the artifact carries its rationale, impact, and verification
+for close-out review.
 
 There is no separate plan-approval gate. Switching to Vibe is the approval, which
 is why `save_plan` persists and echoes rather than interrupting the turn.
@@ -108,16 +139,24 @@ new goal belongs in a fresh session. Plan files are never deleted automatically
 and `.pi/plan/` accumulates.
 
 The template is flat — Goal, Align, Current state, Findings, Decisions, Desired
-state, Approach, Work log, Quirks, Checklist, and Close out with PR summary and
-QA steps. Sections stay stubbed until the mode that owns them fills one, so a
-session that only ever researched simply never grows a work log.
+state, Approach, Work log, Quirks, Checklist, and Close out with Status, optional
+Auto-mode decisions, PR summary, and QA steps. Sections stay stubbed until the
+mode that owns them fills one, so a session that only ever researched simply never
+grows a work log.
 
 Checklist boxes are cumulative live completion metadata: repeated task text is
 one task, the latest checkbox state wins, and unique pending tasks from older
-revisions remain actionable. Keep checklist labels verbatim when changing only
-completion state; do not rename or split a pending item without explicitly
-resolving the original. Closeout updates completed boxes across revisions while
-historical narrative remains append-only.
+revisions remain actionable. Keep the initial Goal and checklist labels verbatim
+when changing only completion state; do not rename or split a pending item without
+explicitly resolving the original. Before closeout, reconcile every requested
+outcome from the initial goal, accepted proposals, and follow-up instructions
+against the cumulative checklist. Closeout updates completed boxes across revisions
+while historical narrative remains append-only. Write `### Status` / `complete` only
+after every requested outcome is reconciled, including any renamed historical item.
+The runtime reads that marker only from the latest revision's close-out and then
+suppresses stale open-work context; a later revision reopens normal checklist
+tracking until it is closed again. Every `### Auto-mode decisions` entry must be
+reviewed with verification details before completion.
 
 `save_plan` belongs to Spec. It replaces only an untouched pre-execution draft
 and appends a dated revision after execution history exists. Once a plan has
@@ -129,19 +168,22 @@ attempted rename fails before any file move.
 ## Handoffs
 
 `/handoff [session-name]` continues the same artifact in a fresh session, seeded
-with the task name and Ask mode so the next direction is aligned before work
-resumes.
+with the task name and the actionable mode inherited from the outgoing branch.
 
 The replacement session inherits the artifact and nothing else, so `/handoff`
-first drives one checkpoint turn in the outgoing session and waits for it. That
+first derives the continuation while current-turn routing signals still exist,
+then drives one checkpoint turn in the outgoing session and waits for it. That
 turn brings the plan file up to date with everything learned so far. Without it,
-a handoff would discard exactly the context it exists to preserve. The picker
-suppresses itself for that settlement.
+a handoff would discard exactly the context it exists to preserve. After the
+checkpoint, the replacement reads the latest pending artifact item and starts the
+inherited action using only its fresh session context. A just-saved Spec plan
+continues in Vibe; active research or implementation keeps its mode. The picker
+suppresses itself for the outgoing checkpoint settlement.
 
 ## Timing
 
 Each artifact carries a script-owned `time-spent` block with one bucket per mode:
-Ask, Spec, and Vibe, plus unallocated history. Every bucket is Agent work only;
+Q&A, Spec, and Vibe, plus unallocated history. Every bucket is Agent work only;
 time spent waiting on the User is never billed to a mode. Progress Tracker accrues
 the active bucket and closes the interval the moment the mode changes, so a switch
 mid-run splits the time correctly.

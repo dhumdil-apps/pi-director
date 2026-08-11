@@ -3,11 +3,12 @@
  *
  * Runtime-owned rather than a tool: the Agent must not be able to skip the
  * User's choice by forgetting a call, and picking is faster than typing. It
- * opens on every settled turn with state-aware options, which is why a blocker
- * in Spec or Vibe can stop instead of interrogating the User mid-turn.
+ * opens when a settled turn has a route to choose, which is why a blocker in
+ * Spec or Vibe can stop instead of interrogating the User mid-turn. Unresolved
+ * Q&A remains inside its native ask loop and settles without a no-op picker.
  *
  * Cross-mode Spec and Vibe selections start the selected block immediately.
- * Cross-mode Ask selections only switch mode and wait for the User's next input.
+ * Cross-mode Q&A selections only switch mode and wait for the User's next input.
  */
 
 import { type Static, Type } from "@sinclair/typebox";
@@ -15,8 +16,8 @@ import type { ExtensionAPI, ExtensionContext, SessionEntry } from "@earendil-wor
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { isLeanContext } from "./context-usage.js";
 import {
-  deriveWorkflowMode,
   MODE_EVENT,
+  resolveWorkflowMode,
   MODE_LABEL,
   recordWorkflowMode,
   WORKFLOW_MODES,
@@ -25,9 +26,9 @@ import {
 import { currentPlanHasOpenWork, currentPlanNextAction, PLAN_SAVED_EVENT, recordModeTransition } from "./task.js";
 import { duringUserWait } from "./user-wait.js";
 
-export const HANDOFF_OPTION = "Hand off to a fresh session";
-export const PHASE_HANDOFF_OPTION = "Hand off next phase";
-export const WRITE_CUSTOM_OPTION = "Write custom answer...";
+export const HANDOFF_OPTION = "🤝 Hand off to a fresh session";
+export const PHASE_HANDOFF_OPTION = "🤝 Hand off next phase";
+export const WRITE_CUSTOM_OPTION = "📝 Write a custom answer...";
 export const NEXT_STEP_EVENT = "agent-workflow:next-step";
 
 const RECOMMENDED = " (recommended)";
@@ -46,7 +47,7 @@ interface NextStepEvent {
 const NextStepParams = Type.Object({
   recommendation: Type.Union([
     Type.Literal("continue"),
-    Type.Literal("ask"),
+    Type.Literal("questionnaire"),
     Type.Literal("spec"),
     Type.Literal("vibe"),
     Type.Literal("phase-boundary"),
@@ -59,7 +60,7 @@ const NextStepParams = Type.Object({
   prompt: Type.Optional(
     Type.String({
       description:
-        "Optional custom kickoff for continue or Spec/Vibe transitions; Ask may use it for targeted Q&A, but omit it for Ask transitions and phase-boundary handoff.",
+        "Optional custom kickoff for Continue in Spec/Vibe or Spec/Vibe transitions; omit it for Q&A and phase-boundary handoff.",
     }),
   ),
 });
@@ -67,28 +68,35 @@ const NextStepParams = Type.Object({
 type NextStepInput = Static<typeof NextStepParams>;
 
 const ALLOWED_RECOMMENDATIONS: Record<WorkflowMode, readonly NextStepRecommendation[]> = {
-  ask: ["continue", "spec", "vibe"],
-  spec: ["continue", "ask", "vibe"],
-  vibe: ["continue", "ask", "spec", "phase-boundary"],
+  questionnaire: ["spec", "vibe", "phase-boundary"],
+  spec: ["continue", "questionnaire", "vibe", "phase-boundary"],
+  vibe: ["continue", "questionnaire", "spec", "phase-boundary"],
 };
 
 const START_LABELS: Record<WorkflowMode, string> = {
-  ask: "Ask — Start a new direction",
-  spec: "Spec — Research a new direction",
-  vibe: "Vibe — Start implementing a new direction",
+  questionnaire: `${MODE_LABEL.questionnaire} — Start a new direction`,
+  spec: `${MODE_LABEL.spec} — Research a new direction`,
+  vibe: `${MODE_LABEL.vibe} — Start implementing a new direction`,
 };
 
 const CONTINUE_LABELS: Record<WorkflowMode, string> = {
-  ask: "Ask — Keep clarifying the direction",
-  spec: "Spec — Keep researching the plan",
-  vibe: "Vibe — Keep implementing",
+  questionnaire: `${MODE_LABEL.questionnaire} — Keep clarifying the direction`,
+  spec: `${MODE_LABEL.spec} — Keep researching the plan`,
+  vibe: `${MODE_LABEL.vibe} — Keep implementing`,
 };
 
-const CONTINUE_KICKOFFS: Record<WorkflowMode, string> = {
-  ask: "Align the task, update the artifact, then recommend Spec or Vibe.",
-  spec: "Research the task, update the artifact, then save the actionable plan.",
-  vibe: "Execute the current work, update the artifact, and close out with verification.",
+type KickoffIntent = "continue" | "start";
+
+const MODE_KICKOFF_DIRECTIVES: Record<WorkflowMode, string> = {
+  questionnaire: "clarify the next unresolved decision with one focused question",
+  spec: "research the open questions and shape the findings into an actionable plan",
+  vibe: "implement the pending task and verify the changed behavior",
 };
+
+function kickoffContext(nextAction?: string): string {
+  const normalized = nextAction?.replace(/\s+/g, " ").trim();
+  return normalized ? ` Prioritize this pending artifact item: “${normalized}”.` : "";
+}
 
 /** Everything the picker needs, so a command context can open it too. */
 type PickerContext = Pick<ExtensionContext, "cwd" | "hasUI" | "ui" | "sessionManager"> & {
@@ -181,20 +189,61 @@ function defaultRecommendation(
   if (explicit && explicit !== "phase-boundary") return explicit === current ? "continue" : explicit;
   if (!openWork) return undefined;
   if (explicit === "phase-boundary") {
-    return current === "vibe" && !lean ? "handoff" : "continue";
+    return openWork ? "handoff" : undefined;
   }
-  if (current === "vibe" && !lean) return "handoff";
+  if (!lean) return "handoff";
   if (current === "spec" && planSaved) return "vibe";
+  // Q&A continues inside the current Agent turn through ask. Without an explicit
+  // route, settlement should not manufacture a recommended Q&A-to-Q&A action.
+  if (current === "questionnaire") return undefined;
   return "continue";
 }
 
+export interface HandoffContinuation {
+  mode: WorkflowMode;
+  prompt?: string;
+}
+
+/** Derive the action a fresh, lean replacement session should inherit. */
+export function deriveHandoffContinuation(
+  entries: SessionEntry[],
+  current: WorkflowMode,
+  openWork: boolean,
+): HandoffContinuation {
+  const signal = deriveNextStepSignal(entries, current);
+  const recommendation =
+    signal?.recommendation === "phase-boundary"
+      ? "continue"
+      : defaultRecommendation(current, true, openWork, planWasJustSaved(entries), signal?.recommendation);
+  const mode =
+    recommendation === "questionnaire" || recommendation === "spec" || recommendation === "vibe"
+      ? recommendation
+      : current;
+  const promptTargetsMode =
+    signal?.recommendation === mode || (signal?.recommendation === "continue" && mode === current);
+  return {
+    mode,
+    ...(promptTargetsMode && signal?.prompt ? { prompt: signal.prompt } : {}),
+  };
+}
+
 function transitionLabel(current: WorkflowMode, next: WorkflowMode): string {
-  if (next === "ask") return "Ask — Clarify the next decision";
-  if (current === "ask" && next === "spec") return "Spec — Research the open questions";
-  if (current === "ask" && next === "vibe") return "Vibe — Start implementing the request";
-  if (current === "spec" && next === "vibe") return "Vibe — Start implementing the plan";
-  if (current === "vibe" && next === "spec") return "Spec — Research the remaining questions";
+  if (next === "questionnaire") return `${MODE_LABEL.questionnaire} — Clarify the next decision`;
+  if (current === "questionnaire" && next === "spec") return `${MODE_LABEL.spec} — Research the open questions`;
+  if (current === "questionnaire" && next === "vibe") return `${MODE_LABEL.vibe} — Start implementing the request`;
+  if (current === "spec" && next === "vibe") return `${MODE_LABEL.vibe} — Start implementing the plan`;
+  if (current === "vibe" && next === "spec") return `${MODE_LABEL.spec} — Research the remaining questions`;
   return `${MODE_LABEL[next]} — Continue in ${MODE_LABEL[next]}`;
+}
+
+function secondaryLabel(current: WorkflowMode, next: WorkflowMode, openWork: boolean, artifactReason?: string): string {
+  const label = openWork ? transitionLabel(current, next) : startLabel(next);
+  return openWork && artifactReason ? labeledAction(label, artifactReason) : label;
+}
+
+function customLabel(current: WorkflowMode, openWork: boolean): string {
+  const mode = openWork ? CONTINUE_LABELS[current] : MODE_LABEL[current];
+  return `${WRITE_CUSTOM_OPTION} (${mode})`;
 }
 
 function pickerState(
@@ -203,7 +252,7 @@ function pickerState(
   openWork: boolean,
   planSaved: boolean,
   explicit?: NextStepRecommendation,
-  askPrompt?: string,
+  questionnairePrompt?: string,
   explicitReason?: string,
   artifactReason?: string,
 ): PickerState {
@@ -218,7 +267,7 @@ function pickerState(
   const continueAction: PickerAction = {
     kind: "continue",
     mode: current,
-    ...(askPrompt ? { prompt: askPrompt } : {}),
+    ...(current !== "questionnaire" && questionnairePrompt ? { prompt: questionnairePrompt } : {}),
   };
   const add = (label: string, action: PickerAction, recommended = false, actionReason = reason) => {
     const rendered = `${recommended ? labeledAction(label, actionReason) : label}${recommended ? RECOMMENDED : ""}`;
@@ -233,24 +282,30 @@ function pickerState(
   } else if (recommendation) {
     add(
       transitionLabel(current, recommendation),
-      { kind: "switch", mode: recommendation, ...(askPrompt ? { prompt: askPrompt } : {}) },
+      {
+        kind: "switch",
+        mode: recommendation,
+        ...(recommendation !== "questionnaire" && questionnairePrompt ? { prompt: questionnairePrompt } : {}),
+      },
       true,
     );
-  } else {
-    add(START_LABELS[current], { kind: "switch", mode: current });
+  } else if (openWork) {
+    add(CONTINUE_LABELS[current], continueAction);
   }
 
-  if (openWork && recommendation !== "continue") {
+  // Completed Q&A already has an explicit route; its continuation only returns
+  // to the editor, unlike Spec/Vibe continuations that start another Agent turn.
+  if (current !== "questionnaire" && openWork && recommendation !== "continue" && recommendation !== undefined) {
     add(CONTINUE_LABELS[current], continueAction);
   }
   for (const mode of WORKFLOW_MODES) {
     if (mode === current || mode === recommendation) continue;
-    add(startLabel(mode), { kind: "switch", mode });
+    add(secondaryLabel(current, mode, openWork, artifactReason), { kind: "switch", mode });
   }
   if (openWork && recommendation !== "handoff") {
     add(HANDOFF_OPTION, { kind: "handoff" });
   }
-  add(WRITE_CUSTOM_OPTION, { kind: "custom" });
+  add(customLabel(current, openWork), { kind: "custom" });
   return { options, actions };
 }
 
@@ -260,21 +315,55 @@ export function modeOptions(
   openWork = true,
   planSaved = false,
   explicit?: NextStepRecommendation,
-  askPrompt?: string,
+  questionnairePrompt?: string,
   explicitReason?: string,
   artifactReason?: string,
 ): string[] {
-  return pickerState(current, lean, openWork, planSaved, explicit, askPrompt, explicitReason, artifactReason).options;
+  return pickerState(current, lean, openWork, planSaved, explicit, questionnairePrompt, explicitReason, artifactReason)
+    .options;
 }
 
-export function continueKickoff(mode: WorkflowMode, prompt?: string): string | undefined {
-  if (prompt?.trim()) return prompt.trim();
-  return CONTINUE_KICKOFFS[mode];
+export function continueKickoff(
+  mode: WorkflowMode,
+  prompt?: string,
+  intent: KickoffIntent = "continue",
+  previous?: WorkflowMode,
+  nextAction?: string,
+): string {
+  const supplied = prompt?.trim();
+  if (supplied) return supplied;
+
+  const transition =
+    intent === "start" && previous && previous !== mode
+      ? `Switch from ${MODE_LABEL[previous]} to ${MODE_LABEL[mode]}.`
+      : intent === "start"
+        ? `Begin ${MODE_LABEL[mode]} mode for the selected direction.`
+        : `Continue in ${MODE_LABEL[mode]} mode.`;
+  return `${transition} ${MODE_KICKOFF_DIRECTIVES[mode]}.${kickoffContext(nextAction)}`;
 }
 
-function sendContinueKickoff(pi: ExtensionAPI, mode: WorkflowMode, prompt?: string): void {
-  const kickoff = continueKickoff(mode, prompt);
-  if (kickoff) pi.sendUserMessage(kickoff);
+function sendContinueKickoff(
+  pi: ExtensionAPI,
+  mode: WorkflowMode,
+  prompt?: string,
+  intent: KickoffIntent = "continue",
+  previous?: WorkflowMode,
+  nextAction?: string,
+): void {
+  // Use the user-message path so Pi runs before_agent_start again and injects
+  // the current persisted mode marker and workflow contract for the continuation.
+  pi.sendUserMessage(continueKickoff(mode, prompt, intent, previous, nextAction), { deliverAs: "followUp" });
+}
+
+/** Start the same continuation used by non-Q&A picker transitions. */
+export function startModeContinuation(
+  pi: ExtensionAPI,
+  mode: WorkflowMode,
+  previous?: WorkflowMode,
+  nextAction?: string,
+  prompt?: string,
+): void {
+  sendContinueKickoff(pi, mode, prompt, "start", previous, nextAction);
 }
 
 // The handoff checkpoint turn is the extension talking to itself; a picker there
@@ -306,7 +395,7 @@ export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext): Prom
   if (!ctx.hasUI) return;
 
   const branch = ctx.sessionManager.getBranch();
-  const current = deriveWorkflowMode(branch) ?? "ask";
+  const current = resolveWorkflowMode(branch);
   const planName = pi.getSessionName() ?? ctx.sessionManager.getSessionName?.();
   const openWork = await currentPlanHasOpenWork(ctx.cwd, planName);
   const artifactNextAction = await currentPlanNextAction(ctx.cwd, planName);
@@ -345,7 +434,9 @@ export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext): Prom
 
   if (action.kind === "continue") {
     resolveCheckpoint(pi, checkpoint.id, "continue");
-    sendContinueKickoff(pi, action.mode, action.prompt);
+    if (action.mode !== "questionnaire") {
+      sendContinueKickoff(pi, action.mode, action.prompt, "continue", current, artifactNextAction);
+    }
     return;
   }
 
@@ -359,7 +450,9 @@ export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext): Prom
 
   resolveCheckpoint(pi, checkpoint.id, action.mode);
   await applyMode(pi, ctx, action.mode, current);
-  if (action.mode !== "ask") sendContinueKickoff(pi, action.mode, action.prompt);
+  if (action.mode !== "questionnaire") {
+    sendContinueKickoff(pi, action.mode, action.prompt, "start", current, artifactNextAction);
+  }
 }
 
 export function registerModePicker(pi: ExtensionAPI): void {
@@ -367,16 +460,16 @@ export function registerModePicker(pi: ExtensionAPI): void {
     name: "recommend_next",
     label: "Recommend Next Step",
     description:
-      "Record the outcome that the post-turn picker should recommend. Call before settling when Ask should continue or proceed to Spec/Vibe, when Spec needs Ask or more research, or when Vibe should continue, return to Ask/Spec, or mark a coherent phase boundary. Include a concise reason for the recommended picker label when useful. Ask may include a targeted Q&A prompt for its continue recommendation. This records intent only; the User still selects the action.",
+      "Record the outcome that the post-turn picker should recommend. Call before settling when Q&A is complete and should proceed to Spec/Vibe, when Spec needs Q&A or more research, or when Vibe should continue, return to Q&A/Spec, or mark a coherent phase boundary. Unresolved Q&A continues through ask without calling this tool. Include a concise reason for the recommended picker label when useful. Q&A selections wait for the User's next input and must not include a custom kickoff. This records intent only; the User still selects the action.",
     parameters: NextStepParams,
     async execute(_toolCallId, params: NextStepInput, _signal, _onUpdate, ctx) {
-      const mode = deriveWorkflowMode(ctx.sessionManager.getBranch()) ?? "ask";
+      const mode = resolveWorkflowMode(ctx.sessionManager.getBranch());
       if (!ALLOWED_RECOMMENDATIONS[mode].includes(params.recommendation)) {
         return {
           content: [
             {
               type: "text" as const,
-              text: `Error: ${params.recommendation} is not a valid ${MODE_LABEL[mode]} recommendation.`,
+              text: `Error: ${params.recommendation} is not valid for the persisted runtime mode ${MODE_LABEL[mode]}. The injected mode marker is informational; continue in ${MODE_LABEL[mode]} or switch modes through the picker.`,
             },
           ],
           details: { mode, recommendation: params.recommendation },
@@ -386,13 +479,15 @@ export function registerModePicker(pi: ExtensionAPI): void {
       const reason = normalizeReason(params.reason);
       const prompt = params.prompt?.trim();
       const promptAllowed =
-        params.recommendation === "continue" || params.recommendation === "spec" || params.recommendation === "vibe";
+        params.recommendation === "spec" ||
+        params.recommendation === "vibe" ||
+        (params.recommendation === "continue" && mode !== "questionnaire");
       if (prompt && !promptAllowed) {
         return {
           content: [
             {
               type: "text" as const,
-              text: "Error: a custom kickoff is only valid for continue or Spec/Vibe transitions.",
+              text: "Error: a custom kickoff is only valid for Spec/Vibe transitions or Continue outside Q&A.",
             },
           ],
           details: { mode, recommendation: params.recommendation, error: "prompt is not valid for this action" },
@@ -425,6 +520,11 @@ export function registerModePicker(pi: ExtensionAPI): void {
       suppressNext = false;
       return;
     }
+    const branch = ctx.sessionManager.getBranch();
+    const mode = resolveWorkflowMode(branch);
+    // An unresolved or cancelled Q&A exchange has no route to choose. Return to
+    // the editor; completed alignment records a Spec/Vibe/handoff recommendation.
+    if (mode === "questionnaire" && !deriveNextStepSignal(branch, mode)) return;
     await openModePicker(pi, ctx);
   });
 }

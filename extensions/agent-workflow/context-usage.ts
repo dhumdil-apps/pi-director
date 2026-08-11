@@ -65,7 +65,7 @@ export function contextUsageText(usage: ContextUsage | undefined, theme: Theme):
 }
 
 /**
- * Share of the last request's prompt that was served from cache — `🗃️ cache 92%`.
+ * Share of the last request's prompt that was served from cache — `⚡92%`.
  * Undefined when no assistant turn has completed or the provider reported no
  * prompt tokens at all (nothing to have hit).
  */
@@ -74,13 +74,13 @@ export function cacheHitText(usage: Usage | undefined, theme: Theme): string | u
   const prompt = (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheWrite ?? 0);
   if (prompt <= 0) return undefined;
   const percent = Math.round(((usage.cacheRead ?? 0) / prompt) * 100);
-  return theme.fg("dim", `🗃️ cache ${percent}%`);
+  return theme.fg("dim", `⚡${percent}%`);
 }
 
 /** Initial prompt weight is neutral until its absolute size becomes a concern. */
 function initialTokensText(tokens: number, theme: Theme): string {
   const color: ThemeColor = tokens >= INIT_TOKENS_ERROR ? "error" : tokens >= INIT_TOKENS_WARNING ? "warning" : "dim";
-  return theme.fg(color, `📦 init ${formatTokens(tokens)}`);
+  return theme.fg(color, `🗃️  ${formatTokens(tokens)}`);
 }
 
 /**
@@ -97,8 +97,8 @@ export function contextIndicatorText(
   if (!context) return undefined;
   const fragments = [
     context,
-    cacheHitText(extras?.lastUsage, theme),
     extras?.firstTurnTokens == null ? undefined : initialTokensText(extras.firstTurnTokens, theme),
+    cacheHitText(extras?.lastUsage, theme),
   ].filter((fragment): fragment is string => fragment !== undefined);
   return fragments.join(theme.fg("dim", SEPARATOR));
 }

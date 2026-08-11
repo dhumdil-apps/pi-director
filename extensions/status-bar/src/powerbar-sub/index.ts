@@ -12,6 +12,11 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import {
+  DEFAULT_WORKING_DAYS_PER_WEEK,
+  loadWorkingDaysPerWeek,
+  parseWorkingDaysPerWeek,
+} from "../powerbar/settings.js";
 
 interface RateWindow {
   label: string;
@@ -32,9 +37,8 @@ const DEFAULT_SEGMENTS = 10;
 const MIN_SEGMENTS = 3;
 const MAX_SEGMENTS = 12;
 const MAX_WEEK_SEGMENTS = 4;
-const MAX_DAY_SEGMENTS = 5;
 const MAX_HOUR_SEGMENTS = 8;
-const WORKDAYS_PER_WEEK = 5;
+const WEEKDAYS_PER_WEEK = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 
@@ -67,34 +71,35 @@ export function segmentsForLabel(label: string | undefined): number {
   return DEFAULT_SEGMENTS;
 }
 
-/** Sum only Monday–Friday time, preserving partial days at either end. */
-function weekdayMsBetween(start: Date, end: Date): number | undefined {
+/** Sum counted-day time, preserving partial days at either end. */
+function countedDayMsBetween(start: Date, end: Date, includeWeekends: boolean): number | undefined {
   const startMs = start.getTime();
   const endMs = end.getTime();
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return undefined;
 
-  let weekdayMs = 0;
+  let countedMs = 0;
   let cursor = startMs;
   while (cursor < endMs) {
     const current = new Date(cursor);
     const nextMidnight = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1).getTime();
     const sliceEnd = Math.min(endMs, nextMidnight);
     const day = current.getDay();
-    if (day >= 1 && day <= 5) weekdayMs += sliceEnd - cursor;
+    if (includeWeekends || (day >= 1 && day <= 5)) countedMs += sliceEnd - cursor;
     cursor = sliceEnd;
   }
-  return weekdayMs;
+  return countedMs;
 }
 
 /**
  * Uses the displayed countdown to select weeks, days, or hours. Monthly
- * horizons use four week blocks; day horizons exclude weekends when an exact
- * reset is available; hour horizons use at most one eight-hour workday.
+ * horizons use four week blocks; 1–5 configured days count Monday–Friday,
+ * while 6–7 configured days include weekends when an exact reset is available.
  */
 function segmentsForCountdown(
   resetDescription: string | undefined,
   resetAt: string | undefined,
   now: Date,
+  workingDaysPerWeek: number,
 ): number | undefined {
   const match = resetDescription?.trim().match(/^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?$/i);
   if (!match || (!match[1] && !match[2])) return undefined;
@@ -108,16 +113,24 @@ function segmentsForCountdown(
     return Math.min(MAX_WEEK_SEGMENTS, Math.ceil((days + Number(hasPartialDay)) / 7));
   }
   if (days > 0) {
-    const weekdayMs = resetAt ? weekdayMsBetween(now, new Date(resetAt)) : undefined;
-    if (weekdayMs !== undefined) return Math.min(MAX_DAY_SEGMENTS, Math.ceil(weekdayMs / DAY_MS));
-    return Math.min(MAX_DAY_SEGMENTS, days + Number(hasPartialDay));
+    const includeWeekends = workingDaysPerWeek > WEEKDAYS_PER_WEEK;
+    const countedMs = resetAt ? countedDayMsBetween(now, new Date(resetAt), includeWeekends) : undefined;
+    if (countedMs !== undefined) return Math.min(workingDaysPerWeek, Math.ceil(countedMs / DAY_MS));
+    return Math.min(workingDaysPerWeek, days + Number(hasPartialDay));
   }
   return Math.min(MAX_HOUR_SEGMENTS, hours + Number(minutes > 0));
 }
 
 /** Prefer the displayed reset countdown, falling back to the window's cadence. */
-export function segmentsForWindow(window: RateWindow, now = new Date()): number {
-  return segmentsForCountdown(window.resetDescription, window.resetAt, now) ?? segmentsForLabel(window.label);
+export function segmentsForWindow(
+  window: RateWindow,
+  now = new Date(),
+  workingDaysPerWeek = DEFAULT_WORKING_DAYS_PER_WEEK,
+): number {
+  const allocationDays = parseWorkingDaysPerWeek(String(workingDaysPerWeek));
+  return (
+    segmentsForCountdown(window.resetDescription, window.resetAt, now, allocationDays) ?? segmentsForLabel(window.label)
+  );
 }
 
 function getColor(pct: number): string {
@@ -163,21 +176,26 @@ function windowsForSegments(windows: RateWindow[]): { hourly?: RateWindow; weekl
 }
 
 /**
- * Rebase total weekly utilization onto the fixed five-workday allocations that
+ * Rebase total weekly utilization onto the configured daily allocations that
  * remain visible. This is cumulative budget position, not usage recorded today.
  */
-export function dailyPacingForWindow(window: RateWindow, now = new Date()): DailyPacing | undefined {
+export function dailyPacingForWindow(
+  window: RateWindow,
+  now = new Date(),
+  workingDaysPerWeek = DEFAULT_WORKING_DAYS_PER_WEEK,
+): DailyPacing | undefined {
+  const allocationDays = parseWorkingDaysPerWeek(String(workingDaysPerWeek));
   const duration = countdownMs(window, now);
   if (!isWeeklyCadence(window.label) || duration === undefined || duration <= DAY_MS || duration >= WEEK_MS) {
     return undefined;
   }
 
-  const barSegments = segmentsForWindow(window, now);
-  if (barSegments < 1 || barSegments > WORKDAYS_PER_WEEK) return undefined;
+  const barSegments = segmentsForWindow(window, now, allocationDays);
+  if (barSegments < 1 || barSegments > allocationDays) return undefined;
 
   const usedPercent = Math.max(0, Math.min(100, window.usedPercent));
-  const dailyAllocation = 100 / WORKDAYS_PER_WEEK;
-  const completedAllocation = (WORKDAYS_PER_WEEK - barSegments) * dailyAllocation;
+  const dailyAllocation = 100 / allocationDays;
+  const completedAllocation = (allocationDays - barSegments) * dailyAllocation;
   const todayLimit = completedAllocation + dailyAllocation;
   const visibleAllocation = barSegments * dailyAllocation;
   const visibleUsage = Math.max(0, usedPercent - completedAllocation);
@@ -190,16 +208,22 @@ export function dailyPacingForWindow(window: RateWindow, now = new Date()): Dail
   };
 }
 
-function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow | undefined): void {
+function emitWindow(
+  pi: ExtensionAPI,
+  segmentId: string,
+  window: RateWindow | undefined,
+  workingDaysPerWeek: number,
+): void {
   if (!window) {
     pi.events.emit("powerbar:update", { id: segmentId, text: undefined });
     return;
   }
 
+  const now = new Date();
   const pct = Math.round(window.usedPercent);
   const label = window.label || "";
   const reset = window.resetDescription || "";
-  const pacing = segmentId === "sub-weekly" ? dailyPacingForWindow(window) : undefined;
+  const pacing = segmentId === "sub-weekly" ? dailyPacingForWindow(window, now, workingDaysPerWeek) : undefined;
 
   const textParts: string[] = [];
   if (label) textParts.push(label);
@@ -210,7 +234,7 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow | un
     text: textParts.join(" "),
     suffix: pacing?.suffix ?? `${pct}%`,
     bar: pacing?.bar ?? pct,
-    barSegments: pacing?.barSegments ?? segmentsForWindow(window),
+    barSegments: pacing?.barSegments ?? segmentsForWindow(window, now, workingDaysPerWeek),
     color: pacing?.color ?? getColor(pct),
     row: 3,
   });
@@ -234,8 +258,9 @@ function emitUsage(pi: ExtensionAPI, state: UsageCoreState | undefined): void {
   }
 
   const windows = windowsForSegments(usage.windows);
-  emitWindow(pi, "sub-hourly", windows.hourly);
-  emitWindow(pi, "sub-weekly", windows.weekly);
+  const workingDaysPerWeek = loadWorkingDaysPerWeek();
+  emitWindow(pi, "sub-hourly", windows.hourly, workingDaysPerWeek);
+  emitWindow(pi, "sub-weekly", windows.weekly, workingDaysPerWeek);
 }
 
 export default function createExtension(pi: ExtensionAPI): void {

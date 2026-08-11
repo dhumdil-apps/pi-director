@@ -2,8 +2,8 @@
  * openHandoffSession — the /handoff command's implementation.
  *
  * A handoff is the session boundary: it spawns a new session, seeds its name and
- * mode before the first turn, and sends a kickoff carrying the concrete plan
- * path, so work resumes with a lean context and nothing to retype.
+ * inherited actionable mode before the first User message, then resumes that
+ * action against the freshly checkpointed artifact.
  *
  * The replacement session inherits only the artifact, so the artifact has to be
  * current first. One checkpoint turn runs in the outgoing session and is awaited
@@ -15,15 +15,11 @@
 
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { appendHeadlessNotice } from "./notice.js";
-import { MODE_EVENT, MODE_LABEL, type ModeEvent, type WorkflowMode } from "./mode.js";
-import { suppressModePicker } from "./mode-picker.js";
-import { type PlanTask, resolvePlanTask } from "./task.js";
+import { MODE_EVENT, type ModeEvent, resolveWorkflowMode } from "./mode.js";
+import { continueKickoff, deriveHandoffContinuation, suppressModePicker } from "./mode-picker.js";
+import { currentPlanHasOpenWork, currentPlanNextAction, type PlanTask, resolvePlanTask } from "./task.js";
 
 const USAGE = "Usage: /handoff [session-name].";
-
-export function handoffKickoff(task: PlanTask, mode: WorkflowMode = "ask"): string {
-  return `Continue the task recorded at ${task.planPath} in ${MODE_LABEL[mode]} mode. Extend that same file; do not start another.`;
-}
 
 function checkpointRequest(task: PlanTask): string {
   return `Before this session hands off, bring ${task.planPath} fully up to date with everything learned so far, so a fresh session can resume from it alone. Update the file and stop; do not start new work.`;
@@ -50,8 +46,12 @@ export async function openHandoffSession(
     return;
   }
 
-  // A fresh session must realign the next direction before it resumes work.
-  const mode: WorkflowMode = "ask";
+  // Recommendation and save signals expire when the checkpoint User message is
+  // sent, so preserve only their plain-data continuation before that turn.
+  const branch = ctx.sessionManager.getBranch();
+  const previous = resolveWorkflowMode(branch);
+  const openWork = await currentPlanHasOpenWork(ctx.cwd, task.name);
+  const continuation = deriveHandoffContinuation(branch, previous, openWork);
 
   // pi.sendUserMessage only queues the turn, so waitForIdle is what guarantees
   // the artifact is written before the session is replaced.
@@ -60,24 +60,33 @@ export async function openHandoffSession(
   pi.sendUserMessage(checkpointRequest(task));
   await ctx.waitForIdle();
 
-  const kickoff = handoffKickoff(task, mode);
+  const nextAction = await currentPlanNextAction(ctx.cwd, task.name);
+  const kickoff = continueKickoff(
+    continuation.mode,
+    continuation.prompt,
+    continuation.mode === previous ? "continue" : "start",
+    previous,
+    nextAction,
+  );
   await ctx.newSession({
     parentSession: ctx.sessionManager.getSessionFile(),
-    // Seed task identity and mode before replacement-session extensions
-    // initialize; the kickoff separately instructs the model.
+    // Seed task identity and inherited mode before replacement-session extensions
+    // initialize; only the replacement context may start its kickoff.
     setup: async (sessionManager) => {
       sessionManager.appendSessionInfo(task.name);
       sessionManager.appendCustomEntry(MODE_EVENT, {
-        mode,
+        mode: continuation.mode,
       } satisfies ModeEvent);
     },
-    withSession: async (next) => {
-      // sendUserMessage resolves only when the triggered turn ends: an
-      // interactive session must not block on it, while a headless run
-      // would otherwise exit mid-turn.
-      const turn = next.sendUserMessage(kickoff);
-      if (next.hasUI) void turn.catch(() => {});
-      else await turn;
+    withSession: async (replacementCtx) => {
+      const pending = replacementCtx.sendUserMessage(kickoff);
+      if (!replacementCtx.hasUI) {
+        await pending;
+        return;
+      }
+      void pending.catch(() => {
+        replacementCtx.ui.notify("Handoff completed, but its inherited action could not start.", "warning");
+      });
     },
   });
 }

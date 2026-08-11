@@ -19,10 +19,10 @@ const EXEC_TIMEOUT_MS = 2_000;
 const BAR_SEGMENTS = 1;
 
 const LABELS: Record<string, string> = {
-  cpu: "cpu",
-  ram: "ram",
-  disk: "ssd",
-  net: "net",
+  cpu: "CPU",
+  ram: "RAM",
+  disk: "SSD",
+  net: "NET",
 };
 
 function getColor(pct: number): string {

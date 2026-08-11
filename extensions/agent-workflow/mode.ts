@@ -1,9 +1,9 @@
 /**
- * The workflow mode — Ask, Spec, or Vibe.
+ * The workflow mode — Q&A, Spec, or Vibe.
  *
  * Mode belongs to the User. Nothing here ever selects one on the Agent's behalf:
  * it is persisted when the User picks it and read back wherever the runtime needs
- * to know which block the Agent is bound to. A session starts in Ask.
+ * to know which block the Agent is bound to. A session starts in Q&A.
  *
  * Mode is persisted workflow state and the timing bucket (plan-time.ts), so it
  * is the one piece of workflow state worth persisting.
@@ -11,7 +11,7 @@
 
 import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent";
 
-export type WorkflowMode = "ask" | "spec" | "vibe";
+export type WorkflowMode = "questionnaire" | "spec" | "vibe";
 
 export const MODE_EVENT = "agent-workflow:mode";
 
@@ -20,25 +20,25 @@ export interface ModeEvent {
 }
 
 export const MODE_LABEL: Record<WorkflowMode, string> = {
-  ask: "Ask",
-  spec: "Spec",
-  vibe: "Vibe",
+  questionnaire: "❓ Q&A",
+  spec: "🔎 Spec",
+  vibe: "🚀 Vibe",
 };
 
-export const WORKFLOW_MODES: readonly WorkflowMode[] = ["ask", "spec", "vibe"];
+export const WORKFLOW_MODES: readonly WorkflowMode[] = ["questionnaire", "spec", "vibe"];
 
 export function isWorkflowMode(value: unknown): value is WorkflowMode {
-  return value === "ask" || value === "spec" || value === "vibe";
+  return value === "questionnaire" || value === "spec" || value === "vibe";
 }
 
 /**
  * Earlier sessions persisted a two-value mode plus a separate phase; both folded
- * into these three, so an old branch resolves instead of resetting to Ask.
+ * into these three, so an old branch resolves instead of resetting to Q&A.
  */
 export function normalizeWorkflowMode(value: unknown): WorkflowMode | undefined {
   if (value === "explore" || value === "plan") return "spec";
   if (value === "execute") return "vibe";
-  if (value === "align") return "ask";
+  if (value === "align") return "questionnaire";
   return isWorkflowMode(value) ? value : undefined;
 }
 
@@ -51,6 +51,11 @@ export function deriveWorkflowMode(entries: SessionEntry[]): WorkflowMode | unde
     if (mode) return mode;
   }
   return undefined;
+}
+
+/** Resolve the persisted runtime mode once, including the legacy default. */
+export function resolveWorkflowMode(entries: SessionEntry[]): WorkflowMode {
+  return deriveWorkflowMode(entries) ?? "questionnaire";
 }
 
 export function recordWorkflowMode(pi: Pick<ExtensionAPI, "appendEntry" | "events">, mode: WorkflowMode): void {
@@ -72,7 +77,7 @@ export function hasEnteredVibe(entries: SessionEntry[]): boolean {
   );
 }
 
-/** Keep the large contract constant; only this tiny suffix changes per turn. */
+/** Keep the large contract constant; only this informational suffix changes per turn. */
 export function workflowModePrompt(mode: WorkflowMode): string {
   return `<pi_workflow_mode>${mode}</pi_workflow_mode>`;
 }

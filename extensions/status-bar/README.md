@@ -27,15 +27,18 @@ as one high-contrast, partial-height bar per metric and show a `0%` placeholder
 until a sample is available. Subscription countdown bars use weeks at seven or
 more days remaining, days below a week, and hours below a day, rounding partial
 units up. For a weekly
-window with between one day and one week left, the remaining-weekday blocks show
-position against five fixed daily allocations: green before completed-day
+window with between one day and one week left, the remaining-day blocks show
+position against the configured daily allocations: green before completed-day
 allocation is consumed, blue while consuming today's allocation, and red only
-when usage spills into a future day. The suffix keeps total quota left visible.
+when usage spills into a future day. The default is five Monday–Friday
+allocations; values six and seven include weekends. The suffix keeps total quota
+left visible.
 
 ## User surface
 
-Configured through `/extension-settings` (stored under `powerbar`): a `Line gap`
-on/off setting plus eight ordered pickers, `line1-left` … `line4-right`, one per
+Configured through `/extension-settings` (stored under `powerbar`): a
+`Working days per week` number input (default `5`, valid `1`–`7`), a `Line gap`
+on/off setting, and eight ordered pickers, `line1-left` … `line4-right`, one per
 line and side. Each picker labels a segment with the line it defaults to, so an
 unplaced segment is easy to find. Bundle defaults are:
 
@@ -50,11 +53,13 @@ as an intentional blank line, so enabling `Line gap` around it creates additiona
 vertical space; trailing empty lines take no space. A layout stored under the
 older `left`/`right` keys is split across these lines once, on first load.
 
-Everything else is fixed rather than configurable, because the knobs were either
-inert or wrong: separator `·`, blocks-style bars, placement below the editor,
-and a 10-block default width for any bar that doesn't declare its own. The token
-segment keeps input/output counts dim while cumulative cost is accent below $5,
-warning from $5, and error from $10.
+Everything else is fixed rather than configurable, because the visual knobs were
+either inert or wrong: separator `·`, blocks-style bars, placement below the
+editor, and a 10-block default width for any bar that doesn't declare its own.
+The message-count segment renders `💬 … · 👤 … · 🤖 … · 🛠️ …`, and OS
+metrics use uppercase `CPU`, `RAM`, `SSD`, and `NET` labels. The token segment
+keeps input/output counts dim while cumulative cost is accent below $5, warning
+from $5, and error from $10.
 
 Agent Workflow owns task naming through `save_plan`: saving a plan names the
 session after the task (a concise `SI-<ticket>-<summary>` form). This producer

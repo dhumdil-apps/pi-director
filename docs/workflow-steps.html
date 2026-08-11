@@ -7,18 +7,12 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg: #0b1020;
-        --panel: #121a2e;
-        --panel-strong: #18243d;
+        --background: #0b1020;
+        --surface: #121a2e;
         --border: #2a3a5c;
-        --muted: #91a0bd;
         --text: #edf3ff;
-        --ask: #58b7ff;
-        --spec: #b98cff;
-        --vibe: #42d6a4;
-        --shared: #f0b56b;
-        --danger: #ff7b91;
-        --shadow: 0 18px 45px rgb(0 0 0 / 24%);
+        --muted: #a7b5d1;
+        --link: #8cc8ff;
       }
 
       * {
@@ -26,625 +20,445 @@
       }
 
       body {
-        margin: 0;
-        min-width: 320px;
-        background:
-          radial-gradient(circle at 12% 0%, rgb(62 104 188 / 20%), transparent 33rem),
-          radial-gradient(circle at 90% 8%, rgb(127 72 180 / 16%), transparent 30rem), var(--bg);
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 40px 20px 64px;
+        background: var(--background);
         color: var(--text);
         font:
-          15px/1.5 Inter,
+          16px/1.5 Inter,
           ui-sans-serif,
           system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
           sans-serif;
       }
 
-      header,
-      main {
-        width: min(1440px, calc(100% - 40px));
-        margin: 0 auto;
-      }
-      header {
-        padding: 42px 0 24px;
-      }
       h1,
       h2,
-      h3,
       p {
         margin: 0;
       }
+
       h1 {
-        font-size: clamp(28px, 4vw, 48px);
+        font-size: clamp(2rem, 5vw, 3.25rem);
         letter-spacing: -0.04em;
       }
-      h1 span {
-        color: var(--ask);
-      }
-      header p {
-        max-width: 760px;
-        color: var(--muted);
-        margin-top: 10px;
-        font-size: 16px;
+
+      h2 {
+        font-size: 1.2rem;
       }
 
-      .legend {
+      p {
+        color: var(--muted);
+      }
+
+      header p,
+      .section-copy {
+        max-width: 850px;
+        margin-top: 10px;
+      }
+
+      .legend,
+      .notes {
         display: flex;
         flex-wrap: wrap;
         gap: 10px 20px;
         margin-top: 22px;
         color: var(--muted);
       }
-      .legend-item {
+
+      .key {
         display: inline-flex;
         align-items: center;
         gap: 8px;
       }
-      .dot {
+
+      .key::before {
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        display: inline-block;
-      }
-      .dot.ask {
-        background: var(--ask);
-      }
-      .dot.spec {
-        background: var(--spec);
-      }
-      .dot.vibe {
-        background: var(--vibe);
-      }
-      .dot.shared {
-        background: var(--shared);
-      }
-
-      .diagram-shell,
-      .card {
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        background: rgb(18 26 46 / 86%);
-        box-shadow: var(--shadow);
-      }
-
-      .diagram-shell {
-        overflow: hidden;
-      }
-      .diagram-toolbar {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: center;
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border);
-      }
-      .diagram-toolbar p {
-        color: var(--muted);
-        font-size: 13px;
-      }
-      button {
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 7px 11px;
-        background: var(--panel-strong);
-        color: var(--text);
-        cursor: pointer;
-      }
-      button:hover,
-      button:focus-visible {
-        border-color: var(--ask);
-        outline: none;
-      }
-      svg {
-        display: block;
-        width: 100%;
-        height: auto;
-        min-height: 680px;
-        background: linear-gradient(180deg, rgb(24 36 61 / 25%), transparent 46%);
-      }
-
-      .lane {
-        fill: rgb(255 255 255 / 2%);
-        stroke: var(--border);
-        stroke-width: 1;
-        stroke-dasharray: 5 7;
-      }
-      .lane-label {
-        fill: var(--muted);
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-      .node {
-        cursor: pointer;
-      }
-      .node rect {
-        fill: var(--panel-strong);
-        stroke: var(--border);
-        stroke-width: 2;
-        transition:
-          filter 0.18s,
-          stroke 0.18s,
-          fill 0.18s;
-      }
-      .node:hover rect,
-      .node:focus rect,
-      .node.selected rect {
-        filter: drop-shadow(0 0 12px rgb(88 183 255 / 28%));
-        stroke: var(--ask);
-      }
-      .node.ask rect {
-        stroke: var(--ask);
-      }
-      .node.spec rect {
-        stroke: var(--spec);
-      }
-      .node.vibe rect {
-        stroke: var(--vibe);
-      }
-      .node.shared rect {
-        stroke: var(--shared);
-      }
-      .node.danger rect {
-        stroke: var(--danger);
-      }
-      .node-title {
-        fill: var(--text);
-        font-size: 16px;
-        font-weight: 750;
-      }
-      .node-copy {
-        fill: var(--muted);
-        font-size: 12px;
-      }
-      .node-badge {
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-      .node.ask .node-badge {
-        fill: var(--ask);
-      }
-      .node.spec .node-badge {
-        fill: var(--spec);
-      }
-      .node.vibe .node-badge {
-        fill: var(--vibe);
-      }
-      .node.shared .node-badge {
-        fill: var(--shared);
-      }
-      .node.danger .node-badge {
-        fill: var(--danger);
-      }
-      .edge {
-        fill: none;
-        stroke: #6e81a8;
-        stroke-width: 2;
-        marker-end: url(#arrow);
-      }
-      .edge.recommend {
-        stroke: var(--ask);
-        stroke-dasharray: 7 5;
-      }
-      .edge.blocked {
-        stroke: var(--danger);
-        stroke-dasharray: 5 5;
-      }
-      .edge-label {
-        fill: var(--muted);
-        font-size: 12px;
-        font-weight: 650;
-      }
-      .edge-label.recommend {
-        fill: var(--ask);
-      }
-      .edge-label.blocked {
-        fill: var(--danger);
-      }
-      .start-dot {
-        fill: var(--ask);
-      }
-
-      .details {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-top: 20px;
-      }
-      .card {
-        padding: 22px;
-      }
-      .card h2 {
-        font-size: 18px;
-        margin-bottom: 8px;
-      }
-      .card h3 {
-        color: var(--ask);
-        font-size: 15px;
-        margin: 18px 0 4px;
-      }
-      .card p,
-      .card li {
-        color: var(--muted);
-      }
-      .card ul {
-        padding-left: 20px;
-        margin: 8px 0 0;
-      }
-      .card li + li {
-        margin-top: 5px;
-      }
-      code {
-        color: #d5e3ff;
-        background: rgb(255 255 255 / 7%);
-        border-radius: 5px;
-        padding: 2px 5px;
-      }
-      .selected-state {
-        color: var(--text);
-        min-height: 112px;
-      }
-      .selected-state strong {
-        color: var(--ask);
-      }
-      .rule-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-        margin: 20px 0 42px;
-      }
-      .rule-grid .card {
-        min-height: 170px;
-      }
-      .rule-grid h2 {
-        font-size: 16px;
-      }
-      .rule-grid h2::before {
+        background: var(--color);
         content: "";
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        margin: 0 8px 2px 0;
-        border-radius: 50%;
-        background: var(--shared);
       }
 
-      @media (max-width: 900px) {
-        header,
-        main {
-          width: min(100% - 24px, 720px);
-        }
-        svg {
-          min-width: 1000px;
-        }
-        .diagram-shell {
-          overflow-x: auto;
-        }
-        .details,
-        .rule-grid {
-          grid-template-columns: 1fr;
-        }
+      .questionnaire {
+        --color: #58b7ff;
+      }
+
+      .spec {
+        --color: #b98cff;
+      }
+
+      .vibe {
+        --color: #42d6a4;
+      }
+
+      .shared {
+        --color: #f0b56b;
+      }
+
+      .diagram,
+      details {
+        margin-top: 34px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface);
+      }
+
+      .diagram {
+        overflow-x: auto;
+        padding: 24px;
+      }
+
+      .mermaid {
+        min-width: 1120px;
+        text-align: center;
+      }
+
+      .reference-header {
+        padding: 20px 22px;
+      }
+
+      summary {
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      summary::marker {
+        color: var(--link);
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        border-top: 1px solid var(--border);
+        padding: 22px;
+        color: #dce8ff;
+        background: rgb(0 0 0 / 18%);
+        font:
+          13px/1.55 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Consolas,
+          monospace;
+      }
+
+      code {
+        color: #dce8ff;
+      }
+
+      a {
+        color: var(--link);
+      }
+
+      .notes {
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
       }
     </style>
   </head>
   <body>
     <header>
-      <h1>Pi <span>Workflow</span> State Machine</h1>
+      <h1>Pi Workflow State Machine</h1>
       <p>
-        An interactive visualization of <code>WORKFLOW_STEPS</code>. Click a state to inspect its contract. The User
-        owns mode changes; the Agent only recommends what should happen after the turn settles.
+        A Mermaid view of the complete <code>WORKFLOW_STEPS</code> control flow. The Agent recommends routes; the User
+        owns every mode change and may always return to Q&amp;A when a decision needs clarification.
       </p>
       <div class="legend" aria-label="Diagram legend">
-        <span class="legend-item"><i class="dot ask"></i> Ask / user alignment</span>
-        <span class="legend-item"><i class="dot spec"></i> Spec / research</span>
-        <span class="legend-item"><i class="dot vibe"></i> Vibe / execution</span>
-        <span class="legend-item"><i class="dot shared"></i> Shared lifecycle</span>
+        <span class="key questionnaire">❓ Q&amp;A / alignment</span>
+        <span class="key spec">🔎 Spec / research</span>
+        <span class="key vibe">🚀 Vibe / execution</span>
+        <span class="key shared">Shared lifecycle</span>
       </div>
     </header>
 
     <main>
-      <section class="diagram-shell" aria-labelledby="diagram-title">
-        <div class="diagram-toolbar">
-          <div>
-            <h2 id="diagram-title">Turn lifecycle</h2>
-            <p>Solid arrows are control flow. Dashed arrows are Agent recommendations or blocked exits.</p>
-          </div>
-          <button id="reset" type="button">Reset selection</button>
+      <section aria-labelledby="diagram-title">
+        <h2 id="diagram-title">Control flow</h2>
+        <p class="section-copy">
+          Each Mermaid group maps to a structural pseudocode block. Solid arrows are normal flow; dotted arrows update
+          or consult the single session artifact.
+        </p>
+        <div class="diagram">
+          <pre class="mermaid">
+flowchart TB
+  Start([Session starts in ❓ Q&amp;A]) --> Dispatch[TURN: run only MODE mode]
+
+  subgraph State[STATE]
+    Mode[Latest persisted mode belongs to User]
+    Scope[Immutable goal plus accepted outcomes]
+    Recommend[Agent records recommendation only]
+    Mutate[Only 🚀 Vibe mutates project files]
+    Always[ALWAYS: scale work, report facts, preserve safeguards]
+    Safety[TOOL AND SAFETY: match schemas and retry rejected calls]
+  end
+
+  subgraph Questionnaire[MODE QUESTIONNAIRE: align]
+    QFirst[First request: start task, state goal, ask direction]
+    QAlign[Ask focused goal, scope, constraint, outcome questions]
+    QScope{New instruction changes scope?}
+    QResolve[State pending outcomes and ask keep, defer, or resolve]
+    QAsk[Native ask: collect the next answer]
+    QUnresolved{Alignment unresolved?}
+    QCancel[Cancelled: return to editor]
+    QRoute{Clear and low-risk?}
+    QVibe[Recommend 🚀 Vibe]
+    QSpec[Recommend 🔎 Spec]
+  end
+
+  subgraph Spec[MODE SPEC: research and propose]
+    SExplore[Explore one decisive source and update artifact]
+    SBlocked{Blocked?}
+    SMore{Research remains?}
+    SContinue[Recommend continue]
+    SSave[save_plan: completed proposal]
+  end
+
+  subgraph Vibe[MODE VIBE: execute]
+    VImplement[Resolve implementation research, implement, verify]
+    VDecision[Record bounded auto decisions]
+    VBlocked{Blocked by decision?}
+    VClose[Close out: reconcile checklist and decisions]
+    VScope{Scope remains?}
+    VContinue[Recommend continue]
+    VHandoff[Recommend phase boundary]
+    VDone([Complete])
+  end
+
+  subgraph Shared[SHARED HELPERS]
+    Blocked[BLOCKED: record problem, options, recommendation]
+    Picker[Settlement picker: User selects next mode]
+    Handoff[Handoff: checkpoint then inherit the pending action]
+    Artifact[(One .pi/plan name.md artifact)]
+    Explore[EXPLORATION: exact search, bounded read, stop when answered]
+  end
+
+  Dispatch --> QFirst
+  Dispatch --> SExplore
+  Dispatch --> VImplement
+  QFirst --> QAlign --> QScope
+  QScope -- yes --> QResolve --> QAsk
+  QScope -- no --> QAsk
+  QAsk --> QUnresolved
+  QUnresolved -- yes --> QAsk
+  QUnresolved -- cancelled --> QCancel
+  QUnresolved -- no --> QRoute
+  QRoute -- yes --> QVibe --> Picker
+  QRoute -- no --> QSpec --> Picker
+  QAsk -- accepted direct Spec or Vibe route --> Picker
+
+  SExplore --> SBlocked
+  SBlocked -- yes --> Blocked --> QAlign
+  SBlocked -- no --> SMore
+  SMore -- yes --> SContinue --> Picker
+  SMore -- no --> SSave --> Picker
+
+  VImplement --> VDecision --> VBlocked
+  VBlocked -- yes --> Blocked
+  VBlocked -- no --> VClose --> VScope
+  VScope -- yes, continue --> VContinue --> Picker
+  VScope -- yes, boundary --> VHandoff --> Picker
+  VScope -- no --> VDone
+
+  Picker -- mode choice --> Mode --> Dispatch
+  Picker -- 🤝 handoff --> Handoff --> Dispatch
+  Always -. applies to .-> Dispatch
+  Safety -. applies to .-> Dispatch
+  Artifact -. records state, decisions, work, checklist .-> QAlign
+  Artifact -. keeps findings and proposal .-> SExplore
+  Artifact -. reconciles closeout .-> VClose
+  Explore -. guides .-> SExplore
+  Explore -. resolves focused implementation research .-> VImplement
+
+  classDef questionnaire fill:#142a44,stroke:#58b7ff,color:#edf3ff;
+  classDef spec fill:#2a1f47,stroke:#b98cff,color:#edf3ff;
+  classDef vibe fill:#153d32,stroke:#42d6a4,color:#edf3ff;
+  classDef shared fill:#3f301d,stroke:#f0b56b,color:#edf3ff;
+  class QFirst,QAlign,QScope,QResolve,QAsk,QUnresolved,QCancel,QRoute,QVibe,QSpec questionnaire;
+  class SExplore,SBlocked,SMore,SContinue,SSave spec;
+  class VImplement,VDecision,VBlocked,VClose,VScope,VContinue,VHandoff,VDone vibe;
+  class Start,Dispatch,Mode,Scope,Recommend,Mutate,Always,Safety,Blocked,Picker,Handoff,Artifact,Explore shared;
+          </pre>
         </div>
-
-        <svg viewBox="0 0 1400 1060" role="img" aria-labelledby="svg-title svg-desc">
-          <title id="svg-title">Pi workflow state machine</title>
-          <desc id="svg-desc">
-            A flow from Ask alignment through optional Spec planning or Vibe execution, with a user-owned mode picker
-            after every settled turn.
-          </desc>
-          <defs>
-            <marker
-              id="arrow"
-              markerWidth="10"
-              markerHeight="10"
-              refX="9"
-              refY="5"
-              orient="auto"
-              markerUnits="strokeWidth"
-            >
-              <path d="M0,0 L10,5 L0,10 z" fill="#6e81a8" />
-            </marker>
-          </defs>
-
-          <rect class="lane" x="35" y="40" width="1330" height="220" rx="18" />
-          <rect class="lane" x="35" y="290" width="1330" height="330" rx="18" />
-          <rect class="lane" x="35" y="650" width="1330" height="180" rx="18" />
-          <rect class="lane" x="35" y="860" width="1330" height="160" rx="18" />
-          <text class="lane-label" x="62" y="70">Session state</text>
-          <text class="lane-label" x="62" y="320">Agent turn</text>
-          <text class="lane-label" x="62" y="680">Settlement</text>
-          <text class="lane-label" x="62" y="890">Persistent context</text>
-
-          <circle class="start-dot" cx="105" cy="152" r="9" />
-          <path class="edge" d="M114 152 H155" />
-
-          <g class="node ask" tabindex="0" role="button" data-state="start" transform="translate(155 105)">
-            <rect width="190" height="94" rx="12" />
-            <text class="node-badge" x="18" y="25">START</text>
-            <text class="node-title" x="18" y="51">Session begins</text>
-            <text class="node-copy" x="18" y="73">mode := ASK</text>
-          </g>
-          <path class="edge" d="M345 152 H390" />
-
-          <g class="node ask" tabindex="0" role="button" data-state="ask" transform="translate(390 90)">
-            <rect width="260" height="124" rx="12" />
-            <text class="node-badge" x="18" y="25">MODE[ASK]</text>
-            <text class="node-title" x="18" y="53">Align and decide</text>
-            <text class="node-copy" x="18" y="76">Interactive goal and scope Q&amp;A</text>
-            <text class="node-copy" x="18" y="96">Bounded orientation only</text>
-          </g>
-          <path class="edge recommend" d="M650 125 C720 82 750 82 815 125" />
-          <text class="edge-label recommend" x="706" y="96">clear + low-risk</text>
-          <path class="edge recommend" d="M650 180 C720 225 750 225 815 180" />
-          <text class="edge-label recommend" x="705" y="221">research needed</text>
-
-          <g class="node vibe" tabindex="0" role="button" data-state="vibe" transform="translate(815 90)">
-            <rect width="240" height="124" rx="12" />
-            <text class="node-badge" x="18" y="25">MODE[VIBE]</text>
-            <text class="node-title" x="18" y="53">Execute</text>
-            <text class="node-copy" x="18" y="76">Implement accepted scope</text>
-            <text class="node-copy" x="18" y="96">Mutate files only in Vibe</text>
-          </g>
-          <g class="node spec" tabindex="0" role="button" data-state="spec" transform="translate(1090 90)">
-            <rect width="240" height="124" rx="12" />
-            <text class="node-badge" x="18" y="25">MODE[SPEC]</text>
-            <text class="node-title" x="18" y="53">Research &amp; propose</text>
-            <text class="node-copy" x="18" y="76">Explore source and evidence</text>
-            <text class="node-copy" x="18" y="96">Save a completed proposal</text>
-          </g>
-          <path class="edge" d="M1055 152 H1090" />
-          <text class="edge-label" x="1059" y="140">User selects</text>
-
-          <path class="edge" d="M510 214 V350" />
-          <path class="edge" d="M1210 214 V350" />
-          <path class="edge" d="M935 214 V350" />
-
-          <g class="node ask" tabindex="0" role="button" data-state="ask-turn" transform="translate(390 350)">
-            <rect width="240" height="104" rx="12" />
-            <text class="node-badge" x="18" y="25">ASK TURN</text>
-            <text class="node-title" x="18" y="52">Goal unresolved?</text>
-            <text class="node-copy" x="18" y="75">Keep aligning until clear</text>
-          </g>
-          <path class="edge recommend" d="M390 402 H305 Q275 402 275 432 V478 Q275 508 305 508 H390" />
-          <text class="edge-label recommend" x="172" y="463">yes → continue</text>
-          <path class="edge" d="M630 402 H700" />
-          <text class="edge-label" x="645" y="391">no</text>
-
-          <g class="node spec" tabindex="0" role="button" data-state="spec-turn" transform="translate(700 350)">
-            <rect width="250" height="104" rx="12" />
-            <text class="node-badge" x="18" y="25">SPEC TURN</text>
-            <text class="node-title" x="18" y="52">Research &amp; design</text>
-            <text class="node-copy" x="18" y="75">Update the living artifact</text>
-          </g>
-          <path class="edge recommend" d="M825 454 V506" />
-          <text class="edge-label recommend" x="844" y="486">research remains</text>
-          <path class="edge blocked" d="M700 402 H665 Q640 402 640 430 V540 Q640 570 670 570 H700" />
-          <text class="edge-label blocked" x="523" y="558">blocked → Ask</text>
-
-          <g class="node shared" tabindex="0" role="button" data-state="save" transform="translate(700 506)">
-            <rect width="250" height="104" rx="12" />
-            <text class="node-badge" x="18" y="25">SPEC OUTPUT</text>
-            <text class="node-title" x="18" y="52">save_plan</text>
-            <text class="node-copy" x="18" y="75">Present proposal, then settle</text>
-          </g>
-          <path class="edge" d="M950 558 H1010" />
-          <path class="edge" d="M935 454 V470 Q935 482 1010 482 V506" />
-
-          <g class="node vibe" tabindex="0" role="button" data-state="execute" transform="translate(1010 350)">
-            <rect width="250" height="104" rx="12" />
-            <text class="node-badge" x="18" y="25">VIBE TURN</text>
-            <text class="node-title" x="18" y="52">Implement &amp; verify</text>
-            <text class="node-copy" x="18" y="75">Resolve research in place</text>
-          </g>
-          <path class="edge blocked" d="M1135 454 V506" />
-          <text class="edge-label blocked" x="1153" y="486">blocked → Ask</text>
-          <path class="edge" d="M1135 454 V578" />
-
-          <g class="node shared" tabindex="0" role="button" data-state="closeout" transform="translate(1010 578)">
-            <rect width="250" height="104" rx="12" />
-            <text class="node-badge" x="18" y="25">CLOSE OUT</text>
-            <text class="node-title" x="18" y="52">Report &amp; record</text>
-            <text class="node-copy" x="18" y="75">Verify, update checklist</text>
-          </g>
-          <path class="edge" d="M825 610 V716 H700" />
-          <text class="edge-label" x="708" y="700">proposal settled</text>
-          <path class="edge" d="M1135 682 V716 H1010" />
-          <text class="edge-label" x="1148" y="704">turn settled</text>
-
-          <g class="node shared" tabindex="0" role="button" data-state="picker" transform="translate(700 716)">
-            <rect width="310" height="92" rx="12" />
-            <text class="node-badge" x="18" y="25">RUNTIME</text>
-            <text class="node-title" x="18" y="52">Settlement mode picker</text>
-            <text class="node-copy" x="18" y="73">User owns the next mode</text>
-          </g>
-          <path class="edge" d="M700 762 H575 Q545 762 545 792 V824" />
-          <path class="edge" d="M855 808 V824" />
-          <path class="edge" d="M1010 762 H1135 Q1165 762 1165 792 V824" />
-          <text class="edge-label" x="560" y="781">Ask</text>
-          <text class="edge-label" x="865" y="822">Spec / Vibe</text>
-          <text class="edge-label" x="1138" y="781">handoff</text>
-
-          <g class="node ask" tabindex="0" role="button" data-state="new-ask" transform="translate(420 824)">
-            <rect width="250" height="88" rx="12" />
-            <text class="node-badge" x="18" y="25">USER CHOICE</text>
-            <text class="node-title" x="18" y="52">Continue / new Ask</text>
-            <text class="node-copy" x="18" y="72">Mode stays or becomes Ask</text>
-          </g>
-          <g class="node vibe" tabindex="0" role="button" data-state="new-vibe" transform="translate(730 824)">
-            <rect width="250" height="88" rx="12" />
-            <text class="node-badge" x="18" y="25">USER CHOICE</text>
-            <text class="node-title" x="18" y="52">Start Vibe</text>
-            <text class="node-copy" x="18" y="72">Begin the approved execution</text>
-          </g>
-          <g class="node shared" tabindex="0" role="button" data-state="handoff" transform="translate(1040 824)">
-            <rect width="250" height="88" rx="12" />
-            <text class="node-badge" x="18" y="25">USER CHOICE</text>
-            <text class="node-title" x="18" y="52">Handoff next phase</text>
-            <text class="node-copy" x="18" y="72">Checkpoint artifact, fresh Ask</text>
-          </g>
-
-          <path class="edge" d="M545 912 V948 H175 V978" />
-          <path class="edge" d="M855 912 V978" />
-          <path class="edge" d="M1165 912 V948 H1225 V978" />
-          <g class="node shared" tabindex="0" role="button" data-state="artifact" transform="translate(35 952)">
-            <rect width="280" height="68" rx="12" />
-            <text class="node-badge" x="18" y="25">ARTIFACT</text>
-            <text class="node-title" x="18" y="50">.pi/plan/&lt;name&gt;.md</text>
-          </g>
-          <g class="node shared" tabindex="0" role="button" data-state="next-turn" transform="translate(715 952)">
-            <rect width="280" height="68" rx="12" />
-            <text class="node-badge" x="18" y="25">NEXT TURN</text>
-            <text class="node-title" x="18" y="50">RUN only MODE[mode]</text>
-          </g>
-          <g class="node ask" tabindex="0" role="button" data-state="new-session" transform="translate(1085 952)">
-            <rect width="280" height="68" rx="12" />
-            <text class="node-badge" x="18" y="25">FRESH SESSION</text>
-            <text class="node-title" x="18" y="50">Starts in ASK</text>
-          </g>
-        </svg>
       </section>
 
-      <section class="details">
-        <article class="card">
-          <h2>Selected state</h2>
-          <p id="state-detail" class="selected-state" aria-live="polite">
-            <strong>Session begins:</strong> Every interactive session starts in Ask. The User owns every later mode
-            change.
-          </p>
-        </article>
-        <article class="card">
-          <h2>Contract invariants</h2>
-          <ul>
-            <li>The Agent ends each turn with <code>recommend_next</code>, never by changing mode.</li>
-            <li>The runtime opens the picker after settlement; the User selects the next mode.</li>
-            <li>Only Vibe is the execution mode for project-file mutations.</li>
-          </ul>
-        </article>
-      </section>
+      <section aria-labelledby="reference-title">
+        <h2 id="reference-title">Authoritative pseudocode reference</h2>
+        <p class="section-copy">
+          The graph is a structural map. The full behavioral contract remains
+          <a href="../extensions/agent-workflow/workflow-steps.md"
+            ><code>extensions/agent-workflow/workflow-steps.md</code></a
+          >; this embedded copy is provided for side-by-side reading and must be synchronized whenever the source
+          changes.
+        </p>
+        <details>
+          <summary class="reference-header">Show the complete workflow pseudocode</summary>
+          <pre><code>MODES := QUESTIONNAIRE | SPEC | VIBE;
 
-      <section class="rule-grid" aria-label="Shared workflow rules">
-        <article class="card">
-          <h2>ALWAYS</h2>
-          <p>
-            Size the work to the change, lead with the result, name paths and symbols, and never claim an unchecked
-            result.
-          </p>
-        </article>
-        <article class="card">
-          <h2>ARTIFACT</h2>
-          <p>
-            One session owns one plan. Keep it resumable, preserve history, and update checklist status at close-out.
-          </p>
-        </article>
-        <article class="card">
-          <h2>EXPLORATION</h2>
-          <p>
-            Search one decisive source first, read bounded sections, exclude generated trees, and stop when answered.
-          </p>
-        </article>
-        <article class="card">
-          <h2>BLOCKED</h2>
-          <p>Stop without improvising, record the problem and recommendation in the artifact, then route to Ask.</p>
-        </article>
-        <article class="card">
-          <h2>SAFETY</h2>
-          <p>
-            Match operations to their tool schemas and preserve safeguards for destructive actions, dependencies,
-            credentials, and external writes.
-          </p>
-        </article>
-        <article class="card">
-          <h2>CLOSE OUT</h2>
-          <p>Report changed paths, verification, limitations, and open concerns. Never claim User acceptance.</p>
-        </article>
+STATE:
+    mode := latest persisted MODE_EVENT, owned by the User and reflected by the injected pi_workflow_mode marker;
+    artifact := this session&#x27;s one .pi/plan/&lt;name&gt;.md;
+    scope := the immutable initial goal plus every accepted follow-up outcome; pending outcomes remain in scope until explicitly resolved;
+    RECOMMEND(x, reason?, prompt?) := CALL &quot;recommend_next&quot; with x valid for the current mode, an optional concise picker reason, and custom prompt only for Agent-starting Spec/Vibe actions; omit prompt for Q&amp;A and phase-boundary handoff;
+    MUTATE project source files ONLY IF mode = VIBE;
+
+TURN:
+    RUN only MODE[mode] on the User&#x27;s request;
+    END the turn with a RECOMMEND when a next action exists; otherwise end as complete without a recommendation;
+    ON settle the runtime opens its picker and the User owns the next mode;
+    A session starts in QUESTIONNAIRE with SPEC optional and User-selected;
+
+ALWAYS:
+    SIZE the work to the change, so a one-line change gets a one-line plan;
+    LEAD with the result, then only detail that changes the next decision;
+    NAME paths and symbols instead of restating file contents;
+    WHEN RECOMMENDING, INCLUDE a concise reason grounded in the artifact or just-completed work; include a custom kickoff only when a Spec/Vibe action starts an Agent turn;
+    SHOW the changed snippet, not the whole file;
+    DO NOT repeat output already in the transcript;
+    DO NOT name the next picker action;
+    NEVER CLAIM a check you did not run or a mutation a tool rejected;
+
+MODE[QUESTIONNAIRE] — align through interactive Q&amp;A:
+    ON first request of session DO
+        CALL &quot;start_task&quot; once;
+        STATE the understood goal and scope;
+        ASK one concise direction-check question;
+        WRITE the answer and direction check to the artifact;
+    END ON
+    TREAT Q&amp;A as Align: ask, listen, explain trade-offs, and refine the shared direction;
+    REMAIN in Q&amp;A while alignment questions remain; an artifact update is not permission to leave;
+    ASK focused goal, scope, constraint, and outcome questions before proposing execution;
+    ON a new instruction that may change scope DO
+        COMPARE it with the initial goal and every pending checklist item;
+        IF it adds, conflicts with, or appears to replace existing work THEN
+            STATE which existing outcomes remain pending;
+            ASK whether to keep, defer, or explicitly resolve each affected outcome;
+            DO NOT rewrite or remove the initial Goal or a pending checklist item;
+        END IF
+    END ON
+    CALL &quot;ask&quot; whenever a consequential choice is open; the tool is mode-neutral and never changes the User-owned workflow mode;
+    BATCH only independent questions whose wording and options remain valid regardless of sibling answers; issue a fresh &quot;ask&quot; call for dependent follow-ups after incorporating the earlier answer;
+    IF bounded orientation is needed to clarify direction THEN
+        READ only the relevant .pi/, README, or docs;
+    END IF
+    DO NOT search source or gather research results in Q&amp;A;
+    WRITE answers and decisions to the artifact;
+    WHILE unresolved DO
+        ASK the next focused question in the same turn;
+        IF the User cancels THEN
+            RETURN to the editor without a recommendation;
+            END turn;
+        END IF
+        WRITE the answer and decision to the artifact;
+    END WHILE
+    IF execution is clear AND low-risk THEN
+        RECOMMEND(vibe, reason);
+    ELSE
+        RECOMMEND(spec, reason);
+    END IF
+    IF the User selects ask&#x27;s direct Spec/Vibe route THEN
+        LET ask terminate Q&amp;A and start the selected mode;
+        IN the target turn, RECORD every accepted recommended answer before research or implementation;
+    END IF
+
+MODE[SPEC] — research and design:
+    EXPLORE per EXPLORATION, then REPORT findings;
+    PREFER the smallest sufficient change and NAME the alternative you rejected;
+    KEEP Current state, Findings, Desired state, Approach, and Checklist current by EDITing the artifact directly while research continues;
+    IF blocked THEN
+        CALL BLOCKED(questionnaire);
+    END IF
+    IF research remains THEN
+        RECOMMEND(continue, reason);
+        END turn;
+    END IF
+    CALL &quot;save_plan&quot; with the completed actionable proposal, then END turn;
+
+MODE[VIBE] — execute:
+    RESOLVE implementation research without leaving VIBE;
+    IMPLEMENT scope;
+    VERIFY with the repository&#x27;s own checks before claiming done;
+    REPORT a pre-existing failure instead of widening scope;
+    UPDATE the artifact Work log and every cumulative checklist item in scope;
+    TREAT checklist items across revisions as cumulative, with latest status winning;
+    WHEN a reversible, low-risk, in-scope implementation choice is already implied by the task, Vibe MAY decide it without interrupting the User, then MUST CALL &quot;record_auto_decision&quot; with its context, rationale, impact, and verification status;
+    DO NOT use autonomous decisions for consequential, ambiguous, irreversible, product-facing, or out-of-scope choices; CALL &quot;ask&quot; or recommend User-selected Q&amp;A instead;
+    IF blocked by a decision THEN
+        CALL BLOCKED(questionnaire);
+    END IF
+    CALL CLOSE_OUT;
+    IF scope remains THEN
+        IF NOT at a coherent boundary THEN
+            RECOMMEND(continue, reason);
+        ELSE
+            RECOMMEND(phase-boundary, reason);
+        END IF
+    ELSE
+        DO NOT CALL &quot;recommend_next&quot;; the task is complete.
+    END IF
+
+BLOCKED(destination):
+    STOP task work without improvising or interrogating mid-turn;
+    RECORD problem, options, and recommendation in the artifact;
+    IF mode = VIBE THEN
+        CALL CLOSE_OUT;
+    END IF
+    RECOMMEND(destination, reason), then END turn;
+
+CLOSE_OUT:
+    RECONCILE the immutable initial Goal, accepted proposals, follow-up instructions, and every revision against the live cumulative checklist;
+    REVIEW every entry under `### Auto-mode decisions`, verify its status/details, and include the complete structured trail in the close-out before declaring completion;
+    WRITE `### Status` followed by `complete` only after every requested outcome and autonomous decision is reconciled. A later `## Revision N` invalidates an earlier completion marker until the new current close-out is complete;
+    IF any requested outcome is missing or unresolved THEN
+        LEAVE it [ ] and DO NOT present the work as complete;
+    END IF
+    MARK finished checklist items [x], including earlier revisions&#x27;;
+    PRESERVE checklist item labels verbatim across revisions when changing completion state; do not rename or split a pending item without explicitly resolving the original;
+    LEAVE pending items [ ] and ANNOTATE skipped or failed ones with the reason;
+    UPDATE only touched sections and PRESERVE historical narrative;
+    REPORT changed paths, verification, limitations, and open concerns;
+    PROMOTE only durable orientation and costly quirks to project memory;
+    NEVER CLAIM User acceptance;
+
+EXPLORATION:
+    BEGIN with one decisive exact symbol or path search;
+    BOUND matches and line width, then READ the owning implementation in small windows;
+    EXCLUDE node_modules, generated, vendor, cache trees, and source maps;
+    STOP when answered and BROADEN only for a concrete open question;
+
+ARTIFACT:
+    OWN exactly one artifact per session, so a new goal needs a fresh session;
+    PRESERVE the initial Goal and every accepted outcome as historical scope; a follow-up may add or explicitly resolve work but may not silently erase it;
+    &quot;start_task&quot; creates it, handoffs extend it, and plans are never deleted;
+    TREAT artifact writes as non-project mutation;
+    LEAVE it resumable without the transcript after every turn;
+    TREAT checklist items across revisions as cumulative, with latest status winning;
+    EDIT it directly in QUESTIONNAIRE and VIBE and during interim SPEC research;
+    CALL &quot;save_plan&quot; ONLY in SPEC and ONLY for a completed proposal;
+    &quot;save_plan&quot; REPLACES an untouched pre-execution draft, otherwise APPENDS a dated bottom &quot;## Revision N&quot; preserving earlier narrative;
+    LOCK the name once execution has begun;
+
+TOOL AND SAFETY:
+    MATCH every operation to its tool schema;
+    IF a tool call is rejected THEN
+        CORRECT it, RETRY once, then report;
+    END IF
+    PRESERVE safeguards for destructive actions, dependencies, credentials, and external writes;
+</code></pre>
+        </details>
       </section>
     </main>
 
-    <script>
-      const details = {
-        start:
-          "<strong>Session begins:</strong> Every interactive session starts in Ask. The User owns every later mode change.",
-        ask: "<strong>Ask / Align:</strong> Use interactive goal, scope, constraint, and trade-off Q&amp;A. Use the native questionnaire when needed; defer source research and results to Spec.",
-        vibe: "<strong>Vibe:</strong> Execute the current instruction or accepted proposal. This is the only mode intended for project-file mutations.",
-        spec: "<strong>Spec:</strong> Research and propose. Explore the source, keep the artifact current, and save a completed actionable plan before settlement.",
-        "ask-turn":
-          "<strong>Ask / Align turn:</strong> Ask focused questions, listen, explain trade-offs, and refine direction. Recommend Spec or Vibe only when alignment is sufficiently clear.",
-        "spec-turn":
-          "<strong>Spec turn:</strong> Research per the exploration rules and update Current state, Findings, Desired state, Approach, and Checklist in the living artifact.",
-        save: "<strong>save_plan:</strong> Spec presents a completed proposal and ends the turn. The picker then offers approval to start Vibe.",
-        execute:
-          "<strong>Vibe turn:</strong> Resolve implementation research in place, implement the scope, and verify with the repository's checks.",
-        closeout:
-          "<strong>Close out:</strong> Mark completed checklist items, report paths and verification, preserve historical narrative, and leave the artifact handoff-ready.",
-        picker:
-          "<strong>Mode picker:</strong> The runtime opens after settlement. It recommends an action, but only the User can adopt the next mode.",
-        "new-ask":
-          "<strong>User choice:</strong> Continue targeted Ask Q&amp;A or start a new Ask direction. Ask returns to the editor and waits for input when no targeted prompt exists.",
-        "new-vibe":
-          "<strong>User choice:</strong> Approve the proposal or start execution. The next turn runs only the selected Vibe mode.",
-        handoff:
-          "<strong>Handoff:</strong> The artifact is checkpointed and continued in a fresh session, which starts in Ask.",
-        artifact:
-          "<strong>Artifact:</strong> The session's single <code>.pi/plan/&lt;name&gt;.md</code> records decisions, research, work, checklist status, and close-out.",
-        "next-turn":
-          "<strong>Next turn:</strong> The Agent runs only the mode currently injected as <code>pi_workflow_mode</code>.",
-        "new-session":
-          "<strong>Fresh session:</strong> A handoff replacement starts in Ask so the User can align the next phase.",
-      };
+    <footer class="notes">
+      <span>Only 🚀 Vibe changes project files.</span>
+      <span>🔎 Spec is optional and User-selected.</span>
+      <span>🤝 Handoffs inherit the pending action.</span>
+    </footer>
 
-      const nodes = document.querySelectorAll(".node");
-      const detail = document.querySelector("#state-detail");
-      const select = (node) => {
-        nodes.forEach((item) => item.classList.remove("selected"));
-        node.classList.add("selected");
-        detail.innerHTML = details[node.dataset.state] || "No detail available.";
-      };
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
 
-      nodes.forEach((node) => {
-        node.addEventListener("click", () => select(node));
-        node.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            select(node);
-          }
-        });
-      });
-
-      document.querySelector("#reset").addEventListener("click", () => {
-        nodes.forEach((node) => node.classList.remove("selected"));
-        detail.innerHTML = details.start;
-      });
+      mermaid.initialize({ startOnLoad: false, theme: "dark" });
+      await mermaid.run({ querySelector: ".mermaid" });
     </script>
   </body>
 </html>

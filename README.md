@@ -3,7 +3,7 @@
 > π Measure twice, cut once.
 
 A [Pi](https://pi.dev) package that directs deliberate coding sessions through
-three modes the human owns — Ask to align, Spec to research and propose, Vibe to
+three modes the human owns — Q&A to align, Spec to research and propose, Vibe to
 execute — with durable memory, checkpointing handoffs, and visible status. When a
 human-authorized Pi Inspector session is available, Director can verify browser
 behavior through shared semantic state and flows.
@@ -45,9 +45,9 @@ pi list
 
 ## Included Features
 
-- **agent-workflow** — Three modes the User owns: Ask aligns through a native in-turn `questionnaire`, Spec researches and proposes with `save_plan`, and Vibe is the execution-oriented mode. The mode boundary is advisory; the Agent never switches mode, and a separate native picker opens after every settled turn offering the recommended next step, the other modes, a handoff, and a free-text escape hatch. Every session scaffolds one `.pi/plan/<timestamp-slug>.md` and extends it for life, including across `/handoff`, which checkpoints the file before spawning. The injected block is constant, so the prompt prefix stays cacheable; only a tiny per-turn mode message varies. See [the agent-workflow README](extensions/agent-workflow/README.md).
+- **agent-workflow** — Three modes the User owns: Q&A aligns through the native in-turn `ask` tool, Spec researches and proposes with `save_plan`, and Vibe is the execution-oriented mode. Unresolved Q&A stays in the same turn without a redundant mode picker; completed alignment, Spec, and open Vibe work settle into tailored routing choices. Every ask also offers explicit actions that accept its remaining recommendations and continue directly in Spec or Vibe. Every session scaffolds one `.pi/plan/<timestamp-slug>.md` and extends it for life, including across `/handoff`, which checkpoints the file before spawning and resumes the inherited actionable mode. Close-out status prevents stale follow-up recommendations, while Vibe's bounded autonomous choices are recorded in the artifact for review. The injected block is constant, so the prompt prefix stays cacheable; only a tiny per-turn mode message varies. See [the agent-workflow README](extensions/agent-workflow/README.md).
 - **project-memory** — Low-noise startup check for the hidden `memory-review` commit cursor. It ignores uncommitted work, gives relevant commits a one-day grace period, and suppresses repeated reminders until both `HEAD` changes and 24 hours pass; cooldown state stays outside the repository.
-- **progress-tracker** — Above-editor per-mode Ask/Spec/Vibe timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
+- **progress-tracker** — Above-editor per-mode Q&A/Spec/Vibe timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
 - **pi-inspector skill & bridge** — Detects an authorized Pi Inspector session for browser debugging and verification, while reporting Director mode and session context back to Inspector over its display-only channel.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).

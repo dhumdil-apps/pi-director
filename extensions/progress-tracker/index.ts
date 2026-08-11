@@ -20,8 +20,8 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
 import {
-  deriveWorkflowMode,
   MODE_EVENT,
+  resolveWorkflowMode,
   normalizeWorkflowMode,
   type ModeEvent,
   type WorkflowMode,
@@ -59,6 +59,10 @@ export default function (pi: ExtensionAPI) {
   });
 
   let currentCtx: ExtensionContext | undefined;
+  // Async lifecycle handlers can finish after session replacement invalidates
+  // their context. Increment this before shutdown so their continuations stay
+  // data-only and never refresh through the old context.
+  let lifecycleGeneration = 0;
   let working = false;
   // The first provider response's reported aggregate usage. Read it from the
   // response itself: live context can already include tool results for the next request.
@@ -74,11 +78,18 @@ export default function (pi: ExtensionAPI) {
   let waitingForUser = false;
 
   // Close the current interval before changing mode. Undefined is the initial
-  // Ask state: the display can still ask for a goal while timing is precise.
+  // Q&A state: the display can still ask for a goal while timing is precise.
   const accrueUntil = (now: number) => {
     if (runStartedAt == null) return;
-    planTime = addModeTime(planTime ?? EMPTY_PLAN_TIME, mode ?? "ask", Math.max(0, now - runStartedAt));
+    planTime = addModeTime(planTime ?? EMPTY_PLAN_TIME, mode ?? "questionnaire", Math.max(0, now - runStartedAt));
     runStartedAt = now;
+  };
+
+  const syncModeFromBranch = (ctx: ExtensionContext): void => {
+    const next = resolveWorkflowMode(ctx.sessionManager.getBranch());
+    if (next === mode) return;
+    accrueUntil(Date.now());
+    mode = next;
   };
 
   pi.events.on?.(MODE_EVENT, (payload: unknown) => {
@@ -137,13 +148,18 @@ export default function (pi: ExtensionAPI) {
     });
   };
 
-  const persistTiming = async () => {
+  const persistTiming = async (ctx: ExtensionContext) => {
+    // Resolve every session-bound value before the file write yields. The
+    // write may outlive this session, so its continuation must use plain data.
     const name = pi.getSessionName?.();
-    if (!currentCtx || !name || planTime == null) return;
-    await updatePlanTime(planPath(currentCtx.cwd, name), name, planTime).catch(() => {});
+    const time = planTime;
+    if (!name || time == null) return;
+    const path = planPath(ctx.cwd, name);
+    await updatePlanTime(path, name, time).catch(() => {});
   };
 
   const adopt = async (ctx: ExtensionContext) => {
+    const generation = lifecycleGeneration;
     currentCtx = ctx;
     working = !ctx.isIdle();
     waitingForUser = false;
@@ -151,7 +167,7 @@ export default function (pi: ExtensionAPI) {
     // and cache age from the active branch rather than trust the empty closure.
     try {
       const branch = ctx.sessionManager.getBranch();
-      mode = deriveWorkflowMode(branch);
+      mode = resolveWorkflowMode(branch);
       cacheStartedAt = latestAssistantTimestamp(branch);
     } catch {
       // A branch that cannot be read is not worth a missing indicator.
@@ -159,10 +175,13 @@ export default function (pi: ExtensionAPI) {
     // A marker-free legacy plan stays visually unchanged until its first new run.
     // Existing persisted totals resume across reloads and handoffs.
     const name = pi.getSessionName?.();
-    if (name && runStartedAt == null) {
-      const persisted = await readPlanTime(planPath(ctx.cwd, name));
-      if (persisted !== undefined) planTime = persisted;
+    const path = name ? planPath(ctx.cwd, name) : undefined;
+    if (path && runStartedAt == null) {
+      const persisted = await readPlanTime(path);
+      if (generation !== lifecycleGeneration || currentCtx !== ctx) return;
+      if (persisted !== undefined && runStartedAt == null) planTime = persisted;
     }
+    if (generation !== lifecycleGeneration || currentCtx !== ctx) return;
     refreshStatus();
   };
 
@@ -187,6 +206,9 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("agent_start", async (_event, ctx) => {
     currentCtx = ctx;
+    // Re-read persisted state at the run boundary in case the mode event was
+    // emitted before this extension observed it or a session tree was replaced.
+    syncModeFromBranch(ctx);
     working = true;
     planTime ??= EMPTY_PLAN_TIME;
     runStartedAt ??= Date.now();
@@ -194,6 +216,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("agent_settled", async (_event, ctx) => {
+    const generation = lifecycleGeneration;
     currentCtx = ctx;
     working = false;
     const settledAt = Date.now();
@@ -201,7 +224,8 @@ export default function (pi: ExtensionAPI) {
     runStartedAt = undefined;
     waitingForUser = false;
     // Best-effort persistence: an unavailable plan must not break turn settlement.
-    await persistTiming();
+    await persistTiming(ctx);
+    if (generation !== lifecycleGeneration || currentCtx !== ctx) return;
     refreshStatus();
   });
 
@@ -246,6 +270,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("session_shutdown", async (_event, ctx) => {
+    lifecycleGeneration++;
     pi.events.emit?.("powerbar:update", {
       id: "attention-span",
       text: undefined,
