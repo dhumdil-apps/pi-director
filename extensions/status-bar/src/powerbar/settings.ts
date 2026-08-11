@@ -53,7 +53,7 @@ export function settingId(line: LineNumber, side: Side): string {
 const DEFAULT_LINES: Record<string, string> = {
   "line1-left": "git-branch,session-name",
   "line1-right": "provider,model",
-  "line2-left": "agent-stats,tokens",
+  "line2-left": "cost,agent-stats,tokens",
   "line2-right": "",
   "line3-left": "cpu,ram,disk,net",
   "line3-right": "sub-hourly,sub-weekly",
@@ -67,6 +67,7 @@ const LEGACY_ROW: Record<string, LineNumber> = {
   "git-branch": 1,
   model: 1,
   provider: 1,
+  cost: 2,
   tokens: 2,
   "agent-stats": 2,
   cpu: 3,
@@ -165,8 +166,22 @@ export function migrateLegacyLayout(): void {
   }
 }
 
+/** Add the separately rendered cost segment to existing token layouts, keeping it prominent. */
+function migrateCostSegmentLayout(): void {
+  for (const line of LINES) {
+    for (const side of ["left", "right"] as const) {
+      const key = settingId(line, side);
+      const stored = getSetting(EXTENSION_NAME, key);
+      const ids = parseList(stored);
+      if (stored === undefined || !ids.includes("tokens") || ids.includes("cost")) continue;
+      setSetting(EXTENSION_NAME, key, ["cost", ...ids].join(","));
+    }
+  }
+}
+
 export function loadSettings(): PowerbarSettings {
   migrateLegacyLayout();
+  migrateCostSegmentLayout();
   return {
     lines: LINES.map((line) => ({
       left: parseList(getSetting(EXTENSION_NAME, settingId(line, "left"), DEFAULT_LINES[settingId(line, "left")])),

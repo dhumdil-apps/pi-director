@@ -32,78 +32,56 @@ Close out is a step at the end of a turn, not a fourth mode.
 
 The picker is the post-turn decision surface, and it is owned by the runtime
 rather than by a tool, so the Agent cannot skip a needed route by forgetting a
-call. Before settling, the Agent can use `recommend_next` to record the turn's
-outcome and a concise reason without changing mode. Spec/Vibe actions may also
-carry a custom kickoff when they start an Agent turn. The runtime combines that
-outcome with live plan and context state to make one action explicit and recommended:
+call. Before settling, the Agent can use `recommend_next` to record one or more
+mode actions without changing mode. Each Agent-authored action may carry its own
+reason and custom kickoff. The runtime renders those actions before manual
+mode-switch choices:
 
-- Q&A asks every unresolved question in the current turn through `ask`; unresolved
-  or cancelled alignment settles directly back to the editor without a redundant
-  Q&A-to-Q&A picker. Once alignment is complete, `recommend_next` opens tailored
-  `🔎 Spec — Research the open questions` or `🚀 Vibe — Start implementing the request`
-  routing. Explicit `/mode` remains available and leaves Q&A unmarked when there
-  is no task-specific route.
-- Spec offers `🔎 Spec — Keep researching the plan` or `❓ Q&A — Clarify the next
-decision`; a successful `save_plan` offers `🚀 Vibe — Start implementing the plan`.
-  Spec transitions use the Agent's custom kickoff when supplied, so the next turn
-  starts with the specific research already identified.
-- Vibe offers `🚀 Vibe — Keep implementing`, `❓ Q&A — Clarify the next decision`, or
-  `🔎 Spec — Research the remaining questions`. A marked phase boundary becomes
-  `🤝 Hand off next phase` from Q&A, Spec, or Vibe when checklist work remains;
-  context pressure can also recommend the User-selected handoff from any mode.
-- Selecting any cross-mode action persists the User's mode choice. Spec and Vibe
-  destinations trigger an extension-generated continuation; an Agent-authored
-  kickoff is included when supplied, otherwise the runtime derives an
-  option-aligned kickoff from the selected mode and the first pending artifact
-  item. Cross-mode Q&A returns to the editor and waits for input without a hidden
-  kickoff. Continuing Q&A does the same. Secondary actions use emoji-prefixed,
+- An Agent can list any combination of Q&A, Spec, and Vibe. Each selected listed
+  action persists its mode and starts the matching continuation. A listed current
+  mode uses its Continue label; a listed Q&A route starts with native `ask`.
+- While work remains, an omitted Agent action receives a contextual runtime
+  fallback: a saved Spec plan starts Vibe, in-progress Spec/Vibe continues its
+  current mode, and context pressure offers a handoff. Only completed work has
+  no fallback; its unlisted mode choices return to the editor for a new direction.
+- Agent-authored actions use mode-prefixed plain-language labels and can include
+  their own concise reason, such as `🚀 Vibe — Start implementing the plan — verify
+the API`. They have no `(recommended)` marker; ask-option confidence is separate.
+- `🤝 Hand off next phase` is an explicit phase-boundary action. The always
+  available `🤝 Hand off to a fresh session` prepares `/handoff <name>` in the
+  editor and requires Enter; after checkpointing, the replacement inherits the
+  first listed mode action, or the current mode when none was listed.
+- The contextual `📝 Write a custom answer...` option and dismissal return to the
+  editor with the mode untouched. Manual secondary actions use emoji-prefixed,
   plan-aware labels that include the first pending checklist item.
-- `🤝 Hand off to a fresh session` remains available while work is open and prepares
-  `/handoff <name>` in the editor. Handoff still requires Enter and checkpoints
-  the artifact before replacement. It then inherits the selected action: an
-  explicit Spec/Vibe route wins, a just-saved Spec plan advances to Vibe, and
-  in-progress Spec or Vibe continues in place with the latest pending item.
-- After all cumulative checklist items are complete, Continue and Handoff are
-  omitted; the picker offers only cross-mode new-direction routes without marking
-  one recommended because no task-specific next step exists. `📝 Write a custom
-answer... (🚀 Vibe)` is the only same-mode path: it returns to the editor with the
-  mode untouched so the User can tailor the next instruction. While work remains,
-  its suffix includes the active continuation intent, such as `(🔎 Spec — Keep
-researching the plan)`.
-- The contextual `📝 Write a custom answer...` option and dismissal are the same
-  escape hatch: control returns to the editor with the mode untouched.
 
-Recommended options use a mode-prefixed plain-language action and may include the
-Agent's concise reason, such as `🚀 Vibe — Start implementing the plan — verify the
-API`, with the recommendation marker appended. If the Agent omits `recommend_next`,
-the runtime uses the first pending cumulative checklist item as context when
-available; otherwise it conservatively recommends continuing Spec or Vibe while
-work is open. Q&A requires an explicit completed-alignment route. When no work
-remains, no generic action is marked recommended. Recommendations expire at the
-next User message and never carry into a later turn.
+Agent actions expire at the next User message and never carry into a later turn.
+Runtime fallback actions apply only while the artifact has unfinished work.
 
 `/questionnaire`, `/spec`, and `/vibe` switch mode directly when the picker itself is
 unavailable, and `/mode` re-opens it. `/questionnaire` waits for the next User input;
 `/spec` and `/vibe` start the same extension-generated continuation as picker transitions.
 
-The mode picker routes work after a turn; `ask` gathers concrete alignment
-questions inside a turn from any interactive mode. It presents 1–4 native option
-pickers, shows the Agent's recommended answer first, and identifies its displayed
-choices as A, B, C, or D in that order. Ordinary selections retain their stable
-values and original labels; custom input includes the displayed letter-to-label key
-so the Agent can interpret references such as “combine A and B” before settlement.
-When a decision needs a user-supplied value, authors direct the User to the built-in
-`📝 Write a custom answer...` entry rather than adding a selectable “specify” option
-that cannot open an input field. The public schema requires
-`recommended: true` on exactly one option per question and permits omission on the
-others. Every picker also offers `Use recommended → Spec` and `Use recommended →
-Vibe`. Either explicit User action preserves prior manual answers, accepts the
-remaining recommendations, persists the selected mode, and queues a target-mode
-turn that records the accepted decisions before working. Batch only independent
-questions whose wording and options remain valid regardless of sibling answers;
-dependent follow-ups require a fresh `ask` call after the earlier answer. Q&A
-should keep this exchange conversational and question-first; a recommendation is
-guidance only, not permission to skip unresolved alignment.
+The mode picker routes work after a turn; Q&A begins every interaction with
+`ask`, and `ask` gathers concrete alignment questions inside a turn from any
+interactive mode. It presents 1–4 native option
+pickers, ranks their options by descending numeric confidence (1–5), and identifies
+its displayed choices as A, B, C, or D in that order. Ties preserve the Agent-supplied
+order. Ordinary selections retain their stable values and original labels; custom
+input includes the displayed letter-to-label key so the Agent can interpret references
+such as “combine A and B” before settlement. When a decision needs user-supplied
+detail, authors set `customAnswerLabel` to a concise input intent, such as “Describe
+desired behavior”. The picker then shows `📝 Write a custom answer... → Describe
+desired behavior`, rather than adding a selectable “specify” option that cannot open
+an input field.
+Every picker also offers `Proceed with best → Spec` and `Proceed with best → Vibe`.
+Either explicit User action preserves prior manual answers, accepts each remaining
+highest-confidence answer, persists the selected mode, and queues a target-mode turn
+that records the accepted decisions before working. Batch only independent questions
+whose wording and options remain valid regardless of sibling answers; dependent
+follow-ups require a fresh `ask` call after the earlier answer. Q&A should keep this
+exchange conversational and question-first; confidence is guidance only, not
+permission to skip unresolved alignment.
 Spec blockers and Vibe decision blockers still stop, write the problem and
 recommended resolution into the artifact, record Q&A as the next step, and let
 the picker carry the decision. Vibe resolves implementation research in place rather than

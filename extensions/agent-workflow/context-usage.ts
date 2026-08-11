@@ -61,7 +61,7 @@ export function contextUsageText(usage: ContextUsage | undefined, theme: Theme):
   const bar = renderPercentageBar(percent, CONTEXT_BAR_WIDTH, theme, color);
   const readout = `${formatTokens(usage.tokens)} / ${formatTokens(usage.contextWindow)}`;
   // The `none` bar style renders nothing — don't leave a double space behind it.
-  return [theme.fg(color, "Context window"), bar, theme.fg(color, readout)].filter(Boolean).join(" ");
+  return [theme.fg(color, "🧠"), bar, theme.fg(color, readout)].filter(Boolean).join(" ");
 }
 
 /**

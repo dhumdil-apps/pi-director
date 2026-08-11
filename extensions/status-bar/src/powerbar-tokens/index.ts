@@ -2,7 +2,7 @@
  * Powerbar Tokens Producer
  *
  * Shows cumulative token/cost stats and active-branch message counts.
- * Segment IDs: "tokens", "agent-stats"
+ * Segment IDs: "cost", "tokens", "agent-stats"
  */
 
 import type { ExtensionAPI, ExtensionContext, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
@@ -57,28 +57,32 @@ function emitSessionStats(pi: ExtensionAPI, ctx: ExtensionContext): void {
   });
 
   if (totalInput === 0 && totalOutput === 0) {
+    pi.events.emit("powerbar:update", { id: "cost", text: undefined });
     pi.events.emit("powerbar:update", { id: "tokens", text: undefined });
     return;
   }
 
   const tokenText = `↑${formatTokens(totalInput)} ↓${formatTokens(totalOutput)}`;
-  const costText = totalCost > 0 ? `$${totalCost.toFixed(2)}` : undefined;
-  pi.events.emit("powerbar:update", {
-    id: "tokens",
-    row: 2,
-    render: (theme: Theme) =>
-      [theme.fg("dim", tokenText), costText ? theme.fg(costColor(totalCost), costText) : undefined]
-        .filter((part): part is string => part !== undefined)
-        .join(" "),
-  });
+  pi.events.emit("powerbar:update", { id: "tokens", text: tokenText, color: "dim", row: 2 });
+  if (totalCost > 0) {
+    pi.events.emit("powerbar:update", {
+      id: "cost",
+      row: 2,
+      render: (theme: Theme) => theme.fg(costColor(totalCost), `$${totalCost.toFixed(2)}`),
+    });
+  } else {
+    pi.events.emit("powerbar:update", { id: "cost", text: undefined });
+  }
 }
 
 function resetSessionStats(pi: ExtensionAPI): void {
+  pi.events.emit("powerbar:update", { id: "cost", text: undefined });
   pi.events.emit("powerbar:update", { id: "tokens", text: undefined });
   pi.events.emit("powerbar:update", { id: "agent-stats", text: undefined });
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
+  pi.events.emit("powerbar:register-segment", { id: "cost", label: "Cost", row: 2 });
   pi.events.emit("powerbar:register-segment", { id: "tokens", label: "Tokens", row: 2 });
   pi.events.emit("powerbar:register-segment", { id: "agent-stats", label: "Agent Stats", row: 2 });
 

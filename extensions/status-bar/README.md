@@ -10,7 +10,7 @@ segments:
 - **`src/powerbar-git/`** — `git-branch` (+ dirty marker)
 - **`src/powerbar-model/`** — `model` (name + thinking level)
 - **`src/powerbar-provider/`** — `provider`
-- **`src/powerbar-tokens/`** — `tokens`, `agent-stats`
+- **`src/powerbar-tokens/`** — `cost`, `tokens`, `agent-stats`
 - **`src/powerbar-sub/`** — `sub-hourly`, `sub-weekly` (from Usage Monitor events)
 - **`src/powerbar-os/`** — `cpu`, `ram`, `disk`/SSD, `net`
 - **Progress Tracker** — `attention-span` (`LLM Attention Span (ctx)`)
@@ -43,7 +43,7 @@ line and side. Each picker labels a segment with the line it defaults to, so an
 unplaced segment is easy to find. Bundle defaults are:
 
 - Line 1 — `git-branch,session-name` left, `provider,model` right
-- Line 2 — `agent-stats,tokens` left
+- Line 2 — `cost,agent-stats,tokens` left
 - Line 3 — `cpu,ram,disk,net` left, `sub-hourly,sub-weekly` right
 - Line 4 — `attention-span` left
 
@@ -52,13 +52,14 @@ rendered Status Bar row. A line left empty between two used lines still renders
 as an intentional blank line, so enabling `Line gap` around it creates additional
 vertical space; trailing empty lines take no space. A layout stored under the
 older `left`/`right` keys is split across these lines once, on first load.
+Existing layouts with `tokens` are upgraded once to add `cost` first.
 
 Everything else is fixed rather than configurable, because the visual knobs were
 either inert or wrong: separator `·`, blocks-style bars, placement below the
 editor, and a 10-block default width for any bar that doesn't declare its own.
 The message-count segment renders `💬 … · 👤 … · 🤖 … · 🛠️ …`, and OS
 metrics use uppercase `CPU`, `RAM`, `SSD`, and `NET` labels. The token segment
-keeps input/output counts dim while cumulative cost is accent below $5, warning
+keeps input/output counts dim. The cost segment is accent below $5, warning
 from $5, and error from $10.
 
 Agent Workflow owns task naming through `save_plan`: saving a plan names the
