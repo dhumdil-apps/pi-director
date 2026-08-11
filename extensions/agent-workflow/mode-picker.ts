@@ -30,6 +30,7 @@ export const HANDOFF_OPTION = "🤝 Hand off to a fresh session";
 export const PHASE_HANDOFF_OPTION = "🤝 Hand off next phase";
 export const WRITE_CUSTOM_OPTION = "📝 Write a custom answer...";
 export const NEXT_STEP_EVENT = "agent-workflow:next-step";
+export const ASK_SETTLEMENT_EVENT = "agent-workflow:ask-settlement";
 
 export type NextStepActionMode = WorkflowMode | "phase-boundary";
 
@@ -176,6 +177,15 @@ export function deriveNextStep(entries: SessionEntry[], current: WorkflowMode): 
   return deriveNextStepSignal(entries, current)?.actions;
 }
 
+function completedAsk(entries: SessionEntry[]): boolean {
+  return (
+    currentTurnSignal(entries, ASK_SETTLEMENT_EVENT, (entry) => {
+      const outcome = (entry.data as { outcome?: unknown } | undefined)?.outcome;
+      return outcome === "answered" || outcome === "cancelled" ? outcome : undefined;
+    }) === "answered"
+  );
+}
+
 function planWasJustSaved(entries: SessionEntry[]): boolean {
   return currentTurnSignal(entries, PLAN_SAVED_EVENT, () => true) === true;
 }
@@ -279,7 +289,9 @@ function pickerState(
   }
   for (const mode of WORKFLOW_MODES) {
     if (mode === current || agentModes.has(mode)) continue;
-    add(secondaryLabel(current, mode, openWork, artifactReason), { kind: "switch", mode, startAgent: false });
+    // A pending artifact means an explicit mode switch is an instruction to
+    // continue that work, not merely relabel the session and strand the User.
+    add(secondaryLabel(current, mode, openWork, artifactReason), { kind: "switch", mode, startAgent: openWork });
   }
   if (!explicit.some((action) => action.mode === "phase-boundary")) add(HANDOFF_OPTION, { kind: "handoff" });
   add(customLabel(), { kind: "custom" });
@@ -460,9 +472,9 @@ export function registerModePicker(pi: ExtensionAPI): void {
     }
     const branch = ctx.sessionManager.getBranch();
     const mode = resolveWorkflowMode(branch);
-    // An unresolved or cancelled Q&A exchange has no route to choose. Return to
-    // the editor; completed alignment records one or more Agent-authored actions.
-    if (mode === "questionnaire" && !deriveNextStepSignal(branch, mode)) return;
+    // An unresolved or cancelled Q&A exchange has no route to choose. A completed
+    // Ask still opens the picker when its Agent forgot to record recommend_next.
+    if (mode === "questionnaire" && !deriveNextStepSignal(branch, mode) && !completedAsk(branch)) return;
     await openModePicker(pi, ctx);
   });
 }

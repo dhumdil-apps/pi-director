@@ -4,14 +4,14 @@ STATE:
     mode := latest persisted MODE_EVENT, owned by the User and reflected by the injected pi_workflow_mode marker;
     artifact := this session's one .pi/plan/<name>.md;
     scope := the immutable initial goal plus every accepted follow-up outcome; pending outcomes remain in scope until explicitly resolved;
-    RECOMMEND(actions[]) := CALL "recommend_next" with one or more distinct action objects (`mode`, optional `reason`, optional `prompt`); each listed Q&A, Spec, or Vibe mode starts Agent after User selection, while unlisted modes only switch and return to the editor; omit `prompt` for phase-boundary handoff;
+    RECOMMEND(actions[]) := CALL "recommend_next" with one or more distinct action objects (`mode`, optional `reason`, optional `prompt`); each listed Q&A, Spec, or Vibe mode starts Agent after User selection, while unlisted modes switch and start the pending artifact when work remains; omit `prompt` for phase-boundary handoff;
     MUTATE project source files ONLY IF mode = VIBE;
 
 TURN:
     RUN only MODE[mode] on the User's request;
     END the turn with a RECOMMEND when a next action exists; unfinished Spec/Vibe has a contextual runtime fallback if omitted, while completed work ends without a recommendation;
     ON settle the runtime opens its picker and the User owns the next mode;
-    A session starts in QUESTIONNAIRE with SPEC optional and User-selected;
+    A new session starts in QUESTIONNAIRE. The User may explicitly select SPEC or VIBE from the picker or an Ask direct route; otherwise remain in QUESTIONNAIRE until alignment selects a route;
 
 ALWAYS:
     SIZE the work to the change, so a one-line change gets a one-line plan;
@@ -49,7 +49,7 @@ MODE[QUESTIONNAIRE] — align through interactive Q&A:
         READ only the relevant .pi/, README, or docs;
     END IF
     DO NOT search source or gather research results in Q&A;
-    WRITE answers and decisions to the artifact;
+    WRITE answers and decisions to the artifact: record concise interpretation in `## Align` and copy every completed native Ask exchange into `## Q&A transcript` — its prompt, context, every displayed option with label and description, and the User's selected or verbatim custom answer; do not summarize or filter its option context;
     WHILE unresolved DO
         ASK the next focused question in the same turn;
         IF the User cancels THEN
@@ -89,43 +89,63 @@ MODE[VIBE] — execute:
     UPDATE the artifact Work log and every cumulative checklist item in scope;
     TREAT checklist items across revisions as cumulative, with latest status winning;
     WHEN a reversible, low-risk, in-scope implementation choice is already implied by the task, Vibe MAY decide it without interrupting the User, then MUST CALL "record_auto_decision" with its context, rationale, impact, and verification status;
-    DO NOT use autonomous decisions for consequential, ambiguous, irreversible, product-facing, or out-of-scope choices; CALL "ask" or recommend User-selected Q&A instead;
-    IF blocked by a decision THEN
-        CALL BLOCKED(questionnaire);
+    DO NOT use native Ask for routine implementation guidance; resolve in-scope work autonomously. Reserve `ask` for a genuine blocker that needs the User to decide what happens next;
+    IF blocked by a genuine decision blocker THEN
+        CALL BLOCKED;
     END IF
-    CALL CLOSE_OUT;
     IF scope remains THEN
+        CALL CHECKPOINT;
         IF NOT at a coherent boundary THEN
             RECOMMEND([{ mode: vibe, reason }]);
         ELSE
+            RECORD the completed boundary, first pending checklist item, and intended continuation mode/reason in the artifact;
             RECOMMEND([{ mode: phase-boundary, reason }]);
         END IF
     ELSE
+        CALL CLOSE_OUT;
         DO NOT CALL "recommend_next"; the task is complete.
     END IF
 
-BLOCKED(destination):
-    STOP task work without improvising or interrogating mid-turn;
+BLOCKED:
+    STOP task work without improvising;
     RECORD problem, options, and recommendation in the artifact;
+    IF mode = SPEC THEN
+        UPDATE the artifact with findings and the unresolved decision; do not call "save_plan" unless a completed proposal is actionable without that decision;
+        RECOMMEND([{ mode: questionnaire, reason }]), then END turn;
+    END IF
     IF mode = VIBE THEN
-        CALL CLOSE_OUT;
+        CALL `ask` once to ask the User what happens next; offer a direct resolution, broader Q&A, and any concrete alternative already known;
+        IF the User resolves the blocker directly THEN
+            RECORD the answer and CONTINUE Vibe without changing mode;
+        ELSE IF the User requests broader alignment THEN
+            RECORD the answer, CALL CHECKPOINT, and RECOMMEND([{ mode: questionnaire, reason }]), then END turn;
+        ELSE
+            RECORD the answer and follow the User-selected Ask or picker route; do not force Q&A;
+        END IF
     END IF
-    RECOMMEND([{ mode: destination, reason }]), then END turn;
 
-CLOSE_OUT:
+CHECKPOINT:
     RECONCILE the immutable initial Goal, accepted proposals, follow-up instructions, and every revision against the live cumulative checklist;
-    REVIEW every entry under `### Auto-mode decisions`, verify its status/details, and include the complete structured trail in the close-out before declaring completion;
-    WRITE `### Status` followed by `complete` only after every requested outcome and autonomous decision is reconciled. A later `## Revision N` invalidates an earlier completion marker until the new current close-out is complete;
-    IF any requested outcome is missing or unresolved THEN
-        LEAVE it [ ] and DO NOT present the work as complete;
-    END IF
+    REVIEW every entry under `### Auto-mode decisions`, verify its status/details, and include the complete structured trail in the checkpoint;
     MARK finished checklist items [x], including earlier revisions;
     PRESERVE checklist item labels verbatim across revisions when changing completion state; do not rename or split a pending item without explicitly resolving the original;
     LEAVE pending items [ ] and ANNOTATE skipped or failed ones with the reason;
     UPDATE only touched sections and PRESERVE historical narrative;
+    WRITE `### Status` as `in progress`; a later revision invalidates an earlier completion marker until the new current close-out is complete;
     REPORT changed paths, verification, limitations, and open concerns;
     PROMOTE only durable orientation and costly quirks to project memory;
     NEVER CLAIM User acceptance;
+
+CLOSE_OUT:
+    CALL CHECKPOINT;
+    IF any requested outcome or autonomous decision is missing or unresolved THEN
+        LEAVE it [ ] and DO NOT present the work as complete;
+    ELSE
+        WRITE `### Status` followed by `complete`;
+        IF review-worthy autonomous decisions, limitations, or follow-up concerns remain THEN
+            RECOMMEND([{ mode: questionnaire, reason }]);
+        END IF
+    END IF
 
 EXPLORATION:
     BEGIN with one decisive exact symbol or path search;
@@ -137,6 +157,7 @@ ARTIFACT:
     OWN exactly one artifact per session, so a new goal needs a fresh session;
     PRESERVE the initial Goal and every accepted outcome as historical scope; a follow-up may add or explicitly resolve work but may not silently erase it;
     "start_task" creates it, handoffs extend it, and plans are never deleted;
+    USE `## Q&A transcript` for complete native Ask exchanges, while `## Align` remains the concise decision record;
     TREAT artifact writes as non-project mutation;
     LEAVE it resumable without the transcript after every turn;
     TREAT checklist items across revisions as cumulative, with latest status winning;

@@ -3,7 +3,7 @@ import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { MODE_LABEL, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
-import { applyMode, startModeContinuation } from "./mode-picker.js";
+import { applyMode, ASK_SETTLEMENT_EVENT, startModeContinuation } from "./mode-picker.js";
 import { duringUserWait } from "./user-wait.js";
 
 const MIN_QUESTIONS = 1;
@@ -160,11 +160,30 @@ function routeKickoff(mode: AskRouteMode): string {
   return `Record every User-accepted answer from the completed ask result in the artifact, then ${action}.`;
 }
 
-function resultText(details: AskDetails): string {
-  const answers = details.answers.map((answer) => {
-    const result = `${answer.id}: ${answer.wasCustom ? "User wrote" : "User selected"}: ${answer.label}`;
+function transcriptText(answer: AskAnswer, question: AskQuestion | undefined): string {
+  const result = `${answer.id}: ${answer.wasCustom ? "User wrote" : "User selected"}: ${answer.label}`;
+  if (!question)
     return answer.optionReferences ? `${result}\nOption references: ${answer.optionReferences.join(", ")}` : result;
-  });
+
+  const options = orderedOptions(question).map(
+    (option, index) => `  ${optionLetter(index)}. ${option.label} — ${option.description}`,
+  );
+  return [
+    `Question: ${question.prompt}`,
+    `Context: ${question.context}`,
+    "Options:",
+    ...options,
+    `Answer: ${answer.wasCustom ? "User wrote" : "User selected"}: ${answer.label}`,
+  ].join("\n");
+}
+
+function resultText(details: AskDetails, questions: AskQuestion[]): string {
+  const answers = details.answers.map((answer) =>
+    transcriptText(
+      answer,
+      questions.find((question) => question.id === answer.id),
+    ),
+  );
   if (details.cancelled) {
     answers.push(
       `The User cancelled with these questions unresolved: ${details.unanswered.join(", ")}. Do not repeat them in prose.`,
@@ -182,10 +201,10 @@ export function registerAsk(pi: ExtensionAPI): void {
     name: "ask",
     label: "Ask",
     description:
-      "Ask the User 1-4 related alignment questions through native option pickers. Use from any interactive workflow mode when concrete answers are possible; explain trade-offs and assign every option a confidence score from 1 through 5. Batch only independent questions whose wording and options remain valid regardless of sibling answers. For dependent follow-ups, make a fresh ask call after incorporating the earlier answer. Ordinary answers return in the same turn; Proceed-with-best routes start their selected mode.",
+      "Ask the User 1-4 related alignment questions through native option pickers. Use from any interactive workflow mode when concrete answers are possible; in Vibe, call it only for a genuine blocker so the User can decide what happens next. Explain trade-offs and assign every option a confidence score from 1 through 5. Batch only independent questions whose wording and options remain valid regardless of sibling answers. For dependent follow-ups, make a fresh ask call after incorporating the earlier answer. Ordinary answers return in the same turn; Proceed-with-best routes start their selected mode.",
     promptSnippet: "Ask focused alignment questions with confidence-scored selectable answers",
     promptGuidelines: [
-      "Use ask instead of ending with prose questions when concrete possible answers can be offered. Ordinary answers are mode-neutral; only the User's explicit Proceed-with-best route changes mode.",
+      "Use ask instead of ending with prose questions when concrete possible answers can be offered. In Vibe, use ask only for a genuine blocker and ask what the User wants next; an ordinary answer remains in Vibe, while broader alignment is a User-selected Q&A recommendation. Only the User's explicit Proceed-with-best route changes mode.",
       "Batch only independent questions. If an answer can change a later question's wording or options, stop the batch and make a fresh ask call after incorporating that answer.",
       "Call ask without sibling tools so an explicit Proceed-with-best route can terminate Q&A cleanly before its selected Spec/Vibe continuation.",
       "When the answer needs user-supplied detail, do not offer a selectable ‘specify’ option. Set customAnswerLabel to a concise input intent (for example, ‘Describe desired behavior’) so the built-in Write a custom answer entry opens the input field instead.",
@@ -222,8 +241,11 @@ export function registerAsk(pi: ExtensionAPI): void {
                 unanswered: params.questions.slice(index).map((item) => item.id),
               };
               resolveCheckpoint(pi, checkpoint.id, "cancelled");
+              // Let the post-turn picker distinguish an explicit cancellation
+              // from an earlier completed Ask in the same Agent turn.
+              pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "cancelled" });
               return {
-                content: [{ type: "text" as const, text: resultText(details) }],
+                content: [{ type: "text" as const, text: resultText(details, params.questions) }],
                 details,
               };
             }
@@ -242,7 +264,7 @@ export function registerAsk(pi: ExtensionAPI): void {
               await applyMode(pi, ctx, route, previous);
               startModeContinuation(pi, route, previous, undefined, routeKickoff(route));
               return {
-                content: [{ type: "text" as const, text: resultText(details) }],
+                content: [{ type: "text" as const, text: resultText(details, params.questions) }],
                 details,
                 terminate: true,
               };
@@ -282,8 +304,11 @@ export function registerAsk(pi: ExtensionAPI): void {
         unanswered: [],
       };
       resolveCheckpoint(pi, checkpoint.id, "answered");
+      // The mode picker consumes this current-turn marker if the Agent forgets
+      // recommend_next after a completed Q&A exchange.
+      pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "answered" });
       return {
-        content: [{ type: "text" as const, text: resultText(details) }],
+        content: [{ type: "text" as const, text: resultText(details, params.questions) }],
         details,
       };
     },

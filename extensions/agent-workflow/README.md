@@ -42,8 +42,9 @@ mode-switch choices:
   mode uses its Continue label; a listed Q&A route starts with native `ask`.
 - While work remains, an omitted Agent action receives a contextual runtime
   fallback: a saved Spec plan starts Vibe, in-progress Spec/Vibe continues its
-  current mode, and context pressure offers a handoff. Only completed work has
-  no fallback; its unlisted mode choices return to the editor for a new direction.
+  current mode, and context pressure offers a handoff. Any selected manual mode
+  switch also starts the pending artifact; only completed work returns to the editor
+  for a new direction.
 - Agent-authored actions use mode-prefixed plain-language labels and can include
   their own concise reason, such as `🚀 Vibe — Start implementing the plan — verify
 the API`. They have no `(recommended)` marker; ask-option confidence is separate.
@@ -56,7 +57,9 @@ the API`. They have no `(recommended)` marker; ask-option confidence is separate
   plan-aware labels that include the first pending checklist item.
 
 Agent actions expire at the next User message and never carry into a later turn.
-Runtime fallback actions apply only while the artifact has unfinished work.
+Runtime fallback actions apply only while the artifact has unfinished work. A normally
+completed native Ask also opens the picker when its Agent omitted `recommend_next`;
+cancelled or unresolved Q&A still returns to the editor.
 
 `/questionnaire`, `/spec`, and `/vibe` switch mode directly when the picker itself is
 unavailable, and `/mode` re-opens it. `/questionnaire` waits for the next User input;
@@ -69,9 +72,10 @@ pickers, ranks their options by descending numeric confidence (1–5), and ident
 its displayed choices as A, B, C, or D in that order. Ties preserve the Agent-supplied
 order. Ordinary selections retain their stable values and original labels; custom
 input includes the displayed letter-to-label key so the Agent can interpret references
-such as “combine A and B” before settlement. When a decision needs user-supplied
-detail, authors set `customAnswerLabel` to a concise input intent, such as “Describe
-desired behavior”. The picker then shows `📝 Write a custom answer... → Describe
+such as “combine A and B” before settlement. Its result also includes the full prompt,
+context, and displayed option descriptions so the Agent can preserve complete Q&A evidence
+in the artifact. When a decision needs user-supplied detail, authors set `customAnswerLabel`
+to a concise input intent, such as “Describe desired behavior”. The picker then shows `📝 Write a custom answer... → Describe
 desired behavior`, rather than adding a selectable “specify” option that cannot open
 an input field.
 Every picker also offers `Proceed with best → Spec` and `Proceed with best → Vibe`.
@@ -82,10 +86,13 @@ whose wording and options remain valid regardless of sibling answers; dependent
 follow-ups require a fresh `ask` call after the earlier answer. Q&A should keep this
 exchange conversational and question-first; confidence is guidance only, not
 permission to skip unresolved alignment.
-Spec blockers and Vibe decision blockers still stop, write the problem and
-recommended resolution into the artifact, record Q&A as the next step, and let
-the picker carry the decision. Vibe resolves implementation research in place rather than
-treating Spec as an execution prerequisite.
+Spec blockers stop, write the problem and recommended resolution into the artifact,
+and recommend Q&A. Vibe proceeds autonomously through routine implementation work. Only
+a genuine Vibe blocker may open native Ask: it records the problem first, then lets the
+User resolve it directly in Vibe, request broader Q&A, or choose another available route.
+An ordinary Ask answer never changes mode; the Agent recommends Q&A only when the User
+leaves the blocker unresolved for broader alignment. Vibe resolves implementation research
+in place rather than treating Spec as an execution prerequisite.
 
 Picker and native ask-tool latency is the User's time: it pauses the active mode
 clock and accrues to no bucket.
@@ -98,7 +105,9 @@ about shell and custom tools based on mode. The User still owns the mode choice,
 and the injected contract remains the primary behavioral guide. Vibe may use
 `record_auto_decision` only for reversible, low-risk, in-scope choices already
 implied by the task; the artifact carries its rationale, impact, and verification
-for close-out review.
+for close-out review. At close-out, a clean completed task returns to the editor;
+Vibe recommends Q&A only when review-worthy autonomous decisions, limitations, or
+follow-up concerns remain.
 
 There is no separate plan-approval gate. Switching to Vibe is the approval, which
 is why `save_plan` persists and echoes rather than interrupting the turn.
@@ -116,11 +125,13 @@ revision stay in one place across the whole session and its handoffs. A genuinel
 new goal belongs in a fresh session. Plan files are never deleted automatically
 and `.pi/plan/` accumulates.
 
-The template is flat — Goal, Align, Current state, Findings, Decisions, Desired
-state, Approach, Work log, Quirks, Checklist, and Close out with Status, optional
-Auto-mode decisions, PR summary, and QA steps. Sections stay stubbed until the
-mode that owns them fills one, so a session that only ever researched simply never
-grows a work log.
+The template is flat — Goal, Align, Q&A transcript, Current state, Findings,
+Decisions, Desired state, Approach, Work log, Quirks, Checklist, and Close out with
+Status, optional Auto-mode decisions, PR summary, and QA steps. `## Q&A transcript`
+preserves each completed native Ask exchange: its prompt, context, every displayed option
+with label and description, and the User's selected or verbatim custom answer. `## Align`
+remains the concise decision record. Sections stay stubbed until the mode that owns them
+fills one, so a session that only ever researched simply never grows a work log.
 
 Checklist boxes are cumulative live completion metadata: repeated task text is
 one task, the latest checkbox state wins, and unique pending tasks from older
