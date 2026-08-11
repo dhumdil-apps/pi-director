@@ -8,15 +8,16 @@ is authoritative when a marker or display is stale. For an interactive view of t
 ## Three modes, chosen by the User
 
 - **Q&A** is Align: an interactive loop for clarifying goal, scope, constraints,
-  trade-offs, and direction. It uses the native `ask` tool
+  trade-offs, and direction. Its internal label is `ALIGN`; it uses the native `ask` tool
   whenever a consequential choice is open, permits only bounded orientation reads,
   and defers source research and results to Spec. When direction changes, it keeps
   the initial goal and pending outcomes visible until the User explicitly resolves
   them. It changes no project files.
-- **Spec** researches and designs. It establishes facts, fills the artifact, and
-  presents a proposal with `save_plan`. It changes no project files.
-- **Vibe** executes. It is the mode intended for edits and writes; the boundary
-  is advisory rather than a runtime permission gate.
+- **SPEC** researches and designs. Its internal label is `EXPLORE`; it establishes
+  facts, fills the artifact, and presents a proposal with `save_plan`. It changes no
+  project files.
+- **VIBE** executes. Its internal label is `EXECUTE`; it is the mode intended for edits
+  and writes, while the boundary remains advisory rather than a runtime permission gate.
 
 A session starts in Q&A. Q&A may proceed directly to Vibe after alignment; Spec
 is optional and starts only when the User chooses research or design. Nothing in
@@ -46,7 +47,7 @@ mode-switch choices:
   switch also starts the pending artifact; only completed work returns to the editor
   for a new direction.
 - Agent-authored actions use mode-prefixed plain-language labels and can include
-  their own concise reason, such as `🚀 Vibe — Start implementing the plan — verify
+  their own concise reason, such as `🚀 VIBE — Start implementing the plan — verify
 the API`. They have no `(recommended)` marker; ask-option confidence is separate.
 - `🤝 Hand off next phase` is an explicit phase-boundary action. The always
   available `🤝 Hand off to a fresh session` prepares `/handoff <name>` in the
@@ -172,7 +173,7 @@ suppresses itself for the outgoing checkpoint settlement.
 ## Timing
 
 Each artifact carries a script-owned `time-spent` block with one bucket per mode:
-Q&A, Spec, and Vibe, plus unallocated history. Every bucket is Agent work only;
+Q&A, SPEC, and VIBE, plus unallocated history. Every bucket is Agent work only;
 time spent waiting on the User is never billed to a mode. Progress Tracker accrues
 the active bucket and closes the interval the moment the mode changes, so a switch
 mid-run splits the time correctly.

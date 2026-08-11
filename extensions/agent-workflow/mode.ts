@@ -21,8 +21,8 @@ export interface ModeEvent {
 
 export const MODE_LABEL: Record<WorkflowMode, string> = {
   questionnaire: "❓ Q&A",
-  spec: "🔎 Spec",
-  vibe: "🚀 Vibe",
+  spec: "🔎 SPEC",
+  vibe: "🚀 VIBE",
 };
 
 export const WORKFLOW_MODES: readonly WorkflowMode[] = ["questionnaire", "spec", "vibe"];

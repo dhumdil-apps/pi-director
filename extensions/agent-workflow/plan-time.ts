@@ -64,8 +64,8 @@ export function timeSpentBlock(value: PlanTime | number): string {
     `<!-- time-spent:start total-ms=${totalMs} questionnaire-ms=${questionnaireMs} spec-ms=${specMs} vibe-ms=${vibeMs} unallocated-ms=${unallocatedMs} -->`,
     `**Time spent:** ${formatDuration(totalMs)}`,
     `- Q&A: ${formatDuration(questionnaireMs)}`,
-    `- Spec: ${formatDuration(specMs)}`,
-    `- Vibe: ${formatDuration(vibeMs)}`,
+    `- SPEC: ${formatDuration(specMs)}`,
+    `- VIBE: ${formatDuration(vibeMs)}`,
   ];
   if (unallocatedMs > 0) lines.push(`- Unallocated: ${formatDuration(unallocatedMs)}`);
   lines.push("<!-- time-spent:end -->");

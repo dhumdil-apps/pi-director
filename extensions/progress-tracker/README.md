@@ -24,8 +24,8 @@ renders the one thing the transcript cannot show.
   percentage. The readout refreshes at turn boundaries and is colored accent /
   warning / error: warning above 20% full and error above 40% full. The bar
   carries the proportion, so the percentage is not printed.
-- Idle prompt — `What’s your goal?` (dim) in Q&A or Spec, or `What’s up next?`
-  (warning) once execution settles in Vibe. The first invites the next goal; the
+- Idle prompt — `What’s your goal?` (dim) in Q&A or SPEC, or `What’s up next?`
+  (warning) once execution settles in VIBE. The first invites the next goal; the
   second invites a review, a refinement, or a clean new session for the next
   task. It is **display only**: the prompt follows the session's
   workflow mode, which only the User changes through the mode picker, `/questionnaire`,
@@ -39,10 +39,10 @@ renders the one thing the transcript cannot show.
   spinner and accent-colored active timing.
 - Work/cache timer — one compact accent-colored readout follows the active
   spinner and counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
-  Q&A, Spec, or Vibe work begins rather than displaying grand-total task time.
+  Q&A, SPEC, or VIBE work begins rather than displaying grand-total task time.
   Accumulated totals follow it as
-  `· ❓ Q&A 5s · 🔎 Spec 12s · 🚀 Vibe 3s`: the current mode is warning and the
-  other modes are dim. Q&A, Spec, and Vibe are mutually exclusive Agent-work buckets;
+  `· ❓ Q&A 5s · 🔎 SPEC 12s · 🚀 VIBE 3s`: the current mode is warning and the
+  other modes are dim. Q&A, SPEC, and VIBE are mutually exclusive Agent-work buckets;
   human latency never enters them.
 
   Native question and approval dialogs pause active work while the UI belongs to
@@ -60,7 +60,7 @@ renders the one thing the transcript cannot show.
   it across reloads and handoffs. A slow idle repaint advances the age and its
   colors without another Pi event until the cap.
 
-  Active intervals accrue to Q&A, Spec, or Vibe, splitting immediately when a
+  Active intervals accrue to Q&A, SPEC, or VIBE, splitting immediately when a
   mode event lands; an initial mode-less interval counts as Q&A. On settlement
   the buckets atomically update the named plan's script-owned `time-spent` block.
   Pre-rename explore/execute markers migrate to Spec/Vibe and their retired
