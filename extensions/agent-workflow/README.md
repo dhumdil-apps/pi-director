@@ -1,9 +1,12 @@
 # Agent Workflow
 
-The injected contract in [`workflow-steps.md`](workflow-steps.md) is the behavior
-contract. [`index.ts`](index.ts) loads it as a package-local asset and injects it.
-This page describes its runtime surfaces and persistence; persisted runtime mode
-is authoritative when a marker or display is stale. For an interactive view of the contract, open the [workflow state machine](../../docs/workflow-steps.html).
+[`workflow-steps.md`](workflow-steps.md) is the injected agent-flow contract;
+[`agent-guidance.md`](agent-guidance.md) holds its non-flow guidance,
+[`agent-api.md`](agent-api.md) owns Agent-visible API descriptions and runtime messages,
+and [`plan-template.md`](plan-template.md) is the readable artifact scaffold. [`index.ts`](index.ts)
+loads the instruction assets as a package-local constant prompt. This page describes
+runtime surfaces and persistence; persisted runtime mode is authoritative when a marker
+or display is stale. For a consolidated rendered view, open [Pi Director documentation](../../docs/pi-director.html).
 
 ## Three modes, chosen by the User
 
@@ -51,8 +54,8 @@ mode-switch choices:
 the API`. They have no `(recommended)` marker; ask-option confidence is separate.
 - `🤝 Hand off next phase` is an explicit phase-boundary action. The always
   available `🤝 Hand off to a fresh session` prepares `/handoff <name>` in the
-  editor and requires Enter; after checkpointing, the replacement inherits the
-  first listed mode action, or the current mode when none was listed.
+  editor and requires Enter; every handoff checkpoints first, then starts Q&A
+  alignment in the replacement session.
 - The contextual `📝 Write a custom answer...` option and dismissal return to the
   editor with the mode untouched. Manual secondary actions use emoji-prefixed,
   plan-aware labels that include the first pending checklist item.
@@ -126,9 +129,10 @@ revision stay in one place across the whole session and its handoffs. A genuinel
 new goal belongs in a fresh session. Plan files are never deleted automatically
 and `.pi/plan/` accumulates.
 
-The template is flat — Goal, Align, Q&A transcript, Current state, Findings,
-Decisions, Desired state, Approach, Work log, Quirks, Checklist, and Close out with
-Status, optional Auto-mode decisions, PR summary, and QA steps. `## Q&A transcript`
+The flat template in [`plan-template.md`](plan-template.md) contains Goal, Align,
+Q&A transcript, Current state, Findings, Decisions, Desired state, Approach, Work log,
+Quirks, Checklist, and Close out with Status, optional Auto-mode decisions, PR summary,
+and QA steps; runtime code inserts the script-owned timing block. `## Q&A transcript`
 preserves each completed native Ask exchange: its prompt, context, every displayed option
 with label and description, and the User's selected or verbatim custom answer. `## Align`
 remains the concise decision record. Sections stay stubbed until the mode that owns them
@@ -157,17 +161,16 @@ attempted rename fails before any file move.
 
 ## Handoffs
 
-`/handoff [session-name]` continues the same artifact in a fresh session, seeded
-with the task name and the actionable mode inherited from the outgoing branch.
+`/handoff [session-name]` continues the same artifact in a fresh Q&A session.
+Both handoff actions seed the task name and Q&A before the replacement extensions
+initialize, so Martin reviews the completed boundary before more work begins.
 
-The replacement session inherits the artifact and nothing else, so `/handoff`
-first derives the continuation while current-turn routing signals still exist,
-then drives one checkpoint turn in the outgoing session and waits for it. That
-turn brings the plan file up to date with everything learned so far. Without it,
-a handoff would discard exactly the context it exists to preserve. After the
-checkpoint, the replacement reads the latest pending artifact item and starts the
-inherited action using only its fresh session context. A just-saved Spec plan
-continues in Vibe; active research or implementation keeps its mode. The picker
+The replacement session inherits the artifact and nothing else. `/handoff` drives
+one checkpoint turn in the outgoing session and waits for it. That turn brings the
+plan file fully up to date, including reconciliation of cumulative checklist statuses
+across revisions. Without it, a handoff would discard exactly the context it exists
+to preserve. After the checkpoint, the replacement reads the latest pending artifact
+item and begins native-Ask alignment using only its fresh session context. The picker
 suppresses itself for the outgoing checkpoint settlement.
 
 ## Timing

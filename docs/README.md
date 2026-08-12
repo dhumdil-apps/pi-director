@@ -7,6 +7,7 @@ Use this page as the navigation map for the `pi-director` package and developmen
 - **[Install & Setup](../README.md#quick-start)** — Installation, setup, & verification
 - **[Extension & Resource Catalog](EXTENSIONS.md)** — Catalog of extensions, prompts, & themes
 - **[Commands & Tools](COMMANDS.md)** — Quick reference for commands & tools
+- **[Pi Director Workflow Reference](pi-director.html)** — Generated workflow, guidance, API, and plan reference
 - **[Troubleshooting](TROUBLESHOOTING.md)** — Troubleshooting & diagnostic steps
 
 ## Maintainer & Developer Guides

@@ -1,6 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
+import { agentApiList, agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { MODE_LABEL, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
 import { applyMode, ASK_SETTLEMENT_EVENT, startModeContinuation } from "./mode-picker.js";
@@ -18,38 +19,29 @@ const RESERVED_LABELS = [WRITE_CUSTOM_ANSWER, ...ROUTE_OPTIONS] as const;
 type AskRouteMode = Exclude<WorkflowMode, "questionnaire">;
 
 const OptionParams = Type.Object({
-  value: Type.String({
-    description: "Stable concise value returned for this option.",
-  }),
-  label: Type.String({
-    description: "Distinct 2-6 word picker label.",
-  }),
-  description: Type.String({
-    description: "One sentence explaining the consequence or trade-off.",
-  }),
+  value: Type.String({ description: agentApiText("tool.ask.option.value") }),
+  label: Type.String({ description: agentApiText("tool.ask.option.label") }),
+  description: Type.String({ description: agentApiText("tool.ask.option.description") }),
   confidence: Type.Integer({
     minimum: 1,
     maximum: 5,
-    description: "Confidence in this option from 1 (lowest) through 5 (highest).",
+    description: agentApiText("tool.ask.option.confidence"),
   }),
 });
 
 const QuestionParams = Type.Object({
-  id: Type.String({ description: "Distinct stable identifier." }),
-  context: Type.String({
-    description: "Why this decision matters and the evidence behind it.",
-  }),
-  prompt: Type.String({ description: "The focused question, in one sentence." }),
+  id: Type.String({ description: agentApiText("tool.ask.question.id") }),
+  context: Type.String({ description: agentApiText("tool.ask.question.context") }),
+  prompt: Type.String({ description: agentApiText("tool.ask.question.prompt") }),
   customAnswerLabel: Type.Optional(
     Type.String({
-      description:
-        "Optional concise intent appended to Write a custom answer, for example ‘Describe desired behavior’. Use it instead of a selectable option that merely asks the User to specify details.",
+      description: agentApiText("tool.ask.question.custom-answer-label"),
     }),
   ),
   options: Type.Array(OptionParams, {
     minItems: MIN_OPTIONS,
     maxItems: MAX_OPTIONS,
-    description: `${MIN_OPTIONS}-${MAX_OPTIONS} concrete choices, each with a confidence score from 1 through 5.`,
+    description: agentApiText("tool.ask.question.options"),
   }),
 });
 
@@ -57,7 +49,7 @@ const AskParams = Type.Object({
   questions: Type.Array(QuestionParams, {
     minItems: MIN_QUESTIONS,
     maxItems: MAX_QUESTIONS,
-    description: `${MIN_QUESTIONS}-${MAX_QUESTIONS} related consequential questions.`,
+    description: agentApiText("tool.ask.questions"),
   }),
 });
 
@@ -153,11 +145,7 @@ function routedMode(choice: string): AskRouteMode | undefined {
 }
 
 function routeKickoff(mode: AskRouteMode): string {
-  const action =
-    mode === "spec"
-      ? "research the aligned direction and shape it into an actionable proposal"
-      : "implement the aligned direction and verify the changed behavior";
-  return `Record every User-accepted answer from the completed ask result in the artifact, then ${action}.`;
+  return agentApiText(`message.ask.direct-route.${mode}`);
 }
 
 function transcriptText(answer: AskAnswer, question: AskQuestion | undefined): string {
@@ -185,13 +173,9 @@ function resultText(details: AskDetails, questions: AskQuestion[]): string {
     ),
   );
   if (details.cancelled) {
-    answers.push(
-      `The User cancelled with these questions unresolved: ${details.unanswered.join(", ")}. Do not repeat them in prose.`,
-    );
+    answers.push(agentApiTemplate("message.ask.cancelled", { unanswered: details.unanswered.join(", ") }));
   } else if (details.routedMode) {
-    answers.push(
-      `The User accepted all remaining best-confidence answers and routed directly to ${details.routedMode}.`,
-    );
+    answers.push(agentApiTemplate("message.ask.routed", { mode: details.routedMode }));
   }
   return answers.join("\n");
 }
@@ -200,15 +184,9 @@ export function registerAsk(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "ask",
     label: "Ask",
-    description:
-      "Ask the User 1-4 related alignment questions through native option pickers. Use from any interactive workflow mode when concrete answers are possible; in Vibe, call it only for a genuine blocker so the User can decide what happens next. Explain trade-offs and assign every option a confidence score from 1 through 5. Batch only independent questions whose wording and options remain valid regardless of sibling answers. For dependent follow-ups, make a fresh ask call after incorporating the earlier answer. Ordinary answers return in the same turn; Proceed-with-best routes start their selected mode.",
-    promptSnippet: "Ask focused alignment questions with confidence-scored selectable answers",
-    promptGuidelines: [
-      "Use ask instead of ending with prose questions when concrete possible answers can be offered. In Vibe, use ask only for a genuine blocker and ask what the User wants next; an ordinary answer remains in Vibe, while broader alignment is a User-selected Q&A recommendation. Only the User's explicit Proceed-with-best route changes mode.",
-      "Batch only independent questions. If an answer can change a later question's wording or options, stop the batch and make a fresh ask call after incorporating that answer.",
-      "Call ask without sibling tools so an explicit Proceed-with-best route can terminate Q&A cleanly before its selected Spec/Vibe continuation.",
-      "When the answer needs user-supplied detail, do not offer a selectable ‘specify’ option. Set customAnswerLabel to a concise input intent (for example, ‘Describe desired behavior’) so the built-in Write a custom answer entry opens the input field instead.",
-    ],
+    description: agentApiText("tool.ask.description"),
+    promptSnippet: agentApiText("tool.ask.prompt-snippet"),
+    promptGuidelines: agentApiList("tool.ask.prompt-guidelines"),
     parameters: AskParams,
     // Native dialogs own input while open and must not race sibling tool calls.
     executionMode: "sequential",

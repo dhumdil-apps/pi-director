@@ -11,6 +11,7 @@
 import { readFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { agentApiText } from "./agent-api.js";
 import { registerCheckpointInputResolution } from "./checkpoint.js";
 import { openHandoffSession } from "./handoff.js";
 import { deriveWorkflowMode, recordWorkflowMode, workflowModePrompt, type WorkflowMode } from "./mode.js";
@@ -35,10 +36,12 @@ import {
  * work consistently across source and packaged runtimes.
  */
 const WORKFLOW_STEPS = readFileSync(new URL("./workflow-steps.md", import.meta.url), "utf8").trimEnd();
+const AGENT_GUIDANCE = readFileSync(new URL("./agent-guidance.md", import.meta.url), "utf8").trimEnd();
+const AGENT_API = readFileSync(new URL("./agent-api.md", import.meta.url), "utf8").trimEnd();
 
 /** Constant by design: the large cacheable prefix never varies per turn. */
 export function workflowPrompt(): string {
-  return `<pi_workflow>\n\n${WORKFLOW_STEPS}\n</pi_workflow>`;
+  return `<pi_workflow>\n\n${WORKFLOW_STEPS}\n\n${AGENT_GUIDANCE}\n\n${AGENT_API}\n</pi_workflow>`;
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
@@ -59,24 +62,24 @@ export default function createExtension(pi: ExtensionAPI): void {
     startModeContinuation(pi, mode, previous, nextAction);
   };
   pi.registerCommand("questionnaire", {
-    description: "Align and decide before any work in this session",
+    description: agentApiText("command.questionnaire"),
     handler: setModeCommand("questionnaire"),
   });
   pi.registerCommand("spec", {
-    description: "Research and propose before any change in this session",
+    description: agentApiText("command.spec"),
     handler: setModeCommand("spec"),
   });
   pi.registerCommand("vibe", {
-    description: "Execute the current instruction or proposal in this session",
+    description: agentApiText("command.vibe"),
     handler: setModeCommand("vibe"),
   });
   pi.registerCommand("mode", {
-    description: "Re-open the mode picker",
+    description: agentApiText("command.mode"),
     handler: async (_args, ctx) => openModePicker(pi, ctx),
   });
 
   pi.registerCommand("handoff", {
-    description: "Checkpoint the artifact and resume its inherited action in a fresh session: /handoff [session-name]",
+    description: agentApiText("command.handoff"),
     getArgumentCompletions: (prefix: string) => {
       const last = prefix.trim();
       return listPlanNames(process.cwd())

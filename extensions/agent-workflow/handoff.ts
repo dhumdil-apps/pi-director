@@ -2,8 +2,8 @@
  * openHandoffSession — the /handoff command's implementation.
  *
  * A handoff is the session boundary: it spawns a new session, seeds its name and
- * inherited actionable mode before the first User message, then resumes that
- * action against the freshly checkpointed artifact.
+ * Q&A mode before the first User message, then resumes alignment against the
+ * freshly checkpointed artifact.
  *
  * The replacement session inherits only the artifact, so the artifact has to be
  * current first. One checkpoint turn runs in the outgoing session and is awaited
@@ -14,15 +14,16 @@
  */
 
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import { agentApiTemplate } from "./agent-api.js";
 import { appendHeadlessNotice } from "./notice.js";
 import { MODE_EVENT, type ModeEvent, resolveWorkflowMode } from "./mode.js";
-import { continueKickoff, deriveHandoffContinuation, suppressModePicker } from "./mode-picker.js";
-import { currentPlanHasOpenWork, currentPlanNextAction, type PlanTask, resolvePlanTask } from "./task.js";
+import { continueKickoff, suppressModePicker } from "./mode-picker.js";
+import { currentPlanNextAction, type PlanTask, resolvePlanTask } from "./task.js";
 
 const USAGE = "Usage: /handoff [session-name].";
 
 function checkpointRequest(task: PlanTask): string {
-  return `Before this session hands off, bring ${task.planPath} fully up to date with everything learned so far, so a fresh session can resume from it alone. Update the file and stop; do not start new work.`;
+  return agentApiTemplate("message.handoff.checkpoint", { planPath: task.planPath });
 }
 
 /**
@@ -46,12 +47,9 @@ export async function openHandoffSession(
     return;
   }
 
-  // Recommendation and save signals expire when the checkpoint User message is
-  // sent, so preserve only their plain-data continuation before that turn.
-  const branch = ctx.sessionManager.getBranch();
-  const previous = resolveWorkflowMode(branch);
-  const openWork = await currentPlanHasOpenWork(ctx.cwd, task.name);
-  const continuation = deriveHandoffContinuation(branch, previous, openWork);
+  // The source mode supplies transition context, but every replacement session
+  // intentionally re-enters Q&A rather than inheriting executable work.
+  const previous = resolveWorkflowMode(ctx.sessionManager.getBranch());
 
   // pi.sendUserMessage only queues the turn, so waitForIdle is what guarantees
   // the artifact is written before the session is replaced.
@@ -61,21 +59,15 @@ export async function openHandoffSession(
   await ctx.waitForIdle();
 
   const nextAction = await currentPlanNextAction(ctx.cwd, task.name);
-  const kickoff = continueKickoff(
-    continuation.mode,
-    continuation.prompt,
-    continuation.mode === previous ? "continue" : "start",
-    previous,
-    nextAction,
-  );
+  const kickoff = continueKickoff("questionnaire", undefined, "start", previous, nextAction);
   await ctx.newSession({
     parentSession: ctx.sessionManager.getSessionFile(),
-    // Seed task identity and inherited mode before replacement-session extensions
-    // initialize; only the replacement context may start its kickoff.
+    // Seed task identity and Q&A before replacement-session extensions initialize;
+    // only the replacement context may start its alignment kickoff.
     setup: async (sessionManager) => {
       sessionManager.appendSessionInfo(task.name);
       sessionManager.appendCustomEntry(MODE_EVENT, {
-        mode: continuation.mode,
+        mode: "questionnaire",
       } satisfies ModeEvent);
     },
     withSession: async (replacementCtx) => {
@@ -85,7 +77,7 @@ export async function openHandoffSession(
         return;
       }
       void pending.catch(() => {
-        replacementCtx.ui.notify("Handoff completed, but its inherited action could not start.", "warning");
+        replacementCtx.ui.notify("Handoff completed, but Q&A alignment could not start.", "warning");
       });
     },
   });

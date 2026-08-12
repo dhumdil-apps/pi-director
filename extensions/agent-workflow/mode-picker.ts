@@ -13,6 +13,7 @@
 
 import { type Static, Type } from "@sinclair/typebox";
 import type { ExtensionAPI, ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
+import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { isLeanContext } from "./context-usage.js";
 import {
@@ -54,12 +55,10 @@ const NextStepActionParams = Type.Object({
     Type.Literal("vibe"),
     Type.Literal("phase-boundary"),
   ]),
-  reason: Type.Optional(
-    Type.String({ description: "Optional concise reason shown beside this action; omit when no reason is useful." }),
-  ),
+  reason: Type.Optional(Type.String({ description: agentApiText("tool.recommend-next.action.reason") })),
   prompt: Type.Optional(
     Type.String({
-      description: "Optional custom kickoff for this Agent-starting mode action; omit for phase-boundary handoff.",
+      description: agentApiText("tool.recommend-next.action.prompt"),
     }),
   ),
 });
@@ -68,8 +67,7 @@ const NextStepParams = Type.Object({
   actions: Type.Array(NextStepActionParams, {
     minItems: 1,
     maxItems: 4,
-    description:
-      "One or more distinct mode actions for the post-turn picker. Every listed mode starts Agent after User selection.",
+    description: agentApiText("tool.recommend-next.actions"),
   }),
 });
 
@@ -89,15 +87,13 @@ const CONTINUE_LABELS: Record<WorkflowMode, string> = {
 
 type KickoffIntent = "continue" | "start";
 
-const MODE_KICKOFF_DIRECTIVES: Record<WorkflowMode, string> = {
-  questionnaire: "clarify the next unresolved decision with the native ask tool before writing prose",
-  spec: "research the open questions and shape the findings into an actionable plan",
-  vibe: "implement the pending task and verify the changed behavior",
-};
-
 function kickoffContext(nextAction?: string): string {
   const normalized = nextAction?.replace(/\s+/g, " ").trim();
-  return normalized ? ` Prioritize this pending artifact item: “${normalized}”.` : "";
+  return normalized ? agentApiTemplate("message.kickoff.pending-action", { nextAction: normalized }) : "";
+}
+
+function kickoffDirective(source: WorkflowMode, target: WorkflowMode): string {
+  return agentApiText(`message.kickoff.directive.${source}.${target}`);
 }
 
 /** Everything the picker needs, so a command context can open it too. */
@@ -198,29 +194,6 @@ function defaultActions(current: WorkflowMode, lean: boolean, openWork: boolean,
   return [{ mode: current }];
 }
 
-export interface HandoffContinuation {
-  mode: WorkflowMode;
-  prompt?: string;
-}
-
-/** Derive the action a fresh, lean replacement session should inherit. */
-export function deriveHandoffContinuation(
-  entries: SessionEntry[],
-  current: WorkflowMode,
-  _openWork: boolean,
-): HandoffContinuation {
-  const actions =
-    deriveNextStepSignal(entries, current)?.actions ??
-    defaultActions(current, true, _openWork, planWasJustSaved(entries));
-  const action = actions.find(
-    (candidate): candidate is NextStepAction & { mode: WorkflowMode } => candidate.mode !== "phase-boundary",
-  );
-  return {
-    mode: action?.mode ?? current,
-    ...(action?.prompt ? { prompt: action.prompt } : {}),
-  };
-}
-
 function transitionLabel(current: WorkflowMode, next: WorkflowMode): string {
   if (next === "questionnaire") return `${MODE_LABEL.questionnaire} — Clarify the next decision`;
   if (current === "questionnaire" && next === "spec") return `${MODE_LABEL.spec} — Research the open questions`;
@@ -239,12 +212,20 @@ function customLabel(): string {
   return WRITE_CUSTOM_OPTION;
 }
 
-function questionnaireKickoff(prompt?: string, reason?: string, nextAction?: string): string {
+function questionnaireKickoff(
+  prompt?: string,
+  reason?: string,
+  nextAction?: string,
+  intent: KickoffIntent = "continue",
+  previous?: WorkflowMode,
+): string {
   const context =
     prompt?.trim() ||
-    (reason ? `Clarify this unresolved decision: ${reason}.` : "Clarify the next unresolved decision.") +
-      kickoffContext(nextAction);
-  return `${context}\nStart by calling the native ask tool; do not ask inline.`;
+    (reason
+      ? agentApiTemplate("message.questionnaire.reason", { reason, context: kickoffContext(nextAction) })
+      : undefined) ||
+    defaultKickoff("questionnaire", intent, previous, nextAction);
+  return `${context}\n${agentApiText("message.questionnaire.start")}`;
 }
 
 function pickerState(
@@ -272,14 +253,14 @@ function pickerState(
     if (action.mode === current) {
       const prompt =
         current === "questionnaire"
-          ? questionnaireKickoff(action.prompt, action.reason, artifactReason)
+          ? questionnaireKickoff(action.prompt, action.reason, artifactReason, "continue", current)
           : action.prompt;
       add(CONTINUE_LABELS[current], { kind: "continue", mode: current, ...(prompt ? { prompt } : {}) }, action.reason);
       continue;
     }
     const prompt =
       action.mode === "questionnaire"
-        ? questionnaireKickoff(action.prompt, action.reason, artifactReason)
+        ? questionnaireKickoff(action.prompt, action.reason, artifactReason, "start", current)
         : action.prompt;
     add(
       transitionLabel(current, action.mode),
@@ -293,7 +274,9 @@ function pickerState(
     // continue that work, not merely relabel the session and strand the User.
     add(secondaryLabel(current, mode, openWork, artifactReason), { kind: "switch", mode, startAgent: openWork });
   }
-  if (!explicit.some((action) => action.mode === "phase-boundary")) add(HANDOFF_OPTION, { kind: "handoff" });
+  if (!explicit.some((action) => action.mode === "phase-boundary")) {
+    add(HANDOFF_OPTION, { kind: "handoff" });
+  }
   add(customLabel(), { kind: "custom" });
   return { options, actions };
 }
@@ -307,6 +290,30 @@ export function modeOptions(
   return pickerState(current, openWork, explicit, artifactReason).options;
 }
 
+function defaultKickoff(
+  mode: WorkflowMode,
+  intent: KickoffIntent,
+  previous?: WorkflowMode,
+  nextAction?: string,
+): string {
+  const source = previous ?? mode;
+  const directive = kickoffDirective(source, mode);
+  const context = kickoffContext(nextAction);
+  if (intent === "start" && previous && previous !== mode) {
+    return agentApiTemplate("message.kickoff.transition", {
+      source: MODE_LABEL[previous],
+      target: MODE_LABEL[mode],
+      directive,
+      context,
+    });
+  }
+  return agentApiTemplate(intent === "start" ? "message.kickoff.start" : "message.kickoff.continue", {
+    target: MODE_LABEL[mode],
+    directive,
+    context,
+  });
+}
+
 export function continueKickoff(
   mode: WorkflowMode,
   prompt?: string,
@@ -317,13 +324,9 @@ export function continueKickoff(
   const supplied = prompt?.trim();
   if (supplied) return supplied;
 
-  const transition =
-    intent === "start" && previous && previous !== mode
-      ? `Switch from ${MODE_LABEL[previous]} to ${MODE_LABEL[mode]}.`
-      : intent === "start"
-        ? `Begin ${MODE_LABEL[mode]} mode for the selected direction.`
-        : `Continue in ${MODE_LABEL[mode]} mode.`;
-  return `${transition} ${MODE_KICKOFF_DIRECTIVES[mode]}.${kickoffContext(nextAction)}`;
+  const kickoff = defaultKickoff(mode, intent, previous, nextAction);
+  if (mode === "questionnaire") return `${kickoff}\n${agentApiText("message.questionnaire.start")}`;
+  return kickoff;
 }
 
 function sendContinueKickoff(
@@ -433,8 +436,7 @@ export function registerModePicker(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "recommend_next",
     label: "Recommend Next Step",
-    description:
-      "Record one or more Agent-authored mode actions for the post-turn picker. Each listed mode starts a focused Agent turn after User selection; modes not listed only switch mode and return to the editor. Include concise per-action reasons or kickoffs when useful. A phase-boundary handoff may not include a kickoff. This records intent only; the User still selects the action.",
+    description: agentApiText("tool.recommend-next.description"),
     parameters: NextStepParams,
     async execute(_toolCallId, params: NextStepInput, _signal, _onUpdate, ctx) {
       const mode = resolveWorkflowMode(ctx.sessionManager.getBranch());

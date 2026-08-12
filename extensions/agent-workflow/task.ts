@@ -1,8 +1,9 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
+import { agentApiText } from "./agent-api.js";
 import { hasEnteredVibe, MODE_LABEL, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
 import {
   EMPTY_PLAN_TIME,
@@ -26,57 +27,11 @@ const TICKET_ID = /\b([a-z0-9]+-\d+)\b/i;
 const MAX_SLUG_WORDS = 4;
 const PLAN_FILE = /^(.+)\.md$/;
 
-/** Flat by design: a section stays stubbed until the mode that owns it fills it. */
-const SECTIONS = [
-  "## Goal",
-  "<the outcome this work must achieve>",
-  "",
-  "## Align",
-  "<questions asked and how they were answered>",
-  "",
-  "## Q&A transcript",
-  "<verbatim manual answers and linked picker context>",
-  "",
-  "## Current state",
-  "<how it works today>",
-  "",
-  "## Findings",
-  "<verified evidence and observations>",
-  "",
-  "## Decisions",
-  "<consequential choices made with the User>",
-  "",
-  "## Desired state",
-  "<what it should do instead>",
-  "",
-  "## Approach",
-  "<how to get from current to desired>",
-  "",
-  "## Work log",
-  "<requested increments and what landed>",
-  "",
-  "## Quirks",
-  "<non-obvious constraints, gotchas, key paths>",
-  "",
-  "## Checklist",
-  "- [ ] <task>",
-  "",
-  "## Close out",
-  "### Status",
-  "<complete only after reconciling every requested outcome>",
-  "",
-  "### Auto-mode decisions",
-  "<none unless Vibe recorded an autonomous decision>",
-  "",
-  "### PR summary",
-  "<concise summary>",
-  "",
-  "### QA steps",
-  "<checks run and results>",
-];
+const PLAN_TEMPLATE_SOURCE = readFileSync(new URL("./plan-template.md", import.meta.url), "utf8").trimEnd();
+const TIME_SPENT_PLACEHOLDER = "{{time-spent}}";
 
 /** The one artifact shape. A session owns a single plan file for its whole life. */
-export const PLAN_TEMPLATE = ["# <session-name>", "", timeSpentBlock(EMPTY_PLAN_TIME), "", ...SECTIONS, ""].join("\n");
+export const PLAN_TEMPLATE = `${PLAN_TEMPLATE_SOURCE.replace(TIME_SPENT_PLACEHOLDER, timeSpentBlock(EMPTY_PLAN_TIME))}\n`;
 
 /**
  * Scaffolded alongside the first plan. Orientation maps the project; quirks record
@@ -150,30 +105,28 @@ const TEMPORARY_NAME_WORD_COUNT = 2;
 export const AUTO_DECISION_EVENT = "agent-workflow:auto-decision";
 
 const AutoDecisionParams = Type.Object({
-  decision: Type.String({ description: "The bounded, reversible implementation choice made in Vibe." }),
-  context: Type.String({ description: "The in-scope implementation context that required the choice." }),
-  rationale: Type.String({ description: "Why this choice is the safest option already implied by the task." }),
-  impact: Type.String({ description: "Affected behavior, files, or compatibility surface." }),
+  decision: Type.String({ description: agentApiText("tool.record-auto-decision.decision") }),
+  context: Type.String({ description: agentApiText("tool.record-auto-decision.context") }),
+  rationale: Type.String({ description: agentApiText("tool.record-auto-decision.rationale") }),
+  impact: Type.String({ description: agentApiText("tool.record-auto-decision.impact") }),
   verificationStatus: Type.Union([Type.Literal("pending"), Type.Literal("verified"), Type.Literal("not-applicable")]),
-  verificationDetails: Type.String({ description: "Checks run, or why verification is not applicable." }),
+  verificationDetails: Type.String({ description: agentApiText("tool.record-auto-decision.verification-details") }),
 });
 
 const SavePlanParams = Type.Object({
   name: Type.String({
-    description:
-      "The new session name: a concise 2–4 meaningful-word summary of the work, optionally prefixed with a ticket ID (e.g. TEST-1234).",
+    description: agentApiText("tool.save-plan.name"),
   }),
   plan: Type.Optional(
     Type.String({
-      description:
-        "The proposal as Markdown under Goal, Current state, Findings, Decisions, Desired state, Approach, Quirks, and Checklist. It replaces only an untouched pre-execution draft, and appends a dated revision after execution history exists. Omit plan to present the on-disk proposal.",
+      description: agentApiText("tool.save-plan.plan"),
     }),
   ),
 });
 
 const StartTaskParams = Type.Object({
   name: Type.String({
-    description: "A context-informed 2–4 word task name, optionally prefixed with a ticket ID.",
+    description: agentApiText("tool.start-task.name"),
   }),
 });
 
@@ -579,8 +532,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "start_task",
     label: "Start Task",
-    description:
-      "Name this session's one artifact from context, without asking the User. Call once, on the first request of the session. A later call with a different name is refused: a session owns a single plan file for its whole life, and a genuinely new goal belongs in a fresh session.",
+    description: agentApiText("tool.start-task.description"),
     parameters: StartTaskParams,
     async execute(_toolCallId, params: StartTaskInput, _signal, _onUpdate, ctx) {
       try {
@@ -608,8 +560,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "record_auto_decision",
     label: "Record Auto-mode Decision",
-    description:
-      "Record a bounded Vibe-only implementation decision in the current artifact. Use only for reversible, low-risk, in-scope choices already implied by the task; use ask or recommend User-selected Q&A for consequential, ambiguous, irreversible, product-facing, or out-of-scope choices. Include the decision, context, rationale, affected behavior/files, and verification status/details. This records an audit trail, not User approval.",
+    description: agentApiText("tool.record-auto-decision.description"),
     parameters: AutoDecisionParams,
     executionMode: "sequential",
     async execute(_toolCallId, params: AutoDecisionInput, _signal, _onUpdate, ctx) {
@@ -669,8 +620,7 @@ export function registerTaskManagement(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "save_plan",
     label: "Save Plan",
-    description:
-      "Persist and echo the Spec proposal at .pi/plan/<session-name>.md, then end the turn so the User's mode picker carries the decision. It replaces only an untouched pre-execution draft, and appends a dated revision after execution history exists. Follow-up work after execution history or Close out belongs in a bottom revision; do not rewrite earlier narrative, while live checklist status may be updated. Only Spec calls save_plan; Q&A and Vibe keep the artifact current by editing it directly. Plan names are immutable once execution has begun, and plan files are never deleted.",
+    description: agentApiText("tool.save-plan.description"),
     parameters: SavePlanParams,
     async execute(_toolCallId, params: SavePlanInput, _signal, _onUpdate, ctx) {
       const branch = ctx.sessionManager.getBranch();

@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pi Director instruction system</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --pico-font-size: 100%;
+        --pico-background-color: #0b1020;
+        --pico-card-background-color: #121a2e;
+        --pico-card-border-color: #2a3a5c;
+        --pico-color: #edf3ff;
+        --pico-muted-color: #a7b5d1;
+        --pico-primary: #8cc8ff;
+        --pico-primary-hover: #b6ddff;
+        --pico-primary-focus: rgb(140 200 255 / 25%);
+        --pico-code-background-color: #090d18;
+      }
+      body > header,
+      body > main,
+      body > footer {
+        max-width: 1440px;
+      }
+      body > header {
+        padding-bottom: 0;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 3.25rem);
+        letter-spacing: -0.04em;
+      }
+      header > p,
+      .section-copy {
+        max-width: 900px;
+      }
+      section {
+        margin-top: 3rem;
+      }
+      .legend,
+      .notes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.25rem;
+        color: var(--pico-muted-color);
+      }
+      .key {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .key::before {
+        width: 0.65rem;
+        height: 0.65rem;
+        border-radius: 50%;
+        background: var(--color);
+        content: "";
+      }
+      .instruction {
+        --color: #58b7ff;
+      }
+      .runtime {
+        --color: #b98cff;
+      }
+      .artifact {
+        --color: #42d6a4;
+      }
+      .context {
+        --color: #f0b56b;
+      }
+      .diagram {
+        margin-top: 1.25rem;
+        overflow-x: auto;
+        border: 1px solid var(--pico-card-border-color);
+        border-radius: var(--pico-border-radius);
+        background: var(--pico-card-background-color);
+        padding: 1rem;
+      }
+      .mermaid {
+        min-width: 960px;
+        margin: 0;
+        text-align: center;
+      }
+      details {
+        margin-top: 1rem;
+        border: 1px solid var(--pico-card-border-color);
+        border-radius: var(--pico-border-radius);
+        background: var(--pico-card-background-color);
+      }
+      summary {
+        padding: 1rem 1.25rem;
+        font-weight: 700;
+      }
+      details > p,
+      details > ul {
+        margin-inline: 1.25rem;
+      }
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        border-top: 1px solid var(--pico-card-border-color);
+        border-radius: 0;
+        padding: 1.25rem;
+        background: rgb(0 0 0 / 18%);
+        font-size: 0.8rem;
+        line-height: 1.55;
+      }
+      table {
+        display: table;
+        margin-top: 1.25rem;
+        font-size: 0.9rem;
+      }
+      th {
+        white-space: nowrap;
+      }
+      .notes {
+        margin-top: 3rem;
+        border-top: 1px solid var(--pico-card-border-color);
+        padding-top: 1.25rem;
+      }
+    </style>
+  </head>
+  <body class="container">
+    <header>
+      <h1>Pi Director instruction system</h1>
+      <p>
+        A complete pseudocode and diagram reference for the Agent instructions, their runtime surfaces, and the one
+        persistent plan artifact. The source blocks below remain the traceable Markdown authority.
+      </p>
+      <div class="legend" aria-label="Diagram legend">
+        <span class="key instruction">Injected Agent instruction</span>
+        <span class="key runtime">Runtime-owned behavior</span>
+        <span class="key artifact">Persistent artifact</span>
+        <span class="key context">Human-facing context</span>
+      </div>
+    </header>
+    <main>
+      <section aria-labelledby="system-title">
+        <h2 id="system-title">Instruction system</h2>
+        <p class="section-copy">
+          The three Markdown instruction assets become the constant Agent prompt. The API document is also parsed for
+          runtime copy, the plan template becomes the session artifact, and the README documents runtime behavior that
+          surrounds—but does not enter—the prompt.
+        </p>
+        <div class="diagram">
+          <pre class="mermaid">
+flowchart LR
+  subgraph Sources[Package-local Markdown sources]
+    Steps[workflow-steps.md\nMode and turn control flow]
+    Guidance[agent-guidance.md\nCross-cutting constraints]
+    Api[agent-api.md\nTool schema and message copy]
+    Template[plan-template.md\nPersistent artifact shape]
+    Readme[README.md\nRuntime behavior reference]
+  end
+
+  Steps --> Prompt[Constant pi_workflow prompt]
+  Guidance --> Prompt
+  Api --> Prompt
+  Api --> Parser[agent-api.ts\nvalidated runtime strings]
+  Template --> Scaffold[Plan scaffold plus timing]
+  Readme -. documents .-> Runtime
+
+  Prompt --> Agent[Agent follows selected mode]
+  Parser --> Runtime[Extension runtime]
+  Scaffold --> Runtime
+  Runtime --> Picker[User-owned mode picker]
+  Picker --> Agent
+  Agent --> Artifact[(One plan artifact)]
+  Artifact --> Runtime
+
+  classDef instruction fill:#142a44,stroke:#58b7ff,color:#edf3ff;
+  classDef runtime fill:#2a1f47,stroke:#b98cff,color:#edf3ff;
+  classDef artifact fill:#153d32,stroke:#42d6a4,color:#edf3ff;
+  classDef context fill:#3f301d,stroke:#f0b56b,color:#edf3ff;
+  class Steps,Guidance,Api,Prompt,Agent instruction;
+  class Parser,Runtime,Picker runtime;
+  class Template,Scaffold,Artifact artifact;
+  class Readme context;
+          </pre>
+        </div>
+      </section>
+
+      <section aria-labelledby="lifecycle-title">
+        <h2 id="lifecycle-title">Lifecycle branches</h2>
+        <p class="section-copy">
+          The runtime persists mode only after a User action. The Agent recommends routes but never chooses one; the
+          mode picker, native Ask direct routes, and commands are the transition surfaces.
+        </p>
+        <div class="diagram">
+          <pre class="mermaid">
+flowchart TB
+  Start([Agent start]) --> UI{Interactive UI?}
+  UI -- no --> Headless[Leave prompt and scaffold untouched]
+  UI -- yes --> Setup[Persist Q&A when absent\nScaffold one plan]
+  Setup --> Mode{User-owned mode}
+
+  Mode --> Q[Q&A: native Ask first]
+  Q --> Aligned{Alignment complete?}
+  Aligned -- no --> Q
+  Aligned -- clear and low risk --> RecommendV[Recommend Vibe]
+  Aligned -- research or design --> RecommendS[Recommend Spec]
+
+  Mode --> S[Spec: focused exploration]
+  S --> SpecBlocked{Blocked?}
+  SpecBlocked -- yes --> RecommendQ[Recommend Q&A]
+  SpecBlocked -- no, research remains --> S
+  SpecBlocked -- proposal ready --> Save[save_plan]
+
+  Mode --> V[Vibe: implement and verify]
+  V --> VibeBlocked{Genuine blocker?}
+  VibeBlocked -- direct resolution --> V
+  VibeBlocked -- broader alignment --> AlignCheckpoint[Checkpoint]
+  AlignCheckpoint --> RecommendQ
+  VibeBlocked -- no --> Remaining{Scope remains?}
+  Remaining -- yes --> WorkCheckpoint[Checkpoint]
+  Remaining -- no --> Close[Close out after checkpoint]
+  WorkCheckpoint --> Boundary{Coherent boundary?}
+  Boundary -- no --> RecommendV
+  Boundary -- yes --> RecommendHandoff[Recommend phase handoff]
+
+  RecommendV --> Picker[Mode picker]
+  RecommendS --> Picker
+  RecommendQ --> Picker
+  Save --> Picker
+  RecommendHandoff --> Picker
+  Picker --> Mode
+  Picker -- handoff --> HandoffCheckpoint[Reconcile artifact] --> Handoff[Fresh Q&A session]
+
+  classDef questionnaire fill:#142a44,stroke:#58b7ff,color:#edf3ff;
+  classDef spec fill:#2a1f47,stroke:#b98cff,color:#edf3ff;
+  classDef vibe fill:#153d32,stroke:#42d6a4,color:#edf3ff;
+  classDef runtime fill:#3f301d,stroke:#f0b56b,color:#edf3ff;
+  class Q questionnaire; class S,Save spec; class V vibe;
+  class Start,UI,Headless,Setup,Mode,Aligned,RecommendV,RecommendS,RecommendQ,SpecBlocked,VibeBlocked,Remaining,Picker,AlignCheckpoint,WorkCheckpoint,Boundary,RecommendHandoff,HandoffCheckpoint,Handoff,Close runtime;
+          </pre>
+        </div>
+      </section>
+
+      <section aria-labelledby="pseudocode-title">
+        <h2 id="pseudocode-title">Complete operational pseudocode</h2>
+        <p class="section-copy">
+          This consolidates the behavior distributed across the instruction files. Follow the source links for the exact
+          Markdown text and API field documentation.
+        </p>
+
+        <details open>
+          <summary>1. Bootstrap, prompt assembly, and transitions</summary>
+          <pre><code>ON before_agent_start(event, context):
+    IF context.hasUI is false:
+        RETURN original system prompt                 // headless bypass
+
+    mode := latest persisted MODE_EVENT OR QUESTIONNAIRE
+    IF no persisted mode:
+        persist QUESTIONNAIRE                         // only the User later changes it
+
+    IF session has no named artifact:
+        create one timestamped plan from plan-template.md
+        insert runtime-owned timing block
+
+    inject constant pi_workflow prompt:
+        workflow-steps.md + agent-guidance.md + agent-api.md
+    inject current mode marker
+
+ON User selects picker action or native-Ask direct route:
+    persist selected mode
+    start matching continuation with pending plan context
+
+ON /questionnaire:
+    persist QUESTIONNAIRE
+    wait for the next User message
+
+ON /spec or /vibe:
+    persist selected mode
+    start the extension-generated continuation with pending plan context
+
+// Agent recommendation records available actions; it never changes mode
+
+ON /handoff [name]:
+    run outgoing CHECKPOINT only
+    preserve the same artifact
+    start replacement session in QUESTIONNAIRE
+
+ON turn settlement:
+    runtime opens the picker
+    use Agent recommendations for this turn when present
+    OTHERWISE, while work remains, offer contextual continuation fallback
+    return completed work to the editor</code></pre>
+        </details>
+
+        <details>
+          <summary>2. Q&amp;A — alignment mode</summary>
+          <pre><code>MODE QUESTIONNAIRE:
+    ON first session request:
+        CALL start_task once
+        state understood goal and scope
+        ASK one concise direction-check question
+        write answer and direction check to artifact
+
+    BEGIN every interaction with native ask; never ask inline
+    ask focused goal, scope, constraint, trade-off, and outcome questions
+    use 1..4 independent questions with confidence-ranked concrete options
+    use customAnswerLabel when free-form detail is required
+    do not research source or report research results
+    only read bounded orientation from relevant .pi, README, or docs
+
+    ON instruction that adds, conflicts with, or appears to replace scope:
+        keep initial goal and every pending checklist outcome visible
+        ask whether each affected outcome stays, defers, or resolves
+        never silently rewrite or remove historical scope
+
+    AFTER every completed Ask:
+        copy prompt, context, displayed options, and selected/custom answer to Q&amp;A transcript
+        record concise interpretation in Align
+
+    WHILE alignment remains unresolved:
+        ask the next focused question
+        IF User cancels: return to editor
+
+    IF direction is clear and low risk:
+        recommend Vibe
+    ELSE:
+        recommend Spec
+
+    IF User explicitly proceeds with best to Spec or Vibe:
+        target turn first records all accepted best-confidence answers</code></pre>
+        </details>
+
+        <details>
+          <summary>3. Spec — research and proposal mode</summary>
+          <pre><code>MODE SPEC:
+    explore using focused-evidence procedure
+    update Current state, Findings, Desired state, Approach, and Checklist
+    prefer smallest sufficient change; name rejected alternative
+
+    IF blocked:
+        record problem, options, and recommendation in artifact
+        recommend Q&amp;A
+        stop unless the remaining proposal is independently actionable
+
+    IF research remains:
+        recommend continuing Spec
+        end turn
+
+    CALL save_plan with complete actionable proposal
+    end turn                                         // save_plan presents the proposal
+
+FOCUSED-EVIDENCE PROCEDURE:
+    begin with one exact symbol or path search
+    bound matches and line width
+    read owning implementation in small windows
+    exclude dependencies, generated/vendor/cache trees, and source maps
+    stop when answered; broaden only for a concrete unresolved question</code></pre>
+        </details>
+
+        <details>
+          <summary>4. Vibe — execution, blockers, and close-out</summary>
+          <pre><code>MODE VIBE:
+    resolve implementation research in place
+    implement scope
+    run repository-owned useful checks
+    report pre-existing failures without widening scope
+    update Work log and cumulative Checklist
+
+    FOR each reversible, low-risk, in-scope choice already implied by task:
+        decide autonomously
+        CALL record_auto_decision with rationale, impact, and verification
+
+    IF genuine decision blocker:
+        record the problem
+        CALL native ask once with direct resolution, broader Q&amp;A, and known alternatives
+        IF User resolves directly: continue Vibe
+        IF User requests broader alignment: CHECKPOINT; recommend Q&amp;A
+        OTHERWISE follow the selected route
+
+    IF scope remains:
+        CHECKPOINT
+        IF coherent phase boundary:
+            record completed boundary and first pending item
+            recommend phase handoff
+        ELSE:
+            recommend Vibe continuation
+    ELSE:
+        CLOSE_OUT
+        IF no review-worthy autonomous decisions, limitations, or follow-up concerns:
+            do not call recommend_next; task is complete
+
+PROCEDURE CHECKPOINT:
+    reconcile initial goal, accepted proposals, follow-ups, and all revisions against live checklist
+    review every Auto-mode decision and its verification details
+    mark completed historical checklist labels without renaming them
+    leave skipped/failed work pending with a reason
+    preserve historical narrative; update only live status
+    write Close out Status = in progress
+    report paths, verification, limitations, and concerns
+    promote only durable, costly orientation/quirks to project memory
+
+PROCEDURE CLOSE_OUT:
+    CHECKPOINT
+    IF any requested outcome or autonomous decision is unresolved:
+        leave it pending; do not claim completion
+    ELSE:
+        write Close out Status = complete
+        recommend Q&amp;A only for review-worthy decisions, limitations, or follow-up concerns</code></pre>
+        </details>
+
+        <details>
+          <summary>5. Artifact, API, and cross-cutting constraints</summary>
+          <pre><code>ARTIFACT INVARIANTS:
+    one session owns one .pi/plan/&lt;name&gt;.md; plan files are never deleted
+    start_task names it once; a different later name is refused
+    Goal and accepted outcomes remain historical scope across handoffs and revisions
+    Checklist is cumulative; latest checkbox state wins
+    save_plan belongs only to Spec:
+        replace untouched pre-execution draft
+        otherwise append dated Revision N while preserving history
+    execution locks the plan name
+
+NATIVE ASK CONTRACT:
+    asks are mode-neutral but do not change User-owned mode by ordinary answer
+    Vibe uses Ask only for a genuine blocker
+    questions contain stable id, context, prompt, 2..4 options, and confidence 1..5
+    batch only independent questions; ask dependent follow-ups in a new call
+    direct routes preserve manual answers and accept remaining highest-confidence answers
+
+OTHER TOOL AND OUTPUT RULES:
+    recommend_next records actions; it does not select a mode
+    match every operation to its tool schema; correct one rejected call and retry once
+    size work and plan to the change; lead with result; name paths and symbols
+    show changed snippets, do not repeat transcript output or claim unrun checks
+    preserve safeguards for destructive actions, dependencies, credentials, and external writes</code></pre>
+        </details>
+      </section>
+
+      <section aria-labelledby="map-title">
+        <h2 id="map-title">Source-to-effect map</h2>
+        <p class="section-copy">
+          Use this index to locate the Markdown file that changes a particular branch or constraint.
+        </p>
+        <div class="overflow-auto">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Source</th>
+                <th scope="col">Runtime relationship</th>
+                <th scope="col">Changes the reference flow</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><a href="#workflow">workflow-steps.md</a></th>
+                <td>Injected verbatim</td>
+                <td>Modes, transitions, blockers, checkpoint, close-out, and focused exploration.</td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="#guidance">agent-guidance.md</a></th>
+                <td>Injected verbatim</td>
+                <td>Output discipline, artifact continuity, and tool/safety behavior across every mode.</td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="#api">agent-api.md</a></th>
+                <td>Injected and parsed by <code>agent-api.ts</code></td>
+                <td>Commands, tool contracts, Ask behavior, and runtime continuation/handoff messages.</td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="#plan-template">plan-template.md</a></th>
+                <td>Read as scaffold input</td>
+                <td>The persistent sections that each mode fills, reconciles, and closes.</td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="#runtime-context">README.md</a></th>
+                <td>Human-facing runtime context</td>
+                <td>Picker fallbacks, persistence, timing, handoff, headless bypass, and evidence policy.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="sources-title">
+        <h2 id="sources-title">Source-exact Markdown</h2>
+        <p class="section-copy">
+          These blocks are generated from the package-local source assets. Edit the source asset, then run
+          <code>npm run docs:workflow</code>.
+        </p>
+        <!-- pi-director:reference-blocks -->
+      </section>
+    </main>
+    <footer class="notes">
+      <span>Every handoff restarts Q&amp;A after checkpointing.</span>
+      <span>Runtime-only UI labels, errors, and notifications remain in TypeScript.</span>
+      <span>Pico CSS and Mermaid load from jsDelivr; Mermaid source remains visible if rendering fails.</span>
+    </footer>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: false, theme: "dark" });
+      await mermaid.run({ querySelector: ".mermaid" });
+    </script>
+  </body>
+</html>
