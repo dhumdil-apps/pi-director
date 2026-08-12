@@ -7,7 +7,7 @@ independent left/right alignment. Producer sub-extensions each emit one or more
 segments:
 
 - **`src/powerbar-session/`** — `session-name` (mandatory ticket ID + short feature description)
-- **`src/powerbar-git/`** — `git-branch` (+ dirty marker)
+- **`src/powerbar-git/`** — `git-branch` (branch, tracked diff statistics, + dirty marker)
 - **`src/powerbar-model/`** — `model` (name + thinking level)
 - **`src/powerbar-provider/`** — `provider`
 - **`src/powerbar-tokens/`** — `cost`, `tokens`, `agent-stats`
@@ -47,8 +47,12 @@ unplaced segment is easy to find. Bundle defaults are:
 - Line 3 — `cpu,ram,disk,net` left, `sub-hourly,sub-weekly` right
 - Line 4 — `attention-span` left
 
-`Line gap` defaults off. When enabled, one blank row appears between every
-rendered Status Bar row. A line left empty between two used lines still renders
+The `Git Branch` segment includes its branch, tracked
+working-tree statistics (`N files · +A −R`), and dirty marker; moving or omitting
+that segment moves or hides all three together.
+
+`Line gap` defaults off. When enabled, one blank row appears between every rendered
+Status Bar row. A line left empty between two used lines still renders
 as an intentional blank line, so enabling `Line gap` around it creates additional
 vertical space; trailing empty lines take no space. A layout stored under the
 older `left`/`right` keys is split across these lines once, on first load.

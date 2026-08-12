@@ -1,11 +1,11 @@
 /**
  * Powerbar Git Producer
  *
- * Shows the current git branch and a dirty-worktree marker (*).
+ * Shows the current git branch, tracked working-tree diff statistics, and a dirty marker (*).
  * Segment ID: "git-branch"
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { execFile } from "child_process";
 import { readFileSync, statSync } from "fs";
 import { isAbsolute, join, resolve } from "path";
@@ -62,16 +62,56 @@ function isDirty(cwd: string): Promise<boolean> {
   });
 }
 
+interface GitDiffStats {
+  files: number;
+  additions: number;
+  removals: number;
+}
+
+function getDiffStats(cwd: string): Promise<GitDiffStats | undefined> {
+  return new Promise((resolve) => {
+    execFile("git", ["diff", "--numstat", "HEAD"], { cwd, timeout: 2000 }, (err, stdout) => {
+      if (err) {
+        resolve(undefined);
+        return;
+      }
+
+      const stats: GitDiffStats = { files: 0, additions: 0, removals: 0 };
+      for (const line of stdout.trim().split("\n")) {
+        if (!line) continue;
+        const [added, removed] = line.split("\t");
+        stats.files++;
+        // Binary rows use "-" counts: they changed a file, but no source lines.
+        if (/^\d+$/.test(added)) stats.additions += Number(added);
+        if (/^\d+$/.test(removed)) stats.removals += Number(removed);
+      }
+      resolve(stats);
+    });
+  });
+}
+
+function formatFileCount(files: number): string {
+  return `${files} file${files === 1 ? "" : "s"}`;
+}
+
 async function emitBranch(pi: ExtensionAPI, ctx: ExtensionContext): Promise<void> {
   const branch = getGitBranch(ctx.cwd);
   if (branch) {
-    const dirty = await isDirty(ctx.cwd);
+    const [dirty, stats] = await Promise.all([isDirty(ctx.cwd), getDiffStats(ctx.cwd)]);
+    const branchColor = dirty ? "warning" : "muted";
     pi.events.emit("powerbar:update", {
       id: "git-branch",
-      text: dirty ? `${branch}*` : branch,
-      icon: "⎇",
-      color: dirty ? "warning" : "muted",
       row: 1,
+      render: (theme: Theme) => {
+        const branchText = dirty ? `${branch}*` : branch;
+        if (!stats) return `${theme.fg(branchColor, "⎇")} ${theme.fg(branchColor, branchText)}`;
+        return [
+          `${theme.fg(branchColor, "⎇")} ${theme.fg(branchColor, branchText)}`,
+          theme.fg("dim", ` · ${formatFileCount(stats.files)} · `),
+          theme.fg("success", `+${stats.additions}`),
+          theme.fg("error", ` −${stats.removals}`),
+        ].join("");
+      },
     });
   } else {
     pi.events.emit("powerbar:update", {
