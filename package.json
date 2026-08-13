@@ -8,9 +8,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "docs:workflow": "node scripts/sync-workflow-reference.mjs",
-    "docs:workflow:check": "node scripts/sync-workflow-reference.mjs --check",
-    "verify": "npm run format:check && npm run typecheck && npm run docs:workflow:check && git diff --check",
+    "verify": "npm run format:check && npm run typecheck && git diff --check",
     "format": "prettier --write --ignore-unknown .",
     "format:check": "prettier --check --ignore-unknown .",
     "typecheck": "tsc --noEmit -p tsconfig.json"

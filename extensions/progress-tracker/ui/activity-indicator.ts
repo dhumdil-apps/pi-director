@@ -27,7 +27,7 @@ export interface IndicatorExtras {
    * closure-local start would restart the counter mid-run.
    */
   runStartedAt?: number;
-  /** Settled Q&A/Spec/Vibe Agent work. */
+  /** Settled Align/Spec/Vibe Agent work. */
   planTime?: PlanTime;
   /** When the latest provider response completed, as epoch ms, for cache age. */
   cacheStartedAt?: number;
@@ -53,7 +53,7 @@ function timerColor(working: boolean, elapsedMs: number): "accent" | "dim" | "wa
 /** Accumulated per-mode accounting stays visible while idle. */
 function modeBuckets(working: boolean, extras: IndicatorExtras | undefined, now: number, theme: Theme): string {
   if (extras?.planTime == null) return "";
-  const currentMode = extras.mode ?? "questionnaire";
+  const currentMode = extras.mode ?? "align";
   // Buckets are Agent work only: an open picker or question is the User's time,
   // and the leading cache-age readout already shows that idle risk.
   const time =
@@ -61,9 +61,9 @@ function modeBuckets(working: boolean, extras: IndicatorExtras | undefined, now:
       ? addModeTime(extras.planTime, currentMode, Math.max(0, now - extras.runStartedAt))
       : extras.planTime;
   const separator = theme.fg("dim", " · ");
-  const questionnaire = theme.fg(
-    currentMode === "questionnaire" ? "warning" : "dim",
-    `${MODE_LABEL.questionnaire} ${formatDuration(time.questionnaireMs)}`,
+  const align = theme.fg(
+    currentMode === "align" ? "warning" : "dim",
+    `${MODE_LABEL.align} ${formatDuration(time.alignMs)}`,
   );
   const spec = theme.fg(
     currentMode === "spec" ? "warning" : "dim",
@@ -73,20 +73,20 @@ function modeBuckets(working: boolean, extras: IndicatorExtras | undefined, now:
     currentMode === "vibe" ? "warning" : "dim",
     `${MODE_LABEL.vibe} ${formatDuration(time.vibeMs)}`,
   );
-  return `${separator}${questionnaire}${separator}${spec}${separator}${vibe}`;
+  return `${separator}${align}${separator}${spec}${separator}${vibe}`;
 }
 
 // The prompts describe the next useful User decision without a separate mode
-// badge; the timing buckets keep the Q&A/Spec/Vibe order visible.
+// badge; the timing buckets keep the Align/Spec/Vibe order visible.
 const MODE_PROMPTS: Record<WorkflowMode, string> = {
-  questionnaire: "What’s your goal?",
+  align: "What’s your goal?",
   spec: "Reviewing the plan",
   vibe: "What’s up next?",
 };
 
 /** Dim while aligning, warning once executing. */
 function modeText(mode: WorkflowMode | undefined, theme: Theme): string {
-  const resolved: WorkflowMode = mode ?? "questionnaire";
+  const resolved: WorkflowMode = mode ?? "align";
   return theme.fg(resolved === "vibe" ? "warning" : "dim", MODE_PROMPTS[resolved]);
 }
 

@@ -19,6 +19,7 @@ import type {
   TurnEndEvent,
 } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
+import { readFile } from "node:fs/promises";
 import {
   MODE_EVENT,
   resolveWorkflowMode,
@@ -33,7 +34,7 @@ import {
   updatePlanTime,
   type PlanTime,
 } from "../agent-workflow/plan-time.js";
-import { planPath } from "../agent-workflow/task.js";
+import { isCurrentPlanFormat, planPath } from "../agent-workflow/task.js";
 import { contextIndicatorText } from "../agent-workflow/context-usage.js";
 import { USER_WAIT_EVENT, type UserWaitEvent } from "../agent-workflow/user-wait.js";
 import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
@@ -78,10 +79,10 @@ export default function (pi: ExtensionAPI) {
   let waitingForUser = false;
 
   // Close the current interval before changing mode. Undefined is the initial
-  // Q&A state: the display can still ask for a goal while timing is precise.
+  // Align state: the display can still ask for a goal while timing is precise.
   const accrueUntil = (now: number) => {
     if (runStartedAt == null) return;
-    planTime = addModeTime(planTime ?? EMPTY_PLAN_TIME, mode ?? "questionnaire", Math.max(0, now - runStartedAt));
+    planTime = addModeTime(planTime ?? EMPTY_PLAN_TIME, mode ?? "align", Math.max(0, now - runStartedAt));
     runStartedAt = now;
   };
 
@@ -155,6 +156,8 @@ export default function (pi: ExtensionAPI) {
     const time = planTime;
     if (!name || time == null) return;
     const path = planPath(ctx.cwd, name);
+    const contents = await readFile(path, "utf8").catch(() => "");
+    if (!isCurrentPlanFormat(contents)) return;
     await updatePlanTime(path, name, time).catch(() => {});
   };
 

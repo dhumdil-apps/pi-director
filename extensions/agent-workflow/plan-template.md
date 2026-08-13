@@ -2,64 +2,41 @@
 
 {{time-spent}}
 
+<!-- pi-director-plan:v2 -->
+<!-- task-name:temporary -->
+
 ## Goal
 
-<the outcome this work must achieve>
+<goal and lifecycle context>
 
 ## Align
 
-<questions asked and how they were answered>
-
-## Q&A transcript
-
-<verbatim manual answers and linked picker context>
-
-## Current state
-
-<how it works today>
-
-## Findings
-
-<verified evidence and observations>
+<accepted direction, scope, constraints, and lifecycle context>
 
 ## Decisions
 
-<consequential choices made with the User>
+<accepted User answers and reviewed Agent choices with stable Q/D identifiers>
 
-## Desired state
+## Evidence
 
-<what it should do instead>
+<current facts, findings, constraints, and lifecycle context>
 
-## Approach
+## Proposal
 
-<how to get from current to desired>
-
-## Work log
-
-<requested increments and what landed>
-
-## Quirks
-
-<non-obvious constraints, gotchas, key paths>
+<desired state, approach, and lifecycle context>
 
 ## Checklist
 
-- [ ] <task>
+- C-example <outcome and free-form state>
 
-## Close out
+## Work log
 
-### Status
+<append-only phase results, verification, limitations, and concerns>
 
-<complete only after reconciling every requested outcome>
+## User transcript
 
-### Auto-mode decisions
+<append-only human task messages and completed Q&A exchanges>
 
-<none unless Vibe recorded an autonomous decision>
+## Agent transcript
 
-### PR summary
-
-<concise summary>
-
-### QA steps
-
-<checks run and results>
+<append-only autonomous decisions, review state, and lifecycle events>

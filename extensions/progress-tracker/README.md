@@ -24,29 +24,29 @@ renders the one thing the transcript cannot show.
   percentage. The readout refreshes at turn boundaries and is colored accent /
   warning / error: warning above 20% full and error above 40% full. The bar
   carries the proportion, so the percentage is not printed.
-- Idle prompt — `What’s your goal?` (dim) in Q&A or SPEC, or `What’s up next?`
+- Idle prompt — `What’s your goal?` (dim) in ALIGN or SPEC, or `What’s up next?`
   (warning) once execution settles in VIBE. The first invites the next goal; the
   second invites a review, a refinement, or a clean new session for the next
   task. It is **display only**: the prompt follows the session's
-  workflow mode, which only the User changes through the mode picker, `/questionnaire`,
-  `/spec`, `/vibe`, or a handoff seed. `/questionnaire` changes mode without starting Agent
+  workflow mode, which only the User changes through the mode picker, `/align`,
+  `/spec`, `/vibe`, or a handoff seed. `/align` changes mode without starting Agent
   work; `/spec` and `/vibe` start a continuation, matching picker transitions. Mode changes are persisted as custom
-  session entries excluded from model context, and pre-rename `explore`, `plan`,
-  and `execute` entries fold onto Spec, Spec, and Vibe. Reloads and tree changes
+  session entries excluded from model context, and legacy `questionnaire`, `explore`,
+  `plan`, and `execute` entries fold onto Align, Spec, Spec, and Vibe. Reloads and tree changes
   read the latest entry. The large injected contract stays constant while only a
   tiny per-turn mode message varies.
 - Working state — while a run is in flight the idle prompt gives way to the
   spinner and accent-colored active timing.
 - Work/cache timer — one compact accent-colored readout follows the active
   spinner and counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
-  Q&A, SPEC, or VIBE work begins rather than displaying grand-total task time.
+  ALIGN, SPEC, or VIBE work begins rather than displaying grand-total task time.
   Accumulated totals follow it as
-  `· ❓ Q&A 5s · 🔎 SPEC 12s · 🚀 VIBE 3s`: the current mode is warning and the
-  other modes are dim. Q&A, SPEC, and VIBE are mutually exclusive Agent-work buckets;
+  `· ❓ ALIGN 5s · 🔎 SPEC 12s · 🚀 VIBE 3s`: the current mode is warning and the
+  other modes are dim. ALIGN, SPEC, and VIBE are mutually exclusive Agent-work buckets;
   human latency never enters them.
 
-  Native question and approval dialogs pause active work while the UI belongs to
-  the User, and the picker opens after settlement, so time spent choosing or
+  Native question and mode dialogs pause active work while the UI belongs to
+  the User, and an Agent-recommended picker opens after settlement, so time spent choosing or
   typing is accrued nowhere. Persisted checkpoint events still keep a custom
   answer open until the next human input and reconstruct unresolved choices after
   reload; they no longer carry timing.
@@ -60,13 +60,13 @@ renders the one thing the transcript cannot show.
   it across reloads and handoffs. A slow idle repaint advances the age and its
   colors without another Pi event until the cap.
 
-  Active intervals accrue to Q&A, SPEC, or VIBE, splitting immediately when a
-  mode event lands; an initial mode-less interval counts as Q&A. On settlement
+  Active intervals accrue to ALIGN, SPEC, or VIBE, splitting immediately when a
+  mode event lands; an initial mode-less interval counts as Align. On settlement
   the buckets atomically update the named plan's script-owned `time-spent` block.
   Pre-rename explore/execute markers migrate to Spec/Vibe and their retired
   decision bucket folds into Unallocated, older
   Plan work folds into Spec, total-only history migrates to Unallocated, and
-  marker-free legacy plans stay byte-identical until their next settled run.
+  legacy plans remain byte-identical and contribute timing only after the Agent creates a current-format continuation.
   Persistence is best-effort if the plan is unavailable. Normal row truncation
   protects narrow terminals.
 

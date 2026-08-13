@@ -8,7 +8,7 @@ import type { EditorTheme, TUI } from "@earendil-works/pi-tui";
 
 /**
  * ui.select returns the chosen label, so the options are named constants —
- * the same shape the workflow approval prompt uses. The destructive option
+ * the same shape as other workflow choice dialogs. The destructive option
  * stays first because the selector has no initial-index parameter and the
  * user reached this prompt by pressing the interrupt key.
  */

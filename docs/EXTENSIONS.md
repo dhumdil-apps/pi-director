@@ -8,7 +8,7 @@ extension.
 
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
-- **Agent Workflow** — User-owned Q&A/Spec/Vibe session modes, a native in-turn `ask` tool with direct recommended-answer routes, a single plan artifact per session, advisory mode guidance, tailored post-settlement routing, and actionable fresh-session handoffs (`ask`, `start_task`, `save_plan`, `/questionnaire`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
+- **Agent Workflow** — User-owned ALIGN / SPEC / VIBE modes, recommended native-Ask preflight, Agent-interpreted artifacts and decisions, ranked routing, and verified handoffs (`ask`, `start`, `next`, `/align`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
 - **Project Memory** — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
@@ -53,12 +53,12 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 
 ## Deliberately absent
 
-- **No workflow skill.** The Q&A/Spec/Vibe workflow and its close-out step remain a
+- **No workflow skill.** The Align/Spec/Vibe workflow and its close-out step remain a
   constant injected contract. The optional Pi Inspector skill activates only for
   applicable local browser debugging and verification.
-- **No general permission gate.** Q&A/Spec/Vibe execution boundaries are
+- **No general permission gate.** Align/Spec/Vibe execution boundaries are
   advisory; destructive-action and external-action consent remains conversational.
-- **No subagents.** Q&A, Spec, and Vibe are persisted modes for the same single
+- **No subagents.** Align, Spec, and Vibe are persisted modes for the same single
   agent; `/handoff` remains the human-controlled session boundary.
 - **No todo tool.** Pi ships none on purpose ("they confuse models"), and a
   structured list the agent must keep in sync is ceremony rather than progress.

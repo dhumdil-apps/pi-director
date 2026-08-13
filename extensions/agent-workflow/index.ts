@@ -2,10 +2,9 @@
  * Agent Workflow
  *
  * A compact, constant pseudocode contract plus one tiny session-mode marker.
- * Mode belongs to the User: Q&A aligns, Spec researches and proposes, Vibe
- * executes. The runtime enforces what judgment should not be trusted with — the
- * settled mode picker, the single artifact, and immutable plan names — and
- * leaves mode-specific execution guidance to the contract.
+ * Mode belongs to the User: Align clarifies, Spec researches and proposes, Vibe
+ * executes. Runtime owns persistence and UI mechanics; the Agent-owned contract
+ * owns interpretation, artifact meaning, and next-step guidance.
  */
 
 import { readFileSync } from "node:fs";
@@ -18,15 +17,7 @@ import { deriveWorkflowMode, recordWorkflowMode, workflowModePrompt, type Workfl
 import { applyMode, openModePicker, registerModePicker, startModeContinuation } from "./mode-picker.js";
 import { registerWorkflowNotices } from "./notice.js";
 import { registerAsk } from "./ask.js";
-import {
-  autoSlug,
-  currentPlanNextAction,
-  ensurePiState,
-  listPlanNames,
-  planPath,
-  PLAN_TEMPLATE,
-  registerTaskManagement,
-} from "./task.js";
+import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, registerTaskManagement } from "./task.js";
 
 /**
  * Constant contract; the selected mode is injected separately.
@@ -36,12 +27,9 @@ import {
  * work consistently across source and packaged runtimes.
  */
 const WORKFLOW_STEPS = readFileSync(new URL("./workflow-steps.md", import.meta.url), "utf8").trimEnd();
-const AGENT_GUIDANCE = readFileSync(new URL("./agent-guidance.md", import.meta.url), "utf8").trimEnd();
-const AGENT_API = readFileSync(new URL("./agent-api.md", import.meta.url), "utf8").trimEnd();
-
 /** Constant by design: the large cacheable prefix never varies per turn. */
 export function workflowPrompt(): string {
-  return `<pi_workflow>\n\n${WORKFLOW_STEPS}\n\n${AGENT_GUIDANCE}\n\n${AGENT_API}\n</pi_workflow>`;
+  return `<pi_workflow>\n\n${WORKFLOW_STEPS}\n</pi_workflow>`;
 }
 
 export default function createExtension(pi: ExtensionAPI): void {
@@ -55,15 +43,13 @@ export default function createExtension(pi: ExtensionAPI): void {
   const setModeCommand = (mode: WorkflowMode) => async (_args: string, ctx: ExtensionCommandContext) => {
     const previous = deriveWorkflowMode(ctx.sessionManager.getBranch());
     await applyMode(pi, ctx, mode, previous);
-    if (mode === "questionnaire" || mode === previous) return;
+    if (mode === "align" || mode === previous) return;
 
-    const planName = pi.getSessionName() ?? ctx.sessionManager.getSessionName?.();
-    const nextAction = await currentPlanNextAction(ctx.cwd, planName);
-    startModeContinuation(pi, mode, previous, nextAction);
+    startModeContinuation(pi, mode, previous);
   };
-  pi.registerCommand("questionnaire", {
-    description: agentApiText("command.questionnaire"),
-    handler: setModeCommand("questionnaire"),
+  pi.registerCommand("align", {
+    description: agentApiText("command.align"),
+    handler: setModeCommand("align"),
   });
   pi.registerCommand("spec", {
     description: agentApiText("command.spec"),
@@ -75,7 +61,7 @@ export default function createExtension(pi: ExtensionAPI): void {
   });
   pi.registerCommand("mode", {
     description: agentApiText("command.mode"),
-    handler: async (_args, ctx) => openModePicker(pi, ctx),
+    handler: async (_args, ctx) => openModePicker(pi, ctx, true),
   });
 
   pi.registerCommand("handoff", {
@@ -108,12 +94,12 @@ export default function createExtension(pi: ExtensionAPI): void {
   });
 }
 
-/** Initialize an ordinary session in Q&A; later modes require an explicit User action. */
+/** Initialize an ordinary session in Align; explicit User actions may select another mode. */
 async function ensureWorkflowMode(pi: ExtensionAPI, ctx: ExtensionContext): Promise<WorkflowMode> {
   const existing = deriveWorkflowMode(ctx.sessionManager.getBranch());
   if (existing) return existing;
-  recordWorkflowMode(pi, "questionnaire");
-  return "questionnaire";
+  recordWorkflowMode(pi, "align");
+  return "align";
 }
 
 /** Best-effort scaffold so timing and handoff have a durable file immediately. */

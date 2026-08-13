@@ -1,45 +1,29 @@
-/**
- * The mode picker — the single decision surface in the workflow.
- *
- * Runtime-owned rather than a tool: the Agent must not be able to skip the
- * User's choice by forgetting a call, and picking is faster than typing. It
- * opens when a settled turn has a route to choose, which is why a blocker in
- * Spec or Vibe can stop instead of interrogating the User mid-turn. Unresolved
- * Q&A remains inside its native ask loop and settles without a no-op picker.
- *
- * Automatic same-mode and cross-mode selections start the selected block
- * immediately. The neutral custom-answer option is the editor wait state.
- */
+/** User-owned routing. Automatic pickers exist only when the Agent recommends actions. */
 
-import { type Static, Type } from "@sinclair/typebox";
 import type { ExtensionAPI, ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
+import { Type, type Static } from "@sinclair/typebox";
 import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
-import { isLeanContext } from "./context-usage.js";
 import {
   MODE_EVENT,
-  resolveWorkflowMode,
   MODE_LABEL,
   recordWorkflowMode,
+  resolveWorkflowMode,
   WORKFLOW_MODES,
   type WorkflowMode,
 } from "./mode.js";
-import { currentPlanHasOpenWork, currentPlanNextAction, PLAN_SAVED_EVENT, recordModeTransition } from "./task.js";
 import { duringUserWait } from "./user-wait.js";
 
 export const HANDOFF_OPTION = "🤝 Hand off to a fresh session";
-export const PHASE_HANDOFF_OPTION = "🤝 Hand off next phase";
-export const WRITE_CUSTOM_OPTION = "📝 Write a custom answer...";
+export const RETURN_OPTION = "↩ Return to editor";
 export const NEXT_STEP_EVENT = "agent-workflow:next-step";
 export const ASK_SETTLEMENT_EVENT = "agent-workflow:ask-settlement";
 
-export type NextStepActionMode = WorkflowMode | "phase-boundary";
+export type NextStepActionMode = WorkflowMode | "handoff";
 
 interface NextStepAction {
   mode: NextStepActionMode;
-  /** Concise context rendered beside this Agent-authored action. */
   reason?: string;
-  /** Custom next-turn kickoff for this Agent-starting mode action. */
   prompt?: string;
 }
 
@@ -49,67 +33,23 @@ interface NextStepEvent {
 }
 
 const NextStepActionParams = Type.Object({
-  mode: Type.Union([
-    Type.Literal("questionnaire"),
-    Type.Literal("spec"),
-    Type.Literal("vibe"),
-    Type.Literal("phase-boundary"),
-  ]),
-  reason: Type.Optional(Type.String({ description: agentApiText("tool.recommend-next.action.reason") })),
-  prompt: Type.Optional(
-    Type.String({
-      description: agentApiText("tool.recommend-next.action.prompt"),
-    }),
-  ),
+  mode: Type.Union([Type.Literal("align"), Type.Literal("spec"), Type.Literal("vibe"), Type.Literal("handoff")]),
+  reason: Type.Optional(Type.String({ description: agentApiText("tool.next.action.reason") })),
+  prompt: Type.Optional(Type.String({ description: agentApiText("tool.next.action.prompt") })),
 });
 
 const NextStepParams = Type.Object({
-  actions: Type.Array(NextStepActionParams, {
-    minItems: 1,
-    maxItems: 4,
-    description: agentApiText("tool.recommend-next.actions"),
-  }),
+  actions: Type.Array(NextStepActionParams, { description: agentApiText("tool.next.actions") }),
 });
 
 type NextStepInput = Static<typeof NextStepParams>;
-
-const START_LABELS: Record<WorkflowMode, string> = {
-  questionnaire: `${MODE_LABEL.questionnaire} — Start a new direction`,
-  spec: `${MODE_LABEL.spec} — Research a new direction`,
-  vibe: `${MODE_LABEL.vibe} — Start implementing a new direction`,
-};
-
-const CONTINUE_LABELS: Record<WorkflowMode, string> = {
-  questionnaire: `${MODE_LABEL.questionnaire} — Keep clarifying the direction`,
-  spec: `${MODE_LABEL.spec} — Keep researching the plan`,
-  vibe: `${MODE_LABEL.vibe} — Keep implementing`,
-};
-
 type KickoffIntent = "continue" | "start";
-
-function kickoffContext(nextAction?: string): string {
-  const normalized = nextAction?.replace(/\s+/g, " ").trim();
-  return normalized ? agentApiTemplate("message.kickoff.pending-action", { nextAction: normalized }) : "";
-}
-
-function kickoffDirective(source: WorkflowMode, target: WorkflowMode): string {
-  return agentApiText(`message.kickoff.directive.${source}.${target}`);
-}
-
-/** Everything the picker needs, so a command context can open it too. */
-type PickerContext = Pick<ExtensionContext, "cwd" | "hasUI" | "ui" | "sessionManager"> & {
-  getContextUsage?: ExtensionContext["getContextUsage"];
-};
-
-function startLabel(mode: WorkflowMode): string {
-  return START_LABELS[mode];
-}
-
+type PickerContext = Pick<ExtensionContext, "cwd" | "hasUI" | "ui" | "sessionManager">;
 type PickerAction =
   | { kind: "continue"; mode: WorkflowMode; prompt?: string }
   | { kind: "handoff" }
-  | { kind: "switch"; mode: WorkflowMode; prompt?: string; startAgent: boolean }
-  | { kind: "custom" };
+  | { kind: "switch"; mode: WorkflowMode; prompt?: string }
+  | { kind: "return" };
 
 interface PickerState {
   options: string[];
@@ -131,186 +71,62 @@ function currentTurnSignal<T>(
   return undefined;
 }
 
-interface NextStepSignal {
-  actions: NextStepAction[];
-}
-
 function normalizeReason(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized || undefined;
-}
-
-function labeledAction(label: string, reason?: string): string {
-  return reason ? `${label} — ${reason}` : label;
+  return value.replace(/\s+/g, " ").trim() || undefined;
 }
 
 function normalizeAction(value: unknown): NextStepAction | undefined {
   if (!value || typeof value !== "object") return undefined;
-  const { mode, reason, prompt } = value as Partial<NextStepAction>;
-  if (!["questionnaire", "spec", "vibe", "phase-boundary"].includes(mode as string)) return undefined;
-  const normalizedReason = normalizeReason(reason);
+  const { mode, reason, prompt } = value as { mode?: unknown; reason?: unknown; prompt?: unknown };
+  const normalizedMode = mode === "questionnaire" ? "align" : mode === "phase-boundary" ? "handoff" : mode;
+  if (!(["align", "spec", "vibe", "handoff"] as unknown[]).includes(normalizedMode)) return undefined;
   const normalizedPrompt = typeof prompt === "string" ? prompt.trim() : undefined;
-  if (mode === "phase-boundary" && normalizedPrompt) return undefined;
   return {
-    mode,
-    ...(normalizedReason ? { reason: normalizedReason } : {}),
+    mode: normalizedMode as NextStepActionMode,
+    ...(normalizeReason(reason) ? { reason: normalizeReason(reason) } : {}),
     ...(normalizedPrompt ? { prompt: normalizedPrompt } : {}),
-  } as NextStepAction;
+  };
 }
 
-function deriveNextStepSignal(entries: SessionEntry[], current: WorkflowMode): NextStepSignal | undefined {
+function deriveNextStepSignal(entries: SessionEntry[], current: WorkflowMode): NextStepAction[] | undefined {
   return currentTurnSignal(entries, NEXT_STEP_EVENT, (entry) => {
     const data = entry.data as Partial<NextStepEvent> | undefined;
     if (data?.mode !== current || !Array.isArray(data.actions)) return undefined;
     const actions = data.actions.map(normalizeAction).filter((action): action is NextStepAction => Boolean(action));
-    if (!actions.length || new Set(actions.map((action) => action.mode)).size !== actions.length) return undefined;
-    return { actions };
+    return actions.length ? actions : undefined;
   });
 }
 
-export function deriveNextStep(entries: SessionEntry[], current: WorkflowMode): NextStepAction[] | undefined {
-  return deriveNextStepSignal(entries, current)?.actions;
+interface AskSettlement {
+  outcome: "answered" | "cancelled" | "routed";
+  target?: Exclude<WorkflowMode, "align">;
 }
 
-function completedAsk(entries: SessionEntry[]): boolean {
-  return (
-    currentTurnSignal(entries, ASK_SETTLEMENT_EVENT, (entry) => {
-      const outcome = (entry.data as { outcome?: unknown } | undefined)?.outcome;
-      return outcome === "answered" || outcome === "cancelled" ? outcome : undefined;
-    }) === "answered"
-  );
-}
-
-function planWasJustSaved(entries: SessionEntry[]): boolean {
-  return currentTurnSignal(entries, PLAN_SAVED_EVENT, () => true) === true;
-}
-
-/** Supply context-aware routing only while an unfinished plan still needs work. */
-function defaultActions(current: WorkflowMode, lean: boolean, openWork: boolean, planSaved: boolean): NextStepAction[] {
-  if (!openWork || current === "questionnaire") return [];
-  if (!lean) return [{ mode: "phase-boundary" }];
-  if (current === "spec" && planSaved) return [{ mode: "vibe" }];
-  return [{ mode: current }];
-}
-
-function transitionLabel(current: WorkflowMode, next: WorkflowMode): string {
-  if (next === "questionnaire") return `${MODE_LABEL.questionnaire} — Clarify the next decision`;
-  if (current === "questionnaire" && next === "spec") return `${MODE_LABEL.spec} — Research the open questions`;
-  if (current === "questionnaire" && next === "vibe") return `${MODE_LABEL.vibe} — Start implementing the request`;
-  if (current === "spec" && next === "vibe") return `${MODE_LABEL.vibe} — Start implementing the plan`;
-  if (current === "vibe" && next === "spec") return `${MODE_LABEL.spec} — Research the remaining questions`;
-  return `${MODE_LABEL[next]} — Continue in ${MODE_LABEL[next]}`;
-}
-
-function secondaryLabel(current: WorkflowMode, next: WorkflowMode, openWork: boolean, artifactReason?: string): string {
-  const label = openWork ? transitionLabel(current, next) : startLabel(next);
-  return openWork && artifactReason ? labeledAction(label, artifactReason) : label;
-}
-
-function customLabel(): string {
-  return WRITE_CUSTOM_OPTION;
-}
-
-function questionnaireKickoff(
-  prompt?: string,
-  reason?: string,
-  nextAction?: string,
-  intent: KickoffIntent = "continue",
-  previous?: WorkflowMode,
-): string {
-  const context =
-    prompt?.trim() ||
-    (reason
-      ? agentApiTemplate("message.questionnaire.reason", { reason, context: kickoffContext(nextAction) })
-      : undefined) ||
-    defaultKickoff("questionnaire", intent, previous, nextAction);
-  return `${context}\n${agentApiText("message.questionnaire.start")}`;
-}
-
-function pickerState(
-  current: WorkflowMode,
-  openWork: boolean,
-  explicit: NextStepAction[] = [],
-  artifactReason?: string,
-): PickerState {
-  const actions = new Map<string, PickerAction>();
-  const options: string[] = [];
-  const agentModes = new Set(
-    explicit.filter((action) => action.mode !== "phase-boundary").map((action) => action.mode),
-  );
-  const add = (label: string, action: PickerAction, reason?: string) => {
-    const rendered = labeledAction(label, reason);
-    options.push(rendered);
-    actions.set(rendered, action);
-  };
-
-  for (const action of explicit) {
-    if (action.mode === "phase-boundary") {
-      add(PHASE_HANDOFF_OPTION, { kind: "handoff" }, action.reason);
-      continue;
+function askSettlement(entries: SessionEntry[]): AskSettlement | undefined {
+  return currentTurnSignal(entries, ASK_SETTLEMENT_EVENT, (entry) => {
+    const data = entry.data as { outcome?: unknown; target?: unknown } | undefined;
+    if (data?.outcome === "answered" || data?.outcome === "cancelled") return { outcome: data.outcome };
+    if (data?.outcome === "routed" && (data.target === "spec" || data.target === "vibe")) {
+      return { outcome: "routed", target: data.target };
     }
-    if (action.mode === current) {
-      const prompt =
-        current === "questionnaire"
-          ? questionnaireKickoff(action.prompt, action.reason, artifactReason, "continue", current)
-          : action.prompt;
-      add(CONTINUE_LABELS[current], { kind: "continue", mode: current, ...(prompt ? { prompt } : {}) }, action.reason);
-      continue;
-    }
-    const prompt =
-      action.mode === "questionnaire"
-        ? questionnaireKickoff(action.prompt, action.reason, artifactReason, "start", current)
-        : action.prompt;
-    add(
-      transitionLabel(current, action.mode),
-      { kind: "switch", mode: action.mode, startAgent: true, ...(prompt ? { prompt } : {}) },
-      action.reason,
-    );
-  }
-  for (const mode of WORKFLOW_MODES) {
-    if (mode === current || agentModes.has(mode)) continue;
-    // A pending artifact means an explicit mode switch is an instruction to
-    // continue that work, not merely relabel the session and strand the User.
-    add(secondaryLabel(current, mode, openWork, artifactReason), { kind: "switch", mode, startAgent: openWork });
-  }
-  if (!explicit.some((action) => action.mode === "phase-boundary")) {
-    add(HANDOFF_OPTION, { kind: "handoff" });
-  }
-  add(customLabel(), { kind: "custom" });
-  return { options, actions };
+    return undefined;
+  });
 }
 
-export function modeOptions(
-  current: WorkflowMode,
-  openWork = true,
-  explicit?: NextStepAction[],
-  artifactReason?: string,
-): string[] {
-  return pickerState(current, openWork, explicit, artifactReason).options;
-}
-
-function defaultKickoff(
-  mode: WorkflowMode,
-  intent: KickoffIntent,
-  previous?: WorkflowMode,
-  nextAction?: string,
-): string {
+function defaultKickoff(mode: WorkflowMode, intent: KickoffIntent, previous?: WorkflowMode): string {
   const source = previous ?? mode;
-  const directive = kickoffDirective(source, mode);
-  const context = kickoffContext(nextAction);
+  const directive = agentApiText(`message.kickoff.directive.${source}.${mode}`);
   if (intent === "start" && previous && previous !== mode) {
     return agentApiTemplate("message.kickoff.transition", {
       source: MODE_LABEL[previous],
       target: MODE_LABEL[mode],
       directive,
-      context,
     });
   }
   return agentApiTemplate(intent === "start" ? "message.kickoff.start" : "message.kickoff.continue", {
     target: MODE_LABEL[mode],
     directive,
-    context,
   });
 }
 
@@ -319,14 +135,9 @@ export function continueKickoff(
   prompt?: string,
   intent: KickoffIntent = "continue",
   previous?: WorkflowMode,
-  nextAction?: string,
 ): string {
-  const supplied = prompt?.trim();
-  if (supplied) return supplied;
-
-  const kickoff = defaultKickoff(mode, intent, previous, nextAction);
-  if (mode === "questionnaire") return `${kickoff}\n${agentApiText("message.questionnaire.start")}`;
-  return kickoff;
+  const kickoff = prompt?.trim() || defaultKickoff(mode, intent, previous);
+  return mode === "align" ? `${kickoff}\n${agentApiText("message.align.start")}` : kickoff;
 }
 
 function sendContinueKickoff(
@@ -335,90 +146,108 @@ function sendContinueKickoff(
   prompt?: string,
   intent: KickoffIntent = "continue",
   previous?: WorkflowMode,
-  nextAction?: string,
 ): void {
-  // Use the user-message path so Pi runs before_agent_start again and injects
-  // the current persisted mode marker and workflow contract for the continuation.
-  pi.sendUserMessage(continueKickoff(mode, prompt, intent, previous, nextAction), { deliverAs: "followUp" });
+  pi.sendUserMessage(continueKickoff(mode, prompt, intent, previous), { deliverAs: "followUp" });
 }
 
-/** Start the same continuation used by non-Q&A picker transitions. */
 export function startModeContinuation(
   pi: ExtensionAPI,
   mode: WorkflowMode,
   previous?: WorkflowMode,
-  nextAction?: string,
   prompt?: string,
 ): void {
-  sendContinueKickoff(pi, mode, prompt, "start", previous, nextAction);
+  sendContinueKickoff(pi, mode, prompt, "start", previous);
 }
 
-// The handoff checkpoint turn is the extension talking to itself; a picker there
-// would interrupt the very update the handoff is waiting for.
+function transitionLabel(current: WorkflowMode, next: WorkflowMode): string {
+  if (next === "align") return `${MODE_LABEL.align} — Clarify or review decisions`;
+  if (current === "align" && next === "spec") return `${MODE_LABEL.spec} — Research and propose`;
+  if (current === "align" && next === "vibe") return `${MODE_LABEL.vibe} — Start implementing`;
+  if (current === "spec" && next === "vibe") return `${MODE_LABEL.vibe} — Implement the proposal`;
+  if (current === "vibe" && next === "spec") return `${MODE_LABEL.spec} — Research and revise`;
+  return `${MODE_LABEL[next]} — Continue in ${MODE_LABEL[next]}`;
+}
+
+function pickerState(current: WorkflowMode, explicit: NextStepAction[] = []): PickerState {
+  const options: string[] = [];
+  const actions = new Map<string, PickerAction>();
+  const recommended = new Set<NextStepActionMode>();
+  const add = (label: string, action: PickerAction, reason?: string) => {
+    const rendered = reason ? `${label} — ${reason}` : label;
+    options.push(rendered);
+    actions.set(rendered, action);
+  };
+
+  for (const action of explicit) {
+    if (recommended.has(action.mode)) continue;
+    recommended.add(action.mode);
+    if (action.mode === "handoff") {
+      add(HANDOFF_OPTION, { kind: "handoff" }, action.reason);
+    } else if (action.mode === current) {
+      add(transitionLabel(current, current), { kind: "continue", mode: current, prompt: action.prompt }, action.reason);
+    } else {
+      add(
+        transitionLabel(current, action.mode),
+        { kind: "switch", mode: action.mode, prompt: action.prompt },
+        action.reason,
+      );
+    }
+  }
+
+  for (const mode of WORKFLOW_MODES) {
+    if (recommended.has(mode)) continue;
+    if (mode === current) add(`${MODE_LABEL[mode]} — Continue current mode`, { kind: "continue", mode });
+    else add(`${MODE_LABEL[mode]} — Switch mode`, { kind: "switch", mode });
+  }
+  if (!recommended.has("handoff")) add(HANDOFF_OPTION, { kind: "handoff" });
+  add(RETURN_OPTION, { kind: "return" });
+  return { options, actions };
+}
+
 let suppressNext = false;
 
-export function suppressModePicker(): void {
+export function suppressModePicker(): () => void {
   suppressNext = true;
+  return () => {
+    suppressNext = false;
+  };
 }
 
-/** Persist the User's switch and log it where the artifact records decisions. */
 export async function applyMode(
   pi: ExtensionAPI,
-  ctx: Pick<PickerContext, "cwd" | "hasUI" | "ui">,
+  ctx: Pick<PickerContext, "hasUI" | "ui">,
   mode: WorkflowMode,
-  previous?: WorkflowMode,
+  _previous?: WorkflowMode,
 ): Promise<void> {
   recordWorkflowMode(pi, mode);
-  const name = pi.getSessionName();
-  if (name && previous !== mode) {
-    await recordModeTransition(ctx.cwd, name, mode).catch(() => {
-      if (ctx.hasUI) ctx.ui.notify("Workflow mode changed, but its artifact log could not be updated.", "warning");
-    });
-  }
   if (ctx.hasUI) ctx.ui.notify(`${MODE_LABEL[mode]} mode selected for this session.`, "info");
 }
 
-export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext): Promise<void> {
+export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext, force = false): Promise<void> {
   if (!ctx.hasUI) return;
-
   const branch = ctx.sessionManager.getBranch();
   const current = resolveWorkflowMode(branch);
-  const planName = pi.getSessionName() ?? ctx.sessionManager.getSessionName?.();
-  const openWork = await currentPlanHasOpenWork(ctx.cwd, planName);
-  const artifactNextAction = await currentPlanNextAction(ctx.cwd, planName);
-  const nextStep = deriveNextStepSignal(branch, current);
-  const actions =
-    nextStep?.actions ??
-    defaultActions(current, isLeanContext(ctx.getContextUsage?.()), openWork, planWasJustSaved(branch));
-  const state = pickerState(current, openWork, actions, artifactNextAction);
+  const explicit = deriveNextStepSignal(branch, current);
+  if (!force && !explicit) return;
+
+  const state = pickerState(current, explicit);
   const checkpoint = openCheckpoint(pi, "mode");
   let choice: string | undefined;
   try {
-    choice = await duringUserWait(pi, "question", () => ctx.ui.select("What next?", state.options));
+    choice = await duringUserWait(pi, "mode", () => ctx.ui.select("What next?", state.options));
   } catch (error) {
     resolveCheckpoint(pi, checkpoint.id, "failure");
     throw error;
   }
-
-  // Dismissal and the custom option are the same escape hatch: control returns
-  // to the editor and the mode is untouched.
   if (choice === undefined) {
     resolveCheckpoint(pi, checkpoint.id, "dismissed");
     return;
   }
-
   const action = state.actions.get(choice);
-  if (!action || action.kind === "custom") {
-    resolveCheckpoint(pi, checkpoint.id, action?.kind === "custom" ? "custom" : "dismissed");
+  if (!action || action.kind === "return") {
+    resolveCheckpoint(pi, checkpoint.id, action?.kind === "return" ? "return" : "dismissed");
     return;
   }
-
-  if (action.kind === "continue") {
-    resolveCheckpoint(pi, checkpoint.id, "continue");
-    sendContinueKickoff(pi, action.mode, action.prompt, "continue", current, artifactNextAction);
-    return;
-  }
-
   if (action.kind === "handoff") {
     resolveCheckpoint(pi, checkpoint.id, "handoff");
     const command = `/handoff ${pi.getSessionName() ?? ""}`.trim();
@@ -427,28 +256,35 @@ export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext): Prom
     return;
   }
 
+  if (action.kind === "continue") {
+    resolveCheckpoint(pi, checkpoint.id, "continue");
+    sendContinueKickoff(pi, action.mode, action.prompt, "continue", current);
+    return;
+  }
   resolveCheckpoint(pi, checkpoint.id, action.mode);
   await applyMode(pi, ctx, action.mode, current);
-  if (action.startAgent) sendContinueKickoff(pi, action.mode, action.prompt, "start", current, artifactNextAction);
+  sendContinueKickoff(pi, action.mode, action.prompt, "start", current);
 }
 
 export function registerModePicker(pi: ExtensionAPI): void {
   pi.registerTool({
-    name: "recommend_next",
-    label: "Recommend Next Step",
-    description: agentApiText("tool.recommend-next.description"),
+    name: "next",
+    label: "Next",
+    description: agentApiText("tool.next.description"),
     parameters: NextStepParams,
     async execute(_toolCallId, params: NextStepInput, _signal, _onUpdate, ctx) {
       const mode = resolveWorkflowMode(ctx.sessionManager.getBranch());
-      const actions = params.actions.map(normalizeAction);
-      if (actions.some((action) => !action) || new Set(actions.map((action) => action?.mode)).size !== actions.length) {
+      if (params.actions.length === 0) {
+        pi.appendEntry(NEXT_STEP_EVENT, { mode, actions: [] } satisfies NextStepEvent);
         return {
-          content: [
-            {
-              type: "text" as const,
-              text: "Error: actions must have distinct valid modes; phase-boundary handoff may not include a custom kickoff.",
-            },
-          ],
+          content: [{ type: "text" as const, text: "No next actions were supplied; no picker will open." }],
+          details: { mode, actions: [] },
+        };
+      }
+      const actions = params.actions.map(normalizeAction);
+      if (actions.some((action) => !action)) {
+        return {
+          content: [{ type: "text" as const, text: "Error: every action needs a valid target." }],
           details: { mode, actions: params.actions },
           isError: true,
         };
@@ -459,10 +295,10 @@ export function registerModePicker(pi: ExtensionAPI): void {
         content: [
           {
             type: "text" as const,
-            text: `The post-turn picker will offer ${actions.map((action) => action!.mode).join(", ")} as Agent-authored actions.`,
+            text: `The post-turn picker will rank ${event.actions.map((action) => action.mode).join(", ")}.`,
           },
         ],
-        details: { mode, actions },
+        details: event,
       };
     },
   });
@@ -474,9 +310,13 @@ export function registerModePicker(pi: ExtensionAPI): void {
     }
     const branch = ctx.sessionManager.getBranch();
     const mode = resolveWorkflowMode(branch);
-    // An unresolved or cancelled Q&A exchange has no route to choose. A completed
-    // Ask still opens the picker when its Agent forgot to record recommend_next.
-    if (mode === "questionnaire" && !deriveNextStepSignal(branch, mode) && !completedAsk(branch)) return;
-    await openModePicker(pi, ctx);
+    const settlement = askSettlement(branch);
+    if (settlement?.outcome === "routed" && settlement.target) {
+      await applyMode(pi, ctx, settlement.target, mode);
+      startModeContinuation(pi, settlement.target, mode, agentApiText(`message.ask.direct-route.${settlement.target}`));
+      return;
+    }
+    if (settlement?.outcome === "cancelled") return;
+    if (deriveNextStepSignal(branch, mode)) await openModePicker(pi, ctx);
   });
 }

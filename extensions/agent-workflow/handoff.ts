@@ -2,7 +2,7 @@
  * openHandoffSession — the /handoff command's implementation.
  *
  * A handoff is the session boundary: it spawns a new session, seeds its name and
- * Q&A mode before the first User message, then resumes alignment against the
+ * Align mode before the first User message, then resumes alignment against the
  * freshly checkpointed artifact.
  *
  * The replacement session inherits only the artifact, so the artifact has to be
@@ -14,11 +14,13 @@
  */
 
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { agentApiTemplate } from "./agent-api.js";
+import { readFile } from "node:fs/promises";
+import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { appendHeadlessNotice } from "./notice.js";
-import { MODE_EVENT, type ModeEvent, resolveWorkflowMode } from "./mode.js";
+import { MODE_EVENT, MODE_LABEL, type ModeEvent, resolveWorkflowMode } from "./mode.js";
 import { continueKickoff, suppressModePicker } from "./mode-picker.js";
-import { currentPlanNextAction, type PlanTask, resolvePlanTask } from "./task.js";
+import { stripTimeSpent } from "./plan-time.js";
+import { isCurrentPlanFormat, planPath, type PlanTask, resolvePlanTask } from "./task.js";
 
 const USAGE = "Usage: /handoff [session-name].";
 
@@ -47,27 +49,68 @@ export async function openHandoffSession(
     return;
   }
 
+  if (!ctx.isIdle()) {
+    notify("Wait for the active turn to settle before handing off.", "warning");
+    return;
+  }
+
   // The source mode supplies transition context, but every replacement session
-  // intentionally re-enters Q&A rather than inheriting executable work.
+  // intentionally re-enters Align rather than inheriting executable work.
   const previous = resolveWorkflowMode(ctx.sessionManager.getBranch());
 
-  // pi.sendUserMessage only queues the turn, so waitForIdle is what guarantees
-  // the artifact is written before the session is replaced.
-  suppressModePicker();
-  notify(`Checkpointing ${task.planPath} before handing off.`, "info");
-  pi.sendUserMessage(checkpointRequest(task));
-  await ctx.waitForIdle();
+  const absolutePlanPath = planPath(ctx.cwd, task.name);
+  const initialContents = await readFile(absolutePlanPath, "utf8").catch(() => "");
+  const legacy = !isCurrentPlanFormat(initialContents);
+  if (!legacy) {
+    notify(`Checkpointing ${task.planPath} before handing off.`, "info");
+    let before = stripTimeSpent(initialContents);
+    let checkpointed = false;
+    for (let attempt = 0; attempt < 2 && !checkpointed; attempt += 1) {
+      const branchLength = ctx.sessionManager.getBranch().length;
+      const releaseSuppression = suppressModePicker();
+      try {
+        pi.sendUserMessage(checkpointRequest(task));
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        await ctx.waitForIdle();
+      } finally {
+        releaseSuppression();
+      }
+      const checkpointEntries = ctx.sessionManager.getBranch().slice(branchLength);
+      const checkpointResponse = [...checkpointEntries]
+        .reverse()
+        .find((entry) => entry.type === "message" && entry.message.role === "assistant");
+      const stopReason =
+        checkpointResponse?.type === "message"
+          ? (checkpointResponse.message as { stopReason?: unknown }).stopReason
+          : undefined;
+      const afterContents = await readFile(absolutePlanPath, "utf8").catch(() => "");
+      const after = stripTimeSpent(afterContents);
+      checkpointed = Boolean(
+        checkpointResponse &&
+        stopReason !== "error" &&
+        stopReason !== "aborted" &&
+        isCurrentPlanFormat(afterContents) &&
+        after !== before,
+      );
+      before = after;
+    }
+    if (!checkpointed) {
+      notify("Handoff stopped because a durable artifact checkpoint could not be verified.", "warning");
+      return;
+    }
+  }
 
-  const nextAction = await currentPlanNextAction(ctx.cwd, task.name);
-  const kickoff = continueKickoff("questionnaire", undefined, "start", previous, nextAction);
+  const kickoff = legacy
+    ? `Begin ${MODE_LABEL.align} against immutable legacy reference ${task.planPath}. Read it for context, then call start before the first .pi write to create a current-format continuation.\n${agentApiText("message.align.start")}`
+    : continueKickoff("align", undefined, "start", previous);
   await ctx.newSession({
     parentSession: ctx.sessionManager.getSessionFile(),
-    // Seed task identity and Q&A before replacement-session extensions initialize;
+    // Seed task identity and Align before replacement-session extensions initialize;
     // only the replacement context may start its alignment kickoff.
     setup: async (sessionManager) => {
       sessionManager.appendSessionInfo(task.name);
       sessionManager.appendCustomEntry(MODE_EVENT, {
-        mode: "questionnaire",
+        mode: "align",
       } satisfies ModeEvent);
     },
     withSession: async (replacementCtx) => {
@@ -77,7 +120,7 @@ export async function openHandoffSession(
         return;
       }
       void pending.catch(() => {
-        replacementCtx.ui.notify("Handoff completed, but Q&A alignment could not start.", "warning");
+        replacementCtx.ui.notify("Handoff completed, but Align could not start.", "warning");
       });
     },
   });

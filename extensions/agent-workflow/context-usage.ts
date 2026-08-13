@@ -1,10 +1,5 @@
 /**
- * Context-usage readout shared across the workflow UI.
- *
- * Lives in agent-workflow (not progress-tracker) so the approval prompt can
- * lean on the same thresholds the Status Bar's `LLM Attention Span (ctx) <bar>`
- * segment uses, without a circular import: progress-tracker already depends
- * on agent-workflow.
+ * Context-usage readout used by Progress Tracker and Status Bar.
  */
 
 import type { ContextUsage, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
@@ -36,14 +31,6 @@ export function contextSeverity(usage: ContextUsage | undefined): ThemeColor | u
   if (percent > CONTEXT_ERROR_PERCENT) return "error";
   if (percent > CONTEXT_WARNING_PERCENT) return "warning";
   return "accent";
-}
-
-/**
- * Whether the context is healthy enough to keep working in this session. An unknown
- * usage counts as lean, mirroring the neutral `ctx —` fallback in the pickers.
- */
-export function isLeanContext(usage: ContextUsage | undefined): boolean {
-  return (contextSeverity(usage) ?? "accent") === "accent";
 }
 
 // Five partial-height blocks show context pressure while leaving room for the

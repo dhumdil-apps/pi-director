@@ -3,30 +3,21 @@ import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
 import { agentApiList, agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
-import { MODE_LABEL, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
-import { applyMode, ASK_SETTLEMENT_EVENT, startModeContinuation } from "./mode-picker.js";
+import { MODE_LABEL, type WorkflowMode } from "./mode.js";
+import { ASK_SETTLEMENT_EVENT } from "./mode-picker.js";
 import { duringUserWait } from "./user-wait.js";
 
-const MIN_QUESTIONS = 1;
-const MAX_QUESTIONS = 4;
-const MIN_OPTIONS = 2;
-const MAX_OPTIONS = 4;
 export const WRITE_CUSTOM_ANSWER = "📝 Write a custom answer...";
 export const PROCEED_WITH_BEST_SPEC = `Proceed with best → ${MODE_LABEL.spec}`;
 export const PROCEED_WITH_BEST_VIBE = `Proceed with best → ${MODE_LABEL.vibe}`;
 const ROUTE_OPTIONS = [PROCEED_WITH_BEST_SPEC, PROCEED_WITH_BEST_VIBE] as const;
-const RESERVED_LABELS = [WRITE_CUSTOM_ANSWER, ...ROUTE_OPTIONS] as const;
-type AskRouteMode = Exclude<WorkflowMode, "questionnaire">;
+type AskRouteMode = Exclude<WorkflowMode, "align">;
 
 const OptionParams = Type.Object({
   value: Type.String({ description: agentApiText("tool.ask.option.value") }),
   label: Type.String({ description: agentApiText("tool.ask.option.label") }),
   description: Type.String({ description: agentApiText("tool.ask.option.description") }),
-  confidence: Type.Integer({
-    minimum: 1,
-    maximum: 5,
-    description: agentApiText("tool.ask.option.confidence"),
-  }),
+  confidence: Type.Integer({ description: agentApiText("tool.ask.option.confidence") }),
 });
 
 const QuestionParams = Type.Object({
@@ -38,19 +29,11 @@ const QuestionParams = Type.Object({
       description: agentApiText("tool.ask.question.custom-answer-label"),
     }),
   ),
-  options: Type.Array(OptionParams, {
-    minItems: MIN_OPTIONS,
-    maxItems: MAX_OPTIONS,
-    description: agentApiText("tool.ask.question.options"),
-  }),
+  options: Type.Array(OptionParams, { description: agentApiText("tool.ask.question.options") }),
 });
 
 const AskParams = Type.Object({
-  questions: Type.Array(QuestionParams, {
-    minItems: MIN_QUESTIONS,
-    maxItems: MAX_QUESTIONS,
-    description: agentApiText("tool.ask.questions"),
-  }),
+  questions: Type.Array(QuestionParams, { description: agentApiText("tool.ask.questions") }),
 });
 
 type AskInput = Static<typeof AskParams>;
@@ -70,34 +53,6 @@ export interface AskDetails {
   cancelled: boolean;
   unanswered: string[];
   routedMode?: AskRouteMode;
-}
-
-function validateInput(params: AskInput): void {
-  const questionIds = params.questions.map((question) => question.id.trim());
-  if (new Set(questionIds).size !== questionIds.length) {
-    throw new Error("Question IDs must be distinct.");
-  }
-
-  for (const question of params.questions) {
-    const labels = question.options.map((option) => option.label.trim());
-    const values = question.options.map((option) => option.value.trim());
-    if (new Set(labels).size !== labels.length) {
-      throw new Error(`Option labels for ${question.id} must be distinct.`);
-    }
-    if (new Set(values).size !== values.length) {
-      throw new Error(`Option values for ${question.id} must be distinct.`);
-    }
-    if (labels.some((label) => RESERVED_LABELS.some((reserved) => reserved === label))) {
-      throw new Error(`Option labels for ${question.id} must not use reserved ask-action labels.`);
-    }
-    if (
-      question.options.some(
-        (option) => !Number.isInteger(option.confidence) || option.confidence < 1 || option.confidence > 5,
-      )
-    ) {
-      throw new Error(`Every option for ${question.id} must have a confidence score from 1 through 5.`);
-    }
-  }
 }
 
 function orderedOptions(question: AskQuestion): AskOption[] {
@@ -131,11 +86,15 @@ function optionAnswer(question: AskQuestion, option: AskOption): AskAnswer {
   };
 }
 
-function acceptRemainingBestAnswers(questions: AskQuestion[], answers: AskAnswer[]): AskAnswer[] {
-  const answeredIds = new Set(answers.map((answer) => answer.id));
-  return questions
-    .filter((question) => !answeredIds.has(question.id))
-    .map((question) => optionAnswer(question, orderedOptions(question)[0]!));
+function acceptBestAnswers(questions: AskQuestion[]): AskAnswer[] {
+  return questions.flatMap((question) => {
+    const best = orderedOptions(question)[0];
+    return best ? [optionAnswer(question, best)] : [];
+  });
+}
+
+function canAcceptBest(questions: AskQuestion[]): boolean {
+  return questions.every((question) => question.options.length > 0);
 }
 
 function routedMode(choice: string): AskRouteMode | undefined {
@@ -144,17 +103,14 @@ function routedMode(choice: string): AskRouteMode | undefined {
   return undefined;
 }
 
-function routeKickoff(mode: AskRouteMode): string {
-  return agentApiText(`message.ask.direct-route.${mode}`);
-}
-
 function transcriptText(answer: AskAnswer, question: AskQuestion | undefined): string {
   const result = `${answer.id}: ${answer.wasCustom ? "User wrote" : "User selected"}: ${answer.label}`;
   if (!question)
     return answer.optionReferences ? `${result}\nOption references: ${answer.optionReferences.join(", ")}` : result;
 
   const options = orderedOptions(question).map(
-    (option, index) => `  ${optionLetter(index)}. ${option.label} — ${option.description}`,
+    (option, index) =>
+      `  ${optionLetter(index)}. ${option.label} · confidence ${option.confidence}/5 — ${option.description}`,
   );
   return [
     `Question: ${question.prompt}`,
@@ -195,15 +151,24 @@ export function registerAsk(pi: ExtensionAPI): void {
       if (!ctx.hasUI) {
         throw new Error("Ask requires an interactive UI.");
       }
-      validateInput(params);
 
       const answers: AskAnswer[] = [];
+      if (params.questions.length === 0) {
+        const details: AskDetails = { answers, cancelled: false, unanswered: [] };
+        pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "answered" });
+        return {
+          content: [{ type: "text" as const, text: "No questions were supplied; Ask made no changes." }],
+          details,
+        };
+      }
       const checkpoint = openCheckpoint(pi, "question");
       try {
         for (const [index, question] of params.questions.entries()) {
           const options = orderedOptions(question);
           const customLabel = customAnswerLabel(question);
-          const labels = [...options.map(pickerLabel), customLabel, ...ROUTE_OPTIONS];
+          const remainingQuestions = params.questions.slice(index);
+          const routes = canAcceptBest(remainingQuestions) ? ROUTE_OPTIONS : [];
+          const labels = [...options.map(pickerLabel), customLabel, ...routes];
           const title =
             params.questions.length === 1
               ? question.prompt
@@ -214,13 +179,11 @@ export function registerAsk(pi: ExtensionAPI): void {
             const choice = await duringUserWait(pi, "question", () => ctx.ui.select(title, labels));
             if (choice === undefined) {
               const details: AskDetails = {
-                answers,
+                answers: [],
                 cancelled: true,
-                unanswered: params.questions.slice(index).map((item) => item.id),
+                unanswered: params.questions.map((item) => item.id),
               };
               resolveCheckpoint(pi, checkpoint.id, "cancelled");
-              // Let the post-turn picker distinguish an explicit cancellation
-              // from an earlier completed Ask in the same Agent turn.
               pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "cancelled" });
               return {
                 content: [{ type: "text" as const, text: resultText(details, params.questions) }],
@@ -230,7 +193,7 @@ export function registerAsk(pi: ExtensionAPI): void {
 
             const route = routedMode(choice);
             if (route) {
-              answers.push(...acceptRemainingBestAnswers(params.questions, answers));
+              answers.push(...acceptBestAnswers(remainingQuestions));
               const details: AskDetails = {
                 answers,
                 cancelled: false,
@@ -238,9 +201,10 @@ export function registerAsk(pi: ExtensionAPI): void {
                 routedMode: route,
               };
               resolveCheckpoint(pi, checkpoint.id, route);
-              const previous = resolveWorkflowMode(ctx.sessionManager.getBranch());
-              await applyMode(pi, ctx, route, previous);
-              startModeContinuation(pi, route, previous, undefined, routeKickoff(route));
+              // The current run still carries its Align mode prompt. Defer the
+              // User-selected transition until agent_settled so the target starts
+              // a fresh run through before_agent_start with the correct marker.
+              pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "routed", target: route });
               return {
                 content: [{ type: "text" as const, text: resultText(details, params.questions) }],
                 details,
@@ -282,8 +246,6 @@ export function registerAsk(pi: ExtensionAPI): void {
         unanswered: [],
       };
       resolveCheckpoint(pi, checkpoint.id, "answered");
-      // The mode picker consumes this current-turn marker if the Agent forgets
-      // recommend_next after a completed Q&A exchange.
       pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "answered" });
       return {
         content: [{ type: "text" as const, text: resultText(details, params.questions) }],

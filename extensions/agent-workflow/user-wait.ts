@@ -3,7 +3,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 /** Display-only signal for time the Agent is blocked on a human-owned dialog. */
 export const USER_WAIT_EVENT = "agent-workflow:user-wait";
 
-export type UserWaitReason = "question" | "approval";
+export type UserWaitReason = "question" | "mode";
 
 export interface UserWaitEvent {
   waiting: boolean;

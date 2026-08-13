@@ -66,8 +66,8 @@ metrics use uppercase `CPU`, `RAM`, `SSD`, and `NET` labels. The token segment
 keeps input/output counts dim. The cost segment is accent below $5, warning
 from $5, and error from $10.
 
-Agent Workflow owns task naming through `save_plan`: saving a plan names the
-session after the task (a concise `SI-<ticket>-<summary>` form). This producer
+Agent Workflow owns task naming through `start`: naming the plan sets the
+session to a timestamped task slug with an optional ticket ID. This producer
 only displays the current name immediately before the git branch and follows
 session-name changes and resumes.
 

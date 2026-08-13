@@ -1,220 +1,49 @@
 # Agent Workflow
 
-[`workflow-steps.md`](workflow-steps.md) is the injected agent-flow contract;
-[`agent-guidance.md`](agent-guidance.md) holds its non-flow guidance,
-[`agent-api.md`](agent-api.md) owns Agent-visible API descriptions and runtime messages,
-and [`plan-template.md`](plan-template.md) is the readable artifact scaffold. [`index.ts`](index.ts)
-loads the instruction assets as a package-local constant prompt. This page describes
-runtime surfaces and persistence; persisted runtime mode is authoritative when a marker
-or display is stale. For a consolidated rendered view, open [Pi Director documentation](../../docs/pi-director.html).
+Pi Director has three User-owned modes:
 
-## Three modes, chosen by the User
+- **ALIGN** is the recommended clarification and decision-review preflight.
+- **SPEC** researches and presents an actionable proposal without changing files outside `.pi`.
+- **VIBE** implements and verifies the selected direction.
 
-- **Q&A** is Align: an interactive loop for clarifying goal, scope, constraints,
-  trade-offs, and direction. Its internal label is `ALIGN`; it uses the native `ask` tool
-  whenever a consequential choice is open, permits only bounded orientation reads,
-  and defers source research and results to Spec. When direction changes, it keeps
-  the initial goal and pending outcomes visible until the User explicitly resolves
-  them. It changes no project files.
-- **SPEC** researches and designs. Its internal label is `EXPLORE`; it establishes
-  facts, fills the artifact, and presents a proposal with `save_plan`. It changes no
-  project files.
-- **VIBE** executes. Its internal label is `EXECUTE`; it is the mode intended for edits
-  and writes, while the boundary remains advisory rather than a runtime permission gate.
+New sessions and handoffs start in Align. Explicit `/align`, `/spec`, and `/vibe` commands remain escape hatches; `/mode` opens the manual picker. Historical `questionnaire`, `explore`, `plan`, and `execute` mode entries still resolve, but `/questionnaire` does not exist.
 
-A session starts in Q&A. Q&A may proceed directly to Vibe after alignment; Spec
-is optional and starts only when the User chooses research or design. Nothing in
-the bundle ever selects a mode on the Agent's behalf — there is no promotion,
-escalation, or fallback. The Agent may recommend a mode; only the User adopts
-one. The choice survives reloads, forks, and
-handoffs, and pre-rename sessions that persisted a phase or a two-value mode fold
-onto these three on read.
+## Three mechanism-only tools
 
-Close out is a step at the end of a turn, not a fourth mode.
+The runtime exposes only capabilities instructions cannot reproduce:
 
-## The mode picker
+- `ask` renders native questions and owns cancellation plus direct Spec/Vibe settlement.
+- `start` permanently names the session artifact or creates a linked continuation from an immutable legacy plan.
+- `next` records ranked actions for the automatic post-turn picker.
 
-The picker is the post-turn decision surface, and it is owned by the runtime
-rather than by a tool, so the Agent cannot skip a needed route by forgetting a
-call. Before settling, the Agent can use `recommend_next` to record one or more
-mode actions without changing mode. Each Agent-authored action may carry its own
-reason and custom kickoff. The runtime renders those actions before manual
-mode-switch choices:
+Only an explicit `next` call opens an automatic picker. Recommended actions appear first, followed by remaining modes, handoff, and `Return to editor`. Selecting handoff prepares `/handoff <name>` in the editor for explicit User execution. Empty recommendations open nothing; `/mode` remains the manual recovery surface.
 
-- An Agent can list any combination of Q&A, Spec, and Vibe. Each selected listed
-  action persists its mode and starts the matching continuation. A listed current
-  mode uses its Continue label; a listed Q&A route starts with native `ask`.
-- While work remains, an omitted Agent action receives a contextual runtime
-  fallback: a saved Spec plan starts Vibe, in-progress Spec/Vibe continues its
-  current mode, and context pressure offers a handoff. Any selected manual mode
-  switch also starts the pending artifact; only completed work returns to the editor
-  for a new direction.
-- Agent-authored actions use mode-prefixed plain-language labels and can include
-  their own concise reason, such as `🚀 VIBE — Start implementing the plan — verify
-the API`. They have no `(recommended)` marker; ask-option confidence is separate.
-- `🤝 Hand off next phase` is an explicit phase-boundary action. The always
-  available `🤝 Hand off to a fresh session` prepares `/handoff <name>` in the
-  editor and requires Enter; every handoff checkpoints first, then starts Q&A
-  alignment in the replacement session.
-- The contextual `📝 Write a custom answer...` option and dismissal return to the
-  editor with the mode untouched. Manual secondary actions use emoji-prefixed,
-  plan-aware labels that include the first pending checklist item.
+Question counts, option counts, confidence scale, identifiers, naming quality, and decision completeness are Agent instructions rather than runtime validation. Empty Ask is a harmless no-op; an optionless question retains custom input but cannot Proceed-with-best.
 
-Agent actions expire at the next User message and never carry into a later turn.
-Runtime fallback actions apply only while the artifact has unfinished work. A normally
-completed native Ask also opens the picker when its Agent omitted `recommend_next`;
-cancelled or unresolved Q&A still returns to the editor.
+## Agent-interpreted artifact
 
-`/questionnaire`, `/spec`, and `/vibe` switch mode directly when the picker itself is
-unavailable, and `/mode` re-opens it. `/questionnaire` waits for the next User input;
-`/spec` and `/vibe` start the same extension-generated continuation as picker transitions.
+One versioned `.pi/plan/<name>.md` follows the task across modes and handoffs. The flat artifact contains Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.
 
-The mode picker routes work after a turn; Q&A begins every interaction with
-`ask`, and `ask` gathers concrete alignment questions inside a turn from any
-interactive mode. It presents 1–4 native option
-pickers, ranks their options by descending numeric confidence (1–5), and identifies
-its displayed choices as A, B, C, or D in that order. Ties preserve the Agent-supplied
-order. Ordinary selections retain their stable values and original labels; custom
-input includes the displayed letter-to-label key so the Agent can interpret references
-such as “combine A and B” before settlement. Its result also includes the full prompt,
-context, and displayed option descriptions so the Agent can preserve complete Q&A evidence
-in the artifact. When a decision needs user-supplied detail, authors set `customAnswerLabel`
-to a concise input intent, such as “Describe desired behavior”. The picker then shows `📝 Write a custom answer... → Describe
-desired behavior`, rather than adding a selectable “specify” option that cannot open
-an input field.
-Every picker also offers `Proceed with best → Spec` and `Proceed with best → Vibe`.
-Either explicit User action preserves prior manual answers, accepts each remaining
-highest-confidence answer, persists the selected mode, and queues a target-mode turn
-that records the accepted decisions before working. Batch only independent questions
-whose wording and options remain valid regardless of sibling answers; dependent
-follow-ups require a fresh `ask` call after the earlier answer. Q&A should keep this
-exchange conversational and question-first; confidence is guidance only, not
-permission to skip unresolved alignment.
-Spec blockers stop, write the problem and recommended resolution into the artifact,
-and recommend Q&A. Vibe proceeds autonomously through routine implementation work. Only
-a genuine Vibe blocker may open native Ask: it records the problem first, then lets the
-User resolve it directly in Vibe, request broader Q&A, or choose another available route.
-An ordinary Ask answer never changes mode; the Agent recommends Q&A only when the User
-leaves the blocker unresolved for broader alignment. Vibe resolves implementation research
-in place rather than treating Spec as an execution prerequisite.
+The Agent preserves the initial goal, accepted follow-ups, and unresolved outcomes as cumulative scope. Follow-up work may add, defer, supersede, skip, fail, or complete a stable C outcome, but it may not silently erase or rename one. Stable Agent-chosen Q/D/C identifiers make question, decision, and outcome lifecycles reviewable across turns.
 
-Picker and native ask-tool latency is the User's time: it pauses the active mode
-clock and accrues to no bucket.
+Runtime does not parse checklist or decision status. The Agent interprets the free-form artifact as a whole, keeps Work log and both transcripts append-only, and leaves the artifact resumable without chat history after every turn.
 
-## Mode as execution guidance
+Spec and Vibe record every material autonomous decision directly in Agent transcript with its question, context, 2–3 compared options, selection, rationale, impact, verification, review state, and lifecycle events. Only explicit User acceptance in Align or Proceed-with-best resolves review; implementation and verification do not imply approval.
 
-Q&A and Spec describe read-only work, while Vibe is the mode for execution. This
-boundary is advisory: the runtime does not block `edit`/`write` calls or warn
-about shell and custom tools based on mode. The User still owns the mode choice,
-and the injected contract remains the primary behavioral guide. Vibe may use
-`record_auto_decision` only for reversible, low-risk, in-scope choices already
-implied by the task; the artifact carries its rationale, impact, and verification
-for close-out review. At close-out, a clean completed task returns to the editor;
-Vibe recommends Q&A only when review-worthy autonomous decisions, limitations, or
-follow-up concerns remain.
+All modes may update `.pi` workflow state, but only Vibe may change files outside `.pi`. This remains an Agent rule rather than a runtime sandbox. The hidden memory-review marker remains `/init`-only.
 
-There is no separate plan-approval gate. Switching to Vibe is the approval, which
-is why `save_plan` persists and echoes rather than interrupting the turn.
+## Close-out and handoff
 
-## Artifacts
+`CLOSE_OUT` is a shared Agent procedure, not an artifact section. It reconciles the initial goal, accepted follow-ups, every C outcome, and every D lifecycle; appends actual changes, verification, omitted checks, limitations, and concerns to Work log; and calls `next` only when a useful choice remains. Unrelated or pre-existing failures are reported without widening scope. Spec then returns a concise proposal summary with the artifact path; Vibe returns a concise implementation result.
 
-An unnamed first turn creates a timestamped plan from the flat template plus
-`.pi/MEMORY.md` when absent. Its temporary filename uses randomly selected
-neutral words from a prepared vocabulary rather than the prompt. `start_task`
-then renames that scaffold once.
+Only durable orientation and costly quirks belong in project memory during ordinary close-out. The hidden review marker remains exclusively owned by `/init`.
 
-**One session owns one plan file.** A later `start_task` with a different name is
-refused rather than starting a second record, so the initial goal and every
-revision stay in one place across the whole session and its handoffs. A genuinely
-new goal belongs in a fresh session. Plan files are never deleted automatically
-and `.pi/plan/` accumulates.
+For current artifacts, `/handoff [session-name]` requests a semantic checkpoint, verifies that the file changed beyond its timing block, and retries once. Failed persistence keeps the current session. Fresh Align reads the whole artifact and chooses the most important unresolved item; runtime derives no state from its prose.
 
-The flat template in [`plan-template.md`](plan-template.md) contains Goal, Align,
-Q&A transcript, Current state, Findings, Decisions, Desired state, Approach, Work log,
-Quirks, Checklist, and Close out with Status, optional Auto-mode decisions, PR summary,
-and QA steps; runtime code inserts the script-owned timing block. `## Q&A transcript`
-preserves each completed native Ask exchange: its prompt, context, every displayed option
-with label and description, and the User's selected or verbatim custom answer. `## Align`
-remains the concise decision record. Sections stay stubbed until the mode that owns them
-fills one, so a session that only ever researched simply never grows a work log.
+Legacy artifacts remain immutable. Legacy handoff opens fresh Align against the old plan, and `start` creates a linked current-format continuation before the first `.pi` write. Runtime carries recognized historical timing; the Agent converts meaningful goal, evidence, decision, and checklist context while preserving the source file.
 
-Checklist boxes are cumulative live completion metadata: repeated task text is
-one task, the latest checkbox state wins, and unique pending tasks from older
-revisions remain actionable. Keep the initial Goal and checklist labels verbatim
-when changing only completion state; do not rename or split a pending item without
-explicitly resolving the original. Before closeout, reconcile every requested
-outcome from the initial goal, accepted proposals, and follow-up instructions
-against the cumulative checklist. Closeout updates completed boxes across revisions
-while historical narrative remains append-only. Write `### Status` / `complete` only
-after every requested outcome is reconciled, including any renamed historical item.
-The runtime reads that marker only from the latest revision's close-out and then
-suppresses stale open-work context; a later revision reopens normal checklist
-tracking until it is closed again. Every `### Auto-mode decisions` entry must be
-reviewed with verification details before completion.
+## Source ownership
 
-`save_plan` belongs to Spec. It replaces only an untouched pre-execution draft
-and appends a dated revision after execution history exists. Once a plan has
-execution history or a Close out, follow-up work belongs in a dated `## Revision
-N` at the bottom; earlier narrative remains historical, while live checklist
-status may be updated. Once execution has begun, the plan name is immutable in code and an
-attempted rename fails before any file move.
+`workflow-steps.md` is the sole operational pseudocode injected into the Agent prompt. `agent-api.md` contains only tool schemas and runtime copy. `plan-template.md` owns the readable artifact scaffold.
 
-## Handoffs
-
-`/handoff [session-name]` continues the same artifact in a fresh Q&A session.
-Both handoff actions seed the task name and Q&A before the replacement extensions
-initialize, so Martin reviews the completed boundary before more work begins.
-
-The replacement session inherits the artifact and nothing else. `/handoff` drives
-one checkpoint turn in the outgoing session and waits for it. That turn brings the
-plan file fully up to date, including reconciliation of cumulative checklist statuses
-across revisions. Without it, a handoff would discard exactly the context it exists
-to preserve. After the checkpoint, the replacement reads the latest pending artifact
-item and begins native-Ask alignment using only its fresh session context. The picker
-suppresses itself for the outgoing checkpoint settlement.
-
-## Timing
-
-Each artifact carries a script-owned `time-spent` block with one bucket per mode:
-Q&A, SPEC, and VIBE, plus unallocated history. Every bucket is Agent work only;
-time spent waiting on the User is never billed to a mode. Progress Tracker accrues
-the active bucket and closes the interval the moment the mode changes, so a switch
-mid-run splits the time correctly.
-
-Markers written before the rename migrate one-to-one — explore becomes Spec and
-execute becomes Vibe — while the retired decision bucket folds into unallocated,
-so no existing plan loses time.
-`stripTimeSpent` excludes the block from plan identity, so a timer write cannot
-disturb revision detection.
-
-## Headless
-
-Non-interactive sessions have no picker to answer and no gate to satisfy, so the
-contract would describe a workflow that cannot happen. `before_agent_start`
-returns the system prompt untouched when there is no UI: no injection, no
-scaffold, no picker.
-
-## Focused exploration
-
-After the scaffold exists, start with one exact symbol or path search before
-opening files. Keep search output bounded with limited matches and line width.
-Read only the owning implementation and directly relevant evidence, using small
-`offset`/`limit` windows (about 200 lines at a time unless a concrete reason
-requires more). Exclude `node_modules`, generated/vendor/cache trees, and source
-maps unless they are the explicit target. Stop when the question is answered;
-broaden only for a concrete unresolved reason.
-
-Before any tool call, match the operation to its schema. If validation rejects a
-call, correct the tool and arguments and retry once; do not switch tool names
-mid-call or claim a rejected mutation succeeded.
-
-## Evidence policy
-
-Use the smallest useful evidence and review diff. Local source and directly
-relevant runtime or documentation evidence lead; memory and historical plans are
-bounded leads to verify. Pi-core documentation is opened only for a named host-API
-question local evidence cannot answer.
-
-## Origin
-
-Bundle-local.
+Headless sessions receive no interactive workflow prompt, scaffold, or picker because they cannot use its UI.

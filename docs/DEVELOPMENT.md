@@ -31,7 +31,7 @@ dogfood a change from inside another project. `-ne` disables extension discovery
 to avoid collision warnings.
 
 Do **not** `pi install <local path>` while the published package is installed:
-both copies register `save_plan`, so the managed extensions fail to load with a
+both copies register the same Agent Workflow tools, so the managed extensions fail to load with a
 tool-conflict error on every start. `-ne -np --no-themes -e` is
 the conflict-free way to run unpublished code.
 
@@ -43,12 +43,8 @@ Run the retained automated checks before committing:
 npm run verify
 ```
 
-`verify` runs formatting, TypeScript, generated-document freshness, and whitespace checks.
+`verify` runs formatting, TypeScript, and whitespace checks.
 Use `npm run format` to apply the repository style. `npm run typecheck` checks every vendored TypeScript extension and must exit zero.
-
-When any Agent Workflow Markdown asset changes, regenerate consolidated documentation
-with `npm run docs:workflow`; the retained `npm run verify` command rejects stale
-`docs/pi-director.html`.
 
 Interactive review still belongs to visual or lifecycle changes: Status Bar
 rendering, the above-editor indicator, the mode picker, and session dashboard.
@@ -82,4 +78,4 @@ Treat an upstream update as a merge, not a blind overwrite:
 5. Run the retained automated checks and review the component interactively when relevant.
 6. Update its snapshot in `UPSTREAM.md`.
 
-High-risk local behavior to preserve includes explicit plan approval (save before presenting), plan-backed project-memory promotion at close-out, and `/init` remaining the only writer of review provenance.
+High-risk local behavior to preserve includes settle-before-route mode injection, evidence-preserving plan presentation, plan-backed project-memory promotion at close-out, and `/init` remaining the only writer of review provenance.

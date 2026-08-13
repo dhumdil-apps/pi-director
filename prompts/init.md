@@ -5,7 +5,7 @@ argument-hint: "[full]"
 
 Run a deliberate repository setup, instruction-layer, and project-memory pass. Requested mode: `${1:-incremental}`.
 
-Use the normal Q&A, Spec, and Vibe workflow. This command may create or revise shared `AGENTS.md`, Pi-local `.pi/AGENTS.md`, and project memory, so show the proposed changes before writing them.
+Use the normal Align, Spec, and Vibe workflow. This command may create or revise shared `AGENTS.md`, Pi-local `.pi/AGENTS.md`, and project memory, so show the proposed changes before writing them.
 
 1. Resolve the current Git repository root. Read its shared root `AGENTS.md` first, then `.pi/AGENTS.md` when present. The shared file is portable contributor guidance; the Pi-local extension owns Pi workflow, project memory, and local tooling.
 2. Determine instruction-audit scope:

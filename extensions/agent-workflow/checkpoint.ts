@@ -4,7 +4,7 @@ import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent
 /** Context-free lifecycle entries for User-visible alignment choices. */
 export const CHECKPOINT_EVENT = "agent-workflow:checkpoint";
 
-export type CheckpointKind = "mode" | "question" | "approval";
+export type CheckpointKind = "mode" | "question";
 
 export type CheckpointEvent =
   | { action: "open"; id: string; kind: CheckpointKind; timestamp: number }
@@ -40,7 +40,7 @@ function isCheckpointEvent(value: unknown): value is CheckpointEvent {
   const event = value as Partial<CheckpointEvent>;
   const validAction =
     event.action === "open"
-      ? event.kind === "mode" || event.kind === "question" || event.kind === "approval"
+      ? event.kind === "mode" || event.kind === "question"
       : event.action === "resolve" && typeof event.outcome === "string";
   return (
     validAction &&
