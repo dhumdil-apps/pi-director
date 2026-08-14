@@ -26,7 +26,9 @@ const DETECTION_HINTS: DetectionHint[] = [
   // reintroducing the exact false-positive class this module's header fix
   // (explicit provider -> no fallback match) is meant to prevent.
   { provider: "kiro", providerTokens: ["kiro"], modelTokens: [] },
-  { provider: "zai", providerTokens: ["zai", "z.ai", "xai"], modelTokens: [] },
+  // "xai" is deliberately not a token here: it is Pi's xAI/Grok provider id
+  // and a substring of itself, so it misidentified SuperGrok sessions as z.ai.
+  { provider: "zai", providerTokens: ["zai", "z.ai"], modelTokens: [] },
 ];
 
 export function detectProvider(model: { provider?: string; id?: string } | undefined): ProviderName | undefined {

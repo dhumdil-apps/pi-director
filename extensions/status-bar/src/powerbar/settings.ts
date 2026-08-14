@@ -1,9 +1,9 @@
 /**
  * Settings for the powerbar via pi-extension-settings.
  *
- * Configurable behavior is limited to layout and weekly subscription pacing.
- * Everything visual is locked (see the constants below) — those knobs existed,
- * were either inert or wrong, and are gone.
+ * Configurable behavior is limited to layout, weekly subscription pacing, and
+ * an unmatched-provider weekly override. Everything visual is locked (see the
+ * constants below) — those knobs existed, were either inert or wrong, and are gone.
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -22,9 +22,13 @@ export const PLACEMENT = "belowEditor" as const;
 export const MAX_LINES = 4;
 
 export const WORKING_DAYS_SETTING_ID = "working-days-per-week";
+export const UNMATCHED_WEEKLY_USED_PERCENT_SETTING_ID = "unmatched-weekly-used-percent";
+export const UNMATCHED_WEEKLY_RESET_SETTING_ID = "unmatched-weekly-reset";
 export const DEFAULT_WORKING_DAYS_PER_WEEK = 5;
 const MIN_WORKING_DAYS_PER_WEEK = 1;
 const MAX_WORKING_DAYS_PER_WEEK = 7;
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?$/;
 
 export type LineNumber = 1 | 2 | 3 | 4;
 export type Side = "left" | "right";
@@ -95,6 +99,55 @@ export function loadWorkingDaysPerWeek(): number {
   );
 }
 
+/** Used percent for the unmatched weekly override. Empty, junk, or out of range is unset. */
+export function parseUnmatchedWeeklyUsedPercent(value: string | undefined): number | undefined {
+  const text = value?.trim() ?? "";
+  if (!text) return undefined;
+  const match = text.match(/^(\d+(?:\.\d+)?)%?$/);
+  if (!match) return undefined;
+  const parsed = Number(match[1]);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return undefined;
+  return parsed;
+}
+
+/** ISO-8601 reset only. Natural grok.com dates stay unset. Date-only is local midnight. */
+export function parseUnmatchedWeeklyReset(value: string | undefined): Date | undefined {
+  const text = value?.trim() ?? "";
+  if (!text) return undefined;
+
+  const dateOnly = text.match(ISO_DATE);
+  if (dateOnly) {
+    const year = Number(dateOnly[1]);
+    const month = Number(dateOnly[2]);
+    const day = Number(dateOnly[3]);
+    const parsed = new Date(year, month - 1, day);
+    if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
+      return undefined;
+    }
+    return parsed;
+  }
+
+  if (!ISO_DATE_TIME.test(text)) return undefined;
+  const ms = Date.parse(text);
+  if (!Number.isFinite(ms)) return undefined;
+  return new Date(ms);
+}
+
+export interface UnmatchedWeeklyOverride {
+  usedPercent: number;
+  resetAt: Date;
+}
+
+/** Both fields must parse or the unmatched weekly override stays unset. */
+export function loadUnmatchedWeeklyOverride(): UnmatchedWeeklyOverride | undefined {
+  const usedPercent = parseUnmatchedWeeklyUsedPercent(
+    getSetting(EXTENSION_NAME, UNMATCHED_WEEKLY_USED_PERCENT_SETTING_ID, ""),
+  );
+  const resetAt = parseUnmatchedWeeklyReset(getSetting(EXTENSION_NAME, UNMATCHED_WEEKLY_RESET_SETTING_ID, ""));
+  if (usedPercent === undefined || resetAt === undefined) return undefined;
+  return { usedPercent, resetAt };
+}
+
 function parseList(value: string | undefined): string[] {
   return (value ?? "")
     .split(",")
@@ -116,6 +169,20 @@ export function registerSettings(pi: ExtensionAPI, segmentOptions: OrderedListOp
       label: "Working days per week",
       description: "Days used to pace weekly subscription bars. Enter an integer from 1 to 7; 6–7 include weekends.",
       defaultValue: String(DEFAULT_WORKING_DAYS_PER_WEEK),
+    },
+    {
+      id: UNMATCHED_WEEKLY_USED_PERCENT_SETTING_ID,
+      label: "Unmatched weekly used %",
+      description:
+        "Manual weekly used percent for unmatched providers (xAI, Bedrock). Use 0–100, optionally with %. Both this and the reset must be set or weekly stays n/a.",
+      defaultValue: "",
+    },
+    {
+      id: UNMATCHED_WEEKLY_RESET_SETTING_ID,
+      label: "Unmatched weekly reset",
+      description:
+        "Manual weekly reset as ISO-8601 (`2026-08-21T18:57` or `2026-08-21`). Natural dates are rejected. Both this and the used percent must be set or weekly stays n/a.",
+      defaultValue: "",
     },
   ];
   for (const line of LINES) {

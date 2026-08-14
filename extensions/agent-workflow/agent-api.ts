@@ -10,7 +10,6 @@ const REQUIRED_KEYS = [
   "command.handoff",
   "tool.ask.description",
   "tool.ask.prompt-snippet",
-  "tool.ask.prompt-guidelines",
   "tool.ask.option.value",
   "tool.ask.option.label",
   "tool.ask.option.description",
@@ -27,18 +26,10 @@ const REQUIRED_KEYS = [
   "tool.next.action.reason",
   "tool.next.action.prompt",
   "tool.next.actions",
-  "message.ask.direct-route.spec",
-  "message.ask.direct-route.vibe",
   "message.ask.cancelled",
   "message.ask.routed",
-  ...["align", "spec", "vibe"].flatMap((source) =>
-    ["align", "spec", "vibe"].map((target) => `message.kickoff.directive.${source}.${target}`),
-  ),
-  "message.kickoff.transition",
-  "message.kickoff.start",
+  "message.kickoff.switch",
   "message.kickoff.continue",
-  "message.align.start",
-  "message.handoff.checkpoint",
 ] as const;
 
 function parseSections(source: string): ReadonlyMap<string, string> {
@@ -69,16 +60,6 @@ export function agentApiText(key: string): string {
   const value = sections.get(key);
   if (!value) throw new Error(`Missing Agent API section: ${key}.`);
   return value;
-}
-
-export function agentApiList(key: string): string[] {
-  return agentApiText(key)
-    .split("\n")
-    .map((line) => {
-      const match = line.match(/^- (.+)$/);
-      if (!match) throw new Error(`Agent API list ${key} must contain only Markdown list items.`);
-      return match[1];
-    });
 }
 
 /** Substitute only declared placeholders so new Agent messages cannot silently use inline copy. */

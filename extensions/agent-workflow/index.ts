@@ -13,7 +13,13 @@ import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@e
 import { agentApiText } from "./agent-api.js";
 import { registerCheckpointInputResolution } from "./checkpoint.js";
 import { openHandoffSession } from "./handoff.js";
-import { deriveWorkflowMode, recordWorkflowMode, workflowModePrompt, type WorkflowMode } from "./mode.js";
+import {
+  deriveWorkflowMode,
+  recordWorkflowMode,
+  resolveWorkflowMode,
+  workflowModePrompt,
+  type WorkflowMode,
+} from "./mode.js";
 import { applyMode, openModePicker, registerModePicker, startModeContinuation } from "./mode-picker.js";
 import { registerWorkflowNotices } from "./notice.js";
 import { registerAsk } from "./ask.js";
@@ -41,10 +47,8 @@ export default function createExtension(pi: ExtensionAPI): void {
   registerModePicker(pi);
 
   const setModeCommand = (mode: WorkflowMode) => async (_args: string, ctx: ExtensionCommandContext) => {
-    const previous = deriveWorkflowMode(ctx.sessionManager.getBranch());
+    const previous = resolveWorkflowMode(ctx.sessionManager.getBranch());
     await applyMode(pi, ctx, mode, previous);
-    if (mode === "align" || mode === previous) return;
-
     startModeContinuation(pi, mode, previous);
   };
   pi.registerCommand("align", {

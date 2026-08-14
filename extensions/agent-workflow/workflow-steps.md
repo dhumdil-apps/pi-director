@@ -96,7 +96,7 @@ ALIGN(message) — recommended preflight and review:
             RETURN without CALL next;
         END IF;
         IF Ask routes directly to SPEC or VIBE THEN;
-            LET runtime settle ALIGN and start a fresh target-mode turn;
+            LET runtime settle ALIGN and start a fresh target-mode turn with only the mechanical transition context;
             IN that turn, reconstruct the full exchange before substantive work;
             RETURN;
         END IF;
@@ -108,6 +108,8 @@ ALIGN(message) — recommended preflight and review:
     IF artifact is temporary AND direction is clear THEN CALL start exactly once;
     IF useful work remains THEN;
         CALL next with only meaningful ranked ALIGN, SPEC, VIBE, and/or handoff actions;
+        FOR EACH non-handoff action INCLUDE a custom instruction grounded in the current C/D identifier or concrete outcome, intended result, and verification target; LET runtime prepend the mechanical switch or continue line;
+        FOR handoff OMIT the kickoff;
     ELSE RETURN to the editor;
     END IF;
 
@@ -179,8 +181,10 @@ CLOSE_OUT(routing := enabled):
     IF routing = disabled THEN ENSURE artifact is resumable and RETURN;
     IF actionable work remains THEN;
         CALL next with ranked appropriate modes and/or handoff;
+        FOR EACH non-handoff action INCLUDE a custom instruction grounded in the current C/D identifier or concrete outcome, intended result, and verification target; LET runtime prepend the mechanical switch or continue line;
+        FOR handoff OMIT the kickoff;
     ELSE IF decision review remains THEN;
-        SUMMARIZE it and CALL next with ALIGN while treating implementation as complete;
+        SUMMARIZE it and CALL next with ALIGN while treating implementation as complete and including a custom instruction grounded in the unresolved D identifier, intended review result, and verification target;
     ELSE;
         DO NOT CALL next;
     END IF;
@@ -188,14 +192,12 @@ CLOSE_OUT(routing := enabled):
 
 HANDOFF:
     IF artifact is current format THEN;
-        ON runtime checkpoint request, RUN CLOSE_OUT(routing := disabled) and APPEND a fresh semantic checkpoint;
-        DO NOT start new work or rely on timing-only changes;
-        LET runtime retry once and verify semantic file change;
-        IF persistence still fails THEN KEEP current session and RETURN failure;
+        USE the already-written artifact and DO NOT start a checkpoint turn;
+        KEEP temporary current-format plans as-is;
     ELSE;
-        DO NOT checkpoint or mutate the legacy artifact;
+        DO NOT mutate the legacy artifact;
     END IF;
-    CONTINUE in fresh ALIGN;
+    CONTINUE in fresh ALIGN with the ordinary continue line;
     READ the whole current artifact or immutable legacy reference;
     CHOOSE the most important unresolved item before asking the next question;
 
@@ -210,11 +212,21 @@ LEGACY_CONTINUATION:
 
 TOOL_MECHANICS:
     tools validate required shapes and protocol enums, not workflow quality;
+    CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly;
+    KEEP question identifiers, option values, and option labels distinct;
+    NEVER imitate native action labels;
+    USE customAnswerLabel for User-supplied detail and NEVER offer a selectable option that merely says "specify";
+    BATCH only independent questions;
+    ASK dependent follow-ups in a later CALL after incorporating earlier answers;
     empty ask is a harmless no-op;
     an optionless question offers custom input but no Proceed-with-best route;
     Proceed-with-best accepts prior answers plus remaining highest-confidence answers and starts fresh SPEC/VIBE;
     manual mode commands accept no unanswered recommendation or unresolved D review;
+    CALL start with a context-informed 2-4 word task name and include a ticket ID when applicable;
     empty next records no recommendation and opens no picker;
+    Agent-authored next actions REQUIRE contextual instructions for recommended ALIGN, SPEC, and VIBE actions and OMIT one for handoff;
+    runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction;
+    manual ALIGN/SPEC/VIBE commands and unrecommended picker choices auto-start with only the neutral switch or continue line;
     duplicate next modes collapse; picker-selected handoff prepares /handoff for explicit User execution;
     counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities;
     IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded;

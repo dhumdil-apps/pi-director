@@ -9,7 +9,7 @@ notices](#upstream-license-notices).
 - **Extension Settings** (`@juanibiapina/pi-extension-settings`) — npm `0.8.0`
 - **Powerbar** (`@juanibiapina/pi-powerbar`) — npm `0.12.0`
 - **Pi Usage** (Powerbar dependency, `@juanibiapina/pi-usage`) — npm `0.1.0`
-- **Usage Extension** (`@tmustier/pi-usage-extension`) — npm `0.9.1`
+- **Usage Extension** (`@tmustier/pi-usage-extension`) — npm `0.9.4`
 
 ## Local divergence
 
@@ -22,6 +22,11 @@ notices](#upstream-license-notices).
 - **Powerbar** — settings are eight per-line segment pickers instead of
   `left`/`right`, and separator, bar style, bar width, and placement are fixed
   constants rather than settings (2026-07-25).
+- **Usage Extension** — Prettier/`.js` imports; `formatAxisCost`, `COLOR_RESET`,
+  and `seriesColor` are exported for `session-dashboard`; exports land in a
+  private `0o700` `/tmp/pi-usage` directory with CSV formula-injection quoting;
+  degenerate timestamp-and-token hashes are not used for cross-file dedupe
+  (2026-08-14).
 
 ## Upstream license notices
 

@@ -12,6 +12,7 @@ Use this page as the navigation map for the `pi-director` package and developmen
 ## Maintainer & Developer Guides
 
 - **[Development & Maintenance](DEVELOPMENT.md)** — Local development, verification, & release
+- **[Agent Workflow Diagrams](AGENT-WORKFLOW-DIAGRAMS.md)** — Progressive visual map (Map → Modes → Machinery → Full picture) of the Agent Workflow contract
 - **[Upstream Inventory](../UPSTREAM.md)** — Upstream snapshots & license notices
 
 ## Source-of-Truth Boundaries

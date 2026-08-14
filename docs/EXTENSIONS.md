@@ -8,7 +8,7 @@ extension.
 
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
-- **Agent Workflow** — User-owned ALIGN / SPEC / VIBE modes, recommended native-Ask preflight, Agent-interpreted artifacts and decisions, ranked routing, and verified handoffs (`ask`, `start`, `next`, `/align`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
+- **Agent Workflow** — User-owned ALIGN / SPEC / VIBE modes, recommended native-Ask preflight, Agent-interpreted artifacts and decisions, ranked routing, and same-artifact handoffs (`ask`, `start`, `next`, `/align`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
 - **Project Memory** — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar
@@ -34,9 +34,13 @@ agent, with the plan file on disk as the only thing carried across.
 ## Extension Preferences registry
 
 Status Bar is the only registrant. It exposes a `Working days per week` number
-setting (default `5`, valid `1`–`7`) plus layout settings: a `Line gap` on/off
-setting and `line1-left`, `line1-right` … `line4-right`, eight ordered segment
-pickers. Weekly values of `6`–`7` include weekends in subscription-bar pacing.
+setting (default `5`, valid `1`–`7`), unmatched weekly override fields
+(`unmatched-weekly-used-percent`, `unmatched-weekly-reset`), plus layout
+settings: a `Line gap` on/off setting and `line1-left`, `line1-right` …
+`line4-right`, eight ordered segment pickers. Weekly values of `6`–`7` include
+weekends in subscription-bar pacing. The unmatched weekly override fills
+`sub-weekly` only when Usage Monitor reports no quota provider; both fields must
+be valid (`0`–`100` and ISO-8601) or that slot stays `n/a`.
 The visual style is fixed on purpose — separator, bar style, bar width, and
 placement were configurable, and were either inert or actively misleading.
 

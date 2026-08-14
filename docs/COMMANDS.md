@@ -6,9 +6,9 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
 
 ## Everyday commands
 
-- **`/align`** / **`/spec`** / **`/vibe`** — Change the session mode. Align is the recommended clarification/review preflight, Spec researches and proposes, and Vibe executes. Repeating the current mode does not start another turn; `/questionnaire` does not exist.
+- **`/align`** / **`/spec`** / **`/vibe`** — Change the session mode and auto-start with only a neutral switch line; repeating the current mode starts with a neutral continue line. Align is the recommended clarification/review preflight, Spec researches and proposes, and Vibe executes. `/questionnaire` does not exist.
 - **`/mode`** — Open the manual mode picker. Agent-recommended actions appear first when present, followed by every remaining mode, handoff, and `Return to editor`. Selecting handoff prepares `/handoff <name>` in the editor; press Enter to execute it.
-- **`/handoff [session-name]`** — Continue the artifact in a fresh Align session. It refuses active runs, verifies a semantic checkpoint with one retry, and spawns nothing when persistence cannot be confirmed.
+- **`/handoff [session-name]`** — Continue the same artifact in a fresh Align session. It refuses active runs, skips a checkpoint turn, and auto-starts ordinary Align continue.
 - **`/init [full]`** — Initializes or realigns tool-agnostic shared and Pi-local instruction layers, then refreshes project memory and review provenance. It proposes approval-gated drift repairs, incrementally audits memory since the hidden reviewed commit by default, and performs a repository-wide audit with `full`.
 - **`/help`** — Full reference: commands, shortcuts, and every active extension
 - **`/extension-settings`** — Edit registered global extension settings
@@ -18,7 +18,7 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
 
 - **`ask`** (Agent Workflow) — Render native Agent-authored questions. The 1–4 question, 2–3 option, confidence, and identifier conventions are instructions rather than runtime limits; Proceed-with-best settles Align before starting Spec or Vibe.
 - **`start`** (Agent Workflow) — Permanently name the temporary artifact or create a linked current-format continuation from an immutable legacy plan.
-- **`next`** (Agent Workflow) — Record ranked actions for the post-turn picker. An empty action list is a harmless no-op; a selected handoff action prepares the explicit `/handoff` command.
+- **`next`** (Agent Workflow) — Record ranked actions for the post-turn picker. Each recommended Align, Spec, or Vibe action includes its own Agent-authored contextual instruction after the neutral runtime transition; handoff omits one. An empty action list is a harmless no-op; a selected handoff action prepares the explicit `/handoff` command.
   Close-out has no tool: durable orientation or quirks captured in the artifact may be promoted into project memory, while only `/init` advances the review marker.
 
 ## Shell and keyboard reminders

@@ -17,7 +17,7 @@ Destructive and external-action consent remains conversational.
 ## The agent switched mode on its own
 
 It cannot. Mode changes only through the picker, `/align`, `/spec`, `/vibe`, or a
-handoff seed. If the prompt or timing bucket looks wrong, the likeliest cause
+handoff that continues in Align. If the prompt or timing bucket looks wrong, the likeliest cause
 is a picker answer that landed on a neighbouring option — run `/mode` and choose
 again, or use the commands directly.
 

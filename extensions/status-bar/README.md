@@ -11,7 +11,7 @@ segments:
 - **`src/powerbar-model/`** — `model` (name + thinking level)
 - **`src/powerbar-provider/`** — `provider`
 - **`src/powerbar-tokens/`** — `cost`, `tokens`, `agent-stats`
-- **`src/powerbar-sub/`** — `sub-hourly`, `sub-weekly` (from Usage Monitor events)
+- **`src/powerbar-sub/`** — `sub-hourly`, `sub-weekly` (from Usage Monitor events; missing slots stay as dim `n/a`)
 - **`src/powerbar-os/`** — `cpu`, `ram`, `disk`/SSD, `net`
 - **Progress Tracker** — `attention-span` (`LLM Attention Span (ctx)`)
 
@@ -32,15 +32,22 @@ position against the configured daily allocations: green before completed-day
 allocation is consumed, blue while consuming today's allocation, and red only
 when usage spills into a future day. The default is five Monday–Friday
 allocations; values six and seven include weekends. The suffix keeps total quota
-left visible.
+left visible. A configured hourly or weekly slot with no live window stays as
+dim `n/a` instead of disappearing. For unmatched providers (xAI, Bedrock), the
+weekly slot can use the two Status Bar override fields below.
 
 ## User surface
 
 Configured through `/extension-settings` (stored under `powerbar`): a
-`Working days per week` number input (default `5`, valid `1`–`7`), a `Line gap`
-on/off setting, and eight ordered pickers, `line1-left` … `line4-right`, one per
-line and side. Each picker labels a segment with the line it defaults to, so an
-unplaced segment is easy to find. Bundle defaults are:
+`Working days per week` number input (default `5`, valid `1`–`7`), unmatched
+weekly override fields `Unmatched weekly used %` and `Unmatched weekly reset`,
+a `Line gap` on/off setting, and eight ordered pickers, `line1-left` …
+`line4-right`, one per line and side. Each picker labels a segment with the line
+it defaults to, so an unplaced segment is easy to find. The unmatched weekly
+override applies only when Usage Monitor has no quota provider; both fields must
+parse (`0`–`100`, optionally with `%`, and ISO-8601 such as `2026-08-21T18:57`)
+or weekly stays `n/a`. Natural grok.com dates are rejected. Known providers keep
+last-good or `n/a` and never read those fields. Bundle defaults are:
 
 - Line 1 — `git-branch,session-name` left, `provider,model` right
 - Line 2 — `cost,agent-stats,tokens` left

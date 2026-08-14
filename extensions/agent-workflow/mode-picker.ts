@@ -81,7 +81,7 @@ function normalizeAction(value: unknown): NextStepAction | undefined {
   const { mode, reason, prompt } = value as { mode?: unknown; reason?: unknown; prompt?: unknown };
   const normalizedMode = mode === "questionnaire" ? "align" : mode === "phase-boundary" ? "handoff" : mode;
   if (!(["align", "spec", "vibe", "handoff"] as unknown[]).includes(normalizedMode)) return undefined;
-  const normalizedPrompt = typeof prompt === "string" ? prompt.trim() : undefined;
+  const normalizedPrompt = typeof prompt === "string" && prompt.trim() ? prompt : undefined;
   return {
     mode: normalizedMode as NextStepActionMode,
     ...(normalizeReason(reason) ? { reason: normalizeReason(reason) } : {}),
@@ -114,19 +114,14 @@ function askSettlement(entries: SessionEntry[]): AskSettlement | undefined {
   });
 }
 
-function defaultKickoff(mode: WorkflowMode, intent: KickoffIntent, previous?: WorkflowMode): string {
+function defaultKickoff(mode: WorkflowMode, previous?: WorkflowMode): string {
   const source = previous ?? mode;
-  const directive = agentApiText(`message.kickoff.directive.${source}.${mode}`);
-  if (intent === "start" && previous && previous !== mode) {
-    return agentApiTemplate("message.kickoff.transition", {
-      source: MODE_LABEL[previous],
-      target: MODE_LABEL[mode],
-      directive,
-    });
+  if (source === mode) {
+    return agentApiTemplate("message.kickoff.continue", { target: MODE_LABEL[mode] });
   }
-  return agentApiTemplate(intent === "start" ? "message.kickoff.start" : "message.kickoff.continue", {
+  return agentApiTemplate("message.kickoff.switch", {
+    source: MODE_LABEL[source],
     target: MODE_LABEL[mode],
-    directive,
   });
 }
 
@@ -136,8 +131,9 @@ export function continueKickoff(
   intent: KickoffIntent = "continue",
   previous?: WorkflowMode,
 ): string {
-  const kickoff = prompt?.trim() || defaultKickoff(mode, intent, previous);
-  return mode === "align" ? `${kickoff}\n${agentApiText("message.align.start")}` : kickoff;
+  const kickoff = defaultKickoff(mode, previous);
+  const instruction = typeof prompt === "string" && prompt.trim() ? prompt : undefined;
+  return instruction ? `${kickoff}\n${instruction}` : kickoff;
 }
 
 function sendContinueKickoff(
@@ -202,15 +198,6 @@ function pickerState(current: WorkflowMode, explicit: NextStepAction[] = []): Pi
   if (!recommended.has("handoff")) add(HANDOFF_OPTION, { kind: "handoff" });
   add(RETURN_OPTION, { kind: "return" });
   return { options, actions };
-}
-
-let suppressNext = false;
-
-export function suppressModePicker(): () => void {
-  suppressNext = true;
-  return () => {
-    suppressNext = false;
-  };
 }
 
 export async function applyMode(
@@ -289,6 +276,21 @@ export function registerModePicker(pi: ExtensionAPI): void {
           isError: true,
         };
       }
+      const invalidPrompt = (actions as NextStepAction[]).some((action) =>
+        action.mode === "handoff" ? Boolean(action.prompt) : !action.prompt,
+      );
+      if (invalidPrompt) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "Error: every Align, Spec, or Vibe action needs a contextual prompt; handoff must omit it.",
+            },
+          ],
+          details: { mode, actions: params.actions },
+          isError: true,
+        };
+      }
       const event: NextStepEvent = { mode, actions: actions as NextStepAction[] };
       pi.appendEntry(NEXT_STEP_EVENT, event);
       return {
@@ -304,16 +306,12 @@ export function registerModePicker(pi: ExtensionAPI): void {
   });
 
   pi.on("agent_settled", async (_event, ctx) => {
-    if (suppressNext) {
-      suppressNext = false;
-      return;
-    }
     const branch = ctx.sessionManager.getBranch();
     const mode = resolveWorkflowMode(branch);
     const settlement = askSettlement(branch);
     if (settlement?.outcome === "routed" && settlement.target) {
       await applyMode(pi, ctx, settlement.target, mode);
-      startModeContinuation(pi, settlement.target, mode, agentApiText(`message.ask.direct-route.${settlement.target}`));
+      startModeContinuation(pi, settlement.target, mode);
       return;
     }
     if (settlement?.outcome === "cancelled") return;

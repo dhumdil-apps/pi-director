@@ -16,7 +16,7 @@ The runtime exposes only capabilities instructions cannot reproduce:
 - `start` permanently names the session artifact or creates a linked continuation from an immutable legacy plan.
 - `next` records ranked actions for the automatic post-turn picker.
 
-Only an explicit `next` call opens an automatic picker. Recommended actions appear first, followed by remaining modes, handoff, and `Return to editor`. Selecting handoff prepares `/handoff <name>` in the editor for explicit User execution. Empty recommendations open nothing; `/mode` remains the manual recovery surface.
+Only an explicit `next` call opens an automatic picker. Every recommended Align, Spec, or Vibe action carries a distinct Agent-authored instruction grounded in the current artifact; runtime prepends only `Switch from … to …` or `Continue in …`, and handoff omits an instruction. Recommended actions appear first, followed by neutral remaining modes, handoff, and `Return to editor`. Manual mode commands and neutral picker choices auto-start with only the mechanical transition line. Selecting handoff prepares `/handoff <name>` in the editor for explicit User execution. Empty recommendations open nothing; `/mode` remains the manual recovery surface.
 
 Question counts, option counts, confidence scale, identifiers, naming quality, and decision completeness are Agent instructions rather than runtime validation. Empty Ask is a harmless no-op; an optionless question retains custom input but cannot Proceed-with-best.
 
@@ -38,12 +38,12 @@ All modes may update `.pi` workflow state, but only Vibe may change files outsid
 
 Only durable orientation and costly quirks belong in project memory during ordinary close-out. The hidden review marker remains exclusively owned by `/init`.
 
-For current artifacts, `/handoff [session-name]` requests a semantic checkpoint, verifies that the file changed beyond its timing block, and retries once. Failed persistence keeps the current session. Fresh Align reads the whole artifact and chooses the most important unresolved item; runtime derives no state from its prose.
+For current artifacts, `/handoff [session-name]` swaps immediately onto the same file, including a temporary plan. It refuses active runs and does not start a checkpoint turn. The replacement is already named and in Align, then auto-starts with ordinary Align continue; fresh Align reads the whole artifact and chooses the most important unresolved item. Runtime derives no state from its prose. Picker-selected handoff still prepares `/handoff` for explicit Enter.
 
 Legacy artifacts remain immutable. Legacy handoff opens fresh Align against the old plan, and `start` creates a linked current-format continuation before the first `.pi` write. Runtime carries recognized historical timing; the Agent converts meaningful goal, evidence, decision, and checklist context while preserving the source file.
 
 ## Source ownership
 
-`workflow-steps.md` is the sole operational pseudocode injected into the Agent prompt. `agent-api.md` contains only tool schemas and runtime copy. `plan-template.md` owns the readable artifact scaffold.
+`workflow-steps.md` is the sole operational pseudocode injected into the Agent prompt. The [Agent Workflow diagrams](../../docs/AGENT-WORKFLOW-DIAGRAMS.md) provide a derived visual map of that contract. `agent-api.md` contains only concise UI/API copy and mechanical runtime messages. `plan-template.md` owns the readable artifact scaffold.
 
 Headless sessions receive no interactive workflow prompt, scaffold, or picker because they cannot use its UI.

@@ -5,8 +5,8 @@
  * Usage Monitor is loaded by Pi as a sibling extension (declared in package.json pi.extensions).
  *
  * We listen to `usage-core:ready` and `usage-core:update-current`.
- * The state includes a `provider` field — when absent (e.g. Bedrock model),
- * we clear the segments.
+ * The state includes a `provider` field — when absent (e.g. xAI / Bedrock),
+ * hourly stays n/a and weekly may use the unmatched settings override.
  *
  * Segment IDs: "sub-hourly", "sub-weekly"
  */
@@ -14,6 +14,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import {
   DEFAULT_WORKING_DAYS_PER_WEEK,
+  loadUnmatchedWeeklyOverride,
   loadWorkingDaysPerWeek,
   parseWorkingDaysPerWeek,
 } from "../powerbar/settings.js";
@@ -208,6 +209,37 @@ export function dailyPacingForWindow(
   };
 }
 
+function formatReset(date: Date, now = new Date()): string {
+  const diffMs = date.getTime() - now.getTime();
+  if (diffMs < 0) return "now";
+
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 60) return `${diffMins}m`;
+
+  const hours = Math.floor(diffMins / 60);
+  const mins = diffMins % 60;
+  if (hours < 24) return mins > 0 ? `${hours}h${mins}m` : `${hours}h`;
+
+  const days = Math.floor(hours / 24);
+  const remHours = hours % 24;
+  return remHours > 0 ? `${days}d${remHours}h` : `${days}d`;
+}
+
+function emitUnavailable(pi: ExtensionAPI, segmentId: string): void {
+  pi.events.emit("powerbar:update", { id: segmentId, text: "n/a", color: "dim" });
+}
+
+function unmatchedWeeklyWindow(): RateWindow | undefined {
+  const override = loadUnmatchedWeeklyOverride();
+  if (!override) return undefined;
+  return {
+    label: "Week",
+    usedPercent: override.usedPercent,
+    resetAt: override.resetAt.toISOString(),
+    resetDescription: formatReset(override.resetAt),
+  };
+}
+
 function emitWindow(
   pi: ExtensionAPI,
   segmentId: string,
@@ -215,7 +247,7 @@ function emitWindow(
   workingDaysPerWeek: number,
 ): void {
   if (!window) {
-    pi.events.emit("powerbar:update", { id: segmentId, text: undefined });
+    emitUnavailable(pi, segmentId);
     return;
   }
 
@@ -240,25 +272,23 @@ function emitWindow(
   });
 }
 
-function clearSegments(pi: ExtensionAPI): void {
-  pi.events.emit("powerbar:update", { id: "sub-hourly", text: undefined });
-  pi.events.emit("powerbar:update", { id: "sub-weekly", text: undefined });
-}
-
 function emitUsage(pi: ExtensionAPI, state: UsageCoreState | undefined): void {
+  const workingDaysPerWeek = loadWorkingDaysPerWeek();
+
   if (!state?.provider) {
-    clearSegments(pi);
+    emitUnavailable(pi, "sub-hourly");
+    emitWindow(pi, "sub-weekly", unmatchedWeeklyWindow(), workingDaysPerWeek);
     return;
   }
 
   const usage = state.usage;
   if (!usage || usage.windows.length === 0) {
-    clearSegments(pi);
+    emitUnavailable(pi, "sub-hourly");
+    emitUnavailable(pi, "sub-weekly");
     return;
   }
 
   const windows = windowsForSegments(usage.windows);
-  const workingDaysPerWeek = loadWorkingDaysPerWeek();
   emitWindow(pi, "sub-hourly", windows.hourly, workingDaysPerWeek);
   emitWindow(pi, "sub-weekly", windows.weekly, workingDaysPerWeek);
 }

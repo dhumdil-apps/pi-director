@@ -1,7 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
-import { agentApiList, agentApiTemplate, agentApiText } from "./agent-api.js";
+import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { MODE_LABEL, type WorkflowMode } from "./mode.js";
 import { ASK_SETTLEMENT_EVENT } from "./mode-picker.js";
@@ -142,7 +142,6 @@ export function registerAsk(pi: ExtensionAPI): void {
     label: "Ask",
     description: agentApiText("tool.ask.description"),
     promptSnippet: agentApiText("tool.ask.prompt-snippet"),
-    promptGuidelines: agentApiList("tool.ask.prompt-guidelines"),
     parameters: AskParams,
     // Native dialogs own input while open and must not race sibling tool calls.
     executionMode: "sequential",

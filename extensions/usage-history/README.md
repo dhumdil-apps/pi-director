@@ -15,5 +15,5 @@ Data collection and caching live in [data.ts](data.ts) (also reused by the
 
 ## Origin
 
-Vendored from `@tmustier/pi-usage-extension` (npm 0.9.1, MIT) — see
+Vendored from `@tmustier/pi-usage-extension` (npm 0.9.4, MIT) — see
 [UPSTREAM.md](../../UPSTREAM.md).

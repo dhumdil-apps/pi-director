@@ -2,9 +2,11 @@
  * Usage Monitor — Subscription usage extension for all providers.
  *
  * Simplified fork of @marckrenn/pi-sub-core (https://github.com/marckrenn/pi-sub).
- * Supports all providers (anthropic, copilot, gemini, antigravity, codex, kiro, zai)
+ * Supports anthropic, copilot, gemini, antigravity, codex, kiro, and zai
  * with corrected provider detection: Bedrock no longer falls back to model tokens
  * when the provider field is explicitly set and doesn't match any known provider.
+ * xAI / SuperGrok is not a live quota source; Status Bar shows n/a (and an
+ * optional unmatched weekly override) instead of a live window.
  *
  * Emits:
  *   - "usage-core:ready"          → { state: UsageCoreState }
