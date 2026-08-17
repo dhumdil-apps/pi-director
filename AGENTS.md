@@ -33,4 +33,5 @@ do not cover.
 - Inspect status and task-owned diffs before editing, and preserve unrelated user changes.
 - Do not commit secrets, runtime session data, or generated artifacts.
 - Keep commits focused and reviewable when commits are requested.
+- When stacked PRs are chosen for multi-phase work, follow `skills/stacked-prs/SKILL.md` recipes; never push or create PRs without explicit User confirmation.
 - Never rewrite shared history or force-push.

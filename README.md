@@ -4,9 +4,7 @@
 
 A [Pi](https://pi.dev) package that directs deliberate coding sessions through
 three modes the human owns — Align to clarify, Spec to research and propose, Vibe to
-execute — with durable memory, instant same-artifact handoffs, and visible status. When a
-human-authorized Pi Inspector session is available, Director can verify browser
-behavior through shared semantic state and flows.
+execute — with durable memory, instant same-artifact handoffs, and visible status.
 
 ## Quick Start
 
@@ -52,7 +50,8 @@ pi list
 - **agent-workflow** — User-owned ALIGN / SPEC / VIBE modes with three mechanism-only tools (`ask`, `start`, `next`), Agent-interpreted task artifacts, explicit ranked routing, reviewable Spec/Vibe decisions, and verified fresh-session handoffs. See [the agent-workflow README](extensions/agent-workflow/README.md).
 - **project-memory** — Low-noise startup check for the hidden `memory-review` commit cursor. It ignores uncommitted work, gives relevant commits a one-day grace period, and suppresses repeated reminders until both `HEAD` changes and 24 hours pass; cooldown state stays outside the repository.
 - **progress-tracker** — Above-editor per-mode Align/Spec/Vibe timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
-- **pi-inspector skill & bridge** — Detects an authorized Pi Inspector session for browser debugging and verification, while reporting Director mode and session context back to Inspector over its display-only channel.
+- **pi-inspector-bridge** — Reports Director mode and session context back to a discoverable Pi Inspector over its display-only channel.
+- **stacked-prs skill** — On-demand guidance for creating, managing, and rebasing stacked branches using the GitHub CLI (`gh`) when the user chooses a stacked PR workflow.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota metrics in the status bar.
 - **usage-history** — Historical token/cost reporting (`/usage`).

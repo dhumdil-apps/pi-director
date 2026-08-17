@@ -128,6 +128,7 @@ SPEC(message) — research and proposal:
     EXCLUDE node_modules, generated, vendor, cache trees, and source maps unless explicitly targeted;
     EDIT Evidence, Proposal, Checklist, and Work log without changing files outside .pi;
     PREFER the smallest sufficient proposal and RECORD meaningful rejected alternatives;
+    FOR multi-phase work where incremental review is useful, OFFER classic single-branch vs stacked PRs (via stacked-prs skill) as an explicit choice;
     FOR EACH material autonomous choice RUN RECORD_DECISION(choice);
     IF a product, destructive, external, irreversible, credential, dependency, or consequential choice appears THEN;
         choice_result := CALL ask immediately;
@@ -144,6 +145,7 @@ SPEC(message) — research and proposal:
 VIBE(message) — implementation:
     IF ALIGN was bypassed AND artifact is temporary THEN CALL start before substantive work;
     IMPLEMENT accepted scope and RESOLVE routine implementation research in place;
+    IF stacked PRs was chosen THEN FOLLOW the stacked-prs skill recipes for branch hierarchy and gh PR targeting;
     FOR EACH material autonomous choice RUN RECORD_DECISION(choice);
     IF a product, destructive, external, irreversible, credential, dependency, or consequential choice appears THEN;
         choice_result := CALL ask before crossing the boundary;
