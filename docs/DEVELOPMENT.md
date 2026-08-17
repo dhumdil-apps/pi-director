@@ -21,7 +21,7 @@ Run the working copy — extensions, prompts, and themes, no push required — w
 off so the managed copy cannot load alongside it:
 
 ```bash
-pi -ne -np --no-themes -e ~/GitHub/dev/pi-stack/pi-director
+pi -ne -np --no-themes -e <repository>
 ```
 
 `-e` accepts the package directory and reads its `package.json` manifest; `.`
@@ -51,11 +51,14 @@ rendering, the above-editor indicator, the mode picker, and session dashboard.
 
 ## After publishing
 
-Push, then refresh the managed copy consumers actually run:
+Push, then refresh the managed copy of this package:
 
 ```bash
 pi update --extension https://github.com/dhumdil-apps/pi-director && pi list
 ```
+
+`--extension <url>` updates only this package. Consumers refreshing every
+installed extension package can keep using `pi update --extensions`.
 
 ## Change checklist
 

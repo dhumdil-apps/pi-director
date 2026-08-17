@@ -29,8 +29,8 @@ renders the one thing the transcript cannot show.
   second invites a review, a refinement, or a clean new session for the next
   task. It is **display only**: the prompt follows the session's
   workflow mode, which only the User changes through the mode picker, `/align`,
-  `/spec`, `/vibe`, or a handoff seed. `/align` changes mode without starting Agent
-  work; `/spec` and `/vibe` start a continuation, matching picker transitions. Mode changes are persisted as custom
+  `/spec`, `/vibe`, or `/handoff`. `/align`, `/spec`, and `/vibe` auto-start a
+  continuation, matching picker transitions. `/handoff` auto-starts ordinary Align continue. Mode changes are persisted as custom
   session entries excluded from model context, and legacy `questionnaire`, `explore`,
   `plan`, and `execute` entries fold onto Align, Spec, Spec, and Vibe. Reloads and tree changes
   read the latest entry. The large injected contract stays constant while only a

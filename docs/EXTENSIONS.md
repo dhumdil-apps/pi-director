@@ -45,7 +45,7 @@ The visual style is fixed on purpose — separator, bar style, bar width, and
 placement were configurable, and were either inert or actively misleading.
 
 Defaults reproduce the previous fixed rows: `git-branch,session-name` /
-`provider,model` on line 1, `agent-stats,tokens` on line 2,
+`provider,model` on line 1, `cost,agent-stats,tokens` on line 2,
 `cpu,ram,disk,net` / `sub-hourly,sub-weekly` on line 3, with Progress Tracker's
 `attention-span` segment on line 4. `Line gap` defaults off; when enabled, one
 blank row appears between each rendered row. A line left empty between two used

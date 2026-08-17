@@ -11,6 +11,7 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
 - **`/handoff [session-name]`** — Continue the same artifact in a fresh Align session. It refuses active runs, skips a checkpoint turn, and auto-starts ordinary Align continue.
 - **`/init [full]`** — Initializes or realigns tool-agnostic shared and Pi-local instruction layers, then refreshes project memory and review provenance. It proposes approval-gated drift repairs, incrementally audits memory since the hidden reviewed commit by default, and performs a repository-wide audit with `full`.
 - **`/help`** — Full reference: commands, shortcuts, and every active extension
+- **`/context`** — Break the context window down by source: prompt, context files, skills, tools, conversation
 - **`/extension-settings`** — Edit registered global extension settings
 - **`/usage`** — Show historical token/cost usage (`/usage-refresh` forces a quota fetch)
 

@@ -4,7 +4,7 @@
 
 A [Pi](https://pi.dev) package that directs deliberate coding sessions through
 three modes the human owns — Align to clarify, Spec to research and propose, Vibe to
-execute — with durable memory, checkpointing handoffs, and visible status. When a
+execute — with durable memory, instant same-artifact handoffs, and visible status. When a
 human-authorized Pi Inspector session is available, Director can verify browser
 behavior through shared semantic state and flows.
 
@@ -23,11 +23,15 @@ Install the package directly into Pi:
 pi install https://github.com/dhumdil-apps/pi-director
 ```
 
-Pi manages the package installation automatically. To update to the latest release at any time, run:
+Pi manages the package installation automatically. To refresh every installed
+extension package, including this one, run:
 
 ```bash
 pi update --extensions
 ```
+
+To refresh only this package after a maintainer push, run
+`pi update --extension https://github.com/dhumdil-apps/pi-director`.
 
 ### Configuration & Preferences
 
@@ -50,7 +54,10 @@ pi list
 - **progress-tracker** — Above-editor per-mode Align/Spec/Vibe timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
 - **pi-inspector skill & bridge** — Detects an authorized Pi Inspector session for browser debugging and verification, while reporting Director mode and session context back to Inspector over its display-only channel.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
-- **status-bar & usage-monitor** — Real-time quota and usage metrics in the status bar (`/usage`).
+- **status-bar & usage-monitor** — Real-time quota metrics in the status bar.
+- **usage-history** — Historical token/cost reporting (`/usage`).
+- **interrupt-confirmation** — Confirms interrupt keys before stopping a running agent.
+- **extension-preferences** — One global UI for registered extension settings (`/extension-settings`).
 - **bundled themes** — `dark` and `github-dark`.
 
 ## Documentation
