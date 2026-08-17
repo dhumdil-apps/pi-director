@@ -91,7 +91,7 @@ stateDiagram-v2
 
 ### mode-align — ALIGN procedure
 
-Bounded orientation only. Cancel discards the exchange and does not open `next`.
+Bounded known orientation only. Do not search source. Ask immediately after those reads. Missing implementation facts go to SPEC via next. Cancel discards the exchange and does not open `next`.
 
 ```mermaid
 flowchart TD
@@ -107,7 +107,7 @@ flowchart TD
     Named -- yes --> Start[Call start once]
     Named -- no --> Useful
     Start --> Useful{Useful work remains?}
-    Useful -- yes --> Next[Call next with contextual<br/>ranked actions]
+    Useful -- yes --> Next[Call next; rank SPEC first<br/>when exploration remains]
     Useful -- no --> Stop
     Next --> Done([RETURN])
 ```

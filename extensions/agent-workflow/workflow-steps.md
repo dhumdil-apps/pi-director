@@ -85,8 +85,15 @@ RECORD_DECISION(choice):
     ALLOW implementation, verification, and CLOSE_OUT to update lifecycle but NEVER imply User approval;
 
 ALIGN(message) — recommended preflight and review:
-    READ only bounded AGENTS.md, .pi state, README, named plans, or documentation for orientation;
-    DO NOT research source implementation or change files outside .pi;
+    READ only bounded AGENTS.md, .pi state including MEMORY.md, README, named plans, or documentation for orientation;
+    TREAT those sources as the starting point even when they may be stale;
+    DO NOT research source implementation, search the codebase, or change files outside .pi;
+    IF known orientation cannot answer an implementation question THEN;
+        RECORD that gap as unresolved work for SPEC;
+        DO NOT open source files or run codebase search to fill it;
+    END IF;
+    AFTER orientation reads, CALL ask immediately when any goal, scope, constraint, outcome, or D review question remains;
+    DO NOT use non-orientation tools before that first ask;
     WHILE a goal, scope, constraint, outcome, or D review question remains DO;
         CALL ask as the first User-facing action with 1-4 independent questions, stable Q identifiers, 2-3 concrete options each, and confidence from 1 through 5;
         ASK dependent follow-ups in a later CALL after incorporating earlier answers;
@@ -108,6 +115,7 @@ ALIGN(message) — recommended preflight and review:
     IF artifact is temporary AND direction is clear THEN CALL start exactly once;
     IF useful work remains THEN;
         CALL next with only meaningful ranked ALIGN, SPEC, VIBE, and/or handoff actions;
+        IF remaining work is source exploration THEN rank SPEC first with a custom instruction for that gap;
         FOR EACH non-handoff action INCLUDE a custom instruction grounded in the current C/D identifier or concrete outcome, intended result, and verification target; LET runtime prepend the mechanical switch or continue line;
         FOR handoff OMIT the kickoff;
     ELSE RETURN to the editor;
