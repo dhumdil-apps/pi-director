@@ -33,24 +33,22 @@ agent, with the plan file on disk as the only thing carried across.
 ## Extension Preferences registry
 
 Status Bar is the only registrant. It exposes a `Working days per week` number
-setting (default `5`, valid `1`–`7`), unmatched weekly override fields
-(`unmatched-weekly-used-percent`, `unmatched-weekly-reset`), plus layout
-settings: a `Line gap` on/off setting and `line1-left`, `line1-right` …
-`line4-right`, eight ordered segment pickers. Weekly values of `6`–`7` include
-weekends in subscription-bar pacing. The unmatched weekly override fills
-`sub-weekly` only when Usage Monitor reports no quota provider; both fields must
-be valid (`0`–`100` and ISO-8601) or that slot stays `n/a`.
-The visual style is fixed on purpose — separator, bar style, bar width, and
-placement were configurable, and were either inert or actively misleading.
+setting (default `5`, valid `1`–`7`) and unmatched weekly override fields
+(`unmatched-weekly-used-percent`, `unmatched-weekly-reset`). Weekly values of
+`6`–`7` include weekends in subscription-bar pacing. The unmatched weekly
+override fills `sub-weekly` only when Usage Monitor reports no quota provider;
+both fields must be valid (`0`–`100` and ISO-8601) or that slot stays `n/a`.
+Layout and visual style are fixed in code — line pickers, Line gap, separator,
+bar style, bar width, and placement were configurable, and were either unused
+or actively misleading.
 
-Defaults reproduce the previous fixed rows: `git-branch,session-name` /
-`provider,model` on line 1, `cost,agent-stats,tokens` on line 2,
-`cpu,ram,disk,net` / `sub-hourly,sub-weekly` on line 3, with Progress Tracker's
-`attention-span` segment on line 4. `Line gap` defaults off; when enabled, one
-blank row appears between each rendered row. A line left empty between two used
-lines remains an intentional blank line; trailing empty lines take no space.
-Unnamed sessions receive `<short-desc>` (or `<ticket>-<short-desc>` when a ticket
-is supplied).
+The frozen rows are `git-branch` / `provider` on line 1, `cost,agent-stats,tokens`
+/ `model` on line 2, Progress Tracker's `attention-span` / `sub-hourly,sub-weekly`
+on line 3, and `session-name` / `cpu,ram,disk,net` on line 4, with one blank row
+between each rendered line. A line left empty between two used lines remains an
+intentional blank line; trailing empty lines take no space. `session-name` shows
+`8 Aug 16:53` plus the remaining slug after `start`; before a plan exists it
+snapshots the current local clock so the slot is never empty.
 
 Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 

@@ -2,11 +2,11 @@
 
 Persistent powerline-style status bar with left/right segments updated via
 events. The core (`src/powerbar/`) listens for `powerbar:update` events,
-maintains a segment store, and renders up to four user-configured lines with
-independent left/right alignment. Producer sub-extensions each emit one or more
+maintains a segment store, and renders four fixed lines with independent
+left/right alignment. Producer sub-extensions each emit one or more
 segments:
 
-- **`src/powerbar-session/`** — `session-name` (mandatory ticket ID + short feature description)
+- **`src/powerbar-session/`** — `session-name` (pretty `8 Aug 16:53` plus remaining ticket/slug; current clock before `start`)
 - **`src/powerbar-git/`** — `git-branch` (branch, tracked diff statistics, + dirty marker)
 - **`src/powerbar-model/`** — `model` (name + thinking level)
 - **`src/powerbar-provider/`** — `provider`
@@ -18,8 +18,8 @@ segments:
 Any extension may register a transient segment via powerbar events: it renders
 only while active and does not need a configured slot. Workflow mode and phase
 remain in Progress Tracker's persistent above-editor indicator; its context
-usage is a configurable Status Bar segment. A configured segment id that no
-longer exists simply renders nothing.
+usage is the line-3 `attention-span` Status Bar segment. A configured segment id
+that no longer exists simply renders nothing.
 
 All Status Bar progress bars use the theme accent normally, changing to warning
 and error at their configured usage thresholds. CPU, RAM, and SSD usage render
@@ -39,31 +39,26 @@ weekly slot can use the two Status Bar override fields below.
 ## User surface
 
 Configured through `/extension-settings` (stored under `powerbar`): a
-`Working days per week` number input (default `5`, valid `1`–`7`), unmatched
-weekly override fields `Unmatched weekly used %` and `Unmatched weekly reset`,
-a `Line gap` on/off setting, and eight ordered pickers, `line1-left` …
-`line4-right`, one per line and side. Each picker labels a segment with the line
-it defaults to, so an unplaced segment is easy to find. The unmatched weekly
-override applies only when Usage Monitor has no quota provider; both fields must
-parse (`0`–`100`, optionally with `%`, and ISO-8601 such as `2026-08-21T18:57`)
-or weekly stays `n/a`. Natural grok.com dates are rejected. Known providers keep
-last-good or `n/a` and never read those fields. Bundle defaults are:
+`Working days per week` number input (default `5`, valid `1`–`7`) and unmatched
+weekly override fields `Unmatched weekly used %` and `Unmatched weekly reset`.
+The unmatched weekly override applies only when Usage Monitor has no quota
+provider; both fields must parse (`0`–`100`, optionally with `%`, and ISO-8601
+such as `2026-08-21T18:57`) or weekly stays `n/a`. Natural grok.com dates are
+rejected. Known providers keep last-good or `n/a` and never read those fields.
+Layout is fixed in `FIXED_SETTINGS` (`extensions/status-bar/src/powerbar/settings.ts`):
 
-- Line 1 — `git-branch,session-name` left, `provider,model` right
-- Line 2 — `cost,agent-stats,tokens` left
-- Line 3 — `cpu,ram,disk,net` left, `sub-hourly,sub-weekly` right
-- Line 4 — `attention-span` left
+- Line 1 — `git-branch` left, `provider` right
+- Line 2 — `cost,agent-stats,tokens` left, `model` right
+- Line 3 — `attention-span` left, `sub-hourly,sub-weekly` right
+- Line 4 — `session-name` left, `cpu,ram,disk,net` right
 
 The `Git Branch` segment includes its branch, tracked
-working-tree statistics (`N files · +A −R`), and dirty marker; moving or omitting
-that segment moves or hides all three together.
+working-tree statistics (`N files · +A −R`), and dirty marker.
 
-`Line gap` defaults off. When enabled, one blank row appears between every rendered
-Status Bar row. A line left empty between two used lines still renders
-as an intentional blank line, so enabling `Line gap` around it creates additional
-vertical space; trailing empty lines take no space. A layout stored under the
-older `left`/`right` keys is split across these lines once, on first load.
-Existing layouts with `tokens` are upgraded once to add `cost` first.
+One blank row appears between every rendered Status Bar row. A line left empty
+between two used lines still renders as an intentional blank line; trailing
+empty lines take no space. Leftover `line1-left` … `line4-right` and `line-gap`
+keys in `settings-extensions.json` are ignored.
 
 Everything else is fixed rather than configurable, because the visual knobs were
 either inert or wrong: separator `·`, blocks-style bars, placement below the
@@ -75,8 +70,9 @@ from $5, and error from $10.
 
 Agent Workflow owns task naming through `start`: naming the plan sets the
 session to a timestamped task slug with an optional ticket ID. This producer
-only displays the current name immediately before the git branch and follows
-session-name changes and resumes.
+parses that stamp into `8 Aug 16:53`, appends the remaining slug, and
+follows session-name changes and resumes. Before `start` it snapshots the
+current local clock so line 4 left is never empty.
 
 ## Origin
 
