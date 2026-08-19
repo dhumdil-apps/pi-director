@@ -47,7 +47,7 @@ pi list
 
 ## Included Features
 
-- **agent-workflow** — User-owned ALIGN / SPEC / VIBE modes with three mechanism-only tools (`ask`, `start`, `next`), Agent-interpreted task artifacts, explicit ranked routing, reviewable Spec/Vibe decisions, and verified fresh-session handoffs. See [the agent-workflow README](extensions/agent-workflow/README.md).
+- **agent-workflow** — User-owned ALIGN / SPEC / VIBE modes with four mechanism-only tools (`ask`, `decide`, `start`, `next`), Agent-interpreted task artifacts, explicit ranked routing, reviewable Spec/Vibe decisions, and verified fresh-session handoffs. See [the agent-workflow README](extensions/agent-workflow/README.md).
 - **project-memory** — Low-noise startup check for the hidden `memory-review` commit cursor. It ignores uncommitted work, gives relevant commits a one-day grace period, and suppresses repeated reminders until both `HEAD` changes and 24 hours pass; cooldown state stays outside the repository.
 - **progress-tracker** — Above-editor per-mode Align/Spec/Vibe timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
 - **pi-inspector-bridge** — Reports Director mode and session context back to a discoverable Pi Inspector over its display-only channel.

@@ -3,8 +3,9 @@ import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
 import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
-import { MODE_LABEL, type WorkflowMode } from "./mode.js";
+import { MODE_LABEL, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
 import { ASK_SETTLEMENT_EVENT } from "./mode-picker.js";
+import { QuestionParams, optionReferences, orderedOptions, pickerLabel, type WorkflowQuestion } from "./questions.js";
 import { duringUserWait } from "./user-wait.js";
 
 export const WRITE_CUSTOM_ANSWER = "📝 Write a custom answer...";
@@ -13,31 +14,12 @@ export const PROCEED_WITH_BEST_VIBE = `Proceed with best → ${MODE_LABEL.vibe}`
 const ROUTE_OPTIONS = [PROCEED_WITH_BEST_SPEC, PROCEED_WITH_BEST_VIBE] as const;
 type AskRouteMode = Exclude<WorkflowMode, "align">;
 
-const OptionParams = Type.Object({
-  value: Type.String({ description: agentApiText("tool.ask.option.value") }),
-  label: Type.String({ description: agentApiText("tool.ask.option.label") }),
-  description: Type.String({ description: agentApiText("tool.ask.option.description") }),
-  confidence: Type.Integer({ description: agentApiText("tool.ask.option.confidence") }),
-});
-
-const QuestionParams = Type.Object({
-  id: Type.String({ description: agentApiText("tool.ask.question.id") }),
-  context: Type.String({ description: agentApiText("tool.ask.question.context") }),
-  prompt: Type.String({ description: agentApiText("tool.ask.question.prompt") }),
-  customAnswerLabel: Type.Optional(
-    Type.String({
-      description: agentApiText("tool.ask.question.custom-answer-label"),
-    }),
-  ),
-  options: Type.Array(OptionParams, { description: agentApiText("tool.ask.question.options") }),
-});
-
 const AskParams = Type.Object({
   questions: Type.Array(QuestionParams, { description: agentApiText("tool.ask.questions") }),
 });
 
 type AskInput = Static<typeof AskParams>;
-type AskQuestion = AskInput["questions"][number];
+type AskQuestion = WorkflowQuestion;
 type AskOption = AskQuestion["options"][number];
 
 export interface AskAnswer {
@@ -55,26 +37,9 @@ export interface AskDetails {
   routedMode?: AskRouteMode;
 }
 
-function orderedOptions(question: AskQuestion): AskOption[] {
-  // Stable sort retains Agent-supplied order when confidence scores tie.
-  return [...question.options].sort((left, right) => right.confidence - left.confidence);
-}
-
-function optionLetter(index: number): string {
-  return String.fromCharCode("A".charCodeAt(0) + index);
-}
-
-function pickerLabel(option: AskOption, index: number): string {
-  return `${optionLetter(index)}. ${option.label} · confidence ${option.confidence}/5`;
-}
-
 function customAnswerLabel(question: AskQuestion): string {
   const intent = question.customAnswerLabel?.trim();
   return intent ? `${WRITE_CUSTOM_ANSWER} → ${intent}` : WRITE_CUSTOM_ANSWER;
-}
-
-function optionReferences(options: AskOption[]): string[] {
-  return options.map((option, index) => `${optionLetter(index)} = ${option.label}`);
 }
 
 function optionAnswer(question: AskQuestion, option: AskOption): AskAnswer {
@@ -109,8 +74,7 @@ function transcriptText(answer: AskAnswer, question: AskQuestion | undefined): s
     return answer.optionReferences ? `${result}\nOption references: ${answer.optionReferences.join(", ")}` : result;
 
   const options = orderedOptions(question).map(
-    (option, index) =>
-      `  ${optionLetter(index)}. ${option.label} · confidence ${option.confidence}/5 — ${option.description}`,
+    (option, index) => `  ${pickerLabel(option, index)} — ${option.description}`,
   );
   return [
     `Question: ${question.prompt}`,
@@ -147,6 +111,15 @@ export function registerAsk(pi: ExtensionAPI): void {
     executionMode: "sequential",
 
     async execute(_toolCallId, params: AskInput, _signal, _onUpdate, ctx: ExtensionContext) {
+      const mode = resolveWorkflowMode(ctx.sessionManager.getBranch());
+      if (mode !== "align") {
+        return {
+          content: [
+            { type: "text" as const, text: "Ask is ALIGN-only; no questions were shown. Use decide in SPEC/VIBE." },
+          ],
+          details: { answers: [], cancelled: false, unanswered: [] } satisfies AskDetails,
+        };
+      }
       if (!ctx.hasUI) {
         throw new Error("Ask requires an interactive UI.");
       }

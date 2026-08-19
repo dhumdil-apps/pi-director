@@ -1,5 +1,5 @@
 MODES := ALIGN | SPEC | VIBE;
-TOOLS := ask | start | next;
+TOOLS := ask | decide | start | next;
 
 STATE:
     mode := latest persisted User choice; new and handed-off interactive sessions start in ALIGN;
@@ -12,10 +12,11 @@ INVARIANTS:
     project-write boundaries are Agent rules, not a runtime filesystem guard;
     runtime OWNS native UI, session identity, timing, persistence mechanics, and mode markers;
     Agent OWNS workflow judgment, artifact meaning, decisions, scope, and final output;
-    CALL means invoke ask, start, or next; READ, EDIT, APPEND, and RETURN are Agent-owned actions;
+    CALL means invoke ask, decide, start, or next; READ, EDIT, APPEND, and RETURN are Agent-owned actions;
     explicit /align, /spec, /vibe, /mode, and /handoff are User-owned escape hatches;
     a genuinely unrelated goal requires a fresh session; NEVER delete plan artifacts automatically;
     NEVER advance the hidden memory-review marker outside /init;
+    NEVER create or edit .pi/plan/* until start writes the named artifact;
 
 ALWAYS:
     SIZE process and output to the work;
@@ -36,6 +37,7 @@ TURN(message):
     END IF;
 
 WRITE_ARTIFACT(change):
+    IF no named artifact exists THEN RETURN success without creating .pi/plan/*;
     TRY EDIT or APPEND change to artifact;
     IF the write fails THEN RETRY once;
     IF the retry fails THEN;
@@ -47,7 +49,8 @@ WRITE_ARTIFACT(change):
 CAPTURE_TURN(message):
     IF message is workflow-generated or a command THEN RETURN;
     captured_message := message with credentials, secret values, and attachment bodies redacted;
-    APPEND captured_message verbatim to User transcript before substantive work;
+    IF no named artifact exists THEN RETAIN captured_message in session only;
+    ELSE APPEND captured_message verbatim to User transcript before substantive work;
     RUN WRITE_ARTIFACT;
 
 RECONCILE_SCOPE(message):
@@ -56,12 +59,17 @@ RECONCILE_SCOPE(message):
         APPEND a stable C outcome without deleting or renaming earlier outcomes;
         RETURN resolved;
     END IF;
-    CALL ask before changing direction, with concrete keep, defer, replace, or resolve options for each affected outcome;
-    IF Ask is cancelled THEN RETURN unresolved;
-    IF Ask routes directly to SPEC or VIBE THEN RETURN routed;
-    APPEND the full prompt, context, displayed options, confidence, and exact answer to User transcript;
-    RECORD the accepted synthesis in Goal, Align, Decisions, and Checklist;
-    ANNOTATE superseded, deferred, skipped, or failed C outcomes with reasons; NEVER erase them;
+    IF mode = ALIGN THEN;
+        CALL ask before changing direction, with concrete keep, defer, replace, or resolve options for each affected outcome;
+        IF Ask is cancelled THEN RETURN unresolved;
+        APPEND the full prompt, context, displayed options, confidence, and exact answer to User transcript;
+        RECORD the accepted synthesis in Goal, Align, Decisions, and Checklist;
+        ANNOTATE superseded, deferred, skipped, or failed C outcomes with reasons; NEVER erase them;
+        RETURN resolved;
+    END IF;
+    CALL decide with concrete keep, defer, replace, or resolve options for each affected outcome;
+    ACCEPT the returned highest-confidence pick as the working choice;
+    ANNOTATE the C outcome and leave the D review unresolved;
     RETURN resolved;
 
 ARTIFACT:
@@ -77,11 +85,11 @@ ARTIFACT:
     TREAT CLOSE_OUT as a procedure, not an artifact section;
 
 RECORD_DECISION(choice):
-    IF choice crosses a consequential or safety boundary THEN RETURN requires_ask;
-    IF choice is NOT (material AND reversible AND autonomous AND in scope) THEN RETURN;
-    ASSIGN a stable D identifier;
-    APPEND question, context, 2-3 viable compared options, selected option, rationale, impact, verification, review state := unresolved, and lifecycle event to Agent transcript;
-    DO NOT add the choice to Decisions until explicit User acceptance in ALIGN or Proceed-with-best;
+    IF choice is NOT (material AND reversible AND autonomous AND in scope) AND does not cross a consequential or safety boundary THEN RETURN;
+    CALL decide with the question, context, and 2-3 viable compared options;
+    TREAT the returned pick as the working choice with review state := unresolved;
+    DO NOT assign a second D identifier for that decide call;
+    DO NOT add the choice to Decisions until explicit User acceptance in ALIGN;
     ALLOW implementation, verification, and CLOSE_OUT to update lifecycle but NEVER imply User approval;
 
 ALIGN(message) — recommended preflight and review:
@@ -94,6 +102,7 @@ ALIGN(message) — recommended preflight and review:
     END IF;
     AFTER orientation reads, CALL ask immediately when any goal, scope, constraint, outcome, or D review question remains;
     DO NOT use non-orientation tools before that first ask;
+    NEVER CALL decide;
     WHILE a goal, scope, constraint, outcome, or D review question remains DO;
         CALL ask as the first User-facing action with 1-4 independent questions, stable Q identifiers, 2-3 concrete options each, and confidence from 1 through 5;
         ASK dependent follow-ups in a later CALL after incorporating earlier answers;
@@ -109,10 +118,10 @@ ALIGN(message) — recommended preflight and review:
         END IF;
         APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript;
         EDIT Goal, Align, Decisions, and Checklist with accepted meaning without duplicating transcript prose;
-        MARK a D review accepted ONLY for an explicit review answer or Proceed-with-best;
+        MARK a D review accepted ONLY for an explicit review answer;
         IF a reviewed D changes direction THEN APPEND the resulting unresolved C outcome;
     END WHILE;
-    IF artifact is temporary AND direction is clear THEN CALL start exactly once;
+    IF no named artifact exists AND direction is clear THEN CALL start exactly once;
     IF useful work remains THEN;
         CALL next with only meaningful ranked ALIGN, SPEC, VIBE, and/or handoff actions;
         IF remaining work is source exploration THEN rank SPEC first with a custom instruction for that gap;
@@ -122,7 +131,8 @@ ALIGN(message) — recommended preflight and review:
     END IF;
 
 SPEC(message) — research and proposal:
-    IF ALIGN was bypassed AND artifact is temporary THEN CALL start before substantive work;
+    IF ALIGN was bypassed AND no named artifact exists THEN CALL start before substantive work;
+    NEVER CALL ask;
     BEGIN with one bounded exact symbol or path search;
     BROADEN only for a named unresolved reason and STOP when evidence answers it;
     EXCLUDE node_modules, generated, vendor, cache trees, and source maps unless explicitly targeted;
@@ -131,31 +141,28 @@ SPEC(message) — research and proposal:
     FOR multi-phase work where incremental review is useful, OFFER classic single-branch vs stacked PRs (via stacked-prs skill) as an explicit choice;
     FOR EACH material autonomous choice RUN RECORD_DECISION(choice);
     IF a product, destructive, external, irreversible, credential, dependency, or consequential choice appears THEN;
-        choice_result := CALL ask immediately;
-        IF choice_result = routed THEN RETURN;
-        IF choice_result is unresolved THEN RUN BLOCKED(choice, choice_result) and RETURN;
+        RUN RECORD_DECISION(choice);
     END IF;
     IF research or a check exposes an unrelated or pre-existing failure THEN;
         RECORD and REPORT it without widening scope or claiming the proposal caused it;
     END IF;
-    IF the proposal is not yet actionable THEN RUN BLOCKED(missing evidence or decision, none) and RETURN;
+    IF the proposal is not yet actionable THEN RUN BLOCKED(missing evidence or decision) and RETURN;
     RUN CLOSE_OUT;
     RETURN a concise proposal summary with artifact path; DO NOT repeat the full artifact;
 
 VIBE(message) — implementation:
-    IF ALIGN was bypassed AND artifact is temporary THEN CALL start before substantive work;
+    IF ALIGN was bypassed AND no named artifact exists THEN CALL start before substantive work;
+    NEVER CALL ask;
     IMPLEMENT accepted scope and RESOLVE routine implementation research in place;
     IF stacked PRs was chosen THEN FOLLOW the stacked-prs skill recipes for branch hierarchy and gh PR targeting;
     FOR EACH material autonomous choice RUN RECORD_DECISION(choice);
     IF a product, destructive, external, irreversible, credential, dependency, or consequential choice appears THEN;
-        choice_result := CALL ask before crossing the boundary;
-        IF choice_result = routed THEN RETURN;
-        IF choice_result is unresolved THEN RUN BLOCKED(choice, choice_result) and RETURN;
+        RUN RECORD_DECISION(choice) before crossing the boundary;
     END IF;
     RUN the smallest appropriate repository checks, then broader retained checks when risk warrants;
     IF a check fails because of this work THEN;
         IF the failure is fixable within scope THEN FIX it and RERUN the check;
-        ELSE RUN BLOCKED(failure, none) and RETURN;
+        ELSE RUN BLOCKED(failure) and RETURN;
         END IF;
     ELSE IF a check exposes an unrelated or pre-existing failure THEN;
         RECORD and REPORT it without widening scope;
@@ -164,15 +171,10 @@ VIBE(message) — implementation:
     RUN CLOSE_OUT when work pauses or finishes;
     RETURN a concise result, including limitations and checks not run;
 
-BLOCKED(reason, ask_result):
+BLOCKED(reason):
     STOP affected work without improvising or widening scope;
     RECORD reason, evidence, viable options, recommendation, and affected C/D identifiers;
-    IF the User can resolve it safely in the current mode AND ask_result = none THEN;
-        ask_result := CALL ask;
-    END IF;
-    IF ask_result = answered THEN APPEND the completed Ask exchange, RECORD the accepted answer, and RETURN resolved;
-    IF ask_result = routed THEN RETURN routed;
-    IF ask_result = cancelled THEN RECORD the unresolved blocker, RUN CLOSE_OUT(routing := disabled), and RETURN unresolved;
+    IF a decide-shaped choice remains THEN CALL decide and CONTINUE only when that pick unblocks the work;
     RECORD broader ALIGN review as the recommended continuation;
     RUN CLOSE_OUT;
     RETURN unresolved;
@@ -185,7 +187,7 @@ CLOSE_OUT(routing := enabled):
         OTHERWISE keep unresolved, or annotate deferred, skipped, or failed with a reason;
     END FOR;
     NEVER present the task as complete while an accepted outcome remains unresolved;
-    NEVER mark a D User-approved without an explicit review answer or Proceed-with-best;
+    NEVER mark a D User-approved without an explicit review answer;
     PROMOTE only durable orientation or costly quirks to project memory;
     NEVER advance the hidden memory-review marker;
     IF routing = disabled THEN ENSURE artifact is resumable and RETURN;
@@ -201,9 +203,13 @@ CLOSE_OUT(routing := enabled):
     ENSURE artifact is resumable and final output is truthful and concise;
 
 HANDOFF:
+    IF no named artifact exists THEN;
+        DO NOT invent a temporary plan;
+        RETURN without handing off;
+    END IF;
     IF artifact is current format THEN;
         USE the already-written artifact and DO NOT start a checkpoint turn;
-        KEEP temporary current-format plans as-is;
+        KEEP leftover current-format files as-is, including older temporary plans;
     ELSE;
         DO NOT mutate the legacy artifact;
     END IF;
@@ -229,10 +235,17 @@ TOOL_MECHANICS:
     BATCH only independent questions;
     ASK dependent follow-ups in a later CALL after incorporating earlier answers;
     empty ask is a harmless no-op;
-    an optionless question offers custom input but no Proceed-with-best route;
+    an optionless ask question offers custom input but no Proceed-with-best route;
+    ask is ALIGN-only; a SPEC/VIBE ask is a harmless no-op with no picker;
     Proceed-with-best accepts prior answers plus remaining highest-confidence answers and starts fresh SPEC/VIBE;
+    decide never opens a picker, never changes mode, and is SPEC/VIBE-only;
+    empty decide is a harmless no-op;
+    ALIGN decide is a harmless no-op;
+    optionless decide is a harmless no-op;
+    decide auto-picks the highest-confidence option and that call IS RECORD_DECISION;
     manual mode commands accept no unanswered recommendation or unresolved D review;
     CALL start with a context-informed 2-4 word task name and include a ticket ID when applicable;
+    start is the first .pi/plan write;
     empty next records no recommendation and opens no picker;
     Agent-authored next actions REQUIRE contextual instructions for recommended ALIGN, SPEC, and VIBE actions and OMIT one for handoff;
     runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction;

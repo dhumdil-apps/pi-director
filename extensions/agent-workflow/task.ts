@@ -24,36 +24,6 @@ export const PLAN_TEMPLATE = `${PLAN_TEMPLATE_SOURCE.replace(TIME_SPENT_PLACEHOL
 export const MEMORY_STUB = ["# Project memory", "", "## Orientation", "", "## Quirks", ""].join("\n");
 const HANDOFF_USAGE = "Usage: /handoff [session-name].";
 
-const TEMPORARY_NAME_WORDS = [
-  "amber",
-  "cedar",
-  "cobalt",
-  "coral",
-  "drift",
-  "ember",
-  "frost",
-  "harbor",
-  "indigo",
-  "juniper",
-  "meadow",
-  "mist",
-  "north",
-  "orbit",
-  "pebble",
-  "pine",
-  "quartz",
-  "ripple",
-  "solar",
-  "stone",
-  "summit",
-  "thistle",
-  "tidal",
-  "velvet",
-  "willow",
-  "wren",
-  "zephyr",
-] as const;
-
 const StartTaskParams = Type.Object({
   name: Type.String({ description: agentApiText("tool.start.name") }),
 });
@@ -102,16 +72,6 @@ export function canonicalTaskName(name: string | undefined): string | undefined 
 
 export function timestampPrefix(name: string | undefined): string | undefined {
   return name?.trim().match(TIMESTAMP)?.[1];
-}
-
-export function autoSlug(prompt: string, now: Date, random: () => number = Math.random): string {
-  const ticket = prompt.match(TICKET_ID)?.[1]?.toUpperCase();
-  const available = [...TEMPORARY_NAME_WORDS];
-  const words: string[] = [];
-  for (let index = 0; index < 2; index += 1) {
-    words.push(available.splice(Math.min(available.length - 1, Math.floor(random() * available.length)), 1)[0]);
-  }
-  return `${stamp(now)}${ticket ? `-${ticket}` : ""}-${words.join("-")}`;
 }
 
 export async function ensurePiState(cwd: string): Promise<void> {

@@ -17,8 +17,9 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
 
 ## User-facing tools
 
-- **`ask`** (Agent Workflow) — Render native Agent-authored questions. The 1–4 question, 2–3 option, confidence, and identifier conventions are instructions rather than runtime limits; Proceed-with-best settles Align before starting Spec or Vibe.
-- **`start`** (Agent Workflow) — Permanently name the temporary artifact or create a linked current-format continuation from an immutable legacy plan.
+- **`ask`** (Agent Workflow) — Render native ALIGN questions and return answers, cancellation, or a Proceed-with-best Spec/Vibe route. The 1–4 question, 2–3 option, confidence, and identifier conventions are instructions rather than runtime limits. A SPEC/VIBE Ask is a harmless no-op.
+- **`decide`** (Agent Workflow) — SPEC/VIBE sibling of Ask. Same question shape, no picker: auto-picks the highest-confidence option and records it as an unresolved decision. An ALIGN or optionless Decide is a harmless no-op.
+- **`start`** (Agent Workflow) — Create the named `.pi/plan` artifact, or create a linked current-format continuation from an immutable legacy plan. No plan file exists until this call.
 - **`next`** (Agent Workflow) — Record ranked actions for the post-turn picker. Each recommended Align, Spec, or Vibe action includes its own Agent-authored contextual instruction after the neutral runtime transition; handoff omits one. An empty action list is a harmless no-op; a selected handoff action prepares the explicit `/handoff` command.
   Close-out has no tool: durable orientation or quirks captured in the artifact may be promoted into project memory, while only `/init` advances the review marker.
 

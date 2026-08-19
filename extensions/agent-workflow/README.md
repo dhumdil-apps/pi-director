@@ -8,17 +8,18 @@ Pi Director has three User-owned modes:
 
 New sessions and handoffs start in Align. Explicit `/align`, `/spec`, and `/vibe` commands remain escape hatches; `/mode` opens the manual picker. Historical `questionnaire`, `explore`, `plan`, and `execute` mode entries still resolve, but `/questionnaire` does not exist.
 
-## Three mechanism-only tools
+## Four mechanism-only tools
 
 The runtime exposes only capabilities instructions cannot reproduce:
 
-- `ask` renders native questions and owns cancellation plus direct Spec/Vibe settlement.
-- `start` permanently names the session artifact or creates a linked continuation from an immutable legacy plan.
+- `ask` renders native ALIGN questions and returns answers, cancellation, or a Proceed-with-best Spec/Vibe route.
+- `decide` silently auto-picks the highest-confidence option for each SPEC/VIBE question and records that pick as an unresolved decision. It never opens a picker or changes mode.
+- `start` creates the named `.pi/plan` artifact or a linked continuation from an immutable legacy plan. No plan file exists until this call.
 - `next` records ranked actions for the automatic post-turn picker.
 
 Only an explicit `next` call opens an automatic picker. Every recommended Align, Spec, or Vibe action carries a distinct Agent-authored instruction grounded in the current artifact; runtime prepends only `Switch from … to …` or `Continue in …`, and handoff omits an instruction. Recommended actions appear first, followed by neutral remaining modes, handoff, and `Return to editor`. Manual mode commands and neutral picker choices auto-start with only the mechanical transition line. Selecting handoff prepares `/handoff <name>` in the editor for explicit User execution. Empty recommendations open nothing; `/mode` remains the manual recovery surface.
 
-Question counts, option counts, confidence scale, identifiers, naming quality, and decision completeness are Agent instructions rather than runtime validation. Empty Ask is a harmless no-op; an optionless question retains custom input but cannot Proceed-with-best.
+Question counts, option counts, confidence scale, identifiers, naming quality, and decision completeness are Agent instructions rather than runtime validation. Empty Ask is a harmless no-op; an optionless Ask question retains custom input but cannot Proceed-with-best. A SPEC/VIBE Ask, an ALIGN Decide, or an optionless Decide is a harmless no-op rather than an error.
 
 ## Agent-interpreted artifact
 
@@ -28,7 +29,7 @@ The Agent preserves the initial goal, accepted follow-ups, and unresolved outcom
 
 Runtime does not parse checklist or decision status. The Agent interprets the free-form artifact as a whole, keeps Work log and both transcripts append-only, and leaves the artifact resumable without chat history after every turn.
 
-Spec and Vibe record every material autonomous decision directly in Agent transcript with its question, context, 2–3 compared options, selection, rationale, impact, verification, review state, and lifecycle events. Only explicit User acceptance in Align or Proceed-with-best resolves review; implementation and verification do not imply approval.
+Spec and Vibe call `decide` for every material autonomous decision. That call is RECORD_DECISION: the runtime auto-picks the highest-confidence option and records the unresolved D. Only explicit User acceptance in Align resolves review; implementation and verification do not imply approval.
 
 All modes may update `.pi` workflow state, but only Vibe may change files outside `.pi`. This remains an Agent rule rather than a runtime sandbox. The hidden memory-review marker remains `/init`-only.
 
@@ -38,7 +39,7 @@ All modes may update `.pi` workflow state, but only Vibe may change files outsid
 
 Only durable orientation and costly quirks belong in project memory during ordinary close-out. The hidden review marker remains exclusively owned by `/init`.
 
-For current artifacts, `/handoff [session-name]` swaps immediately onto the same file, including a temporary plan. It refuses active runs and does not start a checkpoint turn. The replacement is already named and in Align, then auto-starts with ordinary Align continue; fresh Align reads the whole artifact and chooses the most important unresolved item. Runtime derives no state from its prose. Picker-selected handoff still prepares `/handoff` for explicit Enter.
+For current artifacts, `/handoff [session-name]` swaps immediately onto the same already-named file. It refuses active runs, skips a checkpoint turn, and does not invent a plan when `start` has not run. The replacement is already named and in Align, then auto-starts with ordinary Align continue; fresh Align reads the whole artifact and chooses the most important unresolved item. Runtime derives no state from its prose. Picker-selected handoff still prepares `/handoff` for explicit Enter. Leftover older temporary plan files stay on disk.
 
 Legacy artifacts remain immutable. Legacy handoff opens fresh Align against the old plan, and `start` creates a linked current-format continuation before the first `.pi` write. Runtime carries recognized historical timing; the Agent converts meaningful goal, evidence, decision, and checklist context while preserving the source file.
 

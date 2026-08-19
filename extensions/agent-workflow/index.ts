@@ -8,7 +8,6 @@
  */
 
 import { readFileSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { agentApiText } from "./agent-api.js";
 import { registerCheckpointInputResolution } from "./checkpoint.js";
@@ -23,7 +22,8 @@ import {
 import { applyMode, openModePicker, registerModePicker, startModeContinuation } from "./mode-picker.js";
 import { registerWorkflowNotices } from "./notice.js";
 import { registerAsk } from "./ask.js";
-import { autoSlug, ensurePiState, listPlanNames, planPath, PLAN_TEMPLATE, registerTaskManagement } from "./task.js";
+import { registerDecide } from "./decide.js";
+import { listPlanNames, registerTaskManagement } from "./task.js";
 
 /**
  * Constant contract; the selected mode is injected separately.
@@ -40,6 +40,7 @@ export function workflowPrompt(): string {
 
 export default function createExtension(pi: ExtensionAPI): void {
   registerAsk(pi);
+  registerDecide(pi);
   registerTaskManagement(pi);
   registerCheckpointInputResolution(pi);
   registerWorkflowNotices(pi);
@@ -86,7 +87,6 @@ export default function createExtension(pi: ExtensionAPI): void {
     // describe a workflow that cannot happen. Leave those sessions alone.
     if (!ctx.hasUI) return;
     const mode = await ensureWorkflowMode(pi, ctx);
-    await scaffoldPlan(pi, ctx, event.prompt ?? "");
     return {
       systemPrompt: `${event.systemPrompt}\n\n${workflowPrompt()}`,
       message: {
@@ -104,20 +104,4 @@ async function ensureWorkflowMode(pi: ExtensionAPI, ctx: ExtensionContext): Prom
   if (existing) return existing;
   recordWorkflowMode(pi, "align");
   return "align";
-}
-
-/** Best-effort scaffold so timing and handoff have a durable file immediately. */
-async function scaffoldPlan(pi: ExtensionAPI, ctx: ExtensionContext, prompt: string): Promise<void> {
-  if (pi.getSessionName()) return;
-  const name = autoSlug(prompt, new Date());
-  try {
-    await ensurePiState(ctx.cwd);
-    await writeFile(planPath(ctx.cwd, name), PLAN_TEMPLATE.replace("<session-name>", name), {
-      encoding: "utf8",
-      flag: "wx",
-    });
-  } catch {
-    return;
-  }
-  pi.setSessionName(name);
 }

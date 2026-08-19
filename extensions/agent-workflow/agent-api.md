@@ -24,7 +24,7 @@ Continue the same artifact in a fresh ALIGN session: /handoff [session-name]
 
 ## tool.ask.description
 
-Open native option pickers and return completed answers, cancellation state, or a selected Spec/Vibe route.
+Open native option pickers and return completed answers, cancellation, or a selected Spec/Vibe route. ALIGN-only.
 
 ## tool.ask.prompt-snippet
 
@@ -70,9 +70,21 @@ Options offered for this question.
 
 Questions presented sequentially; an empty list is a no-op.
 
+## tool.decide.description
+
+Auto-pick the highest-confidence option for each question, record it as an unresolved decision, and continue. SPEC/VIBE-only; never opens a picker or changes mode.
+
+## tool.decide.prompt-snippet
+
+Record a Spec/Vibe decision by auto-picking the highest-confidence option
+
+## tool.decide.questions
+
+Questions to auto-decide; compared options are required to record a decision. An empty list is a no-op.
+
 ## tool.start.description
 
-Permanently name the current temporary artifact, or create a linked current-format continuation from a legacy artifact.
+Create the named .pi/plan artifact, or create a linked current-format continuation from a legacy artifact.
 
 ## tool.start.name
 

@@ -8,7 +8,7 @@ extension.
 
 - **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
-- **Agent Workflow** — User-owned ALIGN / SPEC / VIBE modes, recommended native-Ask preflight, Agent-interpreted artifacts and decisions, ranked routing, and same-artifact handoffs (`ask`, `start`, `next`, `/align`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
+- **Agent Workflow** — User-owned ALIGN / SPEC / VIBE modes, recommended native-Ask preflight, silent Spec/Vibe `decide`, Agent-interpreted artifacts and decisions, ranked routing, and same-artifact handoffs (`ask`, `decide`, `start`, `next`, `/align`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
 - **Project Memory** — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
 - **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
 - **Usage Monitor** — Live provider quota data for Status Bar

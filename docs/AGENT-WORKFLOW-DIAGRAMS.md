@@ -24,7 +24,7 @@ flowchart LR
     Next -- yes --> Vibe
     Next -- none --> Editor[Return to editor]
     Close --> Handoff[Handoff exit]
-    Align -.-> Tools[ask / start / next]
+    Align -.-> Tools[ask / decide / start / next]
     Spec -.-> Tools
     Vibe -.-> Tools
     Align --> Artifact[(Versioned .pi/plan)]
@@ -40,7 +40,7 @@ The User owns mode selection. The runtime owns UI and persistence mechanisms, wh
 ```mermaid
 flowchart LR
     User[User] -->|goal, answers, mode choice| Agent[Agent]
-    Agent -->|CALL ask, start, or next| Runtime[Pi runtime]
+    Agent -->|CALL ask, decide, start, or next| Runtime[Pi runtime]
     Runtime -->|native questions and pickers| User
     Runtime -->|mode markers, timing, session identity| Session[(Session state)]
 
@@ -50,10 +50,12 @@ flowchart LR
     Agent -->|judgment, scope, decisions, final output| Result[Task result]
 
     Runtime --> AskTool[ask]
+    Runtime --> DecideTool[decide]
     Runtime --> StartTool[start]
     Runtime --> NextTool[next]
     AskTool -->|answer, cancel, or direct route| Agent
-    StartTool -->|name or linked continuation| Artifact
+    DecideTool -->|auto-pick unresolved D| Agent
+    StartTool -->|first named artifact or linked continuation| Artifact
     NextTool -->|ranked post-turn actions| User
 ```
 
@@ -63,7 +65,7 @@ Everyday mode hops and one procedure chart per mode. Continuity exits (handoff, 
 
 ### modes-core — Everyday mode lifecycle
 
-Modes persist as User choices. New and handed-off interactive sessions enter Align; direct routes and picker selections settle the current turn before a fresh target-mode turn begins.
+Modes persist as User choices. New and handed-off interactive sessions enter Align; picker selections settle the current turn before a fresh target-mode turn begins.
 
 ```mermaid
 stateDiagram-v2
@@ -103,11 +105,11 @@ flowchart TD
     Result -- routed Spec/Vibe --> Settle([RETURN<br/>fresh target turn])
     Result -- answered --> Synthesize[Append exchange<br/>update Goal/Align/Decisions/Checklist]
     Synthesize --> Unresolved
-    Unresolved -- no --> Named{Temporary artifact<br/>and direction clear?}
+    Unresolved -- no --> Named{No named artifact<br/>and direction clear?}
     Named -- yes --> Start[Call start once]
     Named -- no --> Useful
     Start --> Useful{Useful work remains?}
-    Useful -- yes --> Next[Call next; rank SPEC first<br/>when exploration remains]
+    Useful -- yes --> Next["Call next; rank SPEC first<br/>when exploration remains"]
     Useful -- no --> Stop
     Next --> Done([RETURN])
 ```
@@ -116,19 +118,18 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Enter([SPEC message]) --> Prep{ALIGN bypassed and<br/>artifact temporary?}
+    Enter([SPEC message]) --> Prep{ALIGN bypassed and<br/>no named artifact?}
     Prep -- yes --> Start[Call start before research]
     Prep -- no --> Research
     Start --> Research[Bounded symbol or path search<br/>build Evidence and Proposal]
-    Research --> Decision[RECORD_DECISION<br/>for material autonomous choice]
+    Research --> Decision[Call decide / RECORD_DECISION<br/>for material autonomous choice]
     Decision --> Boundary{Consequential or<br/>unsafe boundary?}
-    Boundary -- yes --> Ask[Call ask]
-    Ask -- unresolved --> Blocked[BLOCKED]
-    Ask -- resolved --> Actionable
+    Boundary -- yes --> Decide[Call decide]
+    Decide --> Actionable
     Boundary -- no --> Actionable{Proposal actionable?}
-    Actionable -- no --> Blocked
+    Actionable -- no --> Blocked[BLOCKED]
     Actionable -- yes --> Close[CLOSE_OUT]
-    Blocked --> Stop([RETURN unresolved or routed])
+    Blocked --> Stop([RETURN unresolved])
     Close --> Done([RETURN proposal summary])
 ```
 
@@ -136,21 +137,20 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Enter([VIBE message]) --> Prep{ALIGN bypassed and<br/>artifact temporary?}
+    Enter([VIBE message]) --> Prep{ALIGN bypassed and<br/>no named artifact?}
     Prep -- yes --> Start[Call start before work]
     Prep -- no --> Implement
     Start --> Implement[Implement accepted scope<br/>resolve routine research]
-    Implement --> Decision[RECORD_DECISION when needed]
+    Implement --> Decision[Call decide / RECORD_DECISION when needed]
     Decision --> Boundary{Consequential or<br/>unsafe boundary?}
-    Boundary -- yes --> Ask[Call ask before crossing]
-    Ask -- unresolved --> Blocked[BLOCKED]
-    Ask -- resolved --> Checks
+    Boundary -- yes --> Decide[Call decide before crossing]
+    Decide --> Checks
     Boundary -- no --> Checks[Smallest checks,<br/>then broader by risk]
     Checks --> Failure{Failure caused<br/>by this work?}
     Failure -- fixable in scope --> Implement
-    Failure -- not fixable --> Blocked
+    Failure -- not fixable --> Blocked[BLOCKED]
     Failure -- no or pre-existing --> Close[CLOSE_OUT]
-    Blocked --> Stop([RETURN unresolved or routed])
+    Blocked --> Stop([RETURN unresolved])
     Close --> Done([RETURN result])
 ```
 
@@ -168,7 +168,7 @@ flowchart TD
     Capture --> Scope{Scope added, conflicted,<br/>or apparently replaced?}
     Scope -- yes --> Reconcile[RECONCILE_SCOPE]
     Reconcile --> Resolved{Relationship resolved?}
-    Resolved -- no, cancelled, or routed --> Return([RETURN])
+    Resolved -- no or cancelled --> Return([RETURN])
     Resolved -- yes --> Dispatch
     Scope -- no --> Dispatch{Persisted mode}
     Dispatch -- ALIGN --> AlignNode[ALIGN procedure]
@@ -249,7 +249,7 @@ classDiagram
 
 ### review — Outcome and decision lifecycle
 
-Checklist outcomes require evidence to complete. Agent decisions may be implemented while review remains unresolved, but only explicit User acceptance or Proceed-with-best makes them approved.
+Checklist outcomes require evidence to complete. Agent decisions may be implemented while review remains unresolved, but only an explicit Align review answer makes them approved.
 
 ```mermaid
 stateDiagram-v2
@@ -268,7 +268,7 @@ stateDiagram-v2
     state "Agent decision D" as D {
         [*] --> ReviewUnresolved: record options, choice, and rationale
         ReviewUnresolved --> ReviewUnresolved: implementation or verification does not approve
-        ReviewUnresolved --> Accepted: explicit review answer or Proceed-with-best
+        ReviewUnresolved --> Accepted: explicit Align review answer
         Accepted --> DirectionChanged: review changes direction
         DirectionChanged --> [*]: append unresolved C outcome
         Accepted --> [*]: lifecycle reconciled
@@ -309,9 +309,15 @@ sequenceDiagram
         end
     end
 
-    opt temporary artifact with clear direction
+    opt Spec or Vibe decision
+        Agent->>Runtime: CALL decide
+        Runtime-->>Agent: highest-confidence pick as unresolved D
+        Runtime->>Artifact: append Agent-transcript block when named
+    end
+
+    opt no named artifact and direction clear
         Agent->>Runtime: CALL start with stable task name
-        Runtime->>Artifact: permanently name or link continuation
+        Runtime->>Artifact: first named file or linked continuation
     end
 
     opt useful post-turn choice remains
@@ -352,7 +358,7 @@ flowchart TD
 
     Request([HANDOFF requested]) --> Current{Current-format artifact?}
 
-    Current -- yes --> Ready[Use already-written artifact<br/>including temporary plans]
+    Current -- yes --> Ready[Use already-written named artifact]
     Ready --> Fresh[Continue in fresh ALIGN]
 
     Current -- no, legacy --> NoMutation[Do not mutate<br/>legacy artifact]
@@ -388,46 +394,40 @@ flowchart TD
     Capture --> Scope{Scope added, conflicted,<br/>or apparently replaced?}
     Scope -- yes --> Reconcile[RECONCILE_SCOPE]
     Reconcile --> AskScope{Relationship resolved?}
-    AskScope -- no, cancelled,<br/>or routed --> Return([RETURN])
+    AskScope -- no or cancelled --> Return([RETURN])
     AskScope -- yes --> Dispatch{Persisted mode}
     Scope -- no --> Dispatch
 
     Dispatch -- ALIGN --> Align[Bounded orientation<br/>ask unresolved Q or D review]
     Align --> AlignRoute{Direction clear?}
     AlignRoute -- no --> Return
-    AlignRoute -- yes --> Name[Call start once<br/>if artifact is temporary]
+    AlignRoute -- yes --> Name[Call start once<br/>if no named artifact]
     Name --> Useful{Useful work remains?}
     Useful -- yes --> Next[Call next with contextual<br/>ranked actions]
     Useful -- no --> Return
     Next --> Return
 
     Dispatch -- SPEC --> Spec[Bounded symbol or path research<br/>build actionable proposal]
-    Spec --> Decision[RECORD_DECISION<br/>for material autonomous choice]
+    Spec --> Decision[Call decide / RECORD_DECISION<br/>for material autonomous choice]
     Decision --> Boundary{Consequential or<br/>unsafe boundary?}
-    Boundary -- yes --> AskBoundary[Call ask]
-    AskBoundary -- unresolved --> Blocked[BLOCKED]
-    Boundary -- no --> Actionable{Proposal actionable?}
-    AskBoundary -- resolved --> Actionable
-    Actionable -- no --> Blocked
+    Boundary -- yes --> AskBoundary[Call decide]
+    AskBoundary --> Actionable{Proposal actionable?}
+    Boundary -- no --> Actionable
+    Actionable -- no --> Blocked[BLOCKED]
     Actionable -- yes --> Close[CLOSE_OUT]
 
     Dispatch -- VIBE --> Vibe[Implement accepted scope<br/>and routine research]
-    Vibe --> VibeDecision[RECORD_DECISION when needed]
+    Vibe --> VibeDecision[Call decide when needed]
     VibeDecision --> VibeBoundary{Consequential or<br/>unsafe boundary?}
-    VibeBoundary -- yes --> AskVibe[Call ask before crossing]
-    AskVibe -- unresolved --> Blocked
-    AskVibe -- resolved --> Checks[Smallest checks,<br/>then broader checks by risk]
+    VibeBoundary -- yes --> AskVibe[Call decide before crossing]
+    AskVibe --> Checks[Smallest checks,<br/>then broader checks by risk]
     VibeBoundary -- no --> Checks
     Checks --> Failure{Failure caused<br/>by this work?}
     Failure -- fixable in scope --> Vibe
     Failure -- not fixable in scope --> Blocked
     Failure -- no or pre-existing --> Close
 
-    Blocked --> Resolve{User can resolve<br/>safely now?}
-    Resolve -- answered --> Dispatch
-    Resolve -- cancelled or unresolved --> CloseNoRoute[CLOSE_OUT<br/>routing disabled]
-    Resolve -- no --> CloseNoRoute
-    CloseNoRoute --> Return
+    Blocked --> Close
 
     Close --> Remaining{Actionable work<br/>or decision review?}
     Remaining -- actionable work --> Next
