@@ -51,7 +51,6 @@ pi list
 - **project-memory** — Low-noise startup check for the hidden `memory-review` commit cursor. It ignores uncommitted work, gives relevant commits a one-day grace period, and suppresses repeated reminders until both `HEAD` changes and 24 hours pass; cooldown state stays outside the repository.
 - **progress-tracker** — Above-editor per-mode Align/Spec/Vibe timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
 - **pi-inspector-bridge** — Reports Director mode and session context back to a discoverable Pi Inspector over its display-only channel.
-- **stacked-prs skill** — On-demand guidance for creating, managing, and rebasing stacked branches using the GitHub CLI (`gh`) when the user chooses a stacked PR workflow.
 - **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota metrics in the status bar.
 - **usage-history** — Historical token/cost reporting (`/usage`).

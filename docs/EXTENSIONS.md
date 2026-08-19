@@ -20,7 +20,6 @@ extension.
 ## Supporting resources
 
 - **Init prompt** (`prompts/init.md`) — Initialize or realign shared/Pi-local instruction layers and selective project memory
-- **Stacked PRs skill** (`skills/stacked-prs/SKILL.md`) — Guide for creating, managing, and rebasing stacked PR branches using the GitHub CLI (`gh`) when chosen by the user
 - **Bundled themes** (`themes/dark.json`, `themes/github-dark.json`) — Portable bundled themes (`"theme": "github-dark"`)
 
 ## Single-agent policy
@@ -58,7 +57,7 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 ## Deliberately absent
 
 - **No workflow skill.** The Align/Spec/Vibe workflow and its close-out step remain a
-  constant injected contract. The optional Stacked PRs skill activates on-demand when chosen.
+  constant injected contract.
 - **No Pi Inspector skill (deferred / TODO).** Pi Inspector agent skills are deferred
   until Inspector is fully tested, validated, and integrated with the workflow; only the
   display-only bridge extension is currently loaded.

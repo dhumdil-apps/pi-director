@@ -3,7 +3,7 @@
 ## Project
 
 This repository is a private TypeScript extension bundle. `package.json` is the
-manifest for extensions, prompts, skills, and themes. Runtime source is under
+manifest for extensions, prompts, and themes. Runtime source is under
 `extensions/`; maintainer documentation is under `docs/`.
 
 ## Development
@@ -33,5 +33,5 @@ do not cover.
 - Inspect status and task-owned diffs before editing, and preserve unrelated user changes.
 - Do not commit secrets, runtime session data, or generated artifacts.
 - Keep commits focused and reviewable when commits are requested.
-- When stacked PRs are chosen for multi-phase work, follow `skills/stacked-prs/SKILL.md` recipes; never push or create PRs without explicit User confirmation.
+- Never push or create PRs without explicit User confirmation.
 - Never rewrite shared history or force-push.
