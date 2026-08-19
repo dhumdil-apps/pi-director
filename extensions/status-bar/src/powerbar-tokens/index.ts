@@ -56,23 +56,13 @@ function emitSessionStats(pi: ExtensionAPI, ctx: ExtensionContext): void {
     row: 2,
   });
 
-  if (totalInput === 0 && totalOutput === 0) {
-    pi.events.emit("powerbar:update", { id: "cost", text: undefined });
-    pi.events.emit("powerbar:update", { id: "tokens", text: undefined });
-    return;
-  }
-
   const tokenText = `↑${formatTokens(totalInput)} ↓${formatTokens(totalOutput)}`;
   pi.events.emit("powerbar:update", { id: "tokens", text: tokenText, color: "dim", row: 2 });
-  if (totalCost > 0) {
-    pi.events.emit("powerbar:update", {
-      id: "cost",
-      row: 2,
-      render: (theme: Theme) => theme.fg(costColor(totalCost), `$${totalCost.toFixed(2)}`),
-    });
-  } else {
-    pi.events.emit("powerbar:update", { id: "cost", text: undefined });
-  }
+  pi.events.emit("powerbar:update", {
+    id: "cost",
+    row: 2,
+    render: (theme: Theme) => theme.fg(costColor(totalCost), `$${totalCost.toFixed(2)}`),
+  });
 }
 
 function resetSessionStats(pi: ExtensionAPI): void {

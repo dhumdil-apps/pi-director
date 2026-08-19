@@ -6,7 +6,8 @@
  *
  * We listen to `usage-core:ready` and `usage-core:update-current`.
  * The state includes a `provider` field — when absent (e.g. xAI / Bedrock),
- * hourly stays n/a and weekly may use the unmatched settings override.
+ * hourly is hidden when weekly has data, and weekly may use the unmatched
+ * settings override. A lone missing sibling is omitted; both missing show one n/a.
  *
  * Segment IDs: "sub-hourly", "sub-weekly"
  */
@@ -229,6 +230,10 @@ function emitUnavailable(pi: ExtensionAPI, segmentId: string): void {
   pi.events.emit("powerbar:update", { id: segmentId, text: "n/a", color: "dim" });
 }
 
+function emitHidden(pi: ExtensionAPI, segmentId: string): void {
+  pi.events.emit("powerbar:update", { id: segmentId, text: undefined });
+}
+
 function unmatchedWeeklyWindow(): RateWindow | undefined {
   const override = loadUnmatchedWeeklyOverride();
   if (!override) return undefined;
@@ -240,17 +245,7 @@ function unmatchedWeeklyWindow(): RateWindow | undefined {
   };
 }
 
-function emitWindow(
-  pi: ExtensionAPI,
-  segmentId: string,
-  window: RateWindow | undefined,
-  workingDaysPerWeek: number,
-): void {
-  if (!window) {
-    emitUnavailable(pi, segmentId);
-    return;
-  }
-
+function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow, workingDaysPerWeek: number): void {
   const now = new Date();
   const pct = Math.round(window.usedPercent);
   const label = window.label || "";
@@ -272,25 +267,37 @@ function emitWindow(
   });
 }
 
+function emitSlot(
+  pi: ExtensionAPI,
+  segmentId: string,
+  window: RateWindow | undefined,
+  workingDaysPerWeek: number,
+): void {
+  if (window) emitWindow(pi, segmentId, window, workingDaysPerWeek);
+  else emitHidden(pi, segmentId);
+}
+
 function emitUsage(pi: ExtensionAPI, state: UsageCoreState | undefined): void {
   const workingDaysPerWeek = loadWorkingDaysPerWeek();
+  let hourly: RateWindow | undefined;
+  let weekly: RateWindow | undefined;
 
   if (!state?.provider) {
+    weekly = unmatchedWeeklyWindow();
+  } else if (state.usage && state.usage.windows.length > 0) {
+    const windows = windowsForSegments(state.usage.windows);
+    hourly = windows.hourly;
+    weekly = windows.weekly;
+  }
+
+  if (!hourly && !weekly) {
     emitUnavailable(pi, "sub-hourly");
-    emitWindow(pi, "sub-weekly", unmatchedWeeklyWindow(), workingDaysPerWeek);
+    emitHidden(pi, "sub-weekly");
     return;
   }
 
-  const usage = state.usage;
-  if (!usage || usage.windows.length === 0) {
-    emitUnavailable(pi, "sub-hourly");
-    emitUnavailable(pi, "sub-weekly");
-    return;
-  }
-
-  const windows = windowsForSegments(usage.windows);
-  emitWindow(pi, "sub-hourly", windows.hourly, workingDaysPerWeek);
-  emitWindow(pi, "sub-weekly", windows.weekly, workingDaysPerWeek);
+  emitSlot(pi, "sub-hourly", hourly, workingDaysPerWeek);
+  emitSlot(pi, "sub-weekly", weekly, workingDaysPerWeek);
 }
 
 export default function createExtension(pi: ExtensionAPI): void {

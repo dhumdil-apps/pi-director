@@ -245,12 +245,12 @@ export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext, force
 
   if (action.kind === "continue") {
     resolveCheckpoint(pi, checkpoint.id, "continue");
-    sendContinueKickoff(pi, action.mode, action.prompt, "continue", current);
+    if (action.prompt) sendContinueKickoff(pi, action.mode, action.prompt, "continue", current);
     return;
   }
   resolveCheckpoint(pi, checkpoint.id, action.mode);
   await applyMode(pi, ctx, action.mode, current);
-  sendContinueKickoff(pi, action.mode, action.prompt, "start", current);
+  if (action.prompt) sendContinueKickoff(pi, action.mode, action.prompt, "start", current);
 }
 
 export function registerModePicker(pi: ExtensionAPI): void {

@@ -10,8 +10,8 @@ segments:
 - **`src/powerbar-git/`** — `git-branch` (branch, tracked diff statistics, + dirty marker)
 - **`src/powerbar-model/`** — `model` (name + thinking level)
 - **`src/powerbar-provider/`** — `provider`
-- **`src/powerbar-tokens/`** — `cost`, `tokens`, `agent-stats`
-- **`src/powerbar-sub/`** — `sub-hourly`, `sub-weekly` (from Usage Monitor events; missing slots stay as dim `n/a`)
+- **`src/powerbar-tokens/`** — `cost`, `tokens`, `agent-stats` (always shown, including `$0.00` and `↑0 ↓0`)
+- **`src/powerbar-sub/`** — `sub-hourly`, `sub-weekly` (from Usage Monitor events; a missing sibling is omitted, both missing show one dim `n/a`)
 - **`src/powerbar-os/`** — `cpu`, `ram`, `disk`/SSD, `net`
 - **Progress Tracker** — `attention-span` (`LLM Attention Span (ctx)`)
 
@@ -32,9 +32,10 @@ position against the configured daily allocations: green before completed-day
 allocation is consumed, blue while consuming today's allocation, and red only
 when usage spills into a future day. The default is five Monday–Friday
 allocations; values six and seven include weekends. The suffix keeps total quota
-left visible. A configured hourly or weekly slot with no live window stays as
-dim `n/a` instead of disappearing. For unmatched providers (xAI, Bedrock), the
-weekly slot can use the two Status Bar override fields below.
+left visible. A configured hourly or weekly slot with no live window is omitted when the other
+slot has data; only when both are missing does the pair show one dim `n/a`.
+For unmatched providers (xAI, Bedrock), the weekly slot can use the two Status
+Bar override fields below.
 
 ## User surface
 
@@ -43,8 +44,9 @@ Configured through `/extension-settings` (stored under `powerbar`): a
 weekly override fields `Unmatched weekly used %` and `Unmatched weekly reset`.
 The unmatched weekly override applies only when Usage Monitor has no quota
 provider; both fields must parse (`0`–`100`, optionally with `%`, and ISO-8601
-such as `2026-08-21T18:57`) or weekly stays `n/a`. Natural grok.com dates are
-rejected. Known providers keep last-good or `n/a` and never read those fields.
+such as `2026-08-21T18:57`) or weekly is omitted (or the pair shows one `n/a` if
+hourly is also missing). Natural grok.com dates are rejected. Known providers
+keep last-good data or the hide / single-`n/a` rule and never read those fields.
 Layout is fixed in `FIXED_SETTINGS` (`extensions/status-bar/src/powerbar/settings.ts`):
 
 - Line 1 — `git-branch` left, `provider` right

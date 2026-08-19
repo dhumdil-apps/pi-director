@@ -330,7 +330,7 @@ sequenceDiagram
             Runtime->>Agent: fresh turn with mechanical prefix plus Agent instruction
         else neutral or manual mode selected
             User-->>Runtime: select mode
-            Runtime->>Agent: fresh turn with mechanical context only
+            Runtime-->>User: return to editor
         else handoff selected
             User-->>Runtime: select handoff
             Runtime-->>User: prepare /handoff for explicit execution

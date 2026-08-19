@@ -4,8 +4,8 @@ Live subscription/quota usage data for anthropic, copilot, gemini,
 antigravity, codex, kiro, and zai. Feeds the Status Bar's `sub-*` segments;
 has no UI of its own. xAI / SuperGrok is not a live quota source: there is no
 documented consumer usage API, so Usage Monitor emits no provider for those
-models. Status Bar then shows dim `n/a` on the hourly slot, and may fill weekly
-from its unmatched override settings.
+models. Status Bar then hides the hourly slot when weekly has data (one dim `n/a`
+only if both are missing), and may fill weekly from its unmatched override settings.
 
 ## Events emitted
 

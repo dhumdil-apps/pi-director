@@ -19,7 +19,7 @@ import {
   workflowModePrompt,
   type WorkflowMode,
 } from "./mode.js";
-import { applyMode, openModePicker, registerModePicker, startModeContinuation } from "./mode-picker.js";
+import { applyMode, openModePicker, registerModePicker } from "./mode-picker.js";
 import { registerWorkflowNotices } from "./notice.js";
 import { registerAsk } from "./ask.js";
 import { registerDecide } from "./decide.js";
@@ -50,7 +50,6 @@ export default function createExtension(pi: ExtensionAPI): void {
   const setModeCommand = (mode: WorkflowMode) => async (_args: string, ctx: ExtensionCommandContext) => {
     const previous = resolveWorkflowMode(ctx.sessionManager.getBranch());
     await applyMode(pi, ctx, mode, previous);
-    startModeContinuation(pi, mode, previous);
   };
   pi.registerCommand("align", {
     description: agentApiText("command.align"),

@@ -6,7 +6,7 @@ one loop per task, described in [the agent-workflow README](../extensions/agent-
 
 ## Everyday commands
 
-- **`/align`** / **`/spec`** / **`/vibe`** — Change the session mode and auto-start with only a neutral switch line; repeating the current mode starts with a neutral continue line. Align is the recommended clarification/review preflight, Spec researches and proposes, and Vibe executes. `/questionnaire` does not exist.
+- **`/align`** / **`/spec`** / **`/vibe`** — Change the session mode and return to the editor. Align is the recommended clarification/review preflight, Spec researches and proposes, and Vibe executes. `/questionnaire` does not exist.
 - **`/mode`** — Open the manual mode picker. Agent-recommended actions appear first when present, followed by every remaining mode, handoff, and `Return to editor`. Selecting handoff prepares `/handoff <name>` in the editor; press Enter to execute it.
 - **`/handoff [session-name]`** — Continue the same artifact in a fresh Align session. It refuses active runs, skips a checkpoint turn, and auto-starts ordinary Align continue.
 - **`/init [full]`** — Initializes or realigns tool-agnostic shared and Pi-local instruction layers, then refreshes project memory and review provenance. It proposes approval-gated drift repairs, incrementally audits memory since the hidden reviewed commit by default, and performs a repository-wide audit with `full`.

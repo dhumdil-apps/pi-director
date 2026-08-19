@@ -247,7 +247,7 @@ TOOL_MECHANICS:
     empty next records no recommendation and opens no picker;
     Agent-authored next actions REQUIRE contextual instructions for recommended ALIGN, SPEC, and VIBE actions and OMIT one for handoff;
     runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction;
-    manual ALIGN/SPEC/VIBE commands and unrecommended picker choices auto-start with only the neutral switch or continue line;
+    manual ALIGN/SPEC/VIBE commands and unrecommended picker choices return to the editor;
     duplicate next modes collapse; picker-selected handoff prepares /handoff for explicit User execution;
     counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities;
     IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded;

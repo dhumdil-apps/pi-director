@@ -37,7 +37,7 @@ setting (default `5`, valid `1`–`7`) and unmatched weekly override fields
 (`unmatched-weekly-used-percent`, `unmatched-weekly-reset`). Weekly values of
 `6`–`7` include weekends in subscription-bar pacing. The unmatched weekly
 override fills `sub-weekly` only when Usage Monitor reports no quota provider;
-both fields must be valid (`0`–`100` and ISO-8601) or that slot stays `n/a`.
+both fields must be valid (`0`–`100` and ISO-8601) or that slot is omitted (one `n/a` only if hourly is also missing).
 Layout and visual style are fixed in code — line pickers, Line gap, separator,
 bar style, bar width, and placement were configurable, and were either unused
 or actively misleading.
