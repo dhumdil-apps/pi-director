@@ -6,6 +6,7 @@ import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { MODE_LABEL, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
 import { ASK_SETTLEMENT_EVENT } from "./mode-picker.js";
 import { QuestionParams, optionReferences, orderedOptions, pickerLabel, type WorkflowQuestion } from "./questions.js";
+import { missingSessionPlan } from "./task.js";
 import { duringUserWait } from "./user-wait.js";
 
 export const WRITE_CUSTOM_ANSWER = "📝 Write a custom answer...";
@@ -131,6 +132,18 @@ export function registerAsk(pi: ExtensionAPI): void {
         return {
           content: [{ type: "text" as const, text: "No questions were supplied; Ask made no changes." }],
           details,
+        };
+      }
+      const missing = missingSessionPlan(ctx.cwd, pi.getSessionName());
+      if (missing) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${missing}` }],
+          details: {
+            answers: [],
+            cancelled: false,
+            unanswered: params.questions.map((item) => item.id),
+          } satisfies AskDetails,
+          isError: true,
         };
       }
       const checkpoint = openCheckpoint(pi, "question");

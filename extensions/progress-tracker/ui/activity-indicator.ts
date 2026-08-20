@@ -6,7 +6,7 @@
  */
 
 import type { ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth } from "@earendil-works/pi-tui";
+import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { addModeTime, formatDuration, type PlanTime } from "../../agent-workflow/plan-time.js";
 import { MODE_LABEL, type WorkflowMode } from "../../agent-workflow/mode.js";
 
@@ -86,6 +86,21 @@ const MODE_PROMPTS: Record<WorkflowMode, string> = {
   vibe: "What’s up next?",
 };
 
+/** Keep mode buckets visible: cap Current work to the leftover width. */
+function workingStatus(
+  left: string,
+  currentWork: string | undefined,
+  buckets: string,
+  width: number,
+  theme: Theme,
+): string {
+  if (!currentWork) return `${left}${buckets}`;
+  const budget = width - visibleWidth(left) - visibleWidth(buckets) - 1;
+  if (budget <= 0) return `${left}${buckets}`;
+  const clipped = truncateToWidth(currentWork, budget, "…");
+  return clipped ? `${left}${theme.fg("dim", ` ${clipped}`)}${buckets}` : `${left}${buckets}`;
+}
+
 /** Dim while aligning, warning once executing. */
 function modeText(mode: WorkflowMode | undefined, theme: Theme): string {
   const resolved: WorkflowMode = mode ?? "align";
@@ -141,9 +156,8 @@ export function updatePhaseIndicator(ctx: ExtensionContext, working: boolean, ex
                 );
           const buckets = modeBuckets(working, extras, now, theme);
           const currentWork = working ? extras?.currentWork?.trim() : undefined;
-          const work = currentWork ? theme.fg("dim", ` ${currentWork}`) : "";
           const status = working
-            ? `${theme.fg("accent", marker)}${timer}${work}${buckets}`
+            ? workingStatus(theme.fg("accent", marker) + timer, currentWork, buckets, width, theme)
             : `${theme.fg("accent", `${marker} `)}${modeText(extras?.mode, theme)}${timer}${buckets}`;
           return [truncateToWidth(status, width)];
         },

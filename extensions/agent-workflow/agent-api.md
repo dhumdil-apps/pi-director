@@ -96,7 +96,7 @@ Record ranked actions for the post-turn picker without changing mode.
 
 ## tool.next.action.reason
 
-Optional text shown beside this action.
+Optional user-facing picker subtitle. Plain English is the focus; Q, C, or D identifiers only as a trailing [] or (). Shown as `{mode} — {reason}` in place of the canned mode subtitle.
 
 ## tool.next.action.prompt
 

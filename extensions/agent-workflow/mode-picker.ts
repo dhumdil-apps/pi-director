@@ -179,14 +179,10 @@ function pickerState(current: WorkflowMode, explicit: NextStepAction[] = []): Pi
     recommended.add(action.mode);
     if (action.mode === "handoff") {
       add(HANDOFF_OPTION, { kind: "handoff" }, action.reason);
-    } else if (action.mode === current) {
-      add(transitionLabel(current, current), { kind: "continue", mode: current, prompt: action.prompt }, action.reason);
     } else {
-      add(
-        transitionLabel(current, action.mode),
-        { kind: "switch", mode: action.mode, prompt: action.prompt },
-        action.reason,
-      );
+      const label = action.reason ? MODE_LABEL[action.mode] : transitionLabel(current, action.mode);
+      const kind = action.mode === current ? "continue" : "switch";
+      add(label, { kind, mode: action.mode, prompt: action.prompt }, action.reason);
     }
   }
 

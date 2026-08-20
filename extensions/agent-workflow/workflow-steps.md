@@ -130,7 +130,7 @@ ALIGN(message) — recommended preflight and review:
     IF useful work remains THEN;
         CALL next with only meaningful ranked ALIGN, SPEC, VIBE, and/or handoff actions;
         IF remaining work is source exploration THEN rank SPEC first with a custom instruction for that gap;
-        FOR EACH non-handoff action INCLUDE a custom instruction grounded in the current C/D identifier or concrete outcome, intended result, and verification target; LET runtime prepend the mechanical switch or continue line;
+        FOR EACH non-handoff action INCLUDE a user-facing reason in plain English (Q/C/D ids only as a trailing [] or ()) and a custom instruction grounded in the current C/D identifier or concrete outcome, intended result, and verification target; LET runtime prepend the mechanical switch or continue line;
         FOR handoff OMIT the kickoff;
     ELSE RETURN to the editor;
     END IF;
@@ -196,7 +196,7 @@ CLOSE_OUT(routing := enabled):
     IF routing = disabled THEN ENSURE artifact is resumable and RETURN;
     IF actionable work remains THEN;
         CALL next with ranked appropriate modes and/or handoff;
-        FOR EACH non-handoff action INCLUDE a custom instruction grounded in the current C/D identifier or concrete outcome, intended result, and verification target; LET runtime prepend the mechanical switch or continue line;
+        FOR EACH non-handoff action INCLUDE a user-facing reason in plain English (Q/C/D ids only as a trailing [] or ()) and a custom instruction grounded in the current C/D identifier or concrete outcome, intended result, and verification target; LET runtime prepend the mechanical switch or continue line;
         FOR handoff OMIT the kickoff;
     ELSE IF decision review remains THEN;
         SUMMARIZE it and CALL next with ALIGN while treating implementation as complete and including a custom instruction grounded in the unresolved D identifier, intended review result, and verification target;
@@ -250,8 +250,9 @@ TOOL_MECHANICS:
     CALL start with a context-informed 2-4 word task name and include a ticket ID when applicable;
     start is the first .pi/plan write;
     start is the first CALL tool when no named artifact exists;
+    ask must not show a non-empty ALIGN picker without a named artifact; if this session has no plan file it errors without a picker;
     empty next records no recommendation and opens no picker;
-    Agent-authored next actions REQUIRE contextual instructions for recommended ALIGN, SPEC, and VIBE actions and OMIT one for handoff;
+    Agent-authored next actions REQUIRE a user-facing reason (plain English; Q/C/D ids only as a trailing [] or ()) and contextual instructions for recommended ALIGN, SPEC, and VIBE actions and OMIT an instruction for handoff;
     runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction;
     manual ALIGN/SPEC/VIBE commands and unrecommended picker choices return to the editor;
     duplicate next modes collapse; picker-selected handoff prepares /handoff for explicit User execution;

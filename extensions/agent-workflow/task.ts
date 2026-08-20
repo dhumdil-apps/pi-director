@@ -198,6 +198,15 @@ export function resolvePlanTask(
   return { error: `No plan under ${CONFIG_DIR_NAME}/plan/ — start a task first.` };
 }
 
+/** Error when this session has no plan file; undefined when Ask may open. */
+export function missingSessionPlan(cwd: string, sessionName: string | undefined): string | undefined {
+  const current = canonicalTaskName(sessionName);
+  if (current && existsSync(planPath(cwd, current))) return undefined;
+  return current
+    ? `No plan for ${current} under ${CONFIG_DIR_NAME}/plan/ — start a task first.`
+    : `No plan under ${CONFIG_DIR_NAME}/plan/ — start a task first.`;
+}
+
 export function registerTaskManagement(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "start",

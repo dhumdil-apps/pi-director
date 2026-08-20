@@ -12,12 +12,12 @@ New sessions and handoffs start in Align. Explicit `/align`, `/spec`, and `/vibe
 
 The runtime exposes only capabilities instructions cannot reproduce:
 
-- `ask` renders native ALIGN questions and returns answers, cancellation, or a Proceed-with-best Spec/Vibe route.
+- `ask` renders native ALIGN questions and returns answers, cancellation, or a Proceed-with-best Spec/Vibe route. A non-empty Ask errors without a picker if this session has no plan file. It does not write the User transcript.
 - `decide` silently auto-picks the highest-confidence option for each SPEC/VIBE question and records that pick as an unresolved decision. It never opens a picker or changes mode.
 - `start` creates the named `.pi/plan` artifact or a linked continuation from an immutable legacy plan. No plan file exists until this call.
 - `next` records ranked actions for the automatic post-turn picker.
 
-Only an explicit `next` call opens an automatic picker. Every recommended Align, Spec, or Vibe action carries a distinct Agent-authored instruction grounded in the current artifact; runtime prepends only `Switch from … to …` or `Continue in …`, and handoff omits an instruction. Recommended actions appear first, followed by neutral remaining modes, handoff, and `Return to editor`. Manual mode commands and neutral picker choices change mode and return to the editor; only a recommended action with a prefilled prompt starts the agent. Selecting handoff prepares `/handoff <name>` in the editor for explicit User execution. Empty recommendations open nothing; `/mode` remains the manual recovery surface.
+Only an explicit `next` call opens an automatic picker. Every recommended Align, Spec, or Vibe action carries a user-facing subtitle in plain English (Q/C/D identifiers only as a trailing `[]` or `()`) plus a distinct Agent-authored instruction grounded in the current artifact. When a subtitle is present the picker shows `{mode} — {subtitle}` instead of the canned mode phrase; runtime prepends only `Switch from … to …` or `Continue in …` to the hidden kickoff, and handoff omits an instruction. Recommended actions appear first, followed by neutral remaining modes, handoff, and `Return to editor`. Manual mode commands and neutral picker choices change mode and return to the editor; only a recommended action with a prefilled prompt starts the agent. Selecting handoff prepares `/handoff <name>` in the editor for explicit User execution. Empty recommendations open nothing; `/mode` remains the manual recovery surface.
 
 Question counts, option counts, confidence scale, identifiers, naming quality, and decision completeness are Agent instructions rather than runtime validation. Empty Ask is a harmless no-op; an optionless Ask question retains custom input but cannot Proceed-with-best. A SPEC/VIBE Ask, an ALIGN Decide, or an optionless Decide is a harmless no-op rather than an error.
 
