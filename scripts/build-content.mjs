@@ -6,6 +6,7 @@
  * Reads the canonical workflow sources:
  *   - docs/AGENT-WORKFLOW-DIAGRAMS.md  → dist/workflow-diagrams.json
  *   - extensions/agent-workflow/workflow-steps.md → dist/workflow-steps.txt
+ *   - extensions/agent-workflow/workflow-steps.md → dist/workflow.md
  *
  * Then produces a minimal package tarball under dist/.
  */
@@ -145,8 +146,23 @@ console.log(`Parsed ${layers.length} layers, ${totalDiagrams} diagrams`);
 
 writeFileSync(join(DIST, "workflow-diagrams.json"), JSON.stringify(layers, null, 2) + "\n");
 
-// Workflow steps (raw copy)
-cpSync(join(ROOT, "extensions/agent-workflow/workflow-steps.md"), join(DIST, "workflow-steps.txt"));
+// Workflow steps (raw copy) plus a markdown wrap for downstream docs UIs
+const stepsSource = join(ROOT, "extensions/agent-workflow/workflow-steps.md");
+cpSync(stepsSource, join(DIST, "workflow-steps.txt"));
+const steps = readFileSync(stepsSource, "utf-8");
+writeFileSync(
+  join(DIST, "workflow.md"),
+  [
+    "# Workflow",
+    "",
+    "Canonical operational contract from `extensions/agent-workflow/workflow-steps.md`.",
+    "",
+    "```",
+    steps.replace(/\n+$/, ""),
+    "```",
+    "",
+  ].join("\n"),
+);
 
 // Minimal package.json
 const rootPkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf-8"));
@@ -156,7 +172,9 @@ const contentPkg = {
   type: "module",
   description: "Derived workflow content from pi-director for downstream UI consumers.",
   exports: {
+    "./package.json": "./package.json",
     "./workflow-diagrams.json": "./workflow-diagrams.json",
+    "./workflow.md": "./workflow.md",
     "./workflow-steps.txt": "./workflow-steps.txt",
   },
 };

@@ -17,6 +17,7 @@ INVARIANTS:
     a genuinely unrelated goal requires a fresh session; NEVER delete plan artifacts automatically;
     NEVER advance the hidden memory-review marker outside /init;
     NEVER create or edit .pi/plan/* until start writes the named artifact;
+    NEVER CALL ask, decide, or next before start writes the named artifact;
 
 ALWAYS:
     SIZE process and output to the work;
@@ -24,6 +25,8 @@ ALWAYS:
     DO NOT repeat transcript or artifact prose in the final response;
     NEVER claim a mutation, decision, check, or acceptance that did not occur;
     NEVER silently remove an initial goal, accepted outcome, unresolved C item, or unresolved D review;
+    WHEN a named artifact exists, KEEP **Current work:** as one short in-flight phrase of the active C or D, or empty while waiting on User;
+    NEVER copy Checklist into Current work and NEVER add a todo tool;
 
 TURN(message):
     RUN CAPTURE_TURN(message);
@@ -38,6 +41,7 @@ TURN(message):
 
 WRITE_ARTIFACT(change):
     IF no named artifact exists THEN RETURN success without creating .pi/plan/*;
+    INCLUDE **Current work:** in the change when the in-flight outcome changed;
     TRY EDIT or APPEND change to artifact;
     IF the write fails THEN RETRY once;
     IF the retry fails THEN;
@@ -100,8 +104,10 @@ ALIGN(message) — recommended preflight and review:
         RECORD that gap as unresolved work for SPEC;
         DO NOT open source files or run codebase search to fill it;
     END IF;
-    AFTER orientation reads, CALL ask immediately when any goal, scope, constraint, outcome, or D review question remains;
-    DO NOT use non-orientation tools before that first ask;
+    AFTER orientation reads, IF no named artifact exists THEN CALL start exactly once;
+    IF start created the artifact this turn THEN APPEND any session-retained captured message to User transcript;
+    AFTER the artifact exists, CALL ask immediately when any goal, scope, constraint, outcome, or D review question remains;
+    DO NOT use non-orientation tools other than start before that first ask;
     NEVER CALL decide;
     WHILE a goal, scope, constraint, outcome, or D review question remains DO;
         CALL ask as the first User-facing action with 1-4 independent questions, stable Q identifiers, 2-3 concrete options each, and confidence from 1 through 5;
@@ -121,7 +127,6 @@ ALIGN(message) — recommended preflight and review:
         MARK a D review accepted ONLY for an explicit review answer;
         IF a reviewed D changes direction THEN APPEND the resulting unresolved C outcome;
     END WHILE;
-    IF no named artifact exists AND direction is clear THEN CALL start exactly once;
     IF useful work remains THEN;
         CALL next with only meaningful ranked ALIGN, SPEC, VIBE, and/or handoff actions;
         IF remaining work is source exploration THEN rank SPEC first with a custom instruction for that gap;
@@ -244,6 +249,7 @@ TOOL_MECHANICS:
     manual mode commands accept no unanswered recommendation or unresolved D review;
     CALL start with a context-informed 2-4 word task name and include a ticket ID when applicable;
     start is the first .pi/plan write;
+    start is the first CALL tool when no named artifact exists;
     empty next records no recommendation and opens no picker;
     Agent-authored next actions REQUIRE contextual instructions for recommended ALIGN, SPEC, and VIBE actions and OMIT one for handoff;
     runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction;

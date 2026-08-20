@@ -10,7 +10,7 @@ segments:
 - **`src/powerbar-git/`** — `git-branch` (branch, tracked diff statistics, + dirty marker)
 - **`src/powerbar-model/`** — `model` (name + thinking level)
 - **`src/powerbar-provider/`** — `provider`
-- **`src/powerbar-tokens/`** — `cost`, `tokens`, `agent-stats` (always shown, including `$0.00` and `↑0 ↓0`)
+- **`src/powerbar-tokens/`** — `cost` and `agent-stats` always shown (including `$0.00` and zero counters); `tokens` omitted while both ↑↓ are 0
 - **`src/powerbar-sub/`** — `sub-hourly`, `sub-weekly` (from Usage Monitor events; a missing sibling is omitted, both missing show one dim `n/a`)
 - **`src/powerbar-os/`** — `cpu`, `ram`, `disk`/SSD, `net`
 - **Progress Tracker** — `attention-span` (`LLM Attention Span (ctx)`)
@@ -66,8 +66,9 @@ Everything else is fixed rather than configurable, because the visual knobs were
 either inert or wrong: separator `·`, blocks-style bars, placement below the
 editor, and a 10-block default width for any bar that doesn't declare its own.
 The message-count segment renders `💬 … · 👤 … · 🤖 … · 🛠️ …`, and OS
-metrics use uppercase `CPU`, `RAM`, `SSD`, and `NET` labels. The token segment
-keeps input/output counts dim. The cost segment is accent below $5, warning
+metrics use uppercase `CPU`, `RAM`, `SSD`, and `NET` labels. The token segment is omitted while both counts are 0 and otherwise keeps
+input/output counts dim. Progress Tracker's `attention-span` omits `0 /` and
+shows only the context window until used tokens are non-zero. The cost segment is accent below $5, warning
 from $5, and error from $10.
 
 Agent Workflow owns task naming through `start`: naming the plan sets the

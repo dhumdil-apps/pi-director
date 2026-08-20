@@ -27,7 +27,7 @@ One versioned `.pi/plan/<name>.md` follows the task across modes and handoffs. T
 
 The Agent preserves the initial goal, accepted follow-ups, and unresolved outcomes as cumulative scope. Follow-up work may add, defer, supersede, skip, fail, or complete a stable C outcome, but it may not silently erase or rename one. Stable Agent-chosen Q/D/C identifiers make question, decision, and outcome lifecycles reviewable across turns.
 
-Runtime does not parse checklist or decision status. The Agent interprets the free-form artifact as a whole, keeps Work log and both transcripts append-only, and leaves the artifact resumable without chat history after every turn.
+Runtime does not parse checklist or decision status. It does parse the `**Current work:**` line for the Progress Tracker working slot. The Agent interprets the free-form artifact as a whole, keeps Work log and both transcripts append-only, and leaves the artifact resumable without chat history after every turn.
 
 Spec and Vibe call `decide` for every material autonomous decision. That call is RECORD_DECISION: the runtime auto-picks the highest-confidence option and records the unresolved D. Only explicit User acceptance in Align resolves review; implementation and verification do not imply approval.
 

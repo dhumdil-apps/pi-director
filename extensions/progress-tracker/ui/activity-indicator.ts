@@ -31,6 +31,8 @@ export interface IndicatorExtras {
   planTime?: PlanTime;
   /** When the latest provider response completed, as epoch ms, for cache age. */
   cacheStartedAt?: number;
+  /** Plan **Current work:** phrase; omitted while idle or when empty. */
+  currentWork?: string;
   /** Injectable clock, so the live counter is testable. */
   now?: () => number;
 }
@@ -138,8 +140,10 @@ export function updatePhaseIndicator(ctx: ExtensionContext, working: boolean, ex
                   ` ${!working && elapsed >= CACHE_ERROR_IDLE_MS ? "5m+" : formatDuration(elapsed)}`,
                 );
           const buckets = modeBuckets(working, extras, now, theme);
+          const currentWork = working ? extras?.currentWork?.trim() : undefined;
+          const work = currentWork ? theme.fg("dim", ` ${currentWork}`) : "";
           const status = working
-            ? `${theme.fg("accent", marker)}${timer}${buckets}`
+            ? `${theme.fg("accent", marker)}${timer}${work}${buckets}`
             : `${theme.fg("accent", `${marker} `)}${modeText(extras?.mode, theme)}${timer}${buckets}`;
           return [truncateToWidth(status, width)];
         },

@@ -36,7 +36,11 @@ renders the one thing the transcript cannot show.
   read the latest entry. The large injected contract stays constant while only a
   tiny per-turn mode message varies.
 - Working state — while a run is in flight the idle prompt gives way to the
-  spinner and accent-colored active timing.
+  spinner and accent-colored active timing. The plan's `**Current work:**`
+  phrase follows the timer in dim (`⠋ 12s C5 seed current-work line`) when
+  non-empty. Idle, waiting, missing plans, and empty lines omit it. The tracker
+  re-reads the named plan on adopt, `agent_start`, `tool_execution_end`, and
+  `agent_settled`; it does not parse Checklist prose or expose a todo tool.
 - Work/cache timer — one compact accent-colored readout follows the active
   spinner and counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
   ALIGN, SPEC, or VIBE work begins rather than displaying grand-total task time.
@@ -81,8 +85,9 @@ The vendored `manage_todo_list` was removed on 2026-07-24. Pi ships no todo tool
 on purpose — its README states plainly that they confuse models — and the
 vendored one leaned on nagging to stay used: a `CRITICAL workflow` description,
 a "continue to use the todo list" line appended to every write, and a warning
-for lists under three items. What the agent is doing is already visible in the
-transcript.
+for lists under three items. The working row may show one Agent-owned
+`**Current work:**` phrase from the plan; that is display-only, not a list the
+model must keep in tool state.
 
 ## Origin
 

@@ -56,7 +56,8 @@ function emitSessionStats(pi: ExtensionAPI, ctx: ExtensionContext): void {
     row: 2,
   });
 
-  const tokenText = `↑${formatTokens(totalInput)} ↓${formatTokens(totalOutput)}`;
+  const tokenText =
+    totalInput === 0 && totalOutput === 0 ? undefined : `↑${formatTokens(totalInput)} ↓${formatTokens(totalOutput)}`;
   pi.events.emit("powerbar:update", { id: "tokens", text: tokenText, color: "dim", row: 2 });
   pi.events.emit("powerbar:update", {
     id: "cost",
