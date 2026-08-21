@@ -1,8 +1,8 @@
 # Agent Workflow diagrams
 
-This guide is a derived visual map of the Agent Workflow contract. The sole operational source is [`extensions/agent-workflow/workflow-steps.md`](../extensions/agent-workflow/workflow-steps.md); when a diagram and that pseudocode disagree, the pseudocode wins.
+This guide is a derived visual map of the Agent Workflow contract. The sole operational source is [`extensions/agent-workflow/workflow-fsm.ts`](../extensions/agent-workflow/workflow-fsm.ts); when a diagram and that FSM disagree, the FSM wins. Runtime gates live in [`workflow-machine.ts`](../extensions/agent-workflow/workflow-machine.ts). For an interactive diagram of the same transition table, open [`workflow-fsm.html`](../extensions/agent-workflow/workflow-fsm.html) after `npm run build:content`. The page is a diagram-only flat XState-style view: full FSM states and transitions in a machine frame, event/DO edge pills with optional CMD/ESC bundles, orthogonal routing, and double-click sidebar panels with full instruction bodies.
 
-Read the layers in order to build a mental model: **Map → Modes → Machinery → Full picture**. Each view summarizes rules instead of duplicating the complete contract. Use the [coverage index](#source-symbol-coverage) to jump from a pseudocode symbol to its visual home.
+Read the layers in order to build a mental model: **Map → Modes → Machinery → Full picture**. Each view summarizes rules instead of duplicating the complete contract. Use the [coverage index](#source-symbol-coverage) to jump from an FSM symbol to its visual home.
 
 Stable diagram ids (for anchors and downstream copies): `map-overview`, `ownership`, `modes-core`, `mode-align`, `mode-spec`, `mode-vibe`, `turn-spine`, `artifact`, `review`, `tools`, `handoff`, `full-turn`.
 
@@ -98,17 +98,17 @@ Bounded known orientation only. Do not search source. Ask immediately after thos
 ```mermaid
 flowchart TD
     Enter([ALIGN message]) --> Orient[Bounded AGENTS.md, .pi state,<br/>README, named plans, docs]
-    Orient --> Unresolved{Unresolved goal, scope,<br/>constraint, outcome, or D review?}
+    Orient --> Named{Named artifact exists?}
+    Named -- no --> Start[Call start once]
+    Named -- yes --> Unresolved
+    Start --> Unresolved{Unresolved goal, scope,<br/>constraint, outcome, or D review?}
     Unresolved -- yes --> Ask[Call ask<br/>1-4 independent Qs]
     Ask --> Result{Ask result}
     Result -- cancelled --> Stop([RETURN<br/>no next])
     Result -- routed Spec/Vibe --> Settle([RETURN<br/>fresh target turn])
     Result -- answered --> Synthesize[Append exchange<br/>update Goal/Align/Decisions/Checklist]
     Synthesize --> Unresolved
-    Unresolved -- no --> Named{No named artifact<br/>and direction clear?}
-    Named -- yes --> Start[Call start once]
-    Named -- no --> Useful
-    Start --> Useful{Useful work remains?}
+    Unresolved -- no --> Useful{Useful work remains?}
     Useful -- yes --> Next["Call next; rank SPEC first<br/>when exploration remains"]
     Useful -- no --> Stop
     Next --> Done([RETURN])
@@ -290,6 +290,11 @@ sequenceDiagram
     User->>Agent: task message
     Agent->>Artifact: append redacted User transcript
 
+    opt no named artifact
+        Agent->>Runtime: CALL start with stable task name
+        Runtime->>Artifact: first named file or linked continuation
+    end
+
     opt unresolved alignment question
         Agent->>Runtime: CALL ask alone
         Runtime->>User: native question picker
@@ -313,11 +318,6 @@ sequenceDiagram
         Agent->>Runtime: CALL decide
         Runtime-->>Agent: highest-confidence pick as unresolved D
         Runtime->>Artifact: append Agent-transcript block when named
-    end
-
-    opt no named artifact and direction clear
-        Agent->>Runtime: CALL start with stable task name
-        Runtime->>Artifact: first named file or linked continuation
     end
 
     opt useful post-turn choice remains
@@ -398,11 +398,10 @@ flowchart TD
     AskScope -- yes --> Dispatch{Persisted mode}
     Scope -- no --> Dispatch
 
-    Dispatch -- ALIGN --> Align[Bounded orientation<br/>ask unresolved Q or D review]
-    Align --> AlignRoute{Direction clear?}
-    AlignRoute -- no --> Return
-    AlignRoute -- yes --> Name[Call start once<br/>if no named artifact]
-    Name --> Useful{Useful work remains?}
+    Dispatch -- ALIGN --> Align[Bounded orientation]
+    Align --> Ensure[Call start once<br/>if no named artifact]
+    Ensure --> AskLoop[Ask while unresolved Q or D]
+    AskLoop --> Useful{Useful work remains?}
     Useful -- yes --> Next[Call next with contextual<br/>ranked actions]
     Useful -- no --> Return
     Next --> Return
@@ -440,7 +439,7 @@ flowchart TD
 
 - `MODES`, `STATE` (everyday mode hops): L0 `map-overview`, L1 `modes-core`.
 - `TOOLS`, write-boundary `INVARIANTS`: L0 `ownership`, L2 `tools`.
-- `ALWAYS` and source-of-truth rules: introduction, L0, and the operational pseudocode link.
+- `ALWAYS` and source-of-truth rules: introduction, L0, and `workflow-fsm.ts` / `workflow-fsm.html`.
 - `TURN`, `CAPTURE_TURN`, `RECONCILE_SCOPE`, `WRITE_ARTIFACT`: L2 `turn-spine`, L2 `tools`, L3 `full-turn`.
 - `ALIGN`, `SPEC`, `VIBE`: L1 `mode-align` / `mode-spec` / `mode-vibe`, plus L3 `full-turn`.
 - `ARTIFACT`, `RECORD_DECISION`: L2 `artifact` and `review`; decision gates also in L1 Spec/Vibe and L3.

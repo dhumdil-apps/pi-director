@@ -4,16 +4,21 @@
  * Build the pi-director content package for downstream consumers (e.g. lakatos-fe /pi-stack).
  *
  * Reads the canonical workflow sources:
- *   - docs/AGENT-WORKFLOW-DIAGRAMS.md  → dist/workflow-diagrams.json
- *   - extensions/agent-workflow/workflow-steps.md → dist/workflow-steps.txt
- *   - extensions/agent-workflow/workflow-steps.md → dist/workflow.md
+ *   - docs/AGENT-WORKFLOW-DIAGRAMS.md     → dist/workflow-diagrams.json
+ *   - extensions/agent-workflow/workflow-fsm.ts
+ *       → dist/workflow-fsm.json
+ *       → dist/workflow-fsm.mmd
+ *       → dist/workflow-steps.txt (agent prompt body)
+ *       → dist/workflow.md
+ *       → embeds JSON into extensions/agent-workflow/workflow-fsm.html
  *
+ * Requires Node with --experimental-strip-types (Node 22+).
  * Then produces a minimal package tarball under dist/.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, cpSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { execSync } from "node:child_process";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -146,22 +151,48 @@ console.log(`Parsed ${layers.length} layers, ${totalDiagrams} diagrams`);
 
 writeFileSync(join(DIST, "workflow-diagrams.json"), JSON.stringify(layers, null, 2) + "\n");
 
-// Workflow steps (raw copy) plus a markdown wrap for downstream docs UIs
-const stepsSource = join(ROOT, "extensions/agent-workflow/workflow-steps.md");
-cpSync(stepsSource, join(DIST, "workflow-steps.txt"));
-const steps = readFileSync(stepsSource, "utf-8");
+// Canonical FSM (same object agents and the HTML visualizer use)
+const fsmModuleUrl = pathToFileURL(join(ROOT, "extensions/agent-workflow/workflow-fsm.ts")).href;
+const { WORKFLOW_FSM, formatWorkflowPrompt, serializeWorkflowFsm, toMermaid } = await import(fsmModuleUrl);
+const promptBody = formatWorkflowPrompt(WORKFLOW_FSM);
+const fsmJson = serializeWorkflowFsm();
+const mermaid = toMermaid();
+
+writeFileSync(join(DIST, "workflow-fsm.json"), fsmJson);
+writeFileSync(join(DIST, "workflow-fsm.mmd"), mermaid.endsWith("\n") ? mermaid : `${mermaid}\n`);
+writeFileSync(join(DIST, "workflow-steps.txt"), `${promptBody}\n`);
 writeFileSync(
   join(DIST, "workflow.md"),
   [
     "# Workflow",
     "",
-    "Canonical operational contract from `extensions/agent-workflow/workflow-steps.md`.",
+    "Canonical operational FSM from `extensions/agent-workflow/workflow-fsm.ts`.",
+    "Agent prompt, runtime gate docs, and visualizer transitions share this definition.",
     "",
-    "```",
-    steps.replace(/\n+$/, ""),
+    promptBody,
+    "",
+    "## Mermaid",
+    "",
+    "```mermaid",
+    mermaid.replace(/\n+$/, ""),
     "```",
     "",
   ].join("\n"),
+);
+
+// Embed live JSON into the local HTML visualizer (file:// friendly)
+const htmlPath = join(ROOT, "extensions/agent-workflow/workflow-fsm.html");
+const html = readFileSync(htmlPath, "utf-8");
+if (!html.includes('id="workflow-fsm-data"')) {
+  throw new Error("Could not embed workflow FSM JSON into workflow-fsm.html (marker missing)");
+}
+const embedded = html.replace(
+  /<script type="application\/json" id="workflow-fsm-data">[\s\S]*?<\/script>/,
+  `<script type="application/json" id="workflow-fsm-data">\n${JSON.stringify(WORKFLOW_FSM, null, 2)}\n    </script>`,
+);
+writeFileSync(htmlPath, embedded);
+console.log(
+  `FSM v${WORKFLOW_FSM.version}: ${Object.keys(WORKFLOW_FSM.states).length} states, ${WORKFLOW_FSM.transitions.length} transitions`,
 );
 
 // Minimal package.json
@@ -174,6 +205,8 @@ const contentPkg = {
   exports: {
     "./package.json": "./package.json",
     "./workflow-diagrams.json": "./workflow-diagrams.json",
+    "./workflow-fsm.json": "./workflow-fsm.json",
+    "./workflow-fsm.mmd": "./workflow-fsm.mmd",
     "./workflow.md": "./workflow.md",
     "./workflow-steps.txt": "./workflow-steps.txt",
   },

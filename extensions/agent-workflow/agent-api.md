@@ -1,6 +1,6 @@
 # Agent Workflow API
 
-Concise UI/API copy and mechanical runtime messages. Operational guidance belongs only in `workflow-steps.md`.
+Concise UI/API copy and mechanical runtime messages. Operational guidance belongs only in `workflow-fsm.ts` (shareable FSM + agent prompt).
 
 ## command.align
 

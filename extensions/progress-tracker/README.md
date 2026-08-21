@@ -39,7 +39,8 @@ renders the one thing the transcript cannot show.
   spinner and accent-colored active timing. The plan's `**Current work:**`
   phrase follows the timer in dim (`⠋ 12s C5 seed current-work line`) when
   non-empty, and is clipped so the Align/Spec/Vibe times stay visible. Idle,
-  waiting, missing plans, and empty lines omit it. The tracker
+  waiting, missing plans, empty lines, and HTML comments (including the
+  `<!-- pi-director-plan:v2 -->` marker) omit it. The tracker
   re-reads the named plan on adopt, `agent_start`, `tool_execution_end`, and
   `agent_settled`; it does not parse Checklist prose or expose a todo tool.
 - Work/cache timer — one compact accent-colored readout follows the active

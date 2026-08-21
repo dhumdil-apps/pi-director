@@ -27,7 +27,7 @@ One versioned `.pi/plan/<name>.md` follows the task across modes and handoffs. T
 
 The Agent preserves the initial goal, accepted follow-ups, and unresolved outcomes as cumulative scope. Follow-up work may add, defer, supersede, skip, fail, or complete a stable C outcome, but it may not silently erase or rename one. Stable Agent-chosen Q/D/C identifiers make question, decision, and outcome lifecycles reviewable across turns.
 
-Runtime does not parse checklist or decision status. It does parse the `**Current work:**` line for the Progress Tracker working slot. The Agent interprets the free-form artifact as a whole, keeps Work log and both transcripts append-only, and leaves the artifact resumable without chat history after every turn.
+Runtime does not parse checklist or decision status. It does parse the `**Current work:**` line for the Progress Tracker working slot and omits HTML comments so the format marker cannot become that phrase. The Agent interprets the free-form artifact as a whole, keeps Work log and both transcripts append-only, and leaves the artifact resumable without chat history after every turn.
 
 Spec and Vibe call `decide` for every material autonomous decision. That call is RECORD_DECISION: the runtime auto-picks the highest-confidence option and records the unresolved D. Only explicit User acceptance in Align resolves review; implementation and verification do not imply approval.
 
@@ -45,6 +45,6 @@ Legacy artifacts remain immutable. Legacy handoff opens fresh Align against the 
 
 ## Source ownership
 
-`workflow-steps.md` is the sole operational pseudocode injected into the Agent prompt. The [Agent Workflow diagrams](../../docs/AGENT-WORKFLOW-DIAGRAMS.md) provide a derived visual map of that contract. `agent-api.md` contains only concise UI/API copy and mechanical runtime messages. `plan-template.md` owns the readable artifact scaffold.
+`workflow-fsm.ts` is the sole shareable operational FSM (states, transitions, procedures, tool mechanics). It is injected into the Agent prompt via `formatWorkflowPrompt()`, exported as JSON/Mermaid for diagrams, and embedded into `workflow-fsm.html` for local review. `workflow-machine.ts` owns Mode × Artifact × Settlement runtime gates used by `ask`, `decide`, `next`, and `agent_settled` and must stay aligned with `WORKFLOW_FSM.tools` and the transition table. The [Agent Workflow diagrams](../../docs/AGENT-WORKFLOW-DIAGRAMS.md) are a derived visual map; when they disagree with the FSM, the FSM wins. Open `workflow-fsm.html` (after `npm run build:content`) for the diagram-only flat XState-style viewer (full FSM graph, event/DO pills, orthogonal flows, double-click instruction sidebar, machine INFO). `agent-api.md` contains only concise UI/API copy and mechanical runtime messages. `plan-template.md` owns the readable artifact scaffold.
 
 Headless sessions receive no interactive workflow prompt, scaffold, or picker because they cannot use its UI.

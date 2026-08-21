@@ -81,7 +81,12 @@ export function parseUnmatchedWeeklyUsedPercent(value: string | undefined): numb
   return parsed;
 }
 
-/** ISO-8601 reset only. Natural grok.com dates stay unset. Date-only is local midnight. */
+/**
+ * ISO-8601 reset only. Natural grok.com dates stay unset.
+ * - Date-only (`2026-08-21`) → local midnight
+ * - Date-time without zone (`2026-08-21T18:57`) → local wall clock
+ * - Date-time with `Z` or `±HH:MM` → that absolute instant (do not append `Z` to a local clock time)
+ */
 export function parseUnmatchedWeeklyReset(value: string | undefined): Date | undefined {
   const text = value?.trim() ?? "";
   if (!text) return undefined;
@@ -138,7 +143,7 @@ export function registerSettings(pi: ExtensionAPI): void {
       id: UNMATCHED_WEEKLY_RESET_SETTING_ID,
       label: "Unmatched weekly reset",
       description:
-        "Manual weekly reset as ISO-8601 (`2026-08-21T18:57` or `2026-08-21`). Natural dates are rejected. Both this and the used percent must be set or weekly stays n/a.",
+        "Manual weekly reset as ISO-8601. Prefer local wall clock without Z (`2026-08-21T18:57` or `2026-08-21`); use Z/offset only for a true UTC instant — appending Z to a local time overstates remaining by your UTC offset. Natural dates are rejected. Both this and the used percent must be set or weekly stays n/a.",
       defaultValue: "",
     },
   ];

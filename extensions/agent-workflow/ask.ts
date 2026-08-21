@@ -3,11 +3,10 @@ import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
 import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
-import { MODE_LABEL, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
-import { ASK_SETTLEMENT_EVENT } from "./mode-picker.js";
+import { MODE_LABEL, type WorkflowMode } from "./mode.js";
 import { QuestionParams, optionReferences, orderedOptions, pickerLabel, type WorkflowQuestion } from "./questions.js";
-import { missingSessionPlan } from "./task.js";
 import { duringUserWait } from "./user-wait.js";
+import { ASK_SETTLEMENT_EVENT, formatGateText, planMissingMessage, receive, snapshot } from "./workflow-machine.js";
 
 export const WRITE_CUSTOM_ANSWER = "📝 Write a custom answer...";
 export const PROCEED_WITH_BEST_SPEC = `Proceed with best → ${MODE_LABEL.spec}`;
@@ -112,17 +111,23 @@ export function registerAsk(pi: ExtensionAPI): void {
     executionMode: "sequential",
 
     async execute(_toolCallId, params: AskInput, _signal, _onUpdate, ctx: ExtensionContext) {
-      const mode = resolveWorkflowMode(ctx.sessionManager.getBranch());
-      if (mode !== "align") {
+      const sessionName = pi.getSessionName();
+      const snap = snapshot(ctx.sessionManager.getBranch(), ctx.cwd, sessionName);
+      const gate = receive(
+        snap,
+        { type: "TOOL_ASK", hasQuestions: params.questions.length > 0 },
+        planMissingMessage(ctx.cwd, sessionName),
+      );
+      if (!gate.ok) {
         return {
-          content: [
-            { type: "text" as const, text: "Ask is ALIGN-only; no questions were shown. Use decide in SPEC/VIBE." },
-          ],
-          details: { answers: [], cancelled: false, unanswered: [] } satisfies AskDetails,
+          content: [{ type: "text" as const, text: formatGateText(gate) }],
+          details: {
+            answers: [],
+            cancelled: false,
+            unanswered: gate.kind === "error" ? params.questions.map((item) => item.id) : [],
+          } satisfies AskDetails,
+          ...(gate.kind === "error" ? { isError: true as const } : {}),
         };
-      }
-      if (!ctx.hasUI) {
-        throw new Error("Ask requires an interactive UI.");
       }
 
       const answers: AskAnswer[] = [];
@@ -134,17 +139,9 @@ export function registerAsk(pi: ExtensionAPI): void {
           details,
         };
       }
-      const missing = missingSessionPlan(ctx.cwd, pi.getSessionName());
-      if (missing) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${missing}` }],
-          details: {
-            answers: [],
-            cancelled: false,
-            unanswered: params.questions.map((item) => item.id),
-          } satisfies AskDetails,
-          isError: true,
-        };
+      // Mode/plan gates already passed; UI is required only when a picker will open.
+      if (!ctx.hasUI) {
+        throw new Error("Ask requires an interactive UI.");
       }
       const checkpoint = openCheckpoint(pi, "question");
       try {

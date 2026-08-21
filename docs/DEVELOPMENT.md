@@ -46,8 +46,10 @@ npm run verify
 `verify` runs formatting, TypeScript, and whitespace checks.
 Use `npm run format` to apply the repository style. `npm run typecheck` checks every vendored TypeScript extension and must exit zero.
 
+After Agent Workflow FSM changes, also run `npm run build:content` (Node strip-types). That refreshes `dist/workflow-fsm.json`, prompt/Mermaid exports, and embeds the live FSM into `extensions/agent-workflow/workflow-fsm.html`. Open that file (`file://` is enough) for the diagram-only flat XState-style viewer: full FSM states and transitions in a machine frame, event/DO edge pills, orthogonal routing, double-click sidebar for full instruction bodies, and machine INFO.
+
 Interactive review still belongs to visual or lifecycle changes: Status Bar
-rendering, the above-editor indicator, the mode picker, and session dashboard.
+rendering, the above-editor indicator, the mode picker, session dashboard, and the workflow FSM HTML visualizer.
 
 ## After publishing
 

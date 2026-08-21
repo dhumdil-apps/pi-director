@@ -145,8 +145,19 @@ export default function createExtension(pi: ExtensionAPI): void {
   let timer: ReturnType<typeof setInterval> | undefined;
   let prevCpu: CpuSample | undefined;
   let polling = false;
+  let stopped = false;
+
+  function stopPolling(): void {
+    stopped = true;
+    if (timer) {
+      clearInterval(timer);
+      timer = undefined;
+    }
+    prevCpu = undefined;
+  }
 
   function emitBar(id: string, pct: number, color: string): void {
+    if (stopped) return;
     pi.events.emit("powerbar:update", {
       id,
       text: LABELS[id],
@@ -163,10 +174,11 @@ export default function createExtension(pi: ExtensionAPI): void {
   }
 
   async function poll(): Promise<void> {
-    if (polling) return;
+    if (stopped || polling) return;
     polling = true;
     try {
       const currCpu = sampleCpu();
+      if (stopped) return;
       if (prevCpu) {
         const pct = cpuPercent(prevCpu, currCpu);
         if (pct !== undefined) emitBar("cpu", pct, getColor(pct));
@@ -176,7 +188,10 @@ export default function createExtension(pi: ExtensionAPI): void {
       }
       prevCpu = currCpu;
 
+      // execFile can outlive session replacement; Pi then invalidates `pi`
+      // and a resumed emit would exit the process as uncaughtException.
       const [ram, disk, net] = await Promise.allSettled([ramPercent(), diskPercent(), netTotals()]);
+      if (stopped) return;
       if (ram.status === "fulfilled" && ram.value !== undefined) {
         emitBar("ram", ram.value, getColor(ram.value));
       } else emitPlaceholder("ram");
@@ -191,12 +206,15 @@ export default function createExtension(pi: ExtensionAPI): void {
           row: 3,
         });
       }
+    } catch {
+      stopPolling();
     } finally {
       polling = false;
     }
   }
 
   pi.on("session_start", async () => {
+    stopped = false;
     if (!timer) {
       timer = setInterval(() => void poll(), POLL_INTERVAL_MS);
       timer.unref?.();
@@ -209,11 +227,7 @@ export default function createExtension(pi: ExtensionAPI): void {
   });
 
   pi.on("session_shutdown", async () => {
-    if (timer) {
-      clearInterval(timer);
-      timer = undefined;
-    }
-    prevCpu = undefined;
+    stopPolling();
     for (const id of Object.keys(LABELS)) {
       pi.events.emit("powerbar:update", { id, text: undefined });
     }

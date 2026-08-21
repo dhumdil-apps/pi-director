@@ -3,10 +3,10 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
 import { agentApiText } from "./agent-api.js";
-import { resolveWorkflowMode } from "./mode.js";
 import { isCurrentPlanFormat, planPath } from "./task.js";
 import { writePlanAtomically } from "./plan-time.js";
 import { QuestionParams, orderedOptions, pickerLabel, type WorkflowQuestion } from "./questions.js";
+import { formatGateText, planMissingMessage, receive, snapshot } from "./workflow-machine.js";
 
 export const DECISION_EVENT = "agent-workflow:decision";
 
@@ -75,25 +75,22 @@ export function registerDecide(pi: ExtensionAPI): void {
     executionMode: "sequential",
 
     async execute(_toolCallId, params: DecideInput, _signal, _onUpdate, ctx) {
-      const mode = resolveWorkflowMode(ctx.sessionManager.getBranch());
-      if (mode === "align") {
+      const sessionName = pi.getSessionName();
+      const snap = snapshot(ctx.sessionManager.getBranch(), ctx.cwd, sessionName);
+      const gate = receive(
+        snap,
+        {
+          type: "TOOL_DECIDE",
+          hasQuestions: params.questions.length > 0,
+          allHaveOptions: params.questions.every((question) => question.options.length > 0),
+        },
+        planMissingMessage(ctx.cwd, sessionName),
+      );
+      if (!gate.ok) {
         return {
-          content: [
-            { type: "text" as const, text: "Decide is SPEC/VIBE-only; no decision was recorded. Use ask in ALIGN." },
-          ],
+          content: [{ type: "text" as const, text: formatGateText(gate) }],
           details: { picks: [] } satisfies DecideDetails,
-        };
-      }
-      if (params.questions.length === 0) {
-        return {
-          content: [{ type: "text" as const, text: "No questions were supplied; Decide made no changes." }],
-          details: { picks: [] } satisfies DecideDetails,
-        };
-      }
-      if (params.questions.some((question) => question.options.length === 0)) {
-        return {
-          content: [{ type: "text" as const, text: "Decide needs compared options; no decision was recorded." }],
-          details: { picks: [] } satisfies DecideDetails,
+          ...(gate.kind === "error" ? { isError: true as const } : {}),
         };
       }
 

@@ -1,13 +1,12 @@
 /**
  * Agent Workflow
  *
- * A compact, constant pseudocode contract plus one tiny session-mode marker.
+ * Shareable FSM contract (`workflow-fsm.ts`) plus session mode marker and tools.
  * Mode belongs to the User: Align clarifies, Spec researches and proposes, Vibe
- * executes. Runtime owns persistence and UI mechanics; the Agent-owned contract
- * owns interpretation, artifact meaning, and next-step guidance.
+ * executes. Runtime owns persistence, UI mechanics, and Mode×Artifact gates;
+ * the Agent-owned contract owns interpretation, artifact meaning, and routing judgment.
  */
 
-import { readFileSync } from "node:fs";
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { agentApiText } from "./agent-api.js";
 import { registerCheckpointInputResolution } from "./checkpoint.js";
@@ -24,19 +23,9 @@ import { registerWorkflowNotices } from "./notice.js";
 import { registerAsk } from "./ask.js";
 import { registerDecide } from "./decide.js";
 import { listPlanNames, registerTaskManagement } from "./task.js";
+import { workflowPrompt } from "./workflow-machine.js";
 
-/**
- * Constant contract; the selected mode is injected separately.
- *
- * The Markdown is kept as a package-local asset because Pi loads extensions
- * through Jiti rather than a project bundler, so a native text import would not
- * work consistently across source and packaged runtimes.
- */
-const WORKFLOW_STEPS = readFileSync(new URL("./workflow-steps.md", import.meta.url), "utf8").trimEnd();
-/** Constant by design: the large cacheable prefix never varies per turn. */
-export function workflowPrompt(): string {
-  return `<pi_workflow>\n\n${WORKFLOW_STEPS}\n</pi_workflow>`;
-}
+export { workflowPrompt };
 
 export default function createExtension(pi: ExtensionAPI): void {
   registerAsk(pi);

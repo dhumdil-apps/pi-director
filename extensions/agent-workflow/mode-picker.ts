@@ -13,11 +13,19 @@ import {
   type WorkflowMode,
 } from "./mode.js";
 import { duringUserWait } from "./user-wait.js";
+import {
+  ASK_SETTLEMENT_EVENT,
+  dispatchSettlement,
+  formatGateText,
+  NEXT_STEP_EVENT,
+  planMissingMessage,
+  receive,
+  snapshot,
+} from "./workflow-machine.js";
 
 export const HANDOFF_OPTION = "🤝 Hand off to a fresh session";
 export const RETURN_OPTION = "↩ Return to editor";
-export const NEXT_STEP_EVENT = "agent-workflow:next-step";
-export const ASK_SETTLEMENT_EVENT = "agent-workflow:ask-settlement";
+export { ASK_SETTLEMENT_EVENT, NEXT_STEP_EVENT };
 
 export type NextStepActionMode = WorkflowMode | "handoff";
 
@@ -95,22 +103,6 @@ function deriveNextStepSignal(entries: SessionEntry[], current: WorkflowMode): N
     if (data?.mode !== current || !Array.isArray(data.actions)) return undefined;
     const actions = data.actions.map(normalizeAction).filter((action): action is NextStepAction => Boolean(action));
     return actions.length ? actions : undefined;
-  });
-}
-
-interface AskSettlement {
-  outcome: "answered" | "cancelled" | "routed";
-  target?: Exclude<WorkflowMode, "align">;
-}
-
-function askSettlement(entries: SessionEntry[]): AskSettlement | undefined {
-  return currentTurnSignal(entries, ASK_SETTLEMENT_EVENT, (entry) => {
-    const data = entry.data as { outcome?: unknown; target?: unknown } | undefined;
-    if (data?.outcome === "answered" || data?.outcome === "cancelled") return { outcome: data.outcome };
-    if (data?.outcome === "routed" && (data.target === "spec" || data.target === "vibe")) {
-      return { outcome: "routed", target: data.target };
-    }
-    return undefined;
   });
 }
 
@@ -256,7 +248,33 @@ export function registerModePicker(pi: ExtensionAPI): void {
     description: agentApiText("tool.next.description"),
     parameters: NextStepParams,
     async execute(_toolCallId, params: NextStepInput, _signal, _onUpdate, ctx) {
-      const mode = resolveWorkflowMode(ctx.sessionManager.getBranch());
+      const branch = ctx.sessionManager.getBranch();
+      const mode = resolveWorkflowMode(branch);
+      const actions = params.actions.map(normalizeAction);
+      const allTargetsValid = params.actions.length === 0 || actions.every(Boolean);
+      const normalized = actions.filter((action): action is NextStepAction => Boolean(action));
+      const promptsValid =
+        params.actions.length === 0 ||
+        (allTargetsValid &&
+          normalized.every((action) => (action.mode === "handoff" ? !action.prompt : Boolean(action.prompt))));
+      const snap = snapshot(branch, ctx.cwd, pi.getSessionName());
+      const gate = receive(
+        snap,
+        {
+          type: "TOOL_NEXT",
+          hasActions: params.actions.length > 0,
+          allTargetsValid,
+          promptsValid,
+        },
+        planMissingMessage(ctx.cwd, pi.getSessionName()),
+      );
+      if (!gate.ok) {
+        return {
+          content: [{ type: "text" as const, text: formatGateText(gate) }],
+          details: { mode, actions: params.actions },
+          ...(gate.kind === "error" ? { isError: true as const } : {}),
+        };
+      }
       if (params.actions.length === 0) {
         pi.appendEntry(NEXT_STEP_EVENT, { mode, actions: [] } satisfies NextStepEvent);
         return {
@@ -264,30 +282,7 @@ export function registerModePicker(pi: ExtensionAPI): void {
           details: { mode, actions: [] },
         };
       }
-      const actions = params.actions.map(normalizeAction);
-      if (actions.some((action) => !action)) {
-        return {
-          content: [{ type: "text" as const, text: "Error: every action needs a valid target." }],
-          details: { mode, actions: params.actions },
-          isError: true,
-        };
-      }
-      const invalidPrompt = (actions as NextStepAction[]).some((action) =>
-        action.mode === "handoff" ? Boolean(action.prompt) : !action.prompt,
-      );
-      if (invalidPrompt) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: "Error: every Align, Spec, or Vibe action needs a contextual prompt; handoff must omit it.",
-            },
-          ],
-          details: { mode, actions: params.actions },
-          isError: true,
-        };
-      }
-      const event: NextStepEvent = { mode, actions: actions as NextStepAction[] };
+      const event: NextStepEvent = { mode, actions: normalized };
       pi.appendEntry(NEXT_STEP_EVENT, event);
       return {
         content: [
@@ -304,13 +299,14 @@ export function registerModePicker(pi: ExtensionAPI): void {
   pi.on("agent_settled", async (_event, ctx) => {
     const branch = ctx.sessionManager.getBranch();
     const mode = resolveWorkflowMode(branch);
-    const settlement = askSettlement(branch);
-    if (settlement?.outcome === "routed" && settlement.target) {
-      await applyMode(pi, ctx, settlement.target, mode);
-      startModeContinuation(pi, settlement.target, mode);
+    const snap = snapshot(branch, ctx.cwd, pi.getSessionName());
+    const dispatch = dispatchSettlement(snap);
+    if (dispatch.action === "route") {
+      await applyMode(pi, ctx, dispatch.target, mode);
+      startModeContinuation(pi, dispatch.target, mode);
       return;
     }
-    if (settlement?.outcome === "cancelled") return;
-    if (deriveNextStepSignal(branch, mode)) await openModePicker(pi, ctx);
+    if (dispatch.action === "skip_picker") return;
+    if (dispatch.action === "open_picker") await openModePicker(pi, ctx);
   });
 }

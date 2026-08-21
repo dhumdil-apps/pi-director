@@ -2,10 +2,10 @@
 
 {{time-spent}}
 
-**Current work:**
-
 <!-- pi-director-plan:v2 -->
 <!-- task-name:temporary -->
+
+**Current work:**
 
 ## Goal
 

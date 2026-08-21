@@ -1,0 +1,2068 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pi Director Workflow FSM</title>
+    <style>
+      :root {
+        color-scheme: dark light;
+        --bg: #0c0e12;
+        --grid: color-mix(in srgb, #94a3b8 8%, transparent);
+        --text: #e8eaed;
+        --muted: #94a3b8;
+        --panel: #161b22;
+        --panel-border: #30363d;
+        --panel-head: #1c2128;
+        --card: #12161c;
+        --card-border: #30363d;
+        --card-head: #1a2030;
+        --child: #0f1419;
+        --child-border: #3d4450;
+        --current: #3b82f6;
+        --current-glow: color-mix(in srgb, #3b82f6 28%, transparent);
+        --edge: #4b5563;
+        --edge-hot: #93c5fd;
+        --proc: #1a1f2e;
+        --tool: #141a24;
+        --toolbar: #161b22;
+        --toolbar-border: #30363d;
+        --code: #cbd5e1;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #e8ecf1;
+          --grid: color-mix(in srgb, #64748b 12%, transparent);
+          --text: #0f172a;
+          --muted: #64748b;
+          --panel: #ffffff;
+          --panel-border: #cbd5e1;
+          --panel-head: #f1f5f9;
+          --card: #ffffff;
+          --card-border: #cbd5e1;
+          --card-head: #eef2ff;
+          --child: #f8fafc;
+          --child-border: #cbd5e1;
+          --current: #2563eb;
+          --current-glow: color-mix(in srgb, #2563eb 20%, transparent);
+          --edge: #94a3b8;
+          --edge-hot: #1d4ed8;
+          --proc: #f8fafc;
+          --tool: #f1f5f9;
+          --toolbar: #ffffff;
+          --toolbar-border: #cbd5e1;
+          --code: #334155;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        overflow: hidden;
+      }
+      body {
+        display: flex;
+        flex-direction: row;
+      }
+      #stage {
+        position: relative;
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 100%;
+        background-image:
+          linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+        background-size: 24px 24px;
+      }
+      #chart {
+        width: 100%;
+        height: 100%;
+        display: block;
+        cursor: grab;
+        touch-action: none;
+      }
+      #chart.is-panning {
+        cursor: grabbing;
+      }
+      .toolbar {
+        position: absolute;
+        left: 1rem;
+        bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.28rem;
+        background: var(--toolbar);
+        border: 1px solid var(--toolbar-border);
+        border-radius: 10px;
+        box-shadow: 0 8px 24px color-mix(in srgb, #000 35%, transparent);
+        z-index: 3;
+      }
+      .toolbar button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: 1px solid var(--toolbar-border);
+        border-radius: 7px;
+        background: transparent;
+        color: var(--text);
+        cursor: pointer;
+        font: inherit;
+        transition: all 120ms ease;
+      }
+      .toolbar button:hover,
+      .toolbar button:focus-visible,
+      .toolbar button.is-on {
+        border-color: var(--current);
+        outline: none;
+      }
+      .toolbar button.is-on {
+        background: color-mix(in srgb, var(--current) 18%, transparent);
+        color: var(--current);
+      }
+      .toolbar button svg {
+        display: block;
+      }
+      .toolbar-sep {
+        width: 1px;
+        height: 1.2rem;
+        background: var(--toolbar-border);
+        margin: 0 0.15rem;
+      }
+      .warn {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        padding: 2rem;
+        text-align: center;
+      }
+      #hint {
+        flex: 0 0 0;
+        width: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: var(--panel);
+        border-left: 1px solid transparent;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          flex-basis 160ms ease,
+          width 160ms ease,
+          opacity 120ms ease,
+          border-color 120ms ease;
+        z-index: 4;
+      }
+      #hint.is-open {
+        flex: 0 0 min(400px, 38vw);
+        width: min(400px, 38vw);
+        border-left-color: var(--panel-border);
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #hint header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.75rem 0.85rem;
+        background: var(--panel-head);
+        border-bottom: 1px solid var(--panel-border);
+      }
+      #hint header h2 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+      #hint header p {
+        margin: 0.2rem 0 0;
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+      #hint .body {
+        padding: 0.75rem 0.85rem 1rem;
+        overflow: auto;
+        font-size: 0.8rem;
+        line-height: 1.45;
+      }
+      #hint .body h3 {
+        margin: 0.85rem 0 0.35rem;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      #hint .body h3:first-child {
+        margin-top: 0;
+      }
+      #hint .body ul {
+        margin: 0;
+        padding-left: 1.1rem;
+      }
+      #hint .body li {
+        margin: 0.28rem 0;
+        color: var(--code);
+      }
+      #hint .body .summary {
+        margin: 0;
+        color: var(--text);
+      }
+      #hint .body .kv {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      #hint .body .chip {
+        display: inline-flex;
+        padding: 0.12rem 0.45rem;
+        border-radius: 999px;
+        border: 1px solid var(--panel-border);
+        color: var(--muted);
+        font-size: 0.7rem;
+      }
+      #hint .close {
+        border: 1px solid var(--panel-border);
+        background: transparent;
+        color: var(--text);
+        border-radius: 7px;
+        width: 1.7rem;
+        height: 1.7rem;
+        cursor: pointer;
+      }
+      #hint .close:hover,
+      #hint .close:focus-visible {
+        border-color: var(--current);
+        outline: none;
+      }
+
+      .edge-pill text {
+        pointer-events: none;
+      }
+      .state-node {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <svg id="chart" role="img" aria-label="Workflow FSM flat XState-style diagram"></svg>
+      <div class="toolbar" aria-label="Diagram controls">
+        <button type="button" id="zoom-out" title="Zoom out" aria-label="Zoom out">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <button type="button" id="zoom-in" title="Zoom in" aria-label="Zoom in">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <div class="toolbar-sep"></div>
+        <button type="button" id="fit" title="Fit chart" aria-label="Fit chart">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+          </svg>
+        </button>
+        <button type="button" id="reset" title="Reset view" aria-label="Reset view">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+        </button>
+        <div class="toolbar-sep"></div>
+        <button type="button" id="sidebar" title="Toggle instruction sidebar" aria-label="Toggle instruction sidebar">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M15 3v18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <aside id="hint" aria-live="polite" aria-label="Instruction sidebar"></aside>
+
+    <!-- BUILD:CONTENT replaces the following JSON object -->
+    <script type="application/json" id="workflow-fsm-data">
+      {
+        "id": "piDirectorWorkflow",
+        "version": "2.2.0",
+        "title": "Pi Director Agent Workflow",
+        "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
+        "session": {
+          "mode": "latest persisted User choice (align | spec | vibe); new and handed-off interactive sessions start in ALIGN",
+          "artifact": "one versioned .pi/plan/<name>.md continued across modes and handoffs",
+          "scope": "initial Goal + accepted follow-ups + every unresolved Checklist (C) outcome",
+          "review": "unresolved Agent decisions (D) that still need explicit User acceptance in ALIGN"
+        },
+        "ownership": [
+          "Mode belongs to the User: latest persisted choice wins; new and handed-off interactive sessions start in ALIGN.",
+          "Explicit /align, /spec, /vibe, /mode, and /handoff are User-owned escape hatches.",
+          "Manual mode commands accept no unanswered recommendation or unresolved D review — they are escape hatches, not gated on workflow completeness.",
+          "CALL means invoke ask, decide, start, or next; READ, EDIT, APPEND, and RETURN are Agent-owned actions.",
+          "Project-write boundaries are Agent rules, not a runtime filesystem guard.",
+          "A genuinely unrelated goal requires a fresh session; NEVER delete plan artifacts automatically.",
+          "NEVER advance the hidden memory-review marker outside /init.",
+          "NEVER create or edit .pi/plan/* until start writes the named artifact.",
+          "NEVER CALL ask, decide, or next before start writes the named artifact."
+        ],
+        "invariants": [
+          "ONLY VIBE MAY change files outside .pi; ALIGN and SPEC update .pi workflow state only.",
+          "One versioned .pi/plan/<name>.md continues across modes and handoffs.",
+          "Retain Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.",
+          "Work log, User transcript, and Agent transcript are append-only.",
+          "Checklist is cumulative; latest explicit state wins without hiding earlier lifecycle context.",
+          "Assign every question, Agent decision, and checklist outcome one stable Agent-chosen Q, D, or C id; NEVER reuse or rename.",
+          "KEEP **Current work:** as one short in-flight phrase of the active C or D, or empty while waiting on User.",
+          "NEVER copy Checklist, HTML comments, or format markers into Current work and NEVER add a todo tool.",
+          "KEEP the artifact resumable without relying on chat history after every turn.",
+          "Runtime does not parse artifact prose (only time-spent envelope and Current work line)."
+        ],
+        "always": [
+          "SIZE process and output to the work.",
+          "LEAD with the result and NAME paths, symbols, evidence, and unresolved choices instead of restating files.",
+          "DO NOT repeat transcript or artifact prose in the final response.",
+          "NEVER claim a mutation, decision, check, or acceptance that did not occur.",
+          "NEVER silently remove an initial goal, accepted outcome, unresolved C item, or unresolved D review."
+        ],
+        "turn": [
+          "RUN CAPTURE_TURN(message).",
+          "IF message adds, conflicts with, or appears to replace scope THEN RUN RECONCILE_SCOPE(message); IF unresolved THEN RETURN.",
+          "IF mode = ALIGN THEN RUN ALIGN body.",
+          "ELSE IF mode = SPEC THEN RUN SPEC body.",
+          "ELSE IF mode = VIBE THEN RUN VIBE body."
+        ],
+        "procedures": {
+          "CAPTURE_TURN": [
+            "IF message is workflow-generated or a command THEN RETURN.",
+            "Redact credentials, secret values, and attachment bodies.",
+            "IF no named artifact exists THEN RETAIN captured message in session only.",
+            "ELSE APPEND captured message verbatim to User transcript before substantive work.",
+            "RUN WRITE_ARTIFACT when the artifact exists."
+          ],
+          "RECONCILE_SCOPE": [
+            "COMPARE message with Goal, accepted follow-ups, and every unresolved C outcome.",
+            "IF unambiguous and additive THEN APPEND a stable C outcome without deleting or renaming earlier outcomes; RETURN resolved.",
+            "IF mode = ALIGN THEN CALL ask with concrete keep/defer/replace/resolve options; on cancel RETURN unresolved; else APPEND full exchange to User transcript; RECORD synthesis in Goal, Align, Decisions, Checklist; ANNOTATE superseded/deferred/skipped/failed C with reasons; NEVER erase; RETURN resolved.",
+            "IF mode = SPEC or VIBE THEN CALL decide with the same option shape; ACCEPT highest-confidence pick as working choice; ANNOTATE C and leave D review unresolved; RETURN resolved."
+          ],
+          "WRITE_ARTIFACT": [
+            "IF no named artifact exists THEN RETURN success without creating .pi/plan/*.",
+            "INCLUDE **Current work:** when the in-flight outcome changed.",
+            "TRY EDIT or APPEND; IF fail THEN RETRY once.",
+            "IF retry fails THEN WARN concisely and CONTINUE only when still safely resumable; IF HANDOFF requires the change THEN RETURN failure."
+          ],
+          "RECORD_DECISION": [
+            "IF choice is NOT (material AND reversible AND autonomous AND in scope) AND does not cross a consequential or safety boundary THEN RETURN.",
+            "CALL decide with the question, context, and 2-3 viable compared options.",
+            "TREAT the returned pick as the working choice with review state unresolved.",
+            "DO NOT assign a second D identifier for that decide call.",
+            "DO NOT add the choice to Decisions until explicit User acceptance in ALIGN.",
+            "ALLOW implementation, verification, and CLOSE_OUT to update lifecycle but NEVER imply User approval."
+          ],
+          "BLOCKED": [
+            "STOP affected work without improvising or widening scope.",
+            "RECORD reason, evidence, viable options, recommendation, and affected C/D identifiers.",
+            "IF a decide-shaped choice remains THEN CALL decide and CONTINUE only when that pick unblocks the work.",
+            "RECORD broader ALIGN review as the recommended continuation.",
+            "RUN CLOSE_OUT.",
+            "RETURN unresolved."
+          ],
+          "CLOSE_OUT": [
+            "APPEND phase result, actual changed paths, checks run, checks not run, limitations, and concerns to Work log.",
+            "RECONCILE initial Goal, accepted follow-ups, every C outcome, and every D lifecycle from the artifact as a whole.",
+            "FOR EACH C outcome: MARK completed only with evidence; OTHERWISE keep unresolved, or annotate deferred/skipped/failed with a reason.",
+            "NEVER present the task as complete while an accepted outcome remains unresolved.",
+            "NEVER mark a D User-approved without an explicit review answer.",
+            "PROMOTE only durable orientation or costly quirks to project memory; NEVER advance the hidden memory-review marker.",
+            "IF routing disabled THEN ENSURE artifact is resumable and RETURN.",
+            "IF actionable work remains THEN CALL next with ranked modes/handoff; each non-handoff action needs plain-English reason (Q/C/D ids only as trailing [] or ()) and a custom instruction grounded in current C/D, intended result, and verification target; runtime prepends Switch/Continue only.",
+            "ELSE IF decision review remains THEN SUMMARIZE and CALL next with ALIGN plus instruction grounded in unresolved D.",
+            "ELSE DO NOT CALL next.",
+            "ENSURE artifact is resumable and final output is truthful and concise."
+          ],
+          "HANDOFF": [
+            "IF no named artifact exists THEN DO NOT invent a temporary plan; RETURN without handing off.",
+            "IF artifact is current format THEN USE the already-written artifact; DO NOT start a checkpoint turn; KEEP leftover current-format files as-is.",
+            "ELSE DO NOT mutate the legacy artifact.",
+            "CONTINUE in fresh ALIGN with the ordinary continue line.",
+            "READ the whole current artifact or immutable legacy reference.",
+            "CHOOSE the most important unresolved item before asking the next question."
+          ],
+          "LEGACY_CONTINUATION": [
+            "ACCEPT persisted legacy modes as readable; /questionnaire does not exist.",
+            "NEVER mutate an artifact without the current format marker.",
+            "CALL start before the first .pi write to create a linked current-format continuation.",
+            "LET runtime carry recognized historical timing into the continuation.",
+            "CONVERT meaningful legacy goal, evidence, decisions, and checklist history into flat sections.",
+            "PRESERVE the legacy file unchanged.",
+            "CALL ask only when the meaning or desired carry-forward is genuinely uncertain."
+          ]
+        },
+        "states": {
+          "align": {
+            "id": "align",
+            "label": "ALIGN",
+            "kind": "mode",
+            "summary": "Recommended preflight: bounded orientation, clarify scope, review D items, ask User.",
+            "permission": "readonly",
+            "substates": ["orientation", "ensureArtifact", "askLoop", "routeNext"],
+            "procedure": [
+              "READ only bounded AGENTS.md, .pi state including MEMORY.md, README, named plans, or documentation for orientation.",
+              "TREAT those sources as the starting point even when they may be stale.",
+              "DO NOT research source implementation, search the codebase, or change files outside .pi.",
+              "IF known orientation cannot answer an implementation question THEN RECORD that gap as unresolved work for SPEC; DO NOT open source files or run codebase search to fill it.",
+              "AFTER orientation reads, IF no named artifact exists THEN CALL start exactly once.",
+              "IF start created the artifact this turn THEN APPEND any session-retained captured message to User transcript.",
+              "AFTER the artifact exists, CALL ask immediately when any goal, scope, constraint, outcome, or D review question remains.",
+              "DO NOT use non-orientation tools other than start before that first ask.",
+              "NEVER CALL decide.",
+              "WHILE a goal, scope, constraint, outcome, or D review question remains: CALL ask as the first User-facing action with 1-4 independent questions, stable Q ids, 2-3 concrete options each, confidence 1-5.",
+              "ASK dependent follow-ups in a later CALL after incorporating earlier answers.",
+              "IF Ask is cancelled THEN DISCARD the entire cancelled exchange; LEAVE artifact meaning unchanged; RETURN without CALL next.",
+              "IF Ask routes directly to SPEC or VIBE THEN LET runtime settle ALIGN and start a fresh target-mode turn with only mechanical transition context; IN that turn reconstruct the full exchange before substantive work; RETURN.",
+              "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
+              "EDIT Goal, Align, Decisions, and Checklist with accepted meaning without duplicating transcript prose.",
+              "MARK a D review accepted ONLY for an explicit review answer.",
+              "IF a reviewed D changes direction THEN APPEND the resulting unresolved C outcome.",
+              "IF useful work remains THEN CALL next with only meaningful ranked ALIGN, SPEC, VIBE, and/or handoff actions.",
+              "IF remaining work is source exploration THEN rank SPEC first with a custom instruction for that gap.",
+              "FOR EACH non-handoff action INCLUDE a user-facing reason in plain English (Q/C/D ids only as trailing [] or ()) and a custom instruction grounded in the current C/D identifier or concrete outcome, intended result, and verification target.",
+              "FOR handoff OMIT the kickoff.",
+              "ELSE RETURN to the editor (DO NOT CALL next)."
+            ]
+          },
+          "spec": {
+            "id": "spec",
+            "label": "SPEC",
+            "kind": "mode",
+            "summary": "Research and proposal only; plan-only .pi writes; no project file mutations.",
+            "permission": "planonly",
+            "substates": ["ensureArtifact", "research", "proposal", "recordDecision", "closeOut"],
+            "procedure": [
+              "IF ALIGN was bypassed AND no named artifact exists THEN CALL start before substantive work.",
+              "NEVER CALL ask.",
+              "BEGIN with one bounded exact symbol or path search.",
+              "BROADEN only for a named unresolved reason and STOP when evidence answers it.",
+              "EXCLUDE node_modules, generated, vendor, cache trees, and source maps unless explicitly targeted.",
+              "EDIT Evidence, Proposal, Checklist, and Work log without changing files outside .pi.",
+              "PREFER the smallest sufficient proposal and RECORD meaningful rejected alternatives.",
+              "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
+              "IF a product, destructive, external, irreversible, credential, dependency, or consequential choice appears THEN RUN RECORD_DECISION(choice).",
+              "IF research or a check exposes an unrelated or pre-existing failure THEN RECORD and REPORT it without widening scope or claiming the proposal caused it.",
+              "IF the proposal is not yet actionable THEN RUN BLOCKED(missing evidence or decision) and RETURN.",
+              "RUN CLOSE_OUT.",
+              "RETURN a concise proposal summary with artifact path; DO NOT repeat the full artifact."
+            ]
+          },
+          "vibe": {
+            "id": "vibe",
+            "label": "VIBE",
+            "kind": "mode",
+            "summary": "Implement accepted scope, verify with checks, only mode that may write outside .pi.",
+            "permission": "write",
+            "substates": ["ensureArtifact", "execute", "verify", "recordDecision", "closeOut"],
+            "procedure": [
+              "IF ALIGN was bypassed AND no named artifact exists THEN CALL start before substantive work.",
+              "NEVER CALL ask.",
+              "IMPLEMENT accepted scope and RESOLVE routine implementation research in place.",
+              "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
+              "IF a product, destructive, external, irreversible, credential, dependency, or consequential choice appears THEN RUN RECORD_DECISION(choice) before crossing the boundary.",
+              "RUN the smallest appropriate repository checks, then broader retained checks when risk warrants.",
+              "IF a check fails because of this work THEN: IF fixable within scope THEN FIX and RERUN; ELSE RUN BLOCKED(failure) and RETURN.",
+              "ELSE IF a check exposes an unrelated or pre-existing failure THEN RECORD and REPORT it without widening scope.",
+              "UPDATE cumulative Checklist and append-only Work log throughout the work.",
+              "RUN CLOSE_OUT when work pauses or finishes.",
+              "RETURN a concise result, including limitations and checks not run."
+            ]
+          },
+          "closeOut": {
+            "id": "closeOut",
+            "label": "CLOSE_OUT",
+            "kind": "procedure",
+            "summary": "Shared end-of-phase reconcile, work-log, memory promote, and optional next routing.",
+            "permission": "memory",
+            "substates": ["workLog", "reconcile", "promoteMemory", "routeNext"],
+            "procedure": [
+              "CLOSE_OUT is a procedure invoked from SPEC/VIBE (and BLOCKED), not a persisted User mode.",
+              "Follow procedures.CLOSE_OUT exactly.",
+              "Routing uses CALL next; User picker or command selects the next mode."
+            ]
+          },
+          "blocked": {
+            "id": "blocked",
+            "label": "BLOCKED",
+            "kind": "procedure",
+            "summary": "Stop in-scope work, record options, prefer ALIGN review via next.",
+            "permission": "planonly",
+            "procedure": [
+              "Follow procedures.BLOCKED exactly.",
+              "After CLOSE_OUT, recommend ALIGN when broader review is needed."
+            ]
+          },
+          "handoff": {
+            "id": "handoff",
+            "label": "HANDOFF",
+            "kind": "procedure",
+            "summary": "Continue the same artifact in a fresh ALIGN session.",
+            "permission": "standby",
+            "procedure": ["Follow procedures.HANDOFF exactly.", "Fresh session starts in ALIGN."]
+          },
+          "editor": {
+            "id": "editor",
+            "label": "EDITOR",
+            "kind": "standby",
+            "summary": "Idle standby waiting for User message, command, or picker input.",
+            "permission": "standby",
+            "procedure": [
+              "Initial session starts here with default ALIGN mode.",
+              "Reached when mode commands run, unrecommended picker choices are selected, picker is dismissed, or ask is cancelled.",
+              "Manual /align /spec /vibe /mode and unrecommended picker choices return here after changing mode.",
+              "Manual mode commands accept no unanswered recommendation or unresolved D review (escape hatches).",
+              "Only a recommended next prompt or ask-route auto-starts the agent."
+            ]
+          }
+        },
+        "transitions": [
+          {
+            "id": "align-ask-route-spec",
+            "from": "align",
+            "event": "ASK_ROUTED_SPEC",
+            "to": "spec",
+            "label": "Proceed-with-best → SPEC",
+            "description": "User accepts prior answers plus remaining highest-confidence options and routes to SPEC.",
+            "userMediated": true
+          },
+          {
+            "id": "align-ask-route-vibe",
+            "from": "align",
+            "event": "ASK_ROUTED_VIBE",
+            "to": "vibe",
+            "label": "Proceed-with-best → VIBE",
+            "description": "User accepts prior answers plus remaining highest-confidence options and routes to VIBE.",
+            "userMediated": true
+          },
+          {
+            "id": "align-ask-answered",
+            "from": "align",
+            "event": "ASK_ANSWERED",
+            "to": "align",
+            "label": "Ask answered",
+            "description": "Incorporate user answers into session transcript and artifact; continue ALIGN loop.",
+            "userMediated": true
+          },
+          {
+            "id": "align-ask-cancelled",
+            "from": "align",
+            "event": "ASK_CANCELLED",
+            "to": "editor",
+            "label": "Ask cancelled",
+            "description": "Discard exchange; do not open next picker; return to editor.",
+            "userMediated": true
+          },
+          {
+            "id": "align-next-spec",
+            "from": "align",
+            "event": "NEXT_SPEC",
+            "to": "spec",
+            "label": "next → SPEC",
+            "description": "User selects recommended SPEC action with auto-start prompt.",
+            "userMediated": true
+          },
+          {
+            "id": "align-next-vibe",
+            "from": "align",
+            "event": "NEXT_VIBE",
+            "to": "vibe",
+            "label": "next → VIBE",
+            "description": "User selects recommended VIBE action with auto-start prompt.",
+            "userMediated": true
+          },
+          {
+            "id": "align-next-align",
+            "from": "align",
+            "event": "NEXT_ALIGN",
+            "to": "align",
+            "label": "next → ALIGN",
+            "description": "Continue in ALIGN with recommended prompt.",
+            "userMediated": true
+          },
+          {
+            "id": "align-next-handoff",
+            "from": "align",
+            "event": "NEXT_HANDOFF",
+            "to": "editor",
+            "label": "next → handoff prep",
+            "description": "Picker prepares /handoff command for user execution in editor.",
+            "userMediated": true
+          },
+          {
+            "id": "align-picker-dismiss",
+            "from": "align",
+            "event": "PICKER_DISMISS",
+            "to": "editor",
+            "label": "Picker dismiss/unrecommended",
+            "description": "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
+            "userMediated": true
+          },
+          {
+            "id": "align-no-work",
+            "from": "align",
+            "event": "NO_WORK",
+            "to": "editor",
+            "label": "Return to editor",
+            "description": "No useful work remains; do not call next."
+          },
+          {
+            "id": "align-cmd-align",
+            "from": "align",
+            "event": "CMD_ALIGN",
+            "to": "editor",
+            "label": "/align",
+            "description": "Manual mode command escape hatch; records ALIGN mode; returns to editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "align-cmd-spec",
+            "from": "align",
+            "event": "CMD_SPEC",
+            "to": "editor",
+            "label": "/spec",
+            "description": "Manual mode command escape hatch; switches to SPEC mode; returns to editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "align-cmd-vibe",
+            "from": "align",
+            "event": "CMD_VIBE",
+            "to": "editor",
+            "label": "/vibe",
+            "description": "Manual mode command escape hatch; switches to VIBE mode; returns to editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "align-cmd-mode",
+            "from": "align",
+            "event": "CMD_MODE",
+            "to": "editor",
+            "label": "/mode",
+            "description": "Manual mode picker command; opens picker in editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "align-cmd-handoff",
+            "from": "align",
+            "event": "CMD_HANDOFF",
+            "to": "handoff",
+            "label": "/handoff",
+            "description": "Explicit handoff command; swaps session onto named plan.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-closeout",
+            "from": "spec",
+            "event": "CLOSE_OUT",
+            "to": "closeOut",
+            "label": "CLOSE_OUT",
+            "description": "Preferred end-of-phase path: reconcile and optionally CALL next."
+          },
+          {
+            "id": "spec-blocked",
+            "from": "spec",
+            "event": "BLOCKED",
+            "to": "blocked",
+            "label": "BLOCKED",
+            "description": "Missing evidence or decision; stop without widening scope."
+          },
+          {
+            "id": "spec-no-work",
+            "from": "spec",
+            "event": "NO_WORK",
+            "to": "editor",
+            "label": "Proposal returned",
+            "description": "Agent completes proposal without CALL next; returns to editor."
+          },
+          {
+            "id": "spec-next-align",
+            "from": "spec",
+            "event": "NEXT_ALIGN",
+            "to": "align",
+            "label": "next → ALIGN",
+            "description": "Direct next from SPEC; preferred agent path still runs CLOSE_OUT first.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-next-spec",
+            "from": "spec",
+            "event": "NEXT_SPEC",
+            "to": "spec",
+            "label": "next → SPEC",
+            "description": "Continue SPEC via recommended next prompt.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-next-vibe",
+            "from": "spec",
+            "event": "NEXT_VIBE",
+            "to": "vibe",
+            "label": "next → VIBE",
+            "description": "User selects recommended SPEC→VIBE next action.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-next-handoff",
+            "from": "spec",
+            "event": "NEXT_HANDOFF",
+            "to": "editor",
+            "label": "next → handoff prep",
+            "description": "Picker prepares /handoff command for user execution.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-picker-dismiss",
+            "from": "spec",
+            "event": "PICKER_DISMISS",
+            "to": "editor",
+            "label": "Picker dismiss/unrecommended",
+            "description": "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-cmd-align",
+            "from": "spec",
+            "event": "CMD_ALIGN",
+            "to": "editor",
+            "label": "/align",
+            "description": "User escape hatch to ALIGN; returns to editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-cmd-spec",
+            "from": "spec",
+            "event": "CMD_SPEC",
+            "to": "editor",
+            "label": "/spec",
+            "description": "Manual re-assert SPEC; returns to editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-cmd-vibe",
+            "from": "spec",
+            "event": "CMD_VIBE",
+            "to": "editor",
+            "label": "/vibe",
+            "description": "User escape hatch to VIBE; returns to editor standby after mode change.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-cmd-mode",
+            "from": "spec",
+            "event": "CMD_MODE",
+            "to": "editor",
+            "label": "/mode",
+            "description": "Manual mode picker command; opens picker in editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "spec-cmd-handoff",
+            "from": "spec",
+            "event": "CMD_HANDOFF",
+            "to": "handoff",
+            "label": "/handoff",
+            "description": "Explicit handoff command; swaps session onto named plan.",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-closeout",
+            "from": "vibe",
+            "event": "CLOSE_OUT",
+            "to": "closeOut",
+            "label": "CLOSE_OUT",
+            "description": "Preferred end-of-phase path: reconcile and optionally CALL next."
+          },
+          {
+            "id": "vibe-blocked",
+            "from": "vibe",
+            "event": "BLOCKED",
+            "to": "blocked",
+            "label": "BLOCKED",
+            "description": "Unfixable in-scope failure or consequential stop."
+          },
+          {
+            "id": "vibe-no-work",
+            "from": "vibe",
+            "event": "NO_WORK",
+            "to": "editor",
+            "label": "Implementation returned",
+            "description": "Agent completes work without CALL next; returns to editor."
+          },
+          {
+            "id": "vibe-next-align",
+            "from": "vibe",
+            "event": "NEXT_ALIGN",
+            "to": "align",
+            "label": "next → ALIGN",
+            "description": "Decision review or re-clarify via next (prefer after CLOSE_OUT).",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-next-spec",
+            "from": "vibe",
+            "event": "NEXT_SPEC",
+            "to": "spec",
+            "label": "next → SPEC",
+            "description": "More research needed via next (prefer after CLOSE_OUT).",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-next-vibe",
+            "from": "vibe",
+            "event": "NEXT_VIBE",
+            "to": "vibe",
+            "label": "next → VIBE",
+            "description": "Continue VIBE via recommended next prompt.",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-next-handoff",
+            "from": "vibe",
+            "event": "NEXT_HANDOFF",
+            "to": "editor",
+            "label": "next → handoff prep",
+            "description": "Picker prepares /handoff from VIBE.",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-picker-dismiss",
+            "from": "vibe",
+            "event": "PICKER_DISMISS",
+            "to": "editor",
+            "label": "Picker dismiss/unrecommended",
+            "description": "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-cmd-align",
+            "from": "vibe",
+            "event": "CMD_ALIGN",
+            "to": "editor",
+            "label": "/align",
+            "description": "User escape hatch to ALIGN; returns to editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-cmd-spec",
+            "from": "vibe",
+            "event": "CMD_SPEC",
+            "to": "editor",
+            "label": "/spec",
+            "description": "User escape hatch to SPEC; returns to editor standby after mode change.",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-cmd-vibe",
+            "from": "vibe",
+            "event": "CMD_VIBE",
+            "to": "editor",
+            "label": "/vibe",
+            "description": "Manual re-assert VIBE; returns to editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-cmd-mode",
+            "from": "vibe",
+            "event": "CMD_MODE",
+            "to": "editor",
+            "label": "/mode",
+            "description": "Manual mode picker command; opens picker in editor standby.",
+            "userMediated": true
+          },
+          {
+            "id": "vibe-cmd-handoff",
+            "from": "vibe",
+            "event": "CMD_HANDOFF",
+            "to": "handoff",
+            "label": "/handoff",
+            "description": "Explicit handoff command; swaps session onto named plan.",
+            "userMediated": true
+          },
+          {
+            "id": "blocked-closeout",
+            "from": "blocked",
+            "event": "CLOSE_OUT",
+            "to": "closeOut",
+            "label": "CLOSE_OUT",
+            "description": "Record blockage then close out with ALIGN often recommended."
+          },
+          {
+            "id": "blocked-unblock-spec",
+            "from": "blocked",
+            "event": "DECIDE_CONTINUE_SPEC",
+            "to": "spec",
+            "label": "Decide unblocks → SPEC",
+            "description": "Decide auto-picks working choice that unblocks research; continue SPEC."
+          },
+          {
+            "id": "blocked-unblock-vibe",
+            "from": "blocked",
+            "event": "DECIDE_CONTINUE_VIBE",
+            "to": "vibe",
+            "label": "Decide unblocks → VIBE",
+            "description": "Decide auto-picks working choice that unblocks execution; continue VIBE."
+          },
+          {
+            "id": "closeout-next-align",
+            "from": "closeOut",
+            "event": "NEXT_ALIGN",
+            "to": "align",
+            "label": "next → ALIGN",
+            "description": "Actionable review or follow-up clarification; or unresolved D review.",
+            "userMediated": true
+          },
+          {
+            "id": "closeout-next-spec",
+            "from": "closeOut",
+            "event": "NEXT_SPEC",
+            "to": "spec",
+            "label": "next → SPEC",
+            "description": "More research/proposal work remains.",
+            "userMediated": true
+          },
+          {
+            "id": "closeout-next-vibe",
+            "from": "closeOut",
+            "event": "NEXT_VIBE",
+            "to": "vibe",
+            "label": "next → VIBE",
+            "description": "Implementation work remains.",
+            "userMediated": true
+          },
+          {
+            "id": "closeout-next-handoff",
+            "from": "closeOut",
+            "event": "NEXT_HANDOFF",
+            "to": "editor",
+            "label": "next → handoff prep",
+            "description": "Picker prepares /handoff from post-turn picker.",
+            "userMediated": true
+          },
+          {
+            "id": "closeout-picker-dismiss",
+            "from": "closeOut",
+            "event": "PICKER_DISMISS",
+            "to": "editor",
+            "label": "Picker dismiss/unrecommended",
+            "description": "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
+            "userMediated": true
+          },
+          {
+            "id": "closeout-complete",
+            "from": "closeOut",
+            "event": "ALL_COMPLETE",
+            "to": "editor",
+            "label": "Complete",
+            "description": "No next call; return to editor."
+          },
+          {
+            "id": "handoff-continue",
+            "from": "handoff",
+            "event": "SESSION_CONTINUED",
+            "to": "align",
+            "label": "Fresh ALIGN",
+            "description": "Replacement session starts in ALIGN on the same artifact."
+          },
+          {
+            "id": "editor-user-align",
+            "from": "editor",
+            "event": "USER_MESSAGE_ALIGN",
+            "to": "align",
+            "label": "User message (ALIGN)",
+            "description": "User sends message while mode is ALIGN (or initial default).",
+            "userMediated": true
+          },
+          {
+            "id": "editor-user-spec",
+            "from": "editor",
+            "event": "USER_MESSAGE_SPEC",
+            "to": "spec",
+            "label": "User message (SPEC)",
+            "description": "User sends message while mode is SPEC.",
+            "userMediated": true
+          },
+          {
+            "id": "editor-user-vibe",
+            "from": "editor",
+            "event": "USER_MESSAGE_VIBE",
+            "to": "vibe",
+            "label": "User message (VIBE)",
+            "description": "User sends message while mode is VIBE.",
+            "userMediated": true
+          },
+          {
+            "id": "editor-cmd-align",
+            "from": "editor",
+            "event": "CMD_ALIGN",
+            "to": "editor",
+            "label": "/align",
+            "description": "Manual mode command switches mode to ALIGN; stays in editor.",
+            "userMediated": true
+          },
+          {
+            "id": "editor-cmd-spec",
+            "from": "editor",
+            "event": "CMD_SPEC",
+            "to": "editor",
+            "label": "/spec",
+            "description": "Manual mode command switches mode to SPEC; stays in editor.",
+            "userMediated": true
+          },
+          {
+            "id": "editor-cmd-vibe",
+            "from": "editor",
+            "event": "CMD_VIBE",
+            "to": "editor",
+            "label": "/vibe",
+            "description": "Manual mode command switches mode to VIBE; stays in editor.",
+            "userMediated": true
+          },
+          {
+            "id": "editor-cmd-mode",
+            "from": "editor",
+            "event": "CMD_MODE",
+            "to": "editor",
+            "label": "/mode",
+            "description": "Manual mode command opens mode picker; stays in editor.",
+            "userMediated": true
+          },
+          {
+            "id": "editor-cmd-handoff",
+            "from": "editor",
+            "event": "CMD_HANDOFF",
+            "to": "handoff",
+            "label": "/handoff",
+            "description": "User runs /handoff; initiates session handoff on named plan.",
+            "userMediated": true
+          }
+        ],
+        "tools": [
+          {
+            "name": "ask",
+            "summary": "Native ALIGN questions; answers, cancel, or Proceed-with-best SPEC/VIBE route.",
+            "modes": ["align"],
+            "gate": [
+              "ALIGN-only; SPEC/VIBE ask is a harmless no-op (no picker).",
+              "Empty ask is a harmless no-op.",
+              "Non-empty ask requires a named session plan file; otherwise error without picker.",
+              "Interactive UI required only when questions will be shown."
+            ],
+            "mechanics": [
+              "CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly.",
+              "KEEP question identifiers, option values, and option labels distinct.",
+              "NEVER imitate native action labels.",
+              "USE customAnswerLabel for User-supplied detail; NEVER offer a selectable option that merely says specify.",
+              "BATCH only independent questions; dependent follow-ups in a later CALL.",
+              "An optionless ask question offers custom input but no Proceed-with-best route.",
+              "Proceed-with-best accepts prior answers plus remaining highest-confidence answers and starts fresh SPEC/VIBE.",
+              "Agent persists User-transcript meaning; runtime does not write the User transcript."
+            ]
+          },
+          {
+            "name": "decide",
+            "summary": "SPEC/VIBE auto-pick highest-confidence option; that call IS RECORD_DECISION.",
+            "modes": ["spec", "vibe"],
+            "gate": [
+              "SPEC/VIBE-only; ALIGN decide is a harmless no-op.",
+              "Empty decide is a harmless no-op.",
+              "Optionless decide is a harmless no-op.",
+              "Non-empty decide with options requires a named session plan file; otherwise error."
+            ],
+            "mechanics": [
+              "Never opens a picker and never changes mode.",
+              "Auto-picks the highest-confidence option per question.",
+              "Records agent-workflow:decision and appends Agent transcript after start.",
+              "Leaves D review unresolved until explicit ALIGN acceptance."
+            ]
+          },
+          {
+            "name": "start",
+            "summary": "First .pi/plan write: named artifact or linked legacy continuation.",
+            "modes": ["any"],
+            "gate": ["Creates or continues the named plan; no plan file exists until start succeeds."],
+            "mechanics": [
+              "CALL start with a context-informed 2-4 word task name; include a ticket ID when applicable.",
+              "start is the first CALL tool when no named artifact exists.",
+              "Legacy artifacts stay immutable; start forks a linked current-format continuation."
+            ]
+          },
+          {
+            "name": "next",
+            "summary": "Queue ranked post-turn actions; runtime opens picker only for explicit next.",
+            "modes": ["any"],
+            "gate": [
+              "Empty next records no recommendation and opens no picker.",
+              "Non-empty next requires valid targets and prompts; requires named session plan.",
+              "Every ALIGN/SPEC/VIBE action needs contextual prompt; handoff must omit prompt."
+            ],
+            "mechanics": [
+              "Agent-authored actions REQUIRE a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
+              "Runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction.",
+              "Recommended row with a reason shows {mode} — {reason}.",
+              "Prefer CALL next from CLOSE_OUT; runtime still opens the picker if next is called from ALIGN/SPEC/VIBE directly.",
+              "Manual ALIGN/SPEC/VIBE commands and unrecommended picker choices return to the editor.",
+              "Manual mode commands accept no unanswered recommendation or unresolved D review (escape hatches).",
+              "Only a recommended next prompt starts the agent.",
+              "Duplicate next modes collapse; picker-selected handoff prepares /handoff for explicit User execution.",
+              "Ask-routed SPEC/VIBE and /handoff still auto-start."
+            ]
+          }
+        ],
+        "artifact": {
+          "sections": [
+            "Goal",
+            "Align",
+            "Decisions",
+            "Evidence",
+            "Proposal",
+            "Checklist",
+            "Work log",
+            "User transcript",
+            "Agent transcript"
+          ],
+          "identifiers": {
+            "Q": "Stable immutable question id (e.g. Q1)",
+            "D": "Stable immutable decision id (e.g. D1)",
+            "C": "Stable immutable checklist outcome id (e.g. C1)"
+          },
+          "rules": [
+            "PRESERVE historical prose and APPEND lifecycle developments instead of rewriting history.",
+            "KEEP Decisions as the concise accepted synthesis of User answers and reviewed Agent choices.",
+            "INTERPRET status from the artifact as a whole.",
+            "TREAT CLOSE_OUT as a procedure, not an artifact section."
+          ]
+        },
+        "initial": "editor",
+        "notes": [
+          "Persisted User mode is only align|spec|vibe. closeOut, blocked, handoff, and editor are procedural/standby states for the shared flow chart.",
+          "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
+          "Transition table covers the runtime surface (next and CMD_* from each mode). Preferred agent path still ends SPEC/VIBE via CLOSE_OUT before CALL next.",
+          "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
+          "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
+          "tools validate required shapes and protocol enums, not workflow quality."
+        ]
+      }
+    </script>
+
+    <script type="module">
+      const NS = "http://www.w3.org/2000/svg";
+      const fsm = JSON.parse(document.getElementById("workflow-fsm-data").textContent);
+      const svg = document.getElementById("chart");
+      const hint = document.getElementById("hint");
+      const states = fsm.states || {};
+      const procedures = fsm.procedures || {};
+      const tools = Array.isArray(fsm.tools) ? fsm.tools : [];
+      const transitions = Array.isArray(fsm.transitions) ? fsm.transitions : [];
+
+      let selected = fsm.initial || "editor";
+      let sidebarOn = false;
+      let scale = 1;
+      let panX = 0;
+      let panY = 0;
+      let viewport = null;
+      let pinnedHint = null;
+
+      if (!states[selected]) {
+        document
+          .getElementById("stage")
+          .insertAdjacentHTML(
+            "beforeend",
+            '<p class="warn">Embedded snapshot may be stale. Run <code>npm run build:content</code>.</p>',
+          );
+      }
+
+      const MODE_TOOLS = {
+        align: ["ask", "start", "next"],
+        spec: ["start", "decide", "next"],
+        vibe: ["start", "decide", "next"],
+      };
+
+      const NODE_W = 148;
+      const NODE_H = 52;
+      // Hand-tuned flat ranks with breathing room: editor | modes | procedures | handoff
+      const NODE_POS = {
+        editor: { x: 160, y: 460 },
+        align: { x: 780, y: 120 },
+        spec: { x: 780, y: 460 },
+        vibe: { x: 780, y: 800 },
+        closeOut: { x: 1400, y: 260 },
+        blocked: { x: 1400, y: 660 },
+        handoff: { x: 1980, y: 460 },
+      };
+
+      function svgEl(name, attrs = {}, parent) {
+        const node = document.createElementNS(NS, name);
+        for (const [key, value] of Object.entries(attrs)) {
+          if (value != null) node.setAttribute(key, String(value));
+        }
+        parent?.appendChild(node);
+        return node;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function procedureRefName(line) {
+        const match =
+          line.match(/\bprocedures\.([A-Z][A-Z0-9_]*)\b/) ||
+          line.match(/\bFollow procedures\.([A-Z][A-Z0-9_]*)\b/i) ||
+          line.match(/\bRUN ([A-Z][A-Z0-9_]*)\b/);
+        if (!match) return null;
+        return procedures[match[1]] ? match[1] : null;
+      }
+
+      function effectiveProcedureLines(state) {
+        const lines = [];
+        const seen = new Set();
+        for (const step of state.procedure || []) {
+          lines.push(step);
+          const ref = procedureRefName(step);
+          if (ref && !seen.has(ref)) {
+            seen.add(ref);
+            for (const body of procedures[ref] || []) lines.push(`${ref}: ${body}`);
+          }
+        }
+        for (const [name, steps] of Object.entries(procedures)) {
+          const mentioned = (state.procedure || []).some((step) => step.includes(name));
+          if (!mentioned || seen.has(name)) continue;
+          if (
+            state.kind === "procedure" ||
+            (state.procedure || []).some((s) => s.includes(`RUN ${name}`) || s.includes(`procedures.${name}`))
+          ) {
+            seen.add(name);
+            for (const body of steps) lines.push(`${name}: ${body}`);
+          }
+        }
+        return lines;
+      }
+
+      function toolByName(name) {
+        return tools.find((t) => t.name === name);
+      }
+
+      function isCmdEvent(event) {
+        return /^CMD_/.test(event);
+      }
+
+      function isEscEvent(event) {
+        return event === "PICKER_DISMISS" || event === "NO_WORK";
+      }
+
+      /** Q5/D3: collapse CMD_* (incl. self) and non-self ESC families per from→to. */
+      function collapseEdges() {
+        const groups = new Map();
+        for (const t of transitions) {
+          let key;
+          let family = null;
+          if (isCmdEvent(t.event)) {
+            key = `${t.from}\0${t.to}\0CMD`;
+            family = "CMD";
+          } else if (t.from !== t.to && isEscEvent(t.event)) {
+            key = `${t.from}\0${t.to}\0ESC`;
+            family = "ESC";
+          } else {
+            key = `${t.from}\0${t.to}\0${t.event}`;
+          }
+          if (!groups.has(key)) {
+            groups.set(key, {
+              id: key,
+              from: t.from,
+              to: t.to,
+              family,
+              members: [],
+            });
+          }
+          groups.get(key).members.push(t);
+        }
+
+        const items = [];
+        for (const g of groups.values()) {
+          const n = g.members.length;
+          const first = g.members[0];
+          const self = g.from === g.to;
+          let event;
+          let label = null;
+          if (g.family === "CMD") {
+            event = n > 1 ? `CMD_* ×${n}` : first.event;
+          } else if (g.family === "ESC") {
+            event = n > 1 ? `ESC ×${n}` : first.event;
+          } else {
+            event = first.event;
+            if (first.label && first.label !== first.event) label = first.label;
+          }
+          items.push({
+            id: g.id,
+            from: g.from,
+            to: g.to,
+            self,
+            family: g.family,
+            bundle: n > 1,
+            event,
+            label,
+            members: g.members,
+            description: n === 1 ? first.description || "" : g.members.map((m) => m.event).join(", "),
+            userMediated: g.members.some((m) => m.userMediated),
+          });
+        }
+        return items;
+      }
+
+      function layoutFlatXState() {
+        const nodes = {};
+        for (const [id, pos] of Object.entries(NODE_POS)) {
+          const state = states[id];
+          if (!state) continue;
+          nodes[id] = {
+            id,
+            x: pos.x,
+            y: pos.y,
+            w: NODE_W,
+            h: NODE_H,
+            label: state.label || id,
+            kind: state.kind || "mode",
+            permission: state.permission || "",
+          };
+        }
+        const pad = 110;
+        const head = 48;
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxR = 0;
+        let maxB = 0;
+        for (const n of Object.values(nodes)) {
+          minX = Math.min(minX, n.x);
+          minY = Math.min(minY, n.y);
+          maxR = Math.max(maxR, n.x + n.w);
+          maxB = Math.max(maxB, n.y + n.h);
+        }
+        const extraLeft = 140;
+        const extraBottom = 180;
+        const frame = {
+          x: minX - pad - extraLeft,
+          y: minY - pad - head,
+          w: maxR - minX + pad * 2 + extraLeft,
+          h: maxB - minY + pad * 2 + head + extraBottom,
+          head,
+        };
+        return { nodes, frame };
+      }
+
+      function nodeCenter(n) {
+        return { x: n.x + n.w / 2, y: n.y + n.h / 2 };
+      }
+
+      function port(n, side, t = 0.5) {
+        const y = n.y + n.h * Math.min(0.9, Math.max(0.1, t));
+        const x = n.x + n.w * Math.min(0.9, Math.max(0.1, t));
+        if (side === "left") return { x: n.x, y };
+        if (side === "right") return { x: n.x + n.w, y };
+        if (side === "top") return { x, y: n.y };
+        return { x, y: n.y + n.h };
+      }
+
+      /** Lanes fan per source so multi-target exits get distinct horizontal seats. */
+      function assignLanes(items, nodes) {
+        const buckets = new Map();
+        for (const item of items) {
+          const a = nodes[item.from];
+          const b = nodes[item.to];
+          let bucket;
+          if (item.self) bucket = `self:${item.from}`;
+          else if (b && a && b.x > a.x) bucket = `fwd:${item.from}`;
+          else if (item.to === "editor" && item.from !== "editor") bucket = `back:${item.from}`;
+          else if (a && b && Math.abs(a.x - b.x) < 4) bucket = `col:${item.from}`;
+          else bucket = `other:${item.from}`;
+          if (!buckets.has(bucket)) buckets.set(bucket, []);
+          buckets.get(bucket).push(item);
+        }
+        for (const list of buckets.values()) {
+          list.sort((a, b) => {
+            const ay = nodes[a.to]?.y ?? 0;
+            const by = nodes[b.to]?.y ?? 0;
+            if (ay !== by) return ay - by;
+            return a.event.localeCompare(b.event);
+          });
+          list.forEach((item, i) => {
+            item.lane = i;
+            item.laneCount = list.length;
+          });
+        }
+        return items;
+      }
+
+      function routeItem(item, nodes) {
+        const a = nodes[item.from];
+        const b = nodes[item.to];
+        if (!a || !b) return null;
+        const lane = item.lane || 0;
+        const n = Math.max(1, item.laneCount || 1);
+        const mid = (n - 1) / 2;
+        const spread = 40;
+
+        if (item.self) {
+          const cy = a.y + a.h / 2 + (lane - mid) * Math.max(spread, 28);
+          const x0 = a.x;
+          const out = 64 + lane * 18;
+          const d = `M ${x0} ${cy} C ${x0 - out} ${cy - 26}, ${x0 - out} ${cy + 26}, ${x0} ${cy + 0.01}`;
+          return { d, seatX: x0 - out - 8, seatY: cy, seatSide: "left" };
+        }
+
+        // Back-edges into editor: deep under-rail, one lane per source exit
+        if (item.to === "editor" && a.x > b.x) {
+          const p1 = port(a, "bottom", 0.45);
+          const p2 = port(b, "bottom", 0.55);
+          const base = Math.max(a.y + a.h, nodes.vibe ? nodes.vibe.y + nodes.vibe.h : b.y + b.h) + 90;
+          const railY = base + lane * 28;
+          const d = `M ${p1.x} ${p1.y} L ${p1.x} ${railY} L ${p2.x} ${railY} L ${p2.x} ${p2.y}`;
+          return { d, seatX: (p1.x + p2.x) / 2, seatY: railY, seatSide: "bottom" };
+        }
+
+        // Same column: right vertical bus with wide lane gaps
+        if (Math.abs(a.x - b.x) < 4) {
+          const right = a.x + a.w + 80 + lane * 32;
+          const y1 = a.y + a.h / 2;
+          const y2 = b.y + b.h / 2;
+          const d = `M ${a.x + a.w} ${y1} L ${right} ${y1} L ${right} ${y2} L ${b.x + b.w} ${y2}`;
+          return { d, seatX: right, seatY: (y1 + y2) / 2, seatSide: "right" };
+        }
+
+        // Forward: exit → short horizontal pill seat → vertical → into target
+        if (b.x > a.x) {
+          const yExit = a.y + a.h / 2 + (lane - mid) * spread;
+          const yEnter = b.y + b.h / 2;
+          const gap = b.x - (a.x + a.w);
+          const seatLen = Math.min(160, Math.max(96, gap * 0.38));
+          const x1 = a.x + a.w;
+          const xSeatEnd = x1 + seatLen;
+          const xJoin = a.x + a.w + gap * 0.55 + (lane - mid) * 6;
+          const x2 = b.x;
+          const d = `M ${x1} ${a.y + a.h / 2} L ${x1 + 10} ${yExit} L ${xSeatEnd} ${yExit} L ${xJoin} ${yExit} L ${xJoin} ${yEnter} L ${x2} ${yEnter}`;
+          return {
+            d,
+            seatX: (x1 + 10 + xSeatEnd) / 2,
+            seatY: yExit,
+            seatSide: "h",
+          };
+        }
+
+        // Other leftward: over-rail
+        const y1 = a.y + a.h / 2;
+        const y2 = b.y + b.h / 2;
+        const railY = Math.min(a.y, b.y) - 64 - lane * 24;
+        const d = `M ${a.x} ${y1} L ${a.x} ${railY} L ${b.x + b.w} ${railY} L ${b.x + b.w} ${y2}`;
+        return { d, seatX: (a.x + b.x + b.w) / 2, seatY: railY, seatSide: "top" };
+      }
+
+      function itemIsHot(item) {
+        return item.from === selected;
+      }
+
+      function itemIsLabeled(item) {
+        return item.from === selected;
+      }
+
+      function applyCamera() {
+        viewport?.setAttribute("transform", `translate(${panX} ${panY}) scale(${scale})`);
+      }
+
+      function fitContent() {
+        if (!viewport) return;
+        const box = viewport.getBBox();
+        if (!box.width || !box.height) return;
+        const pad = 48;
+        const width = svg.clientWidth || 900;
+        const height = svg.clientHeight || 700;
+        scale = Math.min((width - pad * 2) / box.width, (height - pad * 2) / box.height, 1.2);
+        panX = (width - box.width * scale) / 2 - box.x * scale;
+        panY = (height - box.height * scale) / 2 - box.y * scale;
+        applyCamera();
+      }
+
+      function refitSoon() {
+        requestAnimationFrame(() => requestAnimationFrame(fitContent));
+      }
+
+      function bindClose() {
+        hint.querySelector(".close")?.addEventListener("click", () => {
+          setSidebarOn(false);
+        });
+      }
+
+      function updateSidebarButton() {
+        const btn = document.getElementById("sidebar");
+        if (!btn) return;
+        btn.classList.toggle("is-on", sidebarOn);
+        btn.setAttribute("aria-pressed", sidebarOn ? "true" : "false");
+      }
+
+      function applySidebarVisibility() {
+        if (sidebarOn) {
+          hint.classList.add("is-open");
+          hint.setAttribute("aria-hidden", "false");
+        } else {
+          hint.classList.remove("is-open");
+          hint.setAttribute("aria-hidden", "true");
+        }
+        updateSidebarButton();
+        refitSoon();
+      }
+
+      function renderPinnedSidebar() {
+        if (!pinnedHint || pinnedHint.type === "state") {
+          const stateId = pinnedHint?.id || selected || fsm.initial || "editor";
+          if (states[stateId]) {
+            renderStateSidebar(stateId, { activate: false });
+            return;
+          }
+        }
+        if (pinnedHint.type === "edge" && pinnedHint.item) {
+          renderEdgeSidebar(pinnedHint.item, { activate: false });
+        } else if (pinnedHint.type === "machine") {
+          renderMachineSidebar({ activate: false });
+        } else if (selected && states[selected]) {
+          renderStateSidebar(selected, { activate: false });
+        } else {
+          renderMachineSidebar({ activate: false });
+        }
+      }
+
+      function setSidebarOn(on) {
+        sidebarOn = Boolean(on);
+        if (sidebarOn && !hint.innerHTML.trim()) renderPinnedSidebar();
+        applySidebarVisibility();
+        if (sidebarOn) bindClose();
+      }
+
+      /** Sync panel visibility to sidebarOn. activate=true turns the toggle on (content actions). */
+      function openHint(options = {}) {
+        const activate = options.activate !== false;
+        bindClose();
+        if (activate) {
+          sidebarOn = true;
+          applySidebarVisibility();
+        }
+      }
+
+      function hideHint() {
+        pinnedHint = null;
+        hint.innerHTML = "";
+        setSidebarOn(false);
+      }
+
+      function renderStateSidebar(stateId, options = {}) {
+        const state = states[stateId];
+        if (!state) return;
+        const steps = effectiveProcedureLines(state);
+        const sub = state.substates?.length
+          ? `<div class="kv">${state.substates.map((s) => `<span class="chip">${escapeHtml(s)}</span>`).join("")}</div>`
+          : "";
+        const modeTools = (MODE_TOOLS[stateId] || []).map((n) => toolByName(n)).filter(Boolean);
+        const toolHtml = modeTools
+          .map(
+            (t) =>
+              `<h3>Tool · ${escapeHtml(t.name)}</h3><p class="summary">${escapeHtml(t.summary || "")}</p><ul>${[
+                ...(t.gate || []).map((g) => `<li><strong>Gate:</strong> ${escapeHtml(g)}</li>`),
+                ...(t.mechanics || []).map((g) => `<li>${escapeHtml(g)}</li>`),
+              ].join("")}</ul>`,
+          )
+          .join("");
+        hint.innerHTML = `
+          <header>
+            <div>
+              <h2>${escapeHtml(state.label || state.id)}</h2>
+              <p>${escapeHtml(state.kind)} · ${escapeHtml(state.permission)} · full instruction body</p>
+            </div>
+            <button type="button" class="close" aria-label="Close">×</button>
+          </header>
+          <div class="body">
+            <h3>Summary</h3>
+            <p class="summary">${escapeHtml(state.summary || "")}</p>
+            ${sub ? `<h3>Substates</h3>${sub}` : ""}
+            <h3>Instructions (${steps.length})</h3>
+            <ul>${steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("") || "<li>(none)</li>"}</ul>
+            ${toolHtml}
+          </div>
+        `;
+        openHint({ activate: options.activate !== false });
+      }
+
+      function renderEdgeSidebar(item, options = {}) {
+        const members = item.members || [];
+        const list =
+          members.length > 1
+            ? `<h3>Bundle members (${members.length})</h3><ul>${members
+                .map(
+                  (m) =>
+                    `<li><strong>${escapeHtml(m.event)}</strong>${
+                      m.label && m.label !== m.event ? ` — ${escapeHtml(m.label)}` : ""
+                    }<br/><span class="summary">${escapeHtml(m.description || "")}</span></li>`,
+                )
+                .join("")}</ul>`
+            : "";
+        const m0 = members[0] || {};
+        hint.innerHTML = `
+          <header>
+            <div>
+              <h2>${escapeHtml(item.event)}</h2>
+              <p>${escapeHtml(item.from)} → ${escapeHtml(item.to)}${item.userMediated ? " · user-mediated" : ""}</p>
+            </div>
+            <button type="button" class="close" aria-label="Close">×</button>
+          </header>
+          <div class="body">
+            ${
+              item.label
+                ? `<h3>DO / label</h3><p class="summary">${escapeHtml(item.label)}</p>`
+                : members.length === 1 && m0.label
+                  ? `<h3>DO / label</h3><p class="summary">${escapeHtml(m0.label)}</p>`
+                  : ""
+            }
+            <h3>Description</h3>
+            <p class="summary">${escapeHtml(item.description || m0.description || "")}</p>
+            ${list}
+          </div>
+        `;
+        openHint({ activate: options.activate !== false });
+      }
+
+      function renderMachineSidebar(options = {}) {
+        const list = (items) =>
+          `<ul>${(items || []).map((i) => `<li>${escapeHtml(i)}</li>`).join("") || "<li>(none)</li>"}</ul>`;
+        const procHtml = Object.entries(procedures)
+          .map(([n, steps]) => `<h3>Procedure · ${escapeHtml(n)}</h3>${list(steps)}`)
+          .join("");
+        const toolHtml = tools
+          .map(
+            (t) =>
+              `<h3>Tool · ${escapeHtml(t.name)}</h3><p class="summary">${escapeHtml(t.summary || "")}</p>${list(t.gate)}${list(t.mechanics)}`,
+          )
+          .join("");
+        hint.innerHTML = `
+          <header>
+            <div>
+              <h2>${escapeHtml(fsm.title || fsm.id || "Workflow")}</h2>
+              <p>v${escapeHtml(fsm.version || "?")} · full instruction set</p>
+            </div>
+            <button type="button" class="close" aria-label="Close">×</button>
+          </header>
+          <div class="body">
+            <h3>Summary</h3>
+            <p class="summary">${escapeHtml(fsm.summary || "")}</p>
+            <h3>Session</h3>
+            <ul>
+              <li>mode := ${escapeHtml(fsm.session?.mode || "")}</li>
+              <li>artifact := ${escapeHtml(fsm.session?.artifact || "")}</li>
+              <li>scope := ${escapeHtml(fsm.session?.scope || "")}</li>
+              <li>review := ${escapeHtml(fsm.session?.review || "")}</li>
+            </ul>
+            <h3>Ownership</h3>${list(fsm.ownership)}
+            <h3>Invariants</h3>${list(fsm.invariants)}
+            <h3>Always</h3>${list(fsm.always)}
+            <h3>Turn</h3>${list(fsm.turn)}
+            ${procHtml}
+            ${toolHtml}
+            <h3>Notes</h3>${list(fsm.notes)}
+          </div>
+        `;
+        openHint({ activate: options.activate !== false });
+      }
+
+      function drawRoundedRect(parent, x, y, w, h, rx, fill, stroke, sw = 1) {
+        return svgEl("rect", { x, y, width: w, height: h, rx, fill, stroke, "stroke-width": sw }, parent);
+      }
+
+      function truncate(str, max) {
+        const s = String(str || "");
+        return s.length > max ? `${s.slice(0, max - 1)}…` : s;
+      }
+
+      function drawPill(parent, item, route, hot) {
+        const hasDo = Boolean(item.label) && !item.bundle;
+        const line1 = item.event;
+        const line2 = hasDo ? `DO / ${truncate(item.label, 34)}` : null;
+        const tw = Math.max(56, Math.min(220, Math.max(line1.length, line2 ? line2.length : 0) * 6.1 + 18));
+        const th = line2 ? 30 : 18;
+        const x = route.seatX - tw / 2;
+        const y = route.seatY - th / 2;
+        const g = svgEl("g", { class: "edge-pill" }, parent);
+        g.style.cursor = "pointer";
+        drawRoundedRect(
+          g,
+          x,
+          y,
+          tw,
+          th,
+          9,
+          hot ? "color-mix(in srgb, var(--current) 35%, var(--tool))" : "var(--tool)",
+          hot ? "var(--current)" : "var(--child-border)",
+          hot ? 1.4 : 1,
+        );
+        svgEl(
+          "text",
+          {
+            x: route.seatX,
+            y: line2 ? y + 12 : y + 13,
+            fill: "var(--text)",
+            "font-size": 9,
+            "font-weight": 700,
+            "text-anchor": "middle",
+          },
+          g,
+        ).textContent = truncate(line1, 36);
+        if (line2) {
+          svgEl(
+            "text",
+            {
+              x: route.seatX,
+              y: y + 24,
+              fill: "var(--muted)",
+              "font-size": 8,
+              "text-anchor": "middle",
+            },
+            g,
+          ).textContent = line2;
+        }
+        g.addEventListener("click", (e) => {
+          e.stopPropagation();
+          selected = item.from;
+          pinnedHint = { type: "edge", id: item.id, item };
+          if (sidebarOn) renderEdgeSidebar(item, { activate: false });
+          render({ preserveCamera: true });
+        });
+      }
+
+      function render(options = {}) {
+        const preserveCamera = Boolean(options.preserveCamera);
+        svg.replaceChildren();
+        const defs = svgEl("defs", {}, svg);
+        for (const [id, fill] of [
+          ["arrow", "var(--edge-hot)"],
+          ["arrow-dim", "var(--edge)"],
+        ]) {
+          const marker = svgEl(
+            "marker",
+            {
+              id,
+              viewBox: "0 0 10 10",
+              refX: "9",
+              refY: "5",
+              markerWidth: "6",
+              markerHeight: "6",
+              orient: "auto",
+            },
+            defs,
+          );
+          svgEl("path", { d: "M 0 0 L 10 5 L 0 10 z", fill }, marker);
+        }
+
+        viewport = svgEl("g", { id: "viewport" }, svg);
+        const { nodes, frame } = layoutFlatXState();
+        const items = assignLanes(collapseEdges(), nodes);
+
+        // Machine frame
+        drawRoundedRect(
+          viewport,
+          frame.x,
+          frame.y,
+          frame.w,
+          frame.h,
+          14,
+          "color-mix(in srgb, var(--card) 40%, transparent)",
+          "var(--current)",
+          1.6,
+        );
+        drawRoundedRect(viewport, frame.x, frame.y, frame.w, frame.head, 14, "var(--card-head)", "none");
+        svgEl(
+          "rect",
+          {
+            x: frame.x,
+            y: frame.y + frame.head - 14,
+            width: frame.w,
+            height: 14,
+            fill: "var(--card-head)",
+          },
+          viewport,
+        );
+        const title = svgEl(
+          "text",
+          {
+            x: frame.x + 16,
+            y: frame.y + 28,
+            fill: "var(--text)",
+            "font-size": 14,
+            "font-weight": 700,
+          },
+          viewport,
+        );
+        title.textContent = fsm.id || "piDirectorWorkflow";
+
+        const edgeLayer = svgEl("g", { id: "edges" }, viewport);
+        const nodeLayer = svgEl("g", { id: "nodes" }, viewport);
+        const pillLayer = svgEl("g", { id: "pills" }, viewport);
+
+        // Edges
+        for (const item of items) {
+          const route = routeItem(item, nodes);
+          if (!route) continue;
+          item._route = route;
+          const hot = itemIsHot(item);
+          const pathAttrs = {
+            d: route.d,
+            fill: "none",
+            stroke: hot ? "var(--edge-hot)" : "var(--edge)",
+            "stroke-width": hot ? 1.85 : item.bundle ? 1.15 : 1.05,
+            opacity: hot ? 0.95 : 0.22,
+            "marker-end": hot ? "url(#arrow)" : "url(#arrow-dim)",
+          };
+          if (item.bundle) pathAttrs["stroke-dasharray"] = "5 3";
+          svgEl("path", pathAttrs, edgeLayer);
+        }
+
+        // Nodes
+        for (const node of Object.values(nodes)) {
+          const g = svgEl("g", { class: "state-node", "data-id": node.id }, nodeLayer);
+          const isSel = node.id === selected;
+          const isFinal = node.id === "handoff";
+          const fill =
+            node.kind === "procedure" ? "var(--proc)" : node.id === "editor" ? "var(--child)" : "var(--card)";
+
+          if (isSel) {
+            drawRoundedRect(
+              g,
+              node.x - 5,
+              node.y - 5,
+              node.w + 10,
+              node.h + 10,
+              12,
+              "var(--current-glow)",
+              "var(--current)",
+              1.4,
+            );
+          }
+
+          if (isFinal) {
+            drawRoundedRect(
+              g,
+              node.x - 3,
+              node.y - 3,
+              node.w + 6,
+              node.h + 6,
+              11,
+              "none",
+              isSel ? "var(--current)" : "var(--card-border)",
+              1.2,
+            );
+          }
+
+          drawRoundedRect(
+            g,
+            node.x,
+            node.y,
+            node.w,
+            node.h,
+            10,
+            fill,
+            isSel ? "var(--current)" : "var(--card-border)",
+            isSel ? 2 : 1.2,
+          );
+
+          if (isFinal) {
+            // small final marker square
+            drawRoundedRect(g, node.x + 10, node.y + node.h / 2 - 6, 12, 12, 2, "none", "var(--muted)", 1.2);
+            drawRoundedRect(g, node.x + 13, node.y + node.h / 2 - 3, 6, 6, 1, "var(--muted)", "none", 0);
+          }
+
+          svgEl(
+            "text",
+            {
+              x: node.x + node.w / 2 + (isFinal ? 6 : 0),
+              y: node.y + node.h / 2 + 4,
+              fill: "var(--text)",
+              "font-size": 13,
+              "font-weight": 700,
+              "text-anchor": "middle",
+            },
+            g,
+          ).textContent = node.label;
+
+          g.addEventListener("click", (e) => {
+            e.stopPropagation();
+            selected = node.id;
+            pinnedHint = { type: "state", id: node.id };
+            if (sidebarOn) renderStateSidebar(node.id, { activate: false });
+            render({ preserveCamera: true });
+          });
+        }
+
+        // Initial marker → editor
+        const ed = nodes.editor;
+        if (ed) {
+          const cy = ed.y + ed.h / 2;
+          const cx = ed.x - 28;
+          svgEl("circle", { cx: cx - 10, cy, r: 5.5, fill: "var(--text)" }, viewport);
+          svgEl(
+            "path",
+            {
+              d: `M ${cx - 4} ${cy} L ${ed.x} ${cy}`,
+              stroke: "var(--text)",
+              "stroke-width": 1.6,
+              fill: "none",
+              "marker-end": "url(#arrow)",
+            },
+            viewport,
+          );
+        }
+
+        // Pills on top
+        for (const item of items) {
+          if (!item._route || !itemIsLabeled(item)) continue;
+          drawPill(pillLayer, item, item._route, itemIsHot(item));
+        }
+
+        if (preserveCamera) applyCamera();
+        else requestAnimationFrame(fitContent);
+      }
+
+      document.getElementById("zoom-in").onclick = () => {
+        scale = Math.min(scale * 1.2, 3.5);
+        applyCamera();
+      };
+      document.getElementById("zoom-out").onclick = () => {
+        scale = Math.max(scale / 1.2, 0.2);
+        applyCamera();
+      };
+      document.getElementById("fit").onclick = () => fitContent();
+      document.getElementById("reset").onclick = () => {
+        selected = fsm.initial || "editor";
+        pinnedHint = null;
+        if (sidebarOn) renderPinnedSidebar();
+        render();
+      };
+      document.getElementById("sidebar").onclick = () => {
+        if (sidebarOn) {
+          setSidebarOn(false);
+          return;
+        }
+        setSidebarOn(true);
+        renderPinnedSidebar();
+        applySidebarVisibility();
+      };
+
+      let dragging = false;
+      let lastX = 0;
+      let lastY = 0;
+      svg.addEventListener("pointerdown", (e) => {
+        if (e.target.closest(".state-node") || e.target.closest(".edge-pill")) return;
+        dragging = true;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        svg.classList.add("is-panning");
+        svg.setPointerCapture(e.pointerId);
+      });
+      svg.addEventListener("pointermove", (e) => {
+        if (!dragging) return;
+        panX += e.clientX - lastX;
+        panY += e.clientY - lastY;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        applyCamera();
+      });
+      svg.addEventListener("pointerup", () => {
+        dragging = false;
+        svg.classList.remove("is-panning");
+      });
+      svg.addEventListener(
+        "wheel",
+        (e) => {
+          e.preventDefault();
+          const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+          const next = Math.min(3.5, Math.max(0.2, scale * factor));
+          const rect = svg.getBoundingClientRect();
+          const cx = e.clientX - rect.left;
+          const cy = e.clientY - rect.top;
+          panX = cx - ((cx - panX) * next) / scale;
+          panY = cy - ((cy - panY) * next) / scale;
+          scale = next;
+          applyCamera();
+        },
+        { passive: false },
+      );
+
+      hint.setAttribute("aria-hidden", "true");
+      updateSidebarButton();
+      if (states[selected]) render();
+    </script>
+  </body>
+</html>
