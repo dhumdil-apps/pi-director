@@ -191,7 +191,11 @@ const embedded = html.replace(
   `<script type="application/json" id="workflow-fsm-data">\n${JSON.stringify(WORKFLOW_FSM, null, 2)}\n    </script>`,
 );
 writeFileSync(htmlPath, embedded);
-writeFileSync(join(DIST, "workflow-fsm.html"), embedded);
+try {
+  execSync(`npx prettier --write "${htmlPath}"`, { cwd: ROOT, stdio: "pipe" });
+} catch {}
+const formattedHtml = readFileSync(htmlPath, "utf-8");
+writeFileSync(join(DIST, "workflow-fsm.html"), formattedHtml);
 console.log(
   `FSM v${WORKFLOW_FSM.version}: ${Object.keys(WORKFLOW_FSM.states).length} states, ${WORKFLOW_FSM.transitions.length} transitions`,
 );
