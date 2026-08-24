@@ -1,269 +1,657 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pi Director Workflow FSM</title>
+    <title>Pi Director Agent Workflow · FSM Visualizer</title>
     <style>
       :root {
-        color-scheme: dark light;
-        --bg: #0c0e12;
-        --grid: color-mix(in srgb, #94a3b8 8%, transparent);
-        --text: #e8eaed;
-        --muted: #94a3b8;
-        --panel: #161b22;
-        --panel-border: #30363d;
-        --panel-head: #1c2128;
-        --card: #12161c;
-        --card-border: #30363d;
-        --card-head: #1a2030;
-        --child: #0f1419;
-        --child-border: #3d4450;
-        --current: #3b82f6;
-        --current-glow: color-mix(in srgb, #3b82f6 28%, transparent);
-        --edge: #4b5563;
-        --edge-hot: #93c5fd;
-        --proc: #1a1f2e;
-        --tool: #141a24;
-        --toolbar: #161b22;
-        --toolbar-border: #30363d;
-        --code: #cbd5e1;
-        font-family:
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          "Segoe UI",
-          sans-serif;
+        color-scheme: dark;
+        --flow-bg: #0c0e12;
+        --flow-grid: color-mix(in srgb, #94a3b8 9%, transparent);
+        --flow-text: #e8eaed;
+        --flow-text-muted: #94a3b8;
+        --flow-muted: #64748b;
+        --flow-panel-bg: #161b22;
+        --flow-panel-head: #1c2128;
+        --flow-card-bg: #12161c;
+        --flow-card-selected-bg: #161b22;
+        --flow-head-bg: #1a2030;
+        --flow-head-selected-bg: #1e293b;
+        --flow-border: #30363d;
+        --flow-border-subtle: #21262d;
+        --flow-edge: #4b5563;
+        --flow-edge-dim: #1a202c;
+        --flow-hot: #3b82f6;
+        --flow-tool-bg: #141a24;
+        --flow-badge-bg: #1e293b;
+        --flow-highlight: rgba(59, 130, 246, 0.15);
+        --flow-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       }
-      @media (prefers-color-scheme: light) {
-        :root {
-          --bg: #e8ecf1;
-          --grid: color-mix(in srgb, #64748b 12%, transparent);
-          --text: #0f172a;
-          --muted: #64748b;
-          --panel: #ffffff;
-          --panel-border: #cbd5e1;
-          --panel-head: #f1f5f9;
-          --card: #ffffff;
-          --card-border: #cbd5e1;
-          --card-head: #eef2ff;
-          --child: #f8fafc;
-          --child-border: #cbd5e1;
-          --current: #2563eb;
-          --current-glow: color-mix(in srgb, #2563eb 20%, transparent);
-          --edge: #94a3b8;
-          --edge-hot: #1d4ed8;
-          --proc: #f8fafc;
-          --tool: #f1f5f9;
-          --toolbar: #ffffff;
-          --toolbar-border: #cbd5e1;
-          --code: #334155;
-        }
+
+      [data-theme="light"] {
+        color-scheme: light;
+        --flow-bg: #f8fafc;
+        --flow-grid: color-mix(in srgb, #64748b 12%, transparent);
+        --flow-text: #0f172a;
+        --flow-text-muted: #475569;
+        --flow-muted: #64748b;
+        --flow-panel-bg: #ffffff;
+        --flow-panel-head: #f1f5f9;
+        --flow-card-bg: #ffffff;
+        --flow-card-selected-bg: #f8fafc;
+        --flow-head-bg: #f1f5f9;
+        --flow-head-selected-bg: #e2e8f0;
+        --flow-border: #cbd5e1;
+        --flow-border-subtle: #e2e8f0;
+        --flow-edge: #94a3b8;
+        --flow-edge-dim: #e2e8f0;
+        --flow-hot: #2563eb;
+        --flow-tool-bg: #ffffff;
+        --flow-badge-bg: #f1f5f9;
+        --flow-highlight: rgba(37, 99, 235, 0.1);
+        --flow-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
       }
+
       * {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
+
       html,
       body {
-        margin: 0;
+        width: 100%;
         height: 100%;
-        background: var(--bg);
-        color: var(--text);
         overflow: hidden;
+        background: var(--flow-bg);
+        color: var(--flow-text);
+        font-family: var(--font-sans);
+        user-select: none;
       }
+
       body {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
       }
+
+      /* ---------------- Header Navbar ---------------- */
+      header#topbar {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        height: 3.5rem;
+        padding: 0 1rem;
+        background: color-mix(in srgb, var(--flow-panel-bg) 92%, transparent);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--flow-border);
+        flex-shrink: 0;
+      }
+
+      .topbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .brand-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 1rem;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+      }
+
+      .brand-text h1 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+      }
+
+      .brand-text p {
+        font-size: 0.72rem;
+        color: var(--flow-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .version-tag {
+        display: inline-block;
+        padding: 0.05rem 0.35rem;
+        border-radius: 999px;
+        background: var(--flow-badge-bg);
+        border: 1px solid var(--flow-border);
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        color: var(--flow-text-muted);
+      }
+
+      .version-switcher {
+        display: flex;
+        align-items: center;
+        background: var(--flow-panel-head);
+        border: 1px solid var(--flow-border);
+        border-radius: 999px;
+        padding: 0.2rem;
+        gap: 0.2rem;
+      }
+
+      .version-link {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--flow-text-muted);
+        transition: all 150ms ease;
+      }
+
+      .version-link:hover {
+        color: var(--flow-text);
+      }
+
+      .version-link.active {
+        background: var(--flow-hot);
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+      }
+
+      .topbar-modes {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem;
+        background: var(--flow-panel-head);
+        border: 1px solid var(--flow-border);
+        border-radius: 0.6rem;
+      }
+
+      .mode-pill {
+        border: 0;
+        background: transparent;
+        color: var(--flow-text-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.3rem 0.6rem;
+        border-radius: 0.45rem;
+        cursor: pointer;
+        transition: all 120ms ease;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .mode-pill:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--flow-text);
+      }
+
+      .mode-pill.active {
+        background: var(--flow-card-bg);
+        color: var(--flow-hot);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .mode-pill-dot {
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 999px;
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--flow-border);
+        background: var(--flow-card-bg);
+        color: var(--flow-text-muted);
+        cursor: pointer;
+        transition: all 120ms ease;
+      }
+
+      .btn-icon:hover {
+        border-color: var(--flow-hot);
+        color: var(--flow-text);
+      }
+
+      .btn-icon.active {
+        background: var(--flow-highlight);
+        border-color: var(--flow-hot);
+        color: var(--flow-hot);
+      }
+
+      /* ---------------- Main Canvas Stage ---------------- */
       #stage {
         position: relative;
         flex: 1 1 auto;
         min-width: 0;
-        height: 100%;
-        background-image:
-          linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-        background-size: 24px 24px;
+        height: calc(100% - 3.5rem);
+        overflow: hidden;
+        background-color: var(--flow-bg);
       }
-      #chart {
+
+      #flow-svg {
         width: 100%;
         height: 100%;
         display: block;
         cursor: grab;
         touch-action: none;
       }
-      #chart.is-panning {
+
+      #flow-svg.is-panning {
         cursor: grabbing;
       }
-      .toolbar {
+
+      /* ---------------- Floating Controls Toolbar ---------------- */
+      .flow-toolbar {
         position: absolute;
         left: 1rem;
         bottom: 1rem;
+        z-index: 10;
         display: flex;
         align-items: center;
-        gap: 0.35rem;
-        padding: 0.28rem;
-        background: var(--toolbar);
-        border: 1px solid var(--toolbar-border);
-        border-radius: 10px;
-        box-shadow: 0 8px 24px color-mix(in srgb, #000 35%, transparent);
-        z-index: 3;
+        gap: 0.25rem;
+        padding: 0.25rem;
+        border-radius: 0.75rem;
+        background: color-mix(in srgb, var(--flow-panel-bg) 92%, transparent);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--flow-border);
+        box-shadow: var(--flow-shadow);
       }
-      .toolbar button {
+
+      .flow-toolbar button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 2rem;
         height: 2rem;
         padding: 0;
-        border: 1px solid var(--toolbar-border);
-        border-radius: 7px;
+        border: 1px solid transparent;
+        border-radius: 0.5rem;
         background: transparent;
-        color: var(--text);
+        color: var(--flow-text);
         cursor: pointer;
         font: inherit;
         transition: all 120ms ease;
       }
-      .toolbar button:hover,
-      .toolbar button:focus-visible,
-      .toolbar button.is-on {
-        border-color: var(--current);
-        outline: none;
+
+      .flow-toolbar button:hover {
+        background: var(--flow-panel-head);
+        border-color: var(--flow-border);
       }
-      .toolbar button.is-on {
-        background: color-mix(in srgb, var(--current) 18%, transparent);
-        color: var(--current);
+
+      .flow-toolbar button.active {
+        background: var(--flow-highlight);
+        border-color: var(--flow-hot);
+        color: var(--flow-hot);
       }
-      .toolbar button svg {
-        display: block;
-      }
-      .toolbar-sep {
+
+      .toolbar-divider {
         width: 1px;
         height: 1.2rem;
-        background: var(--toolbar-border);
+        background: var(--flow-border);
         margin: 0 0.15rem;
       }
-      .warn {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        color: var(--muted);
-        padding: 2rem;
+
+      .zoom-indicator {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0 0.4rem;
+        color: var(--flow-muted);
+        min-width: 2.6rem;
         text-align: center;
       }
-      #hint {
-        flex: 0 0 0;
-        width: 0;
+
+      /* ---------------- Flow Minimap ---------------- */
+      .flow-minimap {
+        position: absolute;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 10;
+        width: 160px;
+        height: 110px;
+        border-radius: 0.75rem;
+        background: color-mix(in srgb, var(--flow-panel-bg) 92%, transparent);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--flow-border);
+        box-shadow: var(--flow-shadow);
+        overflow: hidden;
+        cursor: crosshair;
+        transition: opacity 150ms ease;
+      }
+
+      .flow-minimap.hidden {
+        display: none;
+      }
+
+      .flow-minimap svg {
+        width: 100%;
         height: 100%;
+        display: block;
+      }
+
+      /* ---------------- Flow Inspector Sidebar ---------------- */
+      aside#flow-inspector {
+        position: absolute;
+        top: 3.5rem;
+        right: 0;
+        bottom: 0;
+        z-index: 20;
+        width: min(420px, 42vw);
+        background: var(--flow-panel-bg);
+        border-left: 1px solid var(--flow-border);
+        box-shadow: var(--flow-shadow);
         display: flex;
         flex-direction: column;
-        background: var(--panel);
-        border-left: 1px solid transparent;
-        overflow: hidden;
-        opacity: 0;
+        transform: translateX(100%);
+        transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
         pointer-events: none;
-        transition:
-          flex-basis 160ms ease,
-          width 160ms ease,
-          opacity 120ms ease,
-          border-color 120ms ease;
-        z-index: 4;
+        overflow: hidden;
       }
-      #hint.is-open {
-        flex: 0 0 min(400px, 38vw);
-        width: min(400px, 38vw);
-        border-left-color: var(--panel-border);
-        opacity: 1;
+
+      aside#flow-inspector.is-open {
+        transform: translateX(0);
         pointer-events: auto;
       }
-      #hint header {
+
+      .inspector-header {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
         gap: 0.75rem;
-        padding: 0.75rem 0.85rem;
-        background: var(--panel-head);
-        border-bottom: 1px solid var(--panel-border);
+        padding: 0.9rem 1.1rem;
+        background: var(--flow-panel-head);
+        border-bottom: 1px solid var(--flow-border);
+        flex-shrink: 0;
       }
-      #hint header h2 {
-        margin: 0;
-        font-size: 0.95rem;
+
+      .inspector-header h2 {
+        font-size: 1rem;
         font-weight: 700;
+        line-height: 1.25;
+        color: var(--flow-text);
       }
-      #hint header p {
-        margin: 0.2rem 0 0;
-        color: var(--muted);
+
+      .inspector-header p {
         font-size: 0.75rem;
+        color: var(--flow-muted);
+        margin-top: 0.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
       }
-      #hint .body {
-        padding: 0.75rem 0.85rem 1rem;
-        overflow: auto;
-        font-size: 0.8rem;
-        line-height: 1.45;
+
+      .inspector-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.8rem;
+        height: 1.8rem;
+        border-radius: 0.45rem;
+        border: 1px solid var(--flow-border);
+        background: transparent;
+        color: var(--flow-text-muted);
+        cursor: pointer;
+        transition: all 120ms ease;
       }
-      #hint .body h3 {
-        margin: 0.85rem 0 0.35rem;
-        font-size: 0.72rem;
+
+      .inspector-close:hover {
+        border-color: var(--flow-hot);
+        color: var(--flow-text);
+        background: var(--flow-highlight);
+      }
+
+      .inspector-body {
+        flex: 1 1 auto;
+        padding: 1.1rem;
+        overflow-y: auto;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+      }
+
+      .inspector-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+
+      .inspector-section h3 {
+        font-size: 0.7rem;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--muted);
+        letter-spacing: 0.05em;
+        color: var(--flow-muted);
       }
-      #hint .body h3:first-child {
-        margin-top: 0;
+
+      .inspector-section p {
+        color: var(--flow-text-muted);
       }
-      #hint .body ul {
-        margin: 0;
-        padding-left: 1.1rem;
-      }
-      #hint .body li {
-        margin: 0.28rem 0;
-        color: var(--code);
-      }
-      #hint .body .summary {
-        margin: 0;
-        color: var(--text);
-      }
-      #hint .body .kv {
+
+      .chip-group {
         display: flex;
         flex-wrap: wrap;
         gap: 0.35rem;
       }
-      #hint .body .chip {
+
+      .chip {
         display: inline-flex;
-        padding: 0.12rem 0.45rem;
-        border-radius: 999px;
-        border: 1px solid var(--panel-border);
-        color: var(--muted);
+        align-items: center;
+        padding: 0.18rem 0.5rem;
+        border-radius: 0.4rem;
+        border: 1px solid var(--flow-border);
+        background: var(--flow-badge-bg);
+        font-family: var(--font-mono);
         font-size: 0.7rem;
-      }
-      #hint .close {
-        border: 1px solid var(--panel-border);
-        background: transparent;
-        color: var(--text);
-        border-radius: 7px;
-        width: 1.7rem;
-        height: 1.7rem;
-        cursor: pointer;
-      }
-      #hint .close:hover,
-      #hint .close:focus-visible {
-        border-color: var(--current);
-        outline: none;
+        color: var(--flow-text);
       }
 
-      .edge-pill text {
-        pointer-events: none;
+      .perm-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.45rem;
+        border-radius: 0.35rem;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: 1px solid transparent;
       }
-      .state-node {
+
+      .perm-readonly {
+        background: rgba(56, 189, 248, 0.12);
+        color: #38bdf8;
+        border-color: rgba(56, 189, 248, 0.3);
+      }
+
+      .perm-planonly {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.3);
+      }
+
+      .perm-write {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+
+      .perm-memory {
+        background: rgba(139, 92, 246, 0.12);
+        color: #a78bfa;
+        border-color: rgba(139, 92, 246, 0.3);
+      }
+
+      .perm-standby {
+        background: rgba(100, 116, 139, 0.12);
+        color: #94a3b8;
+        border-color: rgba(100, 116, 139, 0.3);
+      }
+
+      .instruction-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+
+      .instruction-item {
+        position: relative;
+        padding: 0.55rem 0.7rem 0.55rem 1.8rem;
+        border-radius: 0.5rem;
+        background: var(--flow-panel-head);
+        border: 1px solid var(--flow-border-subtle);
+        color: var(--flow-text);
+        font-size: 0.78rem;
+        line-height: 1.45;
+      }
+
+      .instruction-index {
+        position: absolute;
+        left: 0.55rem;
+        top: 0.55rem;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--flow-hot);
+      }
+
+      .tool-card {
+        padding: 0.75rem;
+        border-radius: 0.6rem;
+        background: var(--flow-card-bg);
+        border: 1px solid var(--flow-border);
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .tool-card-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--flow-text);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .tool-badge {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        padding: 0.1rem 0.35rem;
+        border-radius: 0.3rem;
+        background: var(--flow-highlight);
+        color: var(--flow-hot);
+      }
+
+      .bundle-member {
+        padding: 0.5rem 0.65rem;
+        border-radius: 0.5rem;
+        background: var(--flow-panel-head);
+        border: 1px solid var(--flow-border);
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      /* ---------------- SVG Diagram Nodes & Edges ---------------- */
+      .flow-node {
         cursor: pointer;
+        transition: transform 150ms ease;
+      }
+
+      .flow-node:hover {
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+      }
+
+      .flow-edge {
+        cursor: pointer;
+      }
+
+      .flow-edge-pill {
+        cursor: pointer;
+      }
+
+      .flow-edge-pill:hover rect {
+        stroke: var(--flow-hot) !important;
+        filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.3));
+      }
+
+      .flow-edge:hover path.visible-edge {
+        stroke: var(--flow-hot) !important;
+        stroke-width: 2px !important;
       }
     </style>
   </head>
   <body>
-    <div id="stage">
-      <svg id="chart" role="img" aria-label="Workflow FSM flat XState-style diagram"></svg>
-      <div class="toolbar" aria-label="Diagram controls">
-        <button type="button" id="zoom-out" title="Zoom out" aria-label="Zoom out">
+    <!-- Top Navigation Header -->
+    <header id="topbar">
+      <div class="topbar-brand">
+        <div class="brand-badge">⚡</div>
+        <div class="brand-text">
+          <h1 id="fsm-title">Pi Director Agent Workflow</h1>
+          <p>
+            <span id="fsm-version" class="version-tag">v2.2.0</span>
+            <span>· Finite State Machine</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Version comparison switcher -->
+      <div class="version-switcher" aria-label="Version Comparison">
+        <a href="workflow-fsm.html" class="version-link active" title="Current Legacy Visualizer">v1 (Legacy)</a>
+        <a href="workflow-fsm-v2.html" class="version-link" title="Open tuto-ui Web Component Visualizer"
+          >v2 (tuto-ui)</a
+        >
+      </div>
+
+      <!-- Mode bypass jumps (Align / Spec / Vibe only) -->
+      <nav class="topbar-modes" aria-label="Workflow Modes">
+        <button type="button" class="mode-pill" data-mode="align">
+          <span class="mode-pill-dot" style="background: #f59e0b"></span>
+          Align
+        </button>
+        <button type="button" class="mode-pill" data-mode="spec">
+          <span class="mode-pill-dot" style="background: #38bdf8"></span>
+          Spec
+        </button>
+        <button type="button" class="mode-pill" data-mode="vibe">
+          <span class="mode-pill-dot" style="background: #10b981"></span>
+          Vibe
+        </button>
+      </nav>
+
+      <div class="topbar-actions">
+        <button type="button" id="btn-theme" class="btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
           <svg
             width="15"
             height="15"
@@ -274,10 +662,25 @@
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <line x1="5" y1="12" x2="19" y2="12" />
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
           </svg>
         </button>
-        <button type="button" id="zoom-in" title="Zoom in" aria-label="Zoom in">
+
+        <button
+          type="button"
+          id="btn-inspector-toggle"
+          class="btn-icon"
+          title="Toggle Flow Inspector"
+          aria-label="Toggle Inspector"
+        >
           <svg
             width="15"
             height="15"
@@ -288,61 +691,121 @@
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
-        <div class="toolbar-sep"></div>
-        <button type="button" id="fit" title="Fit chart" aria-label="Fit chart">
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-          </svg>
-        </button>
-        <button type="button" id="reset" title="Reset view" aria-label="Reset view">
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-            <path d="M3 3v5h5" />
-          </svg>
-        </button>
-        <div class="toolbar-sep"></div>
-        <button type="button" id="sidebar" title="Toggle instruction sidebar" aria-label="Toggle instruction sidebar">
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect width="18" height="18" x="3" y="3" rx="2" />
-            <path d="M15 3v18" />
+            <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+            <path d="M15 3v18"></path>
           </svg>
         </button>
       </div>
-    </div>
-    <aside id="hint" aria-live="polite" aria-label="Instruction sidebar"></aside>
+    </header>
 
-    <!-- BUILD:CONTENT replaces the following JSON object -->
+    <!-- Interactive Flow Canvas Stage -->
+    <main id="stage">
+      <svg id="flow-svg" role="img" aria-label="Interactive Pi Director Workflow Diagram"></svg>
+
+      <!-- Bottom-Left Floating Toolbar -->
+      <div class="flow-toolbar" aria-label="Diagram Controls">
+        <button type="button" id="btn-zoom-out" title="Zoom Out" aria-label="Zoom Out">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <span id="zoom-value" class="zoom-indicator">100%</span>
+        <button type="button" id="btn-zoom-in" title="Zoom In" aria-label="Zoom In">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <div class="toolbar-divider"></div>
+        <button type="button" id="btn-fit" title="Fit to Screen" aria-label="Fit to Screen">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+            ></path>
+          </svg>
+        </button>
+        <button type="button" id="btn-reset" title="Reset View" aria-label="Reset View">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </button>
+        <div class="toolbar-divider"></div>
+        <button type="button" id="btn-minimap-toggle" class="active" title="Toggle Minimap" aria-label="Toggle Minimap">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Live Interactive Minimap -->
+      <div id="flow-minimap" class="flow-minimap" aria-label="Minimap Preview">
+        <svg id="minimap-svg"></svg>
+      </div>
+    </main>
+
+    <!-- Slide-over Flow Inspector -->
+    <aside id="flow-inspector" aria-label="Flow Inspector">
+      <header class="inspector-header">
+        <div>
+          <h2 id="inspector-title">Inspector</h2>
+          <p id="inspector-subtitle">Select a state node or transition edge</p>
+        </div>
+        <button type="button" id="btn-inspector-close" class="inspector-close" aria-label="Close Inspector">×</button>
+      </header>
+      <div class="inspector-body" id="inspector-content">
+        <!-- Injected dynamically -->
+      </div>
+    </aside>
+
+    <!-- Canonical JSON embedded for build-content & standalone usage -->
     <script type="application/json" id="workflow-fsm-data">
       {
         "id": "piDirectorWorkflow",
@@ -357,8 +820,8 @@
         },
         "ownership": [
           "Mode belongs to the User: latest persisted choice wins; new and handed-off interactive sessions start in ALIGN.",
-          "Explicit /align, /spec, /vibe, /mode, and /handoff are User-owned escape hatches.",
-          "Manual mode commands accept no unanswered recommendation or unresolved D review — they are escape hatches, not gated on workflow completeness.",
+          "The /mode command is the universal manual bypass to open the option picker and choose what to do next.",
+          "Manual /mode bypass transitions are User-owned escape hatches — never gated on workflow completeness or unresolved D reviews.",
           "CALL means invoke ask, decide, start, or next; READ, EDIT, APPEND, and RETURN are Agent-owned actions.",
           "Project-write boundaries are Agent rules, not a runtime filesystem guard.",
           "A genuinely unrelated goal requires a fresh session; NEVER delete plan artifacts automatically.",
@@ -464,10 +927,11 @@
             "id": "align",
             "label": "ALIGN",
             "kind": "mode",
-            "summary": "Recommended preflight: bounded orientation, clarify scope, review D items, ask User.",
+            "summary": "Session start and preflight: start tool begins here, then clarify scope, review D items, ask User.",
             "permission": "readonly",
             "substates": ["orientation", "ensureArtifact", "askLoop", "routeNext"],
             "procedure": [
+              "Session story starts here: first entry CALL start (when no named artifact) then ask for direction — Align is the beginning of the guided graph.",
               "READ only bounded AGENTS.md, .pi state including MEMORY.md, README, named plans, or documentation for orientation.",
               "TREAT those sources as the starting point even when they may be stale.",
               "DO NOT research source implementation, search the codebase, or change files outside .pi.",
@@ -540,7 +1004,7 @@
             "id": "closeOut",
             "label": "CLOSE_OUT",
             "kind": "procedure",
-            "summary": "Shared end-of-phase reconcile, work-log, memory promote, and optional next routing.",
+            "summary": "Finish of a Spec/Vibe (or Blocked) phase: reconcile, work-log, memory promote, optional next or handoff restart.",
             "permission": "memory",
             "substates": ["workLog", "reconcile", "promoteMemory", "routeNext"],
             "procedure": [
@@ -564,22 +1028,11 @@
             "id": "handoff",
             "label": "HANDOFF",
             "kind": "procedure",
-            "summary": "Continue the same artifact in a fresh ALIGN session.",
-            "permission": "standby",
-            "procedure": ["Follow procedures.HANDOFF exactly.", "Fresh session starts in ALIGN."]
-          },
-          "editor": {
-            "id": "editor",
-            "label": "EDITOR",
-            "kind": "standby",
-            "summary": "Idle standby waiting for User message, command, or picker input.",
+            "summary": "Fresh context window on the same artifact; restart the guided process from Align (beginning).",
             "permission": "standby",
             "procedure": [
-              "Initial session starts here with default ALIGN mode.",
-              "Reached when mode commands run, unrecommended picker choices are selected, picker is dismissed, or ask is cancelled.",
-              "Manual /align /spec /vibe /mode and unrecommended picker choices return here after changing mode.",
-              "Manual mode commands accept no unanswered recommendation or unresolved D review (escape hatches).",
-              "Only a recommended next prompt or ask-route auto-starts the agent."
+              "Follow procedures.HANDOFF exactly.",
+              "Fresh session starts in ALIGN on the same artifact — restart from the beginning, not an editor hub."
             ]
           }
         },
@@ -603,30 +1056,12 @@
             "userMediated": true
           },
           {
-            "id": "align-ask-answered",
-            "from": "align",
-            "event": "ASK_ANSWERED",
-            "to": "align",
-            "label": "Ask answered",
-            "description": "Incorporate user answers into session transcript and artifact; continue ALIGN loop.",
-            "userMediated": true
-          },
-          {
-            "id": "align-ask-cancelled",
-            "from": "align",
-            "event": "ASK_CANCELLED",
-            "to": "editor",
-            "label": "Ask cancelled",
-            "description": "Discard exchange; do not open next picker; return to editor.",
-            "userMediated": true
-          },
-          {
             "id": "align-next-spec",
             "from": "align",
             "event": "NEXT_SPEC",
             "to": "spec",
             "label": "next → SPEC",
-            "description": "User selects recommended SPEC action with auto-start prompt.",
+            "description": "User chooses SPEC mode via next picker with auto-start prompt.",
             "userMediated": true
           },
           {
@@ -635,87 +1070,16 @@
             "event": "NEXT_VIBE",
             "to": "vibe",
             "label": "next → VIBE",
-            "description": "User selects recommended VIBE action with auto-start prompt.",
-            "userMediated": true
-          },
-          {
-            "id": "align-next-align",
-            "from": "align",
-            "event": "NEXT_ALIGN",
-            "to": "align",
-            "label": "next → ALIGN",
-            "description": "Continue in ALIGN with recommended prompt.",
+            "description": "User chooses VIBE mode via next picker with auto-start prompt.",
             "userMediated": true
           },
           {
             "id": "align-next-handoff",
             "from": "align",
             "event": "NEXT_HANDOFF",
-            "to": "editor",
-            "label": "next → handoff prep",
-            "description": "Picker prepares /handoff command for user execution in editor.",
-            "userMediated": true
-          },
-          {
-            "id": "align-picker-dismiss",
-            "from": "align",
-            "event": "PICKER_DISMISS",
-            "to": "editor",
-            "label": "Picker dismiss/unrecommended",
-            "description": "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
-            "userMediated": true
-          },
-          {
-            "id": "align-no-work",
-            "from": "align",
-            "event": "NO_WORK",
-            "to": "editor",
-            "label": "Return to editor",
-            "description": "No useful work remains; do not call next."
-          },
-          {
-            "id": "align-cmd-align",
-            "from": "align",
-            "event": "CMD_ALIGN",
-            "to": "editor",
-            "label": "/align",
-            "description": "Manual mode command escape hatch; records ALIGN mode; returns to editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "align-cmd-spec",
-            "from": "align",
-            "event": "CMD_SPEC",
-            "to": "editor",
-            "label": "/spec",
-            "description": "Manual mode command escape hatch; switches to SPEC mode; returns to editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "align-cmd-vibe",
-            "from": "align",
-            "event": "CMD_VIBE",
-            "to": "editor",
-            "label": "/vibe",
-            "description": "Manual mode command escape hatch; switches to VIBE mode; returns to editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "align-cmd-mode",
-            "from": "align",
-            "event": "CMD_MODE",
-            "to": "editor",
-            "label": "/mode",
-            "description": "Manual mode picker command; opens picker in editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "align-cmd-handoff",
-            "from": "align",
-            "event": "CMD_HANDOFF",
             "to": "handoff",
-            "label": "/handoff",
-            "description": "Explicit handoff command; swaps session onto named plan.",
+            "label": "next → handoff",
+            "description": "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
             "userMediated": true
           },
           {
@@ -735,29 +1099,12 @@
             "description": "Missing evidence or decision; stop without widening scope."
           },
           {
-            "id": "spec-no-work",
-            "from": "spec",
-            "event": "NO_WORK",
-            "to": "editor",
-            "label": "Proposal returned",
-            "description": "Agent completes proposal without CALL next; returns to editor."
-          },
-          {
             "id": "spec-next-align",
             "from": "spec",
             "event": "NEXT_ALIGN",
             "to": "align",
             "label": "next → ALIGN",
             "description": "Direct next from SPEC; preferred agent path still runs CLOSE_OUT first.",
-            "userMediated": true
-          },
-          {
-            "id": "spec-next-spec",
-            "from": "spec",
-            "event": "NEXT_SPEC",
-            "to": "spec",
-            "label": "next → SPEC",
-            "description": "Continue SPEC via recommended next prompt.",
             "userMediated": true
           },
           {
@@ -773,63 +1120,9 @@
             "id": "spec-next-handoff",
             "from": "spec",
             "event": "NEXT_HANDOFF",
-            "to": "editor",
-            "label": "next → handoff prep",
-            "description": "Picker prepares /handoff command for user execution.",
-            "userMediated": true
-          },
-          {
-            "id": "spec-picker-dismiss",
-            "from": "spec",
-            "event": "PICKER_DISMISS",
-            "to": "editor",
-            "label": "Picker dismiss/unrecommended",
-            "description": "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
-            "userMediated": true
-          },
-          {
-            "id": "spec-cmd-align",
-            "from": "spec",
-            "event": "CMD_ALIGN",
-            "to": "editor",
-            "label": "/align",
-            "description": "User escape hatch to ALIGN; returns to editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "spec-cmd-spec",
-            "from": "spec",
-            "event": "CMD_SPEC",
-            "to": "editor",
-            "label": "/spec",
-            "description": "Manual re-assert SPEC; returns to editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "spec-cmd-vibe",
-            "from": "spec",
-            "event": "CMD_VIBE",
-            "to": "editor",
-            "label": "/vibe",
-            "description": "User escape hatch to VIBE; returns to editor standby after mode change.",
-            "userMediated": true
-          },
-          {
-            "id": "spec-cmd-mode",
-            "from": "spec",
-            "event": "CMD_MODE",
-            "to": "editor",
-            "label": "/mode",
-            "description": "Manual mode picker command; opens picker in editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "spec-cmd-handoff",
-            "from": "spec",
-            "event": "CMD_HANDOFF",
             "to": "handoff",
-            "label": "/handoff",
-            "description": "Explicit handoff command; swaps session onto named plan.",
+            "label": "next → handoff",
+            "description": "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
             "userMediated": true
           },
           {
@@ -847,14 +1140,6 @@
             "to": "blocked",
             "label": "BLOCKED",
             "description": "Unfixable in-scope failure or consequential stop."
-          },
-          {
-            "id": "vibe-no-work",
-            "from": "vibe",
-            "event": "NO_WORK",
-            "to": "editor",
-            "label": "Implementation returned",
-            "description": "Agent completes work without CALL next; returns to editor."
           },
           {
             "id": "vibe-next-align",
@@ -875,75 +1160,12 @@
             "userMediated": true
           },
           {
-            "id": "vibe-next-vibe",
-            "from": "vibe",
-            "event": "NEXT_VIBE",
-            "to": "vibe",
-            "label": "next → VIBE",
-            "description": "Continue VIBE via recommended next prompt.",
-            "userMediated": true
-          },
-          {
             "id": "vibe-next-handoff",
             "from": "vibe",
             "event": "NEXT_HANDOFF",
-            "to": "editor",
-            "label": "next → handoff prep",
-            "description": "Picker prepares /handoff from VIBE.",
-            "userMediated": true
-          },
-          {
-            "id": "vibe-picker-dismiss",
-            "from": "vibe",
-            "event": "PICKER_DISMISS",
-            "to": "editor",
-            "label": "Picker dismiss/unrecommended",
-            "description": "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
-            "userMediated": true
-          },
-          {
-            "id": "vibe-cmd-align",
-            "from": "vibe",
-            "event": "CMD_ALIGN",
-            "to": "editor",
-            "label": "/align",
-            "description": "User escape hatch to ALIGN; returns to editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "vibe-cmd-spec",
-            "from": "vibe",
-            "event": "CMD_SPEC",
-            "to": "editor",
-            "label": "/spec",
-            "description": "User escape hatch to SPEC; returns to editor standby after mode change.",
-            "userMediated": true
-          },
-          {
-            "id": "vibe-cmd-vibe",
-            "from": "vibe",
-            "event": "CMD_VIBE",
-            "to": "editor",
-            "label": "/vibe",
-            "description": "Manual re-assert VIBE; returns to editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "vibe-cmd-mode",
-            "from": "vibe",
-            "event": "CMD_MODE",
-            "to": "editor",
-            "label": "/mode",
-            "description": "Manual mode picker command; opens picker in editor standby.",
-            "userMediated": true
-          },
-          {
-            "id": "vibe-cmd-handoff",
-            "from": "vibe",
-            "event": "CMD_HANDOFF",
             "to": "handoff",
-            "label": "/handoff",
-            "description": "Explicit handoff command; swaps session onto named plan.",
+            "label": "next → handoff",
+            "description": "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
             "userMediated": true
           },
           {
@@ -1001,27 +1223,10 @@
             "id": "closeout-next-handoff",
             "from": "closeOut",
             "event": "NEXT_HANDOFF",
-            "to": "editor",
-            "label": "next → handoff prep",
-            "description": "Picker prepares /handoff from post-turn picker.",
+            "to": "handoff",
+            "label": "next → handoff",
+            "description": "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
             "userMediated": true
-          },
-          {
-            "id": "closeout-picker-dismiss",
-            "from": "closeOut",
-            "event": "PICKER_DISMISS",
-            "to": "editor",
-            "label": "Picker dismiss/unrecommended",
-            "description": "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
-            "userMediated": true
-          },
-          {
-            "id": "closeout-complete",
-            "from": "closeOut",
-            "event": "ALL_COMPLETE",
-            "to": "editor",
-            "label": "Complete",
-            "description": "No next call; return to editor."
           },
           {
             "id": "handoff-continue",
@@ -1029,85 +1234,49 @@
             "event": "SESSION_CONTINUED",
             "to": "align",
             "label": "Fresh ALIGN",
-            "description": "Replacement session starts in ALIGN on the same artifact."
-          },
-          {
-            "id": "editor-user-align",
-            "from": "editor",
-            "event": "USER_MESSAGE_ALIGN",
-            "to": "align",
-            "label": "User message (ALIGN)",
-            "description": "User sends message while mode is ALIGN (or initial default).",
-            "userMediated": true
-          },
-          {
-            "id": "editor-user-spec",
-            "from": "editor",
-            "event": "USER_MESSAGE_SPEC",
-            "to": "spec",
-            "label": "User message (SPEC)",
-            "description": "User sends message while mode is SPEC.",
-            "userMediated": true
-          },
-          {
-            "id": "editor-user-vibe",
-            "from": "editor",
-            "event": "USER_MESSAGE_VIBE",
-            "to": "vibe",
-            "label": "User message (VIBE)",
-            "description": "User sends message while mode is VIBE.",
-            "userMediated": true
-          },
-          {
-            "id": "editor-cmd-align",
-            "from": "editor",
-            "event": "CMD_ALIGN",
-            "to": "editor",
-            "label": "/align",
-            "description": "Manual mode command switches mode to ALIGN; stays in editor.",
-            "userMediated": true
-          },
-          {
-            "id": "editor-cmd-spec",
-            "from": "editor",
-            "event": "CMD_SPEC",
-            "to": "editor",
-            "label": "/spec",
-            "description": "Manual mode command switches mode to SPEC; stays in editor.",
-            "userMediated": true
-          },
-          {
-            "id": "editor-cmd-vibe",
-            "from": "editor",
-            "event": "CMD_VIBE",
-            "to": "editor",
-            "label": "/vibe",
-            "description": "Manual mode command switches mode to VIBE; stays in editor.",
-            "userMediated": true
-          },
-          {
-            "id": "editor-cmd-mode",
-            "from": "editor",
-            "event": "CMD_MODE",
-            "to": "editor",
-            "label": "/mode",
-            "description": "Manual mode command opens mode picker; stays in editor.",
-            "userMediated": true
-          },
-          {
-            "id": "editor-cmd-handoff",
-            "from": "editor",
-            "event": "CMD_HANDOFF",
-            "to": "handoff",
-            "label": "/handoff",
-            "description": "User runs /handoff; initiates session handoff on named plan.",
-            "userMediated": true
+            "description": "Replacement session starts in ALIGN on the same artifact — restart the guided process from the beginning."
           }
         ],
+        "exceptions": {
+          "title": "Manual Bypass & Escape Hatches",
+          "summary": "The /mode command is the universal manual bypass. Running /mode opens the option picker at any time so the User can choose what to do next (jump to ALIGN, SPEC, VIBE, or hand off) without being gated by agent completion.",
+          "commands": [
+            {
+              "command": "/mode",
+              "label": "Open Option Picker (Universal Bypass)",
+              "summary": "Opens the mode option picker to choose any target mode or action.",
+              "description": "User-triggered escape hatch. Opens the interactive option picker in editor standby so the User can choose what to do next (switch mode, hand off, or return)."
+            },
+            {
+              "command": "/handoff [name]",
+              "label": "Direct Handoff Shortcut",
+              "summary": "Swaps active session onto a named plan in fresh ALIGN.",
+              "description": "Direct shortcut for session continuation on a named plan artifact, seeding a fresh ALIGN session."
+            }
+          ],
+          "rules": [
+            "The /mode command is the canonical User-owned bypass to open the option picker and choose what to do next.",
+            "Manual bypass transitions are never gated on workflow completeness, pending recommendations, or unresolved D items.",
+            "Selecting an unrecommended mode in the picker switches the session mode in editor standby.",
+            "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN."
+          ]
+        },
         "tools": [
           {
+            "name": "start",
+            "summary": "First .pi/plan write triggered by user input on start: named artifact or linked legacy continuation.",
+            "modes": ["any"],
+            "gate": ["Creates or continues the named plan; no plan file exists until start succeeds."],
+            "mechanics": [
+              "User input triggers start tool to create the named artifact before substantive ALIGN work.",
+              "CALL start with a context-informed 2-4 word task name; include a ticket ID when applicable.",
+              "start is the first CALL tool when no named artifact exists.",
+              "Legacy artifacts stay immutable; start forks a linked current-format continuation."
+            ]
+          },
+          {
             "name": "ask",
-            "summary": "Native ALIGN questions; answers, cancel, or Proceed-with-best SPEC/VIBE route.",
+            "summary": "Native ALIGN question loop; clarifies scope while staying in ALIGN until ready for next mode.",
             "modes": ["align"],
             "gate": [
               "ALIGN-only; SPEC/VIBE ask is a harmless no-op (no picker).",
@@ -1116,6 +1285,8 @@
               "Interactive UI required only when questions will be shown."
             ],
             "mechanics": [
+              "ALIGN triggers ask to clarify scope, constraints, and decisions before moving to SPEC/VIBE.",
+              "Answers stay in ALIGN (ask loop) to process follow-up questions.",
               "CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly.",
               "KEEP question identifiers, option values, and option labels distinct.",
               "NEVER imitate native action labels.",
@@ -1144,19 +1315,8 @@
             ]
           },
           {
-            "name": "start",
-            "summary": "First .pi/plan write: named artifact or linked legacy continuation.",
-            "modes": ["any"],
-            "gate": ["Creates or continues the named plan; no plan file exists until start succeeds."],
-            "mechanics": [
-              "CALL start with a context-informed 2-4 word task name; include a ticket ID when applicable.",
-              "start is the first CALL tool when no named artifact exists.",
-              "Legacy artifacts stay immutable; start forks a linked current-format continuation."
-            ]
-          },
-          {
             "name": "next",
-            "summary": "Queue ranked post-turn actions; runtime opens picker only for explicit next.",
+            "summary": "Queue ranked post-turn actions; user chooses the next mode (SPEC, VIBE, ALIGN, or handoff).",
             "modes": ["any"],
             "gate": [
               "Empty next records no recommendation and opens no picker.",
@@ -1164,6 +1324,7 @@
               "Every ALIGN/SPEC/VIBE action needs contextual prompt; handoff must omit prompt."
             ],
             "mechanics": [
+              "After alignment or phase completion, CALL next so the user chooses the next mode.",
               "Agent-authored actions REQUIRE a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
               "Runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction.",
               "Recommended row with a reason shows {mode} — {reason}.",
@@ -1200,11 +1361,12 @@
             "TREAT CLOSE_OUT as a procedure, not an artifact section."
           ]
         },
-        "initial": "editor",
+        "initial": "align",
         "notes": [
-          "Persisted User mode is only align|spec|vibe. closeOut, blocked, handoff, and editor are procedural/standby states for the shared flow chart.",
+          "Guided session story: Align (start tool + ask) begins; Spec/Vibe do work; Close-out finishes a phase; Handoff = fresh context, same artifact, restart at Align. Idle product UI when nothing is running is not a graph node.",
+          "Persisted User mode is only align|spec|vibe. closeOut, blocked, and handoff are procedural helpers on the shared flow chart.",
           "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-          "Transition table covers the runtime surface (next and CMD_* from each mode). Preferred agent path still ends SPEC/VIBE via CLOSE_OUT before CALL next.",
+          "Transition table is the guided graph only. Stay-in-mode continue, picker dismiss, ask cancel, end-without-next, and idle UI are runtime — not graph edges. Manual /align /spec /vibe /mode bypasses live under Exceptions. Preferred agent path still ends SPEC/VIBE via CLOSE_OUT before CALL next.",
           "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
           "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
           "tools validate required shapes and protocol enums, not workflow quality."
@@ -1212,246 +1374,165 @@
       }
     </script>
 
+    <!-- Flow Diagram Engine -->
     <script type="module">
       const NS = "http://www.w3.org/2000/svg";
-      const fsm = JSON.parse(document.getElementById("workflow-fsm-data").textContent);
-      const svg = document.getElementById("chart");
-      const hint = document.getElementById("hint");
-      const states = fsm.states || {};
-      const procedures = fsm.procedures || {};
-      const tools = Array.isArray(fsm.tools) ? fsm.tools : [];
-      const transitions = Array.isArray(fsm.transitions) ? fsm.transitions : [];
+      const fsmData = JSON.parse(document.getElementById("workflow-fsm-data").textContent);
+      const svg = document.getElementById("flow-svg");
+      const minimapSvg = document.getElementById("minimap-svg");
+      const minimapEl = document.getElementById("flow-minimap");
+      const inspectorEl = document.getElementById("flow-inspector");
+      const inspectorTitle = document.getElementById("inspector-title");
+      const inspectorSubtitle = document.getElementById("inspector-subtitle");
+      const inspectorContent = document.getElementById("inspector-content");
+      const zoomIndicator = document.getElementById("zoom-value");
 
-      let selected = fsm.initial || "editor";
-      let sidebarOn = false;
+      const states = fsmData.states || {};
+      const procedures = fsmData.procedures || {};
+      const tools = Array.isArray(fsmData.tools) ? fsmData.tools : [];
+      const transitions = Array.isArray(fsmData.transitions) ? fsmData.transitions : [];
+
+      // State Node visual definitions adhering to TUTO Design System Flow styling
+      const NODE_ACCENTS = {
+        align: { accent: "#f59e0b", badge: "MODE", perm: "READONLY", permClass: "perm-readonly" },
+        spec: { accent: "#38bdf8", badge: "MODE", perm: "PLANONLY", permClass: "perm-planonly" },
+        vibe: { accent: "#10b981", badge: "MODE", perm: "WRITE", permClass: "perm-write" },
+        closeOut: { accent: "#8b5cf6", badge: "PROCEDURE", perm: "MEMORY", permClass: "perm-memory" },
+        blocked: { accent: "#ef4444", badge: "PROCEDURE", perm: "PLANONLY", permClass: "perm-planonly" },
+        handoff: { accent: "#64748b", badge: "PROCEDURE", perm: "STANDBY", permClass: "perm-standby" },
+      };
+
+      // Guided story L→R: Align (start) → Spec/Vibe → Close-out/Blocked → Handoff (restart)
+      const NODE_LAYOUT = {
+        align: { x: 120, y: 60, w: 260, h: 175 },
+        spec: { x: 120, y: 355, w: 260, h: 175 },
+        vibe: { x: 120, y: 650, w: 260, h: 175 },
+        closeOut: { x: 680, y: 190, w: 260, h: 175 },
+        blocked: { x: 680, y: 520, w: 260, h: 175 },
+        handoff: { x: 1240, y: 360, w: 240, h: 165 },
+      };
+
+      // Canonical primary flow transitions that display pills by default when unselected
+      const PRIMARY_FORWARD_EVENTS = new Set([
+        "ASK_ROUTED_SPEC",
+        "ASK_ROUTED_VIBE",
+        "NEXT_SPEC",
+        "NEXT_VIBE",
+        "NEXT_ALIGN",
+        "NEXT_HANDOFF",
+        "CLOSE_OUT",
+        "SESSION_CONTINUED",
+      ]);
+
+      let selectedNodeId = null;
+      let selectedEdgeId = null;
+      let hoveredEdgeId = null;
+      let isInspectorOpen = false;
+      let isMinimapVisible = true;
+
+      // Camera transform state
       let scale = 1;
       let panX = 0;
       let panY = 0;
-      let viewport = null;
-      let pinnedHint = null;
+      let viewportGroup = null;
+      let bounds = { x: 0, y: 0, w: 2100, h: 1000 };
 
-      if (!states[selected]) {
-        document
-          .getElementById("stage")
-          .insertAdjacentHTML(
-            "beforeend",
-            '<p class="warn">Embedded snapshot may be stale. Run <code>npm run build:content</code>.</p>',
-          );
+      function escapeHtml(str) {
+        return String(str || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
       }
 
-      const MODE_TOOLS = {
-        align: ["ask", "start", "next"],
-        spec: ["start", "decide", "next"],
-        vibe: ["start", "decide", "next"],
-      };
-
-      const NODE_W = 148;
-      const NODE_H = 52;
-      // Hand-tuned flat ranks with breathing room: editor | modes | procedures | handoff
-      const NODE_POS = {
-        editor: { x: 160, y: 460 },
-        align: { x: 780, y: 120 },
-        spec: { x: 780, y: 460 },
-        vibe: { x: 780, y: 800 },
-        closeOut: { x: 1400, y: 260 },
-        blocked: { x: 1400, y: 660 },
-        handoff: { x: 1980, y: 460 },
-      };
-
-      function svgEl(name, attrs = {}, parent) {
-        const node = document.createElementNS(NS, name);
-        for (const [key, value] of Object.entries(attrs)) {
-          if (value != null) node.setAttribute(key, String(value));
+      function svgEl(tag, attrs = {}, parent = null) {
+        const el = document.createElementNS(NS, tag);
+        for (const [k, v] of Object.entries(attrs)) {
+          if (v != null) el.setAttribute(k, String(v));
         }
-        parent?.appendChild(node);
-        return node;
+        if (parent) parent.appendChild(el);
+        return el;
       }
 
-      function escapeHtml(value) {
-        return String(value)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;");
-      }
-
-      function procedureRefName(line) {
-        const match =
-          line.match(/\bprocedures\.([A-Z][A-Z0-9_]*)\b/) ||
-          line.match(/\bFollow procedures\.([A-Z][A-Z0-9_]*)\b/i) ||
-          line.match(/\bRUN ([A-Z][A-Z0-9_]*)\b/);
-        if (!match) return null;
-        return procedures[match[1]] ? match[1] : null;
-      }
-
-      function effectiveProcedureLines(state) {
-        const lines = [];
-        const seen = new Set();
-        for (const step of state.procedure || []) {
-          lines.push(step);
-          const ref = procedureRefName(step);
-          if (ref && !seen.has(ref)) {
-            seen.add(ref);
-            for (const body of procedures[ref] || []) lines.push(`${ref}: ${body}`);
-          }
-        }
-        for (const [name, steps] of Object.entries(procedures)) {
-          const mentioned = (state.procedure || []).some((step) => step.includes(name));
-          if (!mentioned || seen.has(name)) continue;
-          if (
-            state.kind === "procedure" ||
-            (state.procedure || []).some((s) => s.includes(`RUN ${name}`) || s.includes(`procedures.${name}`))
-          ) {
-            seen.add(name);
-            for (const body of steps) lines.push(`${name}: ${body}`);
-          }
-        }
-        return lines;
-      }
-
-      function toolByName(name) {
-        return tools.find((t) => t.name === name);
-      }
-
-      function isCmdEvent(event) {
-        return /^CMD_/.test(event);
-      }
-
-      function isEscEvent(event) {
-        return event === "PICKER_DISMISS" || event === "NO_WORK";
-      }
-
-      /** Q5/D3: collapse CMD_* (incl. self) and non-self ESC families per from→to. */
-      function collapseEdges() {
+      // One visual edge per from→to pair (multi-event hops share a line; members in inspector)
+      function bundleEdges(edgeList) {
         const groups = new Map();
-        for (const t of transitions) {
-          let key;
-          let family = null;
-          if (isCmdEvent(t.event)) {
-            key = `${t.from}\0${t.to}\0CMD`;
-            family = "CMD";
-          } else if (t.from !== t.to && isEscEvent(t.event)) {
-            key = `${t.from}\0${t.to}\0ESC`;
-            family = "ESC";
-          } else {
-            key = `${t.from}\0${t.to}\0${t.event}`;
-          }
+        for (const t of edgeList) {
+          const key = `${t.from}\0${t.to}`;
           if (!groups.has(key)) {
             groups.set(key, {
-              id: key,
               from: t.from,
               to: t.to,
-              family,
               members: [],
+              userMediated: false,
             });
           }
-          groups.get(key).members.push(t);
+          const g = groups.get(key);
+          if (t.userMediated) g.userMediated = true;
+          g.members.push({
+            id: t.id,
+            event: t.event || "",
+            label: t.label || null,
+            description: t.description || "",
+            userMediated: Boolean(t.userMediated),
+          });
         }
 
         const items = [];
         for (const g of groups.values()) {
           const n = g.members.length;
-          const first = g.members[0];
-          const self = g.from === g.to;
-          let event;
-          let label = null;
-          if (g.family === "CMD") {
-            event = n > 1 ? `CMD_* ×${n}` : first.event;
-          } else if (g.family === "ESC") {
-            event = n > 1 ? `ESC ×${n}` : first.event;
-          } else {
-            event = first.event;
-            if (first.label && first.label !== first.event) label = first.label;
-          }
+          const primary = g.members.find((m) => PRIMARY_FORWARD_EVENTS.has(m.event)) || g.members[0] || { event: "" };
+          const events = g.members.map((m) => m.event).filter(Boolean);
           items.push({
-            id: g.id,
+            id: n === 1 ? primary.id || `${g.from}->${g.to}` : `${g.from}->${g.to}`,
             from: g.from,
             to: g.to,
-            self,
-            family: g.family,
+            self: g.from === g.to,
+            family: "DIRECT",
             bundle: n > 1,
-            event,
-            label,
+            event: n > 1 ? `${primary.event} · ×${n}` : primary.event || "",
+            label: n > 1 ? `${n} paths` : primary.label || null,
             members: g.members,
-            description: n === 1 ? first.description || "" : g.members.map((m) => m.event).join(", "),
-            userMediated: g.members.some((m) => m.userMediated),
+            events,
+            description: n === 1 ? primary.description || "" : g.members.map((m) => m.event).join(", "),
+            userMediated: g.userMediated || g.members.some((m) => m.userMediated),
           });
         }
         return items;
       }
 
-      function layoutFlatXState() {
-        const nodes = {};
-        for (const [id, pos] of Object.entries(NODE_POS)) {
-          const state = states[id];
-          if (!state) continue;
-          nodes[id] = {
-            id,
-            x: pos.x,
-            y: pos.y,
-            w: NODE_W,
-            h: NODE_H,
-            label: state.label || id,
-            kind: state.kind || "mode",
-            permission: state.permission || "",
-          };
-        }
-        const pad = 110;
-        const head = 48;
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxR = 0;
-        let maxB = 0;
-        for (const n of Object.values(nodes)) {
-          minX = Math.min(minX, n.x);
-          minY = Math.min(minY, n.y);
-          maxR = Math.max(maxR, n.x + n.w);
-          maxB = Math.max(maxB, n.y + n.h);
-        }
-        const extraLeft = 140;
-        const extraBottom = 180;
-        const frame = {
-          x: minX - pad - extraLeft,
-          y: minY - pad - head,
-          w: maxR - minX + pad * 2 + extraLeft,
-          h: maxB - minY + pad * 2 + head + extraBottom,
-          head,
-        };
-        return { nodes, frame };
-      }
-
-      function nodeCenter(n) {
-        return { x: n.x + n.w / 2, y: n.y + n.h / 2 };
-      }
-
       function port(n, side, t = 0.5) {
-        const y = n.y + n.h * Math.min(0.9, Math.max(0.1, t));
-        const x = n.x + n.w * Math.min(0.9, Math.max(0.1, t));
-        if (side === "left") return { x: n.x, y };
-        if (side === "right") return { x: n.x + n.w, y };
-        if (side === "top") return { x, y: n.y };
-        return { x, y: n.y + n.h };
+        const x0 = n.x;
+        const y0 = n.y;
+        const w = n.w;
+        const h = n.h;
+        const clampedT = Math.min(0.9, Math.max(0.1, t));
+        if (side === "left") return { x: x0, y: y0 + h * clampedT };
+        if (side === "right") return { x: x0 + w, y: y0 + h * clampedT };
+        if (side === "top") return { x: x0 + w * clampedT, y: y0 };
+        return { x: x0 + w * clampedT, y: y0 + h };
       }
 
-      /** Lanes fan per source so multi-target exits get distinct horizontal seats. */
-      function assignLanes(items, nodes) {
+      function assignLanes(items, nodeMap) {
         const buckets = new Map();
         for (const item of items) {
-          const a = nodes[item.from];
-          const b = nodes[item.to];
+          const a = nodeMap[item.from];
+          const b = nodeMap[item.to];
           let bucket;
           if (item.self) bucket = `self:${item.from}`;
           else if (b && a && b.x > a.x) bucket = `fwd:${item.from}`;
-          else if (item.to === "editor" && item.from !== "editor") bucket = `back:${item.from}`;
+          else if (b && a && b.x < a.x) bucket = `back:${item.from}`;
           else if (a && b && Math.abs(a.x - b.x) < 4) bucket = `col:${item.from}`;
           else bucket = `other:${item.from}`;
+
           if (!buckets.has(bucket)) buckets.set(bucket, []);
           buckets.get(bucket).push(item);
         }
+
         for (const list of buckets.values()) {
           list.sort((a, b) => {
-            const ay = nodes[a.to]?.y ?? 0;
-            const by = nodes[b.to]?.y ?? 0;
+            const ay = nodeMap[a.to]?.y ?? 0;
+            const by = nodeMap[b.to]?.y ?? 0;
             if (ay !== by) return ay - by;
             return a.event.localeCompare(b.event);
           });
@@ -1463,34 +1544,38 @@
         return items;
       }
 
-      function routeItem(item, nodes) {
-        const a = nodes[item.from];
-        const b = nodes[item.to];
+      function routeEdgeItem(item, nodeMap) {
+        const a = nodeMap[item.from];
+        const b = nodeMap[item.to];
         if (!a || !b) return null;
+
         const lane = item.lane || 0;
         const n = Math.max(1, item.laneCount || 1);
         const mid = (n - 1) / 2;
-        const spread = 40;
+        const spread = 42;
 
+        // 1. Self Loop
         if (item.self) {
-          const cy = a.y + a.h / 2 + (lane - mid) * Math.max(spread, 28);
+          const cy = a.y + a.h / 2 + (lane - mid) * Math.max(spread, 32);
           const x0 = a.x;
-          const out = 64 + lane * 18;
-          const d = `M ${x0} ${cy} C ${x0 - out} ${cy - 26}, ${x0 - out} ${cy + 26}, ${x0} ${cy + 0.01}`;
-          return { d, seatX: x0 - out - 8, seatY: cy, seatSide: "left" };
+          const out = 74 + lane * 20;
+          const d = `M ${x0} ${cy} C ${x0 - out} ${cy - 28}, ${x0 - out} ${cy + 28}, ${x0} ${cy + 0.01}`;
+          return { d, seatX: x0 - out - 14, seatY: cy, seatSide: "left" };
         }
 
-        // Back-edges into editor: deep under-rail, one lane per source exit
-        if (item.to === "editor" && a.x > b.x) {
+        // 2. Back-edges (Target is to the left): deep under-rail with staggered seat centers
+        if (a.x > b.x) {
           const p1 = port(a, "bottom", 0.45);
           const p2 = port(b, "bottom", 0.55);
-          const base = Math.max(a.y + a.h, nodes.vibe ? nodes.vibe.y + nodes.vibe.h : b.y + b.h) + 90;
-          const railY = base + lane * 28;
+          const maxY = Math.max(a.y + a.h, b.y + b.h, (nodeMap.vibe?.y || 0) + (nodeMap.vibe?.h || 0));
+          const railY = maxY + 88 + lane * 40;
           const d = `M ${p1.x} ${p1.y} L ${p1.x} ${railY} L ${p2.x} ${railY} L ${p2.x} ${p2.y}`;
-          return { d, seatX: (p1.x + p2.x) / 2, seatY: railY, seatSide: "bottom" };
+          const seatStagger = (lane - mid) * 54;
+          const midX = (p1.x + p2.x) / 2 + seatStagger;
+          return { d, seatX: midX, seatY: railY, seatSide: "bottom" };
         }
 
-        // Same column: right vertical bus with wide lane gaps
+        // 3. Same column: right vertical bus
         if (Math.abs(a.x - b.x) < 4) {
           const right = a.x + a.w + 80 + lane * 32;
           const y1 = a.y + a.h / 2;
@@ -1499,15 +1584,15 @@
           return { d, seatX: right, seatY: (y1 + y2) / 2, seatSide: "right" };
         }
 
-        // Forward: exit → short horizontal pill seat → vertical → into target
+        // 4. Forward edge (Target is to the right)
         if (b.x > a.x) {
           const yExit = a.y + a.h / 2 + (lane - mid) * spread;
           const yEnter = b.y + b.h / 2;
           const gap = b.x - (a.x + a.w);
-          const seatLen = Math.min(160, Math.max(96, gap * 0.38));
+          const seatLen = Math.min(190, Math.max(110, gap * 0.42));
           const x1 = a.x + a.w;
           const xSeatEnd = x1 + seatLen;
-          const xJoin = a.x + a.w + gap * 0.55 + (lane - mid) * 6;
+          const xJoin = a.x + a.w + gap * 0.56 + (lane - mid) * 6;
           const x2 = b.x;
           const d = `M ${x1} ${a.y + a.h / 2} L ${x1 + 10} ${yExit} L ${xSeatEnd} ${yExit} L ${xJoin} ${yExit} L ${xJoin} ${yEnter} L ${x2} ${yEnter}`;
           return {
@@ -1518,7 +1603,7 @@
           };
         }
 
-        // Other leftward: over-rail
+        // 5. Default over-rail
         const y1 = a.y + a.h / 2;
         const y2 = b.y + b.h / 2;
         const railY = Math.min(a.y, b.y) - 64 - lane * 24;
@@ -1526,543 +1611,1084 @@
         return { d, seatX: (a.x + b.x + b.w) / 2, seatY: railY, seatSide: "top" };
       }
 
-      function itemIsHot(item) {
-        return item.from === selected;
+      // Paths from this step only (outbound). Edge/hover selection still lights that edge.
+      function isEdgeOnSelection(item) {
+        if (selectedEdgeId === item.id || hoveredEdgeId === item.id) return true;
+        if (selectedNodeId) return item.from === selectedNodeId;
+        return false;
       }
 
-      function itemIsLabeled(item) {
-        return item.from === selected;
+      // Smart Selective Pill Visibility:
+      // 1. Outbound edges from selected node, or the hovered/selected edge
+      // 2. At rest, only prominent forward transitions
+      function shouldShowPill(item) {
+        if (isEdgeOnSelection(item)) return true;
+        if (selectedNodeId || selectedEdgeId) return false;
+        const primaryEvent = item.events?.[0] || item.event;
+        const isPrimary =
+          (item.events || []).some((e) => PRIMARY_FORWARD_EVENTS.has(e)) || PRIMARY_FORWARD_EVENTS.has(primaryEvent);
+        return isPrimary && item.route?.seatSide === "h";
       }
 
-      function applyCamera() {
-        viewport?.setAttribute("transform", `translate(${panX} ${panY}) scale(${scale})`);
+      // Nudge pill seats so labels never share the same spot
+      function resolvePillSeats(items) {
+        const placed = [];
+        const minDy = 30;
+        const minDx = 56;
+        const ordered = items
+          .filter((i) => i.route)
+          .sort((a, b) => {
+            const ay = a.route.seatY;
+            const by = b.route.seatY;
+            if (ay !== by) return ay - by;
+            return a.route.seatX - b.route.seatX;
+          });
+        for (const item of ordered) {
+          let { seatX, seatY } = item.route;
+          for (let guard = 0; guard < 24; guard++) {
+            const hit = placed.find((p) => Math.abs(p.seatX - seatX) < minDx && Math.abs(p.seatY - seatY) < minDy);
+            if (!hit) break;
+            seatY = hit.seatY + minDy;
+          }
+          item.route.seatX = seatX;
+          item.route.seatY = seatY;
+          placed.push({ seatX, seatY });
+        }
       }
 
-      function fitContent() {
-        if (!viewport) return;
-        const box = viewport.getBBox();
-        if (!box.width || !box.height) return;
-        const pad = 48;
-        const width = svg.clientWidth || 900;
-        const height = svg.clientHeight || 700;
-        scale = Math.min((width - pad * 2) / box.width, (height - pad * 2) / box.height, 1.2);
-        panX = (width - box.width * scale) / 2 - box.x * scale;
-        panY = (height - box.height * scale) / 2 - box.y * scale;
-        applyCamera();
+      function updateCamera() {
+        if (viewportGroup) {
+          viewportGroup.setAttribute("transform", `translate(${panX}, ${panY}) scale(${scale})`);
+        }
+        zoomIndicator.textContent = `${Math.round(scale * 100)}%`;
+        updateMinimap();
       }
 
-      function refitSoon() {
-        requestAnimationFrame(() => requestAnimationFrame(fitContent));
+      function fitBounds(targetBounds = bounds) {
+        const svgW = svg.clientWidth || 900;
+        const svgH = svg.clientHeight || 700;
+        const pad = 44;
+        const bw = targetBounds.w || 2100;
+        const bh = targetBounds.h || 1000;
+        scale = Math.min((svgW - pad * 2) / bw, (svgH - pad * 2) / bh, 1.25);
+        panX = (svgW - bw * scale) / 2 - targetBounds.x * scale;
+        panY = (svgH - bh * scale) / 2 - targetBounds.y * scale;
+        updateCamera();
       }
 
-      function bindClose() {
-        hint.querySelector(".close")?.addEventListener("click", () => {
-          setSidebarOn(false);
+      function syncInspector() {
+        if (isInspectorOpen) renderInspectorContent();
+      }
+
+      function setModePillActive(modeId) {
+        document.querySelectorAll(".mode-pill").forEach((b) => {
+          b.classList.toggle("active", b.dataset.mode === modeId);
         });
       }
 
-      function updateSidebarButton() {
-        const btn = document.getElementById("sidebar");
-        if (!btn) return;
-        btn.classList.toggle("is-on", sidebarOn);
-        btn.setAttribute("aria-pressed", sidebarOn ? "true" : "false");
+      function centerNode(nodeId) {
+        const pos = NODE_LAYOUT[nodeId];
+        if (!pos) return;
+        selectedNodeId = nodeId;
+        selectedEdgeId = null;
+        setModePillActive(["align", "spec", "vibe"].includes(nodeId) ? nodeId : null);
+        renderDiagram({ preserveCamera: true });
+        syncInspector();
+
+        const svgW = svg.clientWidth || 900;
+        const svgH = svg.clientHeight || 700;
+        scale = 1.05;
+        panX = svgW / 2 - (pos.x + pos.w / 2) * scale;
+        panY = svgH / 2 - (pos.y + pos.h / 2) * scale;
+        updateCamera();
       }
 
-      function applySidebarVisibility() {
-        if (sidebarOn) {
-          hint.classList.add("is-open");
-          hint.setAttribute("aria-hidden", "false");
-        } else {
-          hint.classList.remove("is-open");
-          hint.setAttribute("aria-hidden", "true");
+      function updateMinimap() {
+        if (!isMinimapVisible) return;
+        minimapSvg.replaceChildren();
+
+        const mw = 160;
+        const mh = 110;
+        const bw = bounds.w || 2100;
+        const bh = bounds.h || 1000;
+        const scaleMap = Math.min(mw / bw, mh / bh);
+
+        const g = svgEl(
+          "g",
+          {
+            transform: `scale(${scaleMap}) translate(${-bounds.x}, ${-bounds.y})`,
+          },
+          minimapSvg,
+        );
+
+        // Frame rect
+        svgEl(
+          "rect",
+          {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.w,
+            height: bounds.h,
+            rx: 16,
+            fill: "rgba(59, 130, 246, 0.04)",
+            stroke: "var(--flow-border)",
+            "stroke-width": 2,
+          },
+          g,
+        );
+
+        // Node blocks
+        for (const [id, pos] of Object.entries(NODE_LAYOUT)) {
+          const accent = NODE_ACCENTS[id]?.accent || "#3b82f6";
+          svgEl(
+            "rect",
+            {
+              x: pos.x,
+              y: pos.y,
+              width: pos.w,
+              height: pos.h,
+              rx: 10,
+              fill: id === selectedNodeId ? accent : "var(--flow-head-bg)",
+              stroke: accent,
+              "stroke-width": 2,
+            },
+            g,
+          );
         }
-        updateSidebarButton();
-        refitSoon();
+
+        // Viewport indicator
+        const svgW = svg.clientWidth || 900;
+        const svgH = svg.clientHeight || 700;
+        const vx = (-panX / scale - bounds.x) * scaleMap;
+        const vy = (-panY / scale - bounds.y) * scaleMap;
+        const vw = (svgW / scale) * scaleMap;
+        const vh = (svgH / scale) * scaleMap;
+
+        svgEl(
+          "rect",
+          {
+            x: Math.max(0, Math.min(mw, vx)),
+            y: Math.max(0, Math.min(mh, vy)),
+            width: Math.max(4, Math.min(mw, vw)),
+            height: Math.max(4, Math.min(mh, vh)),
+            fill: "rgba(59, 130, 246, 0.15)",
+            stroke: "var(--flow-hot)",
+            "stroke-width": 1.5,
+            rx: 3,
+          },
+          minimapSvg,
+        );
       }
 
-      function renderPinnedSidebar() {
-        if (!pinnedHint || pinnedHint.type === "state") {
-          const stateId = pinnedHint?.id || selected || fsm.initial || "editor";
-          if (states[stateId]) {
-            renderStateSidebar(stateId, { activate: false });
+      function openInspector() {
+        isInspectorOpen = true;
+        inspectorEl.classList.add("is-open");
+        document.getElementById("btn-inspector-toggle").classList.add("active");
+        renderInspectorContent();
+      }
+
+      function closeInspector() {
+        isInspectorOpen = false;
+        inspectorEl.classList.remove("is-open");
+        document.getElementById("btn-inspector-toggle").classList.remove("active");
+      }
+
+      function renderInspectorContent() {
+        if (selectedNodeId && states[selectedNodeId]) {
+          const state = states[selectedNodeId];
+          const acc = NODE_ACCENTS[selectedNodeId] || {
+            accent: "#3b82f6",
+            badge: "MODE",
+            perm: "STANDARD",
+            permClass: "perm-readonly",
+          };
+          inspectorTitle.textContent = state.label || selectedNodeId;
+          inspectorSubtitle.innerHTML = `
+            <span class="chip">${acc.badge}</span>
+            <span class="perm-badge ${acc.permClass}">${state.permission}</span>
+          `;
+
+          const subHtml = state.substates?.length
+            ? `<div class="inspector-section">
+                <h3>Substates</h3>
+                <div class="chip-group">
+                  ${state.substates.map((s) => `<span class="chip">${escapeHtml(s)}</span>`).join("")}
+                </div>
+              </div>`
+            : "";
+
+          const instHtml = (state.procedure || []).length
+            ? `<div class="inspector-section">
+                <h3>Ordered Instructions (${state.procedure.length})</h3>
+                <ol class="instruction-list">
+                  ${state.procedure
+                    .map(
+                      (step, idx) => `
+                    <li class="instruction-item">
+                      <span class="instruction-index">${idx + 1}.</span>
+                      ${escapeHtml(step)}
+                    </li>
+                  `,
+                    )
+                    .join("")}
+                </ol>
+              </div>`
+            : "";
+
+          const stateTools = tools.filter(
+            (t) => (t.modes || []).includes(selectedNodeId) || (t.modes || []).includes("any"),
+          );
+          const toolsHtml = stateTools.length
+            ? `<div class="inspector-section">
+                <h3>Permitted Tools & Gates (${stateTools.length})</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                  ${stateTools
+                    .map(
+                      (t) => `
+                    <div class="tool-card">
+                      <div class="tool-card-title">
+                        <span>${escapeHtml(t.name)}</span>
+                        <span class="tool-badge">TOOL</span>
+                      </div>
+                      <p style="font-size: 0.76rem; color: var(--flow-text-muted);">${escapeHtml(t.summary)}</p>
+                      ${t.gate?.length ? `<div style="font-size: 0.72rem; color: var(--flow-muted);"><strong>Gate:</strong> ${escapeHtml(t.gate.join(" · "))}</div>` : ""}
+                    </div>
+                  `,
+                    )
+                    .join("")}
+                </div>
+              </div>`
+            : "";
+
+          inspectorContent.innerHTML = `
+            <div class="inspector-section">
+              <h3>Summary</h3>
+              <p>${escapeHtml(state.summary)}</p>
+            </div>
+            ${subHtml}
+            ${instHtml}
+            ${toolsHtml}
+          `;
+          return;
+        }
+
+        if (selectedEdgeId) {
+          const items = bundleEdges(transitions);
+          const edge = items.find((i) => i.id === selectedEdgeId);
+          if (edge) {
+            inspectorTitle.textContent = edge.event;
+            inspectorSubtitle.innerHTML = `
+              <span>${escapeHtml(edge.from)} → ${escapeHtml(edge.to)}</span>
+              ${edge.userMediated ? '<span class="chip" style="color: #3b82f6;">user-mediated</span>' : ""}
+            `;
+
+            const membersHtml =
+              edge.members?.length > 1
+                ? `<div class="inspector-section">
+                  <h3>Bundle Members (${edge.members.length})</h3>
+                  <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    ${edge.members
+                      .map(
+                        (m) => `
+                      <div class="bundle-member">
+                        <strong style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--flow-hot);">${escapeHtml(m.event)}</strong>
+                        ${m.label ? `<span style="font-size: 0.75rem; color: var(--flow-text);">${escapeHtml(m.label)}</span>` : ""}
+                        <span style="font-size: 0.72rem; color: var(--flow-muted);">${escapeHtml(m.description)}</span>
+                      </div>
+                    `,
+                      )
+                      .join("")}
+                  </div>
+                </div>`
+                : "";
+
+            inspectorContent.innerHTML = `
+              ${edge.label ? `<div class="inspector-section"><h3>DO / Label</h3><p style="font-weight: 600; color: var(--flow-text);">${escapeHtml(edge.label)}</p></div>` : ""}
+              <div class="inspector-section">
+                <h3>Description</h3>
+                <p>${escapeHtml(edge.description)}</p>
+              </div>
+              ${membersHtml}
+            `;
             return;
           }
         }
-        if (pinnedHint.type === "edge" && pinnedHint.item) {
-          renderEdgeSidebar(pinnedHint.item, { activate: false });
-        } else if (pinnedHint.type === "machine") {
-          renderMachineSidebar({ activate: false });
-        } else if (selected && states[selected]) {
-          renderStateSidebar(selected, { activate: false });
-        } else {
-          renderMachineSidebar({ activate: false });
-        }
-      }
 
-      function setSidebarOn(on) {
-        sidebarOn = Boolean(on);
-        if (sidebarOn && !hint.innerHTML.trim()) renderPinnedSidebar();
-        applySidebarVisibility();
-        if (sidebarOn) bindClose();
-      }
+        // Default: Graph Overview
+        inspectorTitle.textContent = fsmData.title || "Workflow FSM";
+        inspectorSubtitle.innerHTML = `<span>v${fsmData.version || "2.2.0"} · Global Specification</span>`;
 
-      /** Sync panel visibility to sidebarOn. activate=true turns the toggle on (content actions). */
-      function openHint(options = {}) {
-        const activate = options.activate !== false;
-        bindClose();
-        if (activate) {
-          sidebarOn = true;
-          applySidebarVisibility();
-        }
-      }
-
-      function hideHint() {
-        pinnedHint = null;
-        hint.innerHTML = "";
-        setSidebarOn(false);
-      }
-
-      function renderStateSidebar(stateId, options = {}) {
-        const state = states[stateId];
-        if (!state) return;
-        const steps = effectiveProcedureLines(state);
-        const sub = state.substates?.length
-          ? `<div class="kv">${state.substates.map((s) => `<span class="chip">${escapeHtml(s)}</span>`).join("")}</div>`
-          : "";
-        const modeTools = (MODE_TOOLS[stateId] || []).map((n) => toolByName(n)).filter(Boolean);
-        const toolHtml = modeTools
-          .map(
-            (t) =>
-              `<h3>Tool · ${escapeHtml(t.name)}</h3><p class="summary">${escapeHtml(t.summary || "")}</p><ul>${[
-                ...(t.gate || []).map((g) => `<li><strong>Gate:</strong> ${escapeHtml(g)}</li>`),
-                ...(t.mechanics || []).map((g) => `<li>${escapeHtml(g)}</li>`),
-              ].join("")}</ul>`,
-          )
-          .join("");
-        hint.innerHTML = `
-          <header>
-            <div>
-              <h2>${escapeHtml(state.label || state.id)}</h2>
-              <p>${escapeHtml(state.kind)} · ${escapeHtml(state.permission)} · full instruction body</p>
-            </div>
-            <button type="button" class="close" aria-label="Close">×</button>
-          </header>
-          <div class="body">
-            <h3>Summary</h3>
-            <p class="summary">${escapeHtml(state.summary || "")}</p>
-            ${sub ? `<h3>Substates</h3>${sub}` : ""}
-            <h3>Instructions (${steps.length})</h3>
-            <ul>${steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("") || "<li>(none)</li>"}</ul>
-            ${toolHtml}
+        inspectorContent.innerHTML = `
+          <div class="inspector-section">
+            <h3>Overview</h3>
+            <p>${escapeHtml(fsmData.summary)}</p>
           </div>
-        `;
-        openHint({ activate: options.activate !== false });
-      }
-
-      function renderEdgeSidebar(item, options = {}) {
-        const members = item.members || [];
-        const list =
-          members.length > 1
-            ? `<h3>Bundle members (${members.length})</h3><ul>${members
-                .map(
-                  (m) =>
-                    `<li><strong>${escapeHtml(m.event)}</strong>${
-                      m.label && m.label !== m.event ? ` — ${escapeHtml(m.label)}` : ""
-                    }<br/><span class="summary">${escapeHtml(m.description || "")}</span></li>`,
-                )
-                .join("")}</ul>`
-            : "";
-        const m0 = members[0] || {};
-        hint.innerHTML = `
-          <header>
-            <div>
-              <h2>${escapeHtml(item.event)}</h2>
-              <p>${escapeHtml(item.from)} → ${escapeHtml(item.to)}${item.userMediated ? " · user-mediated" : ""}</p>
+          <div class="inspector-section">
+            <h3>Session State Fields</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.76rem;">
+              <div><strong>mode:</strong> <span style="color: var(--flow-text-muted);">${escapeHtml(fsmData.session?.mode)}</span></div>
+              <div><strong>artifact:</strong> <span style="color: var(--flow-text-muted);">${escapeHtml(fsmData.session?.artifact)}</span></div>
+              <div><strong>scope:</strong> <span style="color: var(--flow-text-muted);">${escapeHtml(fsmData.session?.scope)}</span></div>
+              <div><strong>review:</strong> <span style="color: var(--flow-text-muted);">${escapeHtml(fsmData.session?.review)}</span></div>
             </div>
-            <button type="button" class="close" aria-label="Close">×</button>
-          </header>
-          <div class="body">
-            ${
-              item.label
-                ? `<h3>DO / label</h3><p class="summary">${escapeHtml(item.label)}</p>`
-                : members.length === 1 && m0.label
-                  ? `<h3>DO / label</h3><p class="summary">${escapeHtml(m0.label)}</p>`
-                  : ""
-            }
-            <h3>Description</h3>
-            <p class="summary">${escapeHtml(item.description || m0.description || "")}</p>
-            ${list}
           </div>
-        `;
-        openHint({ activate: options.activate !== false });
-      }
-
-      function renderMachineSidebar(options = {}) {
-        const list = (items) =>
-          `<ul>${(items || []).map((i) => `<li>${escapeHtml(i)}</li>`).join("") || "<li>(none)</li>"}</ul>`;
-        const procHtml = Object.entries(procedures)
-          .map(([n, steps]) => `<h3>Procedure · ${escapeHtml(n)}</h3>${list(steps)}`)
-          .join("");
-        const toolHtml = tools
-          .map(
-            (t) =>
-              `<h3>Tool · ${escapeHtml(t.name)}</h3><p class="summary">${escapeHtml(t.summary || "")}</p>${list(t.gate)}${list(t.mechanics)}`,
-          )
-          .join("");
-        hint.innerHTML = `
-          <header>
-            <div>
-              <h2>${escapeHtml(fsm.title || fsm.id || "Workflow")}</h2>
-              <p>v${escapeHtml(fsm.version || "?")} · full instruction set</p>
-            </div>
-            <button type="button" class="close" aria-label="Close">×</button>
-          </header>
-          <div class="body">
-            <h3>Summary</h3>
-            <p class="summary">${escapeHtml(fsm.summary || "")}</p>
-            <h3>Session</h3>
-            <ul>
-              <li>mode := ${escapeHtml(fsm.session?.mode || "")}</li>
-              <li>artifact := ${escapeHtml(fsm.session?.artifact || "")}</li>
-              <li>scope := ${escapeHtml(fsm.session?.scope || "")}</li>
-              <li>review := ${escapeHtml(fsm.session?.review || "")}</li>
+          <div class="inspector-section">
+            <h3>Core Ownership Rules (${(fsmData.ownership || []).length})</h3>
+            <ul style="padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.35rem; color: var(--flow-text-muted); font-size: 0.75rem;">
+              ${(fsmData.ownership || []).map((o) => `<li>${escapeHtml(o)}</li>`).join("")}
             </ul>
-            <h3>Ownership</h3>${list(fsm.ownership)}
-            <h3>Invariants</h3>${list(fsm.invariants)}
-            <h3>Always</h3>${list(fsm.always)}
-            <h3>Turn</h3>${list(fsm.turn)}
-            ${procHtml}
-            ${toolHtml}
-            <h3>Notes</h3>${list(fsm.notes)}
+          </div>
+          <div class="inspector-section">
+            <h3>Exceptions & Escape Hatches</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+              ${(fsmData.exceptions?.commands || [])
+                .map(
+                  (c) => `
+                <div class="bundle-member">
+                  <div><code style="color: var(--flow-hot); font-weight: 700;">${escapeHtml(c.command)}</code> — <strong>${escapeHtml(c.label)}</strong></div>
+                  <span style="font-size: 0.72rem; color: var(--flow-muted);">${escapeHtml(c.description || c.summary)}</span>
+                </div>
+              `,
+                )
+                .join("")}
+            </div>
           </div>
         `;
-        openHint({ activate: options.activate !== false });
       }
 
-      function drawRoundedRect(parent, x, y, w, h, rx, fill, stroke, sw = 1) {
-        return svgEl("rect", { x, y, width: w, height: h, rx, fill, stroke, "stroke-width": sw }, parent);
-      }
-
-      function truncate(str, max) {
-        const s = String(str || "");
-        return s.length > max ? `${s.slice(0, max - 1)}…` : s;
-      }
-
-      function drawPill(parent, item, route, hot) {
-        const hasDo = Boolean(item.label) && !item.bundle;
-        const line1 = item.event;
-        const line2 = hasDo ? `DO / ${truncate(item.label, 34)}` : null;
-        const tw = Math.max(56, Math.min(220, Math.max(line1.length, line2 ? line2.length : 0) * 6.1 + 18));
-        const th = line2 ? 30 : 18;
-        const x = route.seatX - tw / 2;
-        const y = route.seatY - th / 2;
-        const g = svgEl("g", { class: "edge-pill" }, parent);
-        g.style.cursor = "pointer";
-        drawRoundedRect(
-          g,
-          x,
-          y,
-          tw,
-          th,
-          9,
-          hot ? "color-mix(in srgb, var(--current) 35%, var(--tool))" : "var(--tool)",
-          hot ? "var(--current)" : "var(--child-border)",
-          hot ? 1.4 : 1,
-        );
-        svgEl(
-          "text",
-          {
-            x: route.seatX,
-            y: line2 ? y + 12 : y + 13,
-            fill: "var(--text)",
-            "font-size": 9,
-            "font-weight": 700,
-            "text-anchor": "middle",
-          },
-          g,
-        ).textContent = truncate(line1, 36);
-        if (line2) {
-          svgEl(
-            "text",
-            {
-              x: route.seatX,
-              y: y + 24,
-              fill: "var(--muted)",
-              "font-size": 8,
-              "text-anchor": "middle",
-            },
-            g,
-          ).textContent = line2;
-        }
-        g.addEventListener("click", (e) => {
-          e.stopPropagation();
-          selected = item.from;
-          pinnedHint = { type: "edge", id: item.id, item };
-          if (sidebarOn) renderEdgeSidebar(item, { activate: false });
-          render({ preserveCamera: true });
-        });
-      }
-
-      function render(options = {}) {
+      function renderDiagram(options = {}) {
         const preserveCamera = Boolean(options.preserveCamera);
         svg.replaceChildren();
+
+        // 1. Defs & Markers
         const defs = svgEl("defs", {}, svg);
-        for (const [id, fill] of [
-          ["arrow", "var(--edge-hot)"],
-          ["arrow-dim", "var(--edge)"],
+
+        // Background grid pattern
+        const pat = svgEl(
+          "pattern",
+          {
+            id: "flow-grid-pattern",
+            width: 24,
+            height: 24,
+            patternUnits: "userSpaceOnUse",
+          },
+          defs,
+        );
+        svgEl(
+          "path",
+          {
+            d: "M 24 0 L 0 0 0 24",
+            fill: "none",
+            stroke: "var(--flow-grid)",
+            "stroke-width": 1,
+          },
+          pat,
+        );
+
+        // Arrow markers
+        for (const [id, color] of [
+          ["flow-arrow", "var(--flow-edge)"],
+          ["flow-arrow-hot", "var(--flow-hot)"],
+          ["flow-arrow-align", "#f59e0b"],
+          ["flow-arrow-spec", "#38bdf8"],
+          ["flow-arrow-vibe", "#10b981"],
         ]) {
           const marker = svgEl(
             "marker",
             {
               id,
               viewBox: "0 0 10 10",
-              refX: "9",
-              refY: "5",
-              markerWidth: "6",
-              markerHeight: "6",
-              orient: "auto",
+              refX: 7,
+              refY: 5,
+              markerWidth: 6,
+              markerHeight: 6,
+              orient: "auto-start-reverse",
             },
             defs,
           );
-          svgEl("path", { d: "M 0 0 L 10 5 L 0 10 z", fill }, marker);
+          svgEl("path", { d: "M 0 1.5 L 8 5 L 0 8.5 z", fill: color }, marker);
         }
 
-        viewport = svgEl("g", { id: "viewport" }, svg);
-        const { nodes, frame } = layoutFlatXState();
-        const items = assignLanes(collapseEdges(), nodes);
-
-        // Machine frame
-        drawRoundedRect(
-          viewport,
-          frame.x,
-          frame.y,
-          frame.w,
-          frame.h,
-          14,
-          "color-mix(in srgb, var(--card) 40%, transparent)",
-          "var(--current)",
-          1.6,
-        );
-        drawRoundedRect(viewport, frame.x, frame.y, frame.w, frame.head, 14, "var(--card-head)", "none");
+        // Full canvas background with grid
         svgEl(
           "rect",
           {
-            x: frame.x,
-            y: frame.y + frame.head - 14,
-            width: frame.w,
-            height: 14,
-            fill: "var(--card-head)",
+            width: "100%",
+            height: "100%",
+            fill: "url(#flow-grid-pattern)",
           },
-          viewport,
+          svg,
         );
-        const title = svgEl(
+
+        // Viewport Group for Camera Pan & Zoom
+        viewportGroup = svgEl("g", { id: "viewport-root" }, svg);
+
+        // Calculate layout & bounds
+        const nodeMap = {};
+        for (const [id, pos] of Object.entries(NODE_LAYOUT)) {
+          const st = states[id] || {};
+          nodeMap[id] = {
+            id,
+            ...pos,
+            label: st.label || id,
+            kind: st.kind || "mode",
+            summary: st.summary || "",
+            substates: st.substates || [],
+            procedure: st.procedure || [],
+            permission: st.permission || "readonly",
+          };
+        }
+
+        // Stay-in-mode is internal procedure — never draw self-loop edges even if data regresses
+        const bundledItems = assignLanes(
+          bundleEdges(transitions).filter((item) => !item.self),
+          nodeMap,
+        );
+
+        // Calculate bounding frame
+        let minX = Infinity,
+          minY = Infinity,
+          maxR = -Infinity,
+          maxB = -Infinity;
+        for (const n of Object.values(nodeMap)) {
+          minX = Math.min(minX, n.x);
+          minY = Math.min(minY, n.y);
+          maxR = Math.max(maxR, n.x + n.w);
+          maxB = Math.max(maxB, n.y + n.h);
+        }
+        const padX = 64;
+        const padY = 56;
+        const headH = 46;
+        bounds = {
+          x: minX - padX,
+          y: minY - padY - headH,
+          w: maxR - minX + padX * 2,
+          h: maxB - minY + padY * 2 + headH + 90,
+        };
+
+        // Outer Workflow Framing Card
+        const frameGroup = svgEl("g", { class: "machine-frame" }, viewportGroup);
+        svgEl(
+          "rect",
+          {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.w,
+            height: bounds.h,
+            rx: 16,
+            fill: "var(--flow-panel-bg)",
+            "fill-opacity": "0.35",
+            stroke: "var(--flow-border)",
+            "stroke-width": 1.5,
+          },
+          frameGroup,
+        );
+
+        // Frame header bar
+        svgEl(
+          "path",
+          {
+            d: `M ${bounds.x} ${bounds.y + 16} Q ${bounds.x} ${bounds.y} ${bounds.x + 16} ${bounds.y} L ${bounds.x + bounds.w - 16} ${bounds.y} Q ${bounds.x + bounds.w} ${bounds.y} ${bounds.x + bounds.w} ${bounds.y + 16} L ${bounds.x + bounds.w} ${bounds.y + headH} L ${bounds.x} ${bounds.y + headH} Z`,
+            fill: "var(--flow-panel-head)",
+          },
+          frameGroup,
+        );
+
+        svgEl(
+          "line",
+          {
+            x1: bounds.x,
+            y1: bounds.y + headH,
+            x2: bounds.x + bounds.w,
+            y2: bounds.y + headH,
+            stroke: "var(--flow-border)",
+            "stroke-width": 1,
+          },
+          frameGroup,
+        );
+
+        const frameTitle = svgEl(
           "text",
           {
-            x: frame.x + 16,
-            y: frame.y + 28,
-            fill: "var(--text)",
-            "font-size": 14,
+            x: bounds.x + 20,
+            y: bounds.y + 28,
+            fill: "var(--flow-text)",
+            "font-size": 13,
             "font-weight": 700,
+            "letter-spacing": "0.02em",
           },
-          viewport,
+          frameGroup,
         );
-        title.textContent = fsm.id || "piDirectorWorkflow";
+        frameTitle.textContent = `${fsmData.id} · Lifecycle Machine`;
 
-        const edgeLayer = svgEl("g", { id: "edges" }, viewport);
-        const nodeLayer = svgEl("g", { id: "nodes" }, viewport);
-        const pillLayer = svgEl("g", { id: "pills" }, viewport);
+        const frameSub = svgEl(
+          "text",
+          {
+            x: bounds.x + 260,
+            y: bounds.y + 28,
+            fill: "var(--flow-muted)",
+            "font-size": 11,
+            "font-weight": 500,
+          },
+          frameGroup,
+        );
+        frameSub.textContent = "ALIGN (clarify & review) → SPEC (research & plan) → VIBE (implement & verify)";
 
-        // Edges
-        for (const item of items) {
-          const route = routeItem(item, nodes);
+        // Layers
+        const edgeLayer = svgEl("g", { id: "edges-layer" }, viewportGroup);
+        const nodeLayer = svgEl("g", { id: "nodes-layer" }, viewportGroup);
+        const pillLayer = svgEl("g", { id: "pills-layer" }, viewportGroup);
+
+        // Route all edges, then de-overlap pill seats before paint
+        for (const item of bundledItems) {
+          item.route = routeEdgeItem(item, nodeMap);
+        }
+        resolvePillSeats(bundledItems);
+
+        // 2. Render Edges
+        for (const item of bundledItems) {
+          const route = item.route;
           if (!route) continue;
-          item._route = route;
-          const hot = itemIsHot(item);
-          const pathAttrs = {
-            d: route.d,
-            fill: "none",
-            stroke: hot ? "var(--edge-hot)" : "var(--edge)",
-            "stroke-width": hot ? 1.85 : item.bundle ? 1.15 : 1.05,
-            opacity: hot ? 0.95 : 0.22,
-            "marker-end": hot ? "url(#arrow)" : "url(#arrow-dim)",
-          };
-          if (item.bundle) pathAttrs["stroke-dasharray"] = "5 3";
-          svgEl("path", pathAttrs, edgeLayer);
-        }
 
-        // Nodes
-        for (const node of Object.values(nodes)) {
-          const g = svgEl("g", { class: "state-node", "data-id": node.id }, nodeLayer);
-          const isSel = node.id === selected;
-          const isFinal = node.id === "handoff";
-          const fill =
-            node.kind === "procedure" ? "var(--proc)" : node.id === "editor" ? "var(--child)" : "var(--card)";
+          const isHot = isEdgeOnSelection(item);
+          const modeAcc = NODE_ACCENTS[item.from];
+          const strokeColor = isHot ? modeAcc?.accent || "var(--flow-hot)" : "var(--flow-edge)";
+          const markerId = isHot
+            ? item.from === "align"
+              ? "flow-arrow-align"
+              : item.from === "spec"
+                ? "flow-arrow-spec"
+                : item.from === "vibe"
+                  ? "flow-arrow-vibe"
+                  : "flow-arrow-hot"
+            : "flow-arrow";
 
-          if (isSel) {
-            drawRoundedRect(
-              g,
-              node.x - 5,
-              node.y - 5,
-              node.w + 10,
-              node.h + 10,
-              12,
-              "var(--current-glow)",
-              "var(--current)",
-              1.4,
-            );
-          }
+          const edgeG = svgEl("g", { class: "flow-edge", "data-edge-id": item.id }, edgeLayer);
 
-          if (isFinal) {
-            drawRoundedRect(
-              g,
-              node.x - 3,
-              node.y - 3,
-              node.w + 6,
-              node.h + 6,
-              11,
-              "none",
-              isSel ? "var(--current)" : "var(--card-border)",
-              1.2,
-            );
-          }
-
-          drawRoundedRect(
-            g,
-            node.x,
-            node.y,
-            node.w,
-            node.h,
-            10,
-            fill,
-            isSel ? "var(--current)" : "var(--card-border)",
-            isSel ? 2 : 1.2,
-          );
-
-          if (isFinal) {
-            // small final marker square
-            drawRoundedRect(g, node.x + 10, node.y + node.h / 2 - 6, 12, 12, 2, "none", "var(--muted)", 1.2);
-            drawRoundedRect(g, node.x + 13, node.y + node.h / 2 - 3, 6, 6, 1, "var(--muted)", "none", 0);
-          }
-
-          svgEl(
-            "text",
-            {
-              x: node.x + node.w / 2 + (isFinal ? 6 : 0),
-              y: node.y + node.h / 2 + 4,
-              fill: "var(--text)",
-              "font-size": 13,
-              "font-weight": 700,
-              "text-anchor": "middle",
-            },
-            g,
-          ).textContent = node.label;
-
-          g.addEventListener("click", (e) => {
-            e.stopPropagation();
-            selected = node.id;
-            pinnedHint = { type: "state", id: node.id };
-            if (sidebarOn) renderStateSidebar(node.id, { activate: false });
-            render({ preserveCamera: true });
-          });
-        }
-
-        // Initial marker → editor
-        const ed = nodes.editor;
-        if (ed) {
-          const cy = ed.y + ed.h / 2;
-          const cx = ed.x - 28;
-          svgEl("circle", { cx: cx - 10, cy, r: 5.5, fill: "var(--text)" }, viewport);
+          // Wide invisible hit area
           svgEl(
             "path",
             {
-              d: `M ${cx - 4} ${cy} L ${ed.x} ${cy}`,
-              stroke: "var(--text)",
-              "stroke-width": 1.6,
+              d: route.d,
               fill: "none",
-              "marker-end": "url(#arrow)",
+              stroke: "transparent",
+              "stroke-width": 18,
+              "stroke-linecap": "round",
             },
-            viewport,
+            edgeG,
+          );
+
+          // Hot glow background
+          if (isHot) {
+            svgEl(
+              "path",
+              {
+                d: route.d,
+                fill: "none",
+                stroke: strokeColor,
+                "stroke-width": 5,
+                "stroke-opacity": 0.35,
+                "stroke-linecap": "round",
+              },
+              edgeG,
+            );
+          }
+
+          // Main visible line
+          const lineAttrs = {
+            d: route.d,
+            fill: "none",
+            stroke: strokeColor,
+            "stroke-width": isHot ? 2 : item.bundle ? 1.4 : 1.1,
+            "stroke-linecap": "round",
+            opacity: isHot ? 1 : 0.45,
+            "marker-end": `url(#${markerId})`,
+            class: "visible-edge",
+          };
+          if (item.bundle) lineAttrs["stroke-dasharray"] = "5 3";
+          svgEl("path", lineAttrs, edgeG);
+
+          edgeG.addEventListener("pointerenter", () => {
+            hoveredEdgeId = item.id;
+            renderDiagram({ preserveCamera: true });
+          });
+
+          edgeG.addEventListener("pointerleave", () => {
+            if (hoveredEdgeId === item.id) {
+              hoveredEdgeId = null;
+              renderDiagram({ preserveCamera: true });
+            }
+          });
+
+          edgeG.addEventListener("click", (e) => {
+            e.stopPropagation();
+            selectedEdgeId = item.id;
+            selectedNodeId = null;
+            setModePillActive(null);
+            renderDiagram({ preserveCamera: true });
+            syncInspector();
+          });
+        }
+
+        // 3. Render Nodes (Design System FlowNode Cards)
+        for (const node of Object.values(nodeMap)) {
+          const isSelected = selectedNodeId === node.id;
+          const isHot =
+            !isSelected &&
+            bundledItems.some(
+              (e) =>
+                (selectedNodeId === e.from && e.to === node.id) ||
+                (selectedEdgeId && e.id === selectedEdgeId && (e.from === node.id || e.to === node.id)),
+            );
+          const acc = NODE_ACCENTS[node.id] || {
+            accent: "#3b82f6",
+            badge: "MODE",
+            perm: "STANDARD",
+            permClass: "perm-readonly",
+          };
+
+          const nodeG = svgEl(
+            "g",
+            {
+              class: "flow-node",
+              "data-node-id": node.id,
+              transform: `translate(${node.x}, ${node.y})`,
+            },
+            nodeLayer,
+          );
+
+          // Card Outer Glow (if selected or hot)
+          if (isSelected || isHot) {
+            svgEl(
+              "rect",
+              {
+                x: -4,
+                y: -4,
+                width: node.w + 8,
+                height: node.h + 8,
+                rx: 14,
+                fill: isSelected ? "rgba(59, 130, 246, 0.12)" : "transparent",
+                stroke: acc.accent,
+                "stroke-width": 1.5,
+                "stroke-opacity": isSelected ? 0.8 : 0.4,
+              },
+              nodeG,
+            );
+          }
+
+          // Main Card Rectangle
+          svgEl(
+            "rect",
+            {
+              x: 0,
+              y: 0,
+              width: node.w,
+              height: node.h,
+              rx: 10,
+              fill: isSelected ? "var(--flow-card-selected-bg)" : "var(--flow-card-bg)",
+              stroke: isSelected ? acc.accent : isHot ? "var(--flow-hot)" : "var(--flow-border)",
+              "stroke-width": isSelected ? 2 : 1,
+            },
+            nodeG,
+          );
+
+          // Card Header Background
+          svgEl(
+            "path",
+            {
+              d: `M 0 10 Q 0 0 10 0 L ${node.w - 10} 0 Q ${node.w} 0 ${node.w} 10 L ${node.w} 34 L 0 34 Z`,
+              fill: isSelected ? "var(--flow-head-selected-bg)" : "var(--flow-head-bg)",
+            },
+            nodeG,
+          );
+
+          svgEl(
+            "line",
+            {
+              x1: 0,
+              y1: 34,
+              x2: node.w,
+              y2: 34,
+              stroke: "var(--flow-border)",
+              "stroke-width": 1,
+            },
+            nodeG,
+          );
+
+          // Left Color Accent Pill
+          svgEl(
+            "rect",
+            {
+              x: 8,
+              y: 8,
+              width: 4,
+              height: 18,
+              rx: 2,
+              fill: acc.accent,
+            },
+            nodeG,
+          );
+
+          // ForeignObject for crisp HTML text and badge slots
+          const fo = svgEl(
+            "foreignObject",
+            {
+              x: 0,
+              y: 0,
+              width: node.w,
+              height: node.h,
+              style: "pointer-events: none; overflow: hidden;",
+            },
+            nodeG,
+          );
+
+          const foDiv = document.createElement("div");
+          foDiv.style.cssText =
+            "width: 100%; height: 100%; display: flex; flex-direction: column; padding: 0.45rem 0.6rem 0.6rem; box-sizing: border-box;";
+
+          const subTags = (node.substates || [])
+            .slice(0, 3)
+            .map(
+              (s) => `
+            <span style="font-family: var(--font-mono); font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 0.3rem; background: var(--flow-badge-bg); color: var(--flow-text); border: 1px solid var(--flow-border-subtle);">${escapeHtml(s)}</span>
+          `,
+            )
+            .join("");
+
+          foDiv.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between; height: 1.35rem; padding-left: 0.65rem;">
+              <span style="font-weight: 700; font-size: 0.82rem; color: var(--flow-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${escapeHtml(node.label || node.id)}
+              </span>
+              <div style="display: flex; align-items: center; gap: 0.25rem;">
+                <span style="font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700; padding: 0.08rem 0.35rem; border-radius: 0.3rem; background: var(--flow-badge-bg); color: var(--flow-muted); border: 1px solid var(--flow-border);">${acc.badge}</span>
+                <span class="perm-badge ${acc.permClass}" style="font-size: 0.58rem; padding: 0.08rem 0.3rem;">${node.permission}</span>
+              </div>
+            </div>
+            <div style="margin-top: 0.5rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+              <p style="font-size: 0.72rem; line-height: 1.35; color: var(--flow-text-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                ${escapeHtml(node.summary)}
+              </p>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: auto; padding-top: 0.3rem;">
+                ${subTags || `<span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--flow-muted);">${node.procedure?.length || 0} instruction steps</span>`}
+              </div>
+            </div>
+          `;
+          fo.appendChild(foDiv);
+
+          nodeG.addEventListener("click", (e) => {
+            e.stopPropagation();
+            selectedNodeId = node.id;
+            selectedEdgeId = null;
+            setModePillActive(["align", "spec", "vibe"].includes(node.id) ? node.id : null);
+            renderDiagram({ preserveCamera: true });
+            syncInspector();
+          });
+        }
+
+        // 4. Entry mark on ALIGN (guided story starts here)
+        const al = nodeMap.align;
+        if (al) {
+          const cy = al.y + al.h / 2;
+          const cx = al.x - 36;
+          const startAccent = NODE_ACCENTS.align?.accent || "#a855f7";
+          svgEl("circle", { cx: cx - 12, cy, r: 6, fill: startAccent }, viewportGroup);
+          svgEl("circle", { cx: cx - 12, cy, r: 10, fill: "rgba(168, 85, 247, 0.2)" }, viewportGroup);
+          svgEl(
+            "path",
+            {
+              d: `M ${cx - 6} ${cy} L ${al.x} ${cy}`,
+              stroke: startAccent,
+              "stroke-width": 2,
+              fill: "none",
+              "marker-end": "url(#flow-arrow-align)",
+            },
+            viewportGroup,
           );
         }
 
-        // Pills on top
-        for (const item of items) {
-          if (!item._route || !itemIsLabeled(item)) continue;
-          drawPill(pillLayer, item, item._route, itemIsHot(item));
+        // 5. Render Edge Pills (Design System FlowEdgePill with Selective Visibility)
+        for (const item of bundledItems) {
+          if (!item.route || !shouldShowPill(item)) continue;
+
+          const isHot = isEdgeOnSelection(item);
+          const line1 = item.event;
+          const line2 = item.bundle
+            ? `DO / ${item.label || `${item.members?.length || 0} paths`}`
+            : item.label
+              ? `DO / ${item.label}`
+              : null;
+          const tw = Math.max(70, Math.min(220, Math.max(line1.length, line2 ? line2.length : 0) * 6.2 + 24));
+          const th = line2 ? 32 : 20;
+          const px = item.route.seatX - tw / 2;
+          const py = item.route.seatY - th / 2;
+
+          const pillG = svgEl(
+            "g",
+            {
+              class: "flow-edge-pill",
+              transform: `translate(${px}, ${py})`,
+            },
+            pillLayer,
+          );
+
+          const acc = NODE_ACCENTS[item.from]?.accent || "var(--flow-hot)";
+
+          // Pill Background Rect
+          svgEl(
+            "rect",
+            {
+              x: 0,
+              y: 0,
+              width: tw,
+              height: th,
+              rx: 10,
+              fill: isHot ? "color-mix(in srgb, var(--flow-hot) 20%, var(--flow-tool-bg))" : "var(--flow-tool-bg)",
+              stroke: isHot ? acc : "var(--flow-border)",
+              "stroke-width": isHot ? 1.5 : 1,
+            },
+            pillG,
+          );
+
+          // Top Monospace Event Text
+          const t1 = svgEl(
+            "text",
+            {
+              x: tw / 2,
+              y: line2 ? 12 : 13.5,
+              "text-anchor": "middle",
+              fill: isHot ? "var(--flow-text)" : "var(--flow-text-muted)",
+              "font-family": "var(--font-mono)",
+              "font-size": 9.5,
+              "font-weight": 700,
+            },
+            pillG,
+          );
+          t1.textContent = line1.length > 30 ? `${line1.slice(0, 29)}…` : line1;
+
+          // Optional Subtitle DO label
+          if (line2) {
+            const t2 = svgEl(
+              "text",
+              {
+                x: tw / 2,
+                y: 24.5,
+                "text-anchor": "middle",
+                fill: "var(--flow-muted)",
+                "font-size": 8.5,
+                "font-weight": 500,
+              },
+              pillG,
+            );
+            t2.textContent = line2.length > 34 ? `${line2.slice(0, 33)}…` : line2;
+          }
+
+          pillG.addEventListener("pointerenter", () => {
+            hoveredEdgeId = item.id;
+          });
+
+          pillG.addEventListener("pointerleave", () => {
+            if (hoveredEdgeId === item.id) {
+              hoveredEdgeId = null;
+            }
+          });
+
+          pillG.addEventListener("click", (e) => {
+            e.stopPropagation();
+            selectedEdgeId = item.id;
+            selectedNodeId = null;
+            setModePillActive(null);
+            renderDiagram({ preserveCamera: true });
+            syncInspector();
+          });
         }
 
-        if (preserveCamera) applyCamera();
-        else requestAnimationFrame(fitContent);
+        if (preserveCamera) {
+          updateCamera();
+        } else {
+          requestAnimationFrame(() => fitBounds(bounds));
+        }
       }
 
-      document.getElementById("zoom-in").onclick = () => {
+      // ---------------- Event Handlers & Controls ----------------
+      document.getElementById("btn-zoom-in").addEventListener("click", () => {
         scale = Math.min(scale * 1.2, 3.5);
-        applyCamera();
-      };
-      document.getElementById("zoom-out").onclick = () => {
-        scale = Math.max(scale / 1.2, 0.2);
-        applyCamera();
-      };
-      document.getElementById("fit").onclick = () => fitContent();
-      document.getElementById("reset").onclick = () => {
-        selected = fsm.initial || "editor";
-        pinnedHint = null;
-        if (sidebarOn) renderPinnedSidebar();
-        render();
-      };
-      document.getElementById("sidebar").onclick = () => {
-        if (sidebarOn) {
-          setSidebarOn(false);
-          return;
-        }
-        setSidebarOn(true);
-        renderPinnedSidebar();
-        applySidebarVisibility();
-      };
+        updateCamera();
+      });
 
-      let dragging = false;
-      let lastX = 0;
-      let lastY = 0;
+      document.getElementById("btn-zoom-out").addEventListener("click", () => {
+        scale = Math.max(scale / 1.2, 0.2);
+        updateCamera();
+      });
+
+      document.getElementById("btn-fit").addEventListener("click", () => {
+        fitBounds(bounds);
+      });
+
+      document.getElementById("btn-reset").addEventListener("click", () => {
+        selectedNodeId = null;
+        selectedEdgeId = null;
+        setModePillActive(null);
+        renderDiagram();
+        closeInspector();
+      });
+
+      document.getElementById("btn-minimap-toggle").addEventListener("click", function () {
+        isMinimapVisible = !isMinimapVisible;
+        minimapEl.classList.toggle("hidden", !isMinimapVisible);
+        this.classList.toggle("active", isMinimapVisible);
+        if (isMinimapVisible) updateMinimap();
+      });
+
+      document.getElementById("btn-inspector-toggle").addEventListener("click", () => {
+        if (isInspectorOpen) closeInspector();
+        else openInspector();
+      });
+
+      document.getElementById("btn-inspector-close").addEventListener("click", closeInspector);
+
+      // Load saved theme
+      try {
+        const savedTheme = localStorage.getItem("pi_workflow_theme");
+        if (savedTheme === "light" || savedTheme === "dark") {
+          document.documentElement.setAttribute("data-theme", savedTheme);
+        }
+      } catch {}
+
+      document.getElementById("btn-theme").addEventListener("click", () => {
+        const doc = document.documentElement;
+        const nextTheme = doc.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        doc.setAttribute("data-theme", nextTheme);
+        try {
+          localStorage.setItem("pi_workflow_theme", nextTheme);
+        } catch {}
+        renderDiagram({ preserveCamera: true });
+      });
+
+      // Mode bypass jumps — Align / Spec / Vibe only (camera + select; no force-open inspector)
+      document.querySelectorAll(".mode-pill").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const modeId = btn.dataset.mode;
+          if (!modeId) return;
+          centerNode(modeId);
+        });
+      });
+
+      // Canvas Drag & Pan
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let startPanX = 0;
+      let startPanY = 0;
+
       svg.addEventListener("pointerdown", (e) => {
-        if (e.target.closest(".state-node") || e.target.closest(".edge-pill")) return;
-        dragging = true;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        svg.classList.add("is-panning");
-        svg.setPointerCapture(e.pointerId);
+        if (e.button !== 0) return;
+        if (e.target.closest(".flow-node, .flow-edge, .flow-edge-pill")) return;
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startPanX = panX;
+        startPanY = panY;
+        svg.style.cursor = "grabbing";
       });
-      svg.addEventListener("pointermove", (e) => {
-        if (!dragging) return;
-        panX += e.clientX - lastX;
-        panY += e.clientY - lastY;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        applyCamera();
+
+      window.addEventListener("pointermove", (e) => {
+        if (!isDragging) return;
+        panX = startPanX + (e.clientX - startX);
+        panY = startPanY + (e.clientY - startY);
+        updateCamera();
       });
-      svg.addEventListener("pointerup", () => {
-        dragging = false;
-        svg.classList.remove("is-panning");
+
+      window.addEventListener("pointerup", () => {
+        if (isDragging) {
+          isDragging = false;
+          svg.style.cursor = "grab";
+        }
       });
+
+      // Wheel zoom centered on pointer
       svg.addEventListener(
         "wheel",
         (e) => {
           e.preventDefault();
-          const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
-          const next = Math.min(3.5, Math.max(0.2, scale * factor));
           const rect = svg.getBoundingClientRect();
+          const factor = e.deltaY < 0 ? 1.12 : 0.89;
+          const nextScale = Math.max(0.2, Math.min(3.5, scale * factor));
           const cx = e.clientX - rect.left;
           const cy = e.clientY - rect.top;
-          panX = cx - ((cx - panX) * next) / scale;
-          panY = cy - ((cy - panY) * next) / scale;
-          scale = next;
-          applyCamera();
+          panX = cx - ((cx - panX) * nextScale) / scale;
+          panY = cy - ((cy - panY) * nextScale) / scale;
+          scale = nextScale;
+          updateCamera();
         },
         { passive: false },
       );
 
-      hint.setAttribute("aria-hidden", "true");
-      updateSidebarButton();
-      if (states[selected]) render();
+      // Minimap Click & Drag to Pan
+      let isMinimapDragging = false;
+
+      function panToMinimapPoint(clientX, clientY) {
+        const rect = minimapEl.getBoundingClientRect();
+        const mx = clientX - rect.left;
+        const my = clientY - rect.top;
+        const scaleMap = Math.min(160 / bounds.w, 110 / bounds.h);
+        const targetWorldX = mx / scaleMap + bounds.x;
+        const targetWorldY = my / scaleMap + bounds.y;
+        const svgW = svg.clientWidth || 900;
+        const svgH = svg.clientHeight || 700;
+        panX = svgW / 2 - targetWorldX * scale;
+        panY = svgH / 2 - targetWorldY * scale;
+        updateCamera();
+      }
+
+      minimapEl.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        isMinimapDragging = true;
+        panToMinimapPoint(e.clientX, e.clientY);
+      });
+
+      window.addEventListener("pointermove", (e) => {
+        if (!isMinimapDragging) return;
+        panToMinimapPoint(e.clientX, e.clientY);
+      });
+
+      window.addEventListener("pointerup", () => {
+        isMinimapDragging = false;
+      });
+
+      // Keyboard navigation
+      window.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "INPUT") return;
+        if (e.key === "+" || e.key === "=") {
+          scale = Math.min(scale * 1.2, 3.5);
+          updateCamera();
+        } else if (e.key === "-") {
+          scale = Math.max(scale / 1.2, 0.2);
+          updateCamera();
+        } else if (e.key === "0" || e.key === "f") {
+          fitBounds(bounds);
+        } else if (e.key === "i") {
+          if (isInspectorOpen) closeInspector();
+          else openInspector();
+        } else if (e.key === "m") {
+          document.getElementById("btn-minimap-toggle").click();
+        } else if (e.key === "Escape") {
+          // Viewer UI only — closes inspector; not a workflow FSM escape hatch
+          closeInspector();
+          selectedNodeId = null;
+          selectedEdgeId = null;
+          setModePillActive(null);
+          renderDiagram({ preserveCamera: true });
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        updateCamera();
+      });
+
+      // Initial Mount
+      renderDiagram();
     </script>
   </body>
 </html>

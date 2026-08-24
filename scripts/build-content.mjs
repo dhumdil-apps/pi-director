@@ -191,6 +191,7 @@ const embedded = html.replace(
   `<script type="application/json" id="workflow-fsm-data">\n${JSON.stringify(WORKFLOW_FSM, null, 2)}\n    </script>`,
 );
 writeFileSync(htmlPath, embedded);
+writeFileSync(join(DIST, "workflow-fsm.html"), embedded);
 console.log(
   `FSM v${WORKFLOW_FSM.version}: ${Object.keys(WORKFLOW_FSM.states).length} states, ${WORKFLOW_FSM.transitions.length} transitions`,
 );
@@ -207,6 +208,7 @@ const contentPkg = {
     "./workflow-diagrams.json": "./workflow-diagrams.json",
     "./workflow-fsm.json": "./workflow-fsm.json",
     "./workflow-fsm.mmd": "./workflow-fsm.mmd",
+    "./workflow-fsm.html": "./workflow-fsm.html",
     "./workflow.md": "./workflow.md",
     "./workflow-steps.txt": "./workflow-steps.txt",
   },

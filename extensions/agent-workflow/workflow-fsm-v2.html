@@ -1,0 +1,1901 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pi Director Agent Workflow · FSM Visualizer v2 (tuto-ui)</title>
+    <style>
+:root {
+  color-scheme: dark;
+  --tuto-bg: #0c0e12;
+  --tuto-grid: color-mix(in srgb, #94a3b8 9%, transparent);
+  --tuto-text: #e8eaed;
+  --tuto-text-muted: #94a3b8;
+  --tuto-muted: #64748b;
+  --tuto-panel-bg: #161b22;
+  --tuto-panel-head: #1c2128;
+  --tuto-card-bg: #12161c;
+  --tuto-card-selected-bg: #161b22;
+  --tuto-head-bg: #1a2030;
+  --tuto-head-selected-bg: #1e293b;
+  --tuto-border: #30363d;
+  --tuto-border-subtle: #21262d;
+  --tuto-edge: #4b5563;
+  --tuto-edge-dim: #1a202c;
+  --tuto-hot: #3b82f6;
+  --tuto-tool-bg: #141a24;
+  --tuto-badge-bg: #1e293b;
+  --tuto-highlight: rgba(59, 130, 246, 0.15);
+  --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  --tuto-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --tuto-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  
+  /* Fallback aliases for flow */
+  --flow-bg: var(--tuto-bg);
+  --flow-grid: var(--tuto-grid);
+  --flow-text: var(--tuto-text);
+  --flow-text-muted: var(--tuto-text-muted);
+  --flow-muted: var(--tuto-muted);
+  --flow-panel-bg: var(--tuto-panel-bg);
+  --flow-panel-head: var(--tuto-panel-head);
+  --flow-card-bg: var(--tuto-card-bg);
+  --flow-card-selected-bg: var(--tuto-card-selected-bg);
+  --flow-head-bg: var(--tuto-head-bg);
+  --flow-head-selected-bg: var(--tuto-head-selected-bg);
+  --flow-border: var(--tuto-border);
+  --flow-border-subtle: var(--tuto-border-subtle);
+  --flow-edge: var(--tuto-edge);
+  --flow-edge-dim: var(--tuto-edge-dim);
+  --flow-hot: var(--tuto-hot);
+  --flow-tool-bg: var(--tuto-tool-bg);
+  --flow-badge-bg: var(--tuto-badge-bg);
+  --flow-highlight: var(--tuto-highlight);
+  --flow-shadow: var(--tuto-shadow);
+  --font-sans: var(--tuto-font-sans);
+  --font-mono: var(--tuto-font-mono);
+}
+
+[data-theme="light"], :root[data-theme="light"] {
+  color-scheme: light;
+  --tuto-bg: #f8fafc;
+  --tuto-grid: color-mix(in srgb, #64748b 12%, transparent);
+  --tuto-text: #0f172a;
+  --tuto-text-muted: #475569;
+  --tuto-muted: #64748b;
+  --tuto-panel-bg: #ffffff;
+  --tuto-panel-head: #f1f5f9;
+  --tuto-card-bg: #ffffff;
+  --tuto-card-selected-bg: #f8fafc;
+  --tuto-head-bg: #f1f5f9;
+  --tuto-head-selected-bg: #e2e8f0;
+  --tuto-border: #cbd5e1;
+  --tuto-border-subtle: #e2e8f0;
+  --tuto-edge: #94a3b8;
+  --tuto-edge-dim: #e2e8f0;
+  --tuto-hot: #2563eb;
+  --tuto-tool-bg: #ffffff;
+  --tuto-badge-bg: #f1f5f9;
+  --tuto-highlight: rgba(37, 99, 235, 0.1);
+  --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+}
+
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--tuto-bg, #0c0e12);
+        color: var(--tuto-text, #e8eaed);
+        font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        user-select: none;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ---------------- Header Navbar ---------------- */
+      header#topbar {
+        position: relative;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        height: 3.5rem;
+        padding: 0 1rem;
+        background: color-mix(in srgb, var(--tuto-panel-bg, #161b22) 92%, transparent);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--tuto-border, #30363d);
+        flex-shrink: 0;
+      }
+
+      .topbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .brand-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 1rem;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+      }
+
+      .brand-text h1 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+      }
+
+      .brand-text p {
+        font-size: 0.72rem;
+        color: var(--tuto-muted, #64748b);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .version-tag {
+        display: inline-block;
+        padding: 0.05rem 0.35rem;
+        border-radius: 999px;
+        background: var(--tuto-badge-bg, #1e293b);
+        border: 1px solid var(--tuto-border, #30363d);
+        font-family: var(--tuto-font-mono, monospace);
+        font-size: 0.68rem;
+        color: var(--tuto-text-muted, #94a3b8);
+      }
+
+      /* Version comparison switcher */
+      .version-switcher {
+        display: flex;
+        align-items: center;
+        background: var(--tuto-panel-head, #1c2128);
+        border: 1px solid var(--tuto-border, #30363d);
+        border-radius: 999px;
+        padding: 0.2rem;
+        gap: 0.2rem;
+      }
+
+      .version-link {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--tuto-text-muted, #94a3b8);
+        transition: all 150ms ease;
+      }
+
+      .version-link:hover {
+        color: var(--tuto-text, #e8eaed);
+      }
+
+      .version-link.active {
+        background: var(--tuto-hot, #3b82f6);
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+      }
+
+      .topbar-modes {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem;
+        background: var(--tuto-panel-head, #1c2128);
+        border: 1px solid var(--tuto-border, #30363d);
+        border-radius: 0.6rem;
+      }
+
+      .mode-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: 0.4rem;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--tuto-text-muted, #94a3b8);
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 120ms ease;
+        font-family: inherit;
+      }
+
+      .mode-pill:hover {
+        background: var(--tuto-head-bg, #1a2030);
+        color: var(--tuto-text, #e8eaed);
+      }
+
+      .mode-pill.active {
+        background: var(--tuto-head-selected-bg, #1e293b);
+        color: var(--tuto-text, #e8eaed);
+        border-color: var(--tuto-border, #30363d);
+      }
+
+      .mode-pill-dot {
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 999px;
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--tuto-border, #30363d);
+        background: var(--tuto-panel-head, #1c2128);
+        color: var(--tuto-text-muted, #94a3b8);
+        cursor: pointer;
+        transition: all 120ms ease;
+      }
+
+      .btn-icon:hover {
+        border-color: var(--tuto-hot, #3b82f6);
+        color: var(--tuto-text, #e8eaed);
+      }
+
+      /* ---------------- Stage ---------------- */
+      main#stage {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+
+      tuto-flow-canvas {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+
+    <!-- Self-Contained tuto-ui Library (zero external requests, file:// safe) -->
+    <script>
+var TutoUI=(function(c){"use strict";var ce=Object.defineProperty;var he=(c,w,I)=>w in c?ce(c,w,{enumerable:!0,configurable:!0,writable:!0,value:I}):c[w]=I;var l=(c,w,I)=>he(c,typeof w!="symbol"?w+"":w,I);const w={dark:{bg:"#0c0e12",grid:"rgba(148, 163, 184, 0.09)",text:"#e8eaed",textMuted:"#94a3b8",muted:"#64748b",panelBg:"#161b22",panelHead:"#1c2128",cardBg:"#12161c",cardSelectedBg:"#161b22",headBg:"#1a2030",headSelectedBg:"#1e293b",border:"#30363d",borderSubtle:"#21262d",edge:"#4b5563",edgeDim:"#1a202c",hot:"#3b82f6",toolBg:"#141a24",badgeBg:"#1e293b",highlight:"rgba(59, 130, 246, 0.15)",shadow:"0 12px 36px rgba(0, 0, 0, 0.45)"},light:{bg:"#f8fafc",grid:"rgba(100, 116, 139, 0.12)",text:"#0f172a",textMuted:"#475569",muted:"#64748b",panelBg:"#ffffff",panelHead:"#f1f5f9",cardBg:"#ffffff",cardSelectedBg:"#f8fafc",headBg:"#f1f5f9",headSelectedBg:"#e2e8f0",border:"#cbd5e1",borderSubtle:"#e2e8f0",edge:"#94a3b8",edgeDim:"#e2e8f0",hot:"#2563eb",toolBg:"#ffffff",badgeBg:"#f1f5f9",highlight:"rgba(37, 99, 235, 0.1)",shadow:"0 12px 36px rgba(0, 0, 0, 0.12)"},accents:{align:{accent:"#f59e0b",badge:"ALIGN",perm:"READ-ONLY",permClass:"perm-readonly"},spec:{accent:"#38bdf8",badge:"SPEC",perm:"PLAN-ONLY",permClass:"perm-planonly"},vibe:{accent:"#10b981",badge:"VIBE",perm:"FULL-WRITE",permClass:"perm-write"},closeOut:{accent:"#8b5cf6",badge:"PROCEDURE",perm:"MEMORY-ONLY",permClass:"perm-memory"},blocked:{accent:"#ef4444",badge:"EXCEPTION",perm:"READ-ONLY",permClass:"perm-readonly"},handoff:{accent:"#f97316",badge:"STANDBY",perm:"READ-ONLY",permClass:"perm-readonly"},editor:{accent:"#ec4899",badge:"USER-CONTROL",perm:"USER-WRITE",permClass:"perm-write"}}},I={fonts:{sans:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',mono:'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'},sizes:{xs:"0.68rem",sm:"0.75rem",base:"0.875rem",md:"0.95rem",lg:"1.125rem",xl:"1.25rem","2xl":"1.5rem"},weights:{normal:"400",medium:"500",semibold:"600",bold:"700",extrabold:"800"},lineHeights:{tight:"1.15",normal:"1.4",relaxed:"1.6"}},oe={space:{1:"0.25rem",2:"0.5rem",3:"0.75rem",4:"1rem",5:"1.25rem",6:"1.5rem",8:"2rem",10:"2.5rem",12:"3rem"},radii:{none:"0",sm:"0.375rem",md:"0.5rem",lg:"0.75rem",xl:"1rem",full:"9999px"},shadows:{sm:"0 1px 2px 0 rgba(0, 0, 0, 0.05)",md:"0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",lg:"0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",xl:"0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",elevated:"0 12px 36px rgba(0, 0, 0, 0.45)",glow:"0 0 15px rgba(59, 130, 246, 0.35)"},transitions:{fast:"150ms ease",default:"200ms ease",smooth:"300ms cubic-bezier(0.4, 0, 0.2, 1)"},zIndex:{canvas:0,edge:1,node:5,overlay:10,drawer:20,tooltip:30}};function O(){if(typeof document>"u"||document.getElementById("tuto-theme-tokens"))return;const s=document.createElement("style");s.id="tuto-theme-tokens",s.textContent=`
+    :root {
+      --tuto-bg: #0c0e12;
+      --tuto-grid: color-mix(in srgb, #94a3b8 9%, transparent);
+      --tuto-text: #e8eaed;
+      --tuto-text-muted: #94a3b8;
+      --tuto-muted: #64748b;
+      --tuto-panel-bg: #161b22;
+      --tuto-panel-head: #1c2128;
+      --tuto-card-bg: #12161c;
+      --tuto-card-selected-bg: #161b22;
+      --tuto-head-bg: #1a2030;
+      --tuto-head-selected-bg: #1e293b;
+      --tuto-border: #30363d;
+      --tuto-border-subtle: #21262d;
+      --tuto-edge: #4b5563;
+      --tuto-edge-dim: #1a202c;
+      --tuto-hot: #3b82f6;
+      --tuto-tool-bg: #141a24;
+      --tuto-badge-bg: #1e293b;
+      --tuto-highlight: rgba(59, 130, 246, 0.15);
+      --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      --tuto-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --tuto-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    [data-theme="light"], :root[data-theme="light"] {
+      --tuto-bg: #f8fafc;
+      --tuto-grid: color-mix(in srgb, #64748b 12%, transparent);
+      --tuto-text: #0f172a;
+      --tuto-text-muted: #475569;
+      --tuto-muted: #64748b;
+      --tuto-panel-bg: #ffffff;
+      --tuto-panel-head: #f1f5f9;
+      --tuto-card-bg: #ffffff;
+      --tuto-card-selected-bg: #f8fafc;
+      --tuto-head-bg: #f1f5f9;
+      --tuto-head-selected-bg: #e2e8f0;
+      --tuto-border: #cbd5e1;
+      --tuto-border-subtle: #e2e8f0;
+      --tuto-edge: #94a3b8;
+      --tuto-edge-dim: #e2e8f0;
+      --tuto-hot: #2563eb;
+      --tuto-tool-bg: #ffffff;
+      --tuto-badge-bg: #f1f5f9;
+      --tuto-highlight: rgba(37, 99, 235, 0.1);
+      --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+    }
+  `,document.head.appendChild(s)}const $=class $ extends HTMLElement{constructor(e={}){super();l(this,"_isRenderPending",!1);l(this,"_hasRendered",!1);l(this,"_useShadow");l(this,"shadowRootNode",null);this._useShadow=e.useShadow!==!1,this._useShadow&&(this.shadowRootNode=this.attachShadow({mode:e.shadowMode||"open"}))}connectedCallback(){this.adoptStyles(),this.requestUpdate()}disconnectedCallback(){}adoptStyles(){const e=this.constructor,t=e.styles;if(!(!t||!this.shadowRootNode)){if("adoptedStyleSheets"in Document.prototype&&"adoptedStyleSheets"in ShadowRoot.prototype)try{let o=$._styleSheetMap.get(e);o||(o=new CSSStyleSheet,o.replaceSync(t),$._styleSheetMap.set(e,o)),this.shadowRootNode.adoptedStyleSheets.includes(o)||(this.shadowRootNode.adoptedStyleSheets=[...this.shadowRootNode.adoptedStyleSheets,o]);return}catch{}if(!this.shadowRootNode.querySelector("style[data-tuto-style]")){const o=document.createElement("style");o.setAttribute("data-tuto-style","true"),o.textContent=t,this.shadowRootNode.prepend(o)}}}requestUpdate(){this._isRenderPending||(this._isRenderPending=!0,requestAnimationFrame(()=>{this._isRenderPending=!1,this.render(),this._hasRendered||(this._hasRendered=!0,this.firstUpdated()),this.updated()}))}emit(e,t,o={}){const r=new CustomEvent(e,{bubbles:!0,composed:!0,cancelable:!0,detail:t,...o});return this.dispatchEvent(r)}get renderRoot(){return this.shadowRootNode||this}firstUpdated(){}updated(){}};l($,"styles",""),l($,"_styleSheetMap",new WeakMap);let M=$;const H="http://www.w3.org/2000/svg";function E(s,i={},e){const t=document.createElementNS(H,s);for(const[o,r]of Object.entries(i))r!=null&&r!==!1&&t.setAttribute(o,String(r));return e&&e.appendChild(t),t}function se(s,i={},e){const t=document.createElement(s);for(const[o,r]of Object.entries(i))r!=null&&r!==!1&&(o==="className"||o==="class"?t.className=String(r):t.setAttribute(o,String(r)));return e&&e.appendChild(t),t}function b(s){return s==null?"":String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function z(s,i,e){return Math.max(i,Math.min(e,s))}class C extends M{static get observedAttributes(){return["variant","size","disabled"]}get variant(){return this.getAttribute("variant")||"secondary"}set variant(i){this.setAttribute("variant",i)}get size(){return this.getAttribute("size")||"md"}set size(i){this.setAttribute("size",i)}get disabled(){return this.hasAttribute("disabled")}set disabled(i){i?this.setAttribute("disabled",""):this.removeAttribute("disabled")}attributeChangedCallback(){this.requestUpdate()}render(){this.shadowRootNode&&(this.shadowRootNode.innerHTML=`
+      <button class="variant-${this.variant} size-${this.size}" ${this.disabled?"disabled":""}>
+        <slot></slot>
+      </button>
+    `)}}l(C,"styles",`
+    :host {
+      display: inline-block;
+      font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      border: 1px solid transparent;
+      border-radius: var(--tuto-radius-md, 0.5rem);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+      font-family: inherit;
+      line-height: 1;
+      text-decoration: none;
+      box-sizing: border-box;
+      outline: none;
+    }
+    button:focus-visible {
+      box-shadow: 0 0 0 2px var(--tuto-hot, #3b82f6);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Sizes */
+    .size-sm {
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+      height: 1.75rem;
+    }
+    .size-md {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      height: 2.25rem;
+    }
+    .size-lg {
+      padding: 0.65rem 1.25rem;
+      font-size: 1rem;
+      height: 2.75rem;
+    }
+
+    /* Variants */
+    .variant-primary {
+      background: var(--tuto-hot, #3b82f6);
+      color: #ffffff;
+    }
+    .variant-primary:hover:not(:disabled) {
+      filter: brightness(1.1);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+    }
+
+    .variant-secondary {
+      background: var(--tuto-panel-head, #1c2128);
+      color: var(--tuto-text, #e8eaed);
+      border-color: var(--tuto-border, #30363d);
+    }
+    .variant-secondary:hover:not(:disabled) {
+      background: var(--tuto-head-bg, #1a2030);
+      border-color: var(--tuto-muted, #64748b);
+    }
+
+    .variant-outline {
+      background: transparent;
+      color: var(--tuto-text, #e8eaed);
+      border-color: var(--tuto-border, #30363d);
+    }
+    .variant-outline:hover:not(:disabled) {
+      background: var(--tuto-panel-head, #1c2128);
+      border-color: var(--tuto-hot, #3b82f6);
+    }
+
+    .variant-ghost {
+      background: transparent;
+      color: var(--tuto-text-muted, #94a3b8);
+    }
+    .variant-ghost:hover:not(:disabled) {
+      background: var(--tuto-panel-head, #1c2128);
+      color: var(--tuto-text, #e8eaed);
+    }
+
+    .variant-danger {
+      background: #ef4444;
+      color: #ffffff;
+    }
+    .variant-danger:hover:not(:disabled) {
+      filter: brightness(1.1);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+    }
+  `),customElements.get("tuto-button")||customElements.define("tuto-button",C);class A extends M{static get observedAttributes(){return["variant"]}get variant(){return this.getAttribute("variant")||"default"}set variant(i){this.setAttribute("variant",i)}attributeChangedCallback(){this.requestUpdate()}render(){this.shadowRootNode&&(this.shadowRootNode.innerHTML=`
+      <span class="badge variant-${this.variant}">
+        <slot></slot>
+      </span>
+    `)}}l(A,"styles",`
+    :host {
+      display: inline-block;
+      font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      line-height: 1;
+    }
+    span.badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+      box-sizing: border-box;
+    }
+
+    .variant-default {
+      background: var(--tuto-badge-bg, #1e293b);
+      color: var(--tuto-text-muted, #94a3b8);
+      border-color: var(--tuto-border, #30363d);
+    }
+    .variant-accent {
+      background: var(--tuto-hot, #3b82f6);
+      color: #ffffff;
+    }
+    .variant-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+    .variant-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+    .variant-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+    .variant-mono {
+      background: var(--tuto-panel-head, #1c2128);
+      color: var(--tuto-text, #e8eaed);
+      border-color: var(--tuto-border, #30363d);
+      font-family: var(--tuto-font-mono, monospace);
+    }
+  `),customElements.get("tuto-badge")||customElements.define("tuto-badge",A);const S=.2,R=3.5,j=44;function F(s,i,e=j,t=1.25){const o=s.width||900,r=s.height||700,n=i.w||2e3,d=i.h||1e3,h=z(Math.min((o-e*2)/n,(r-e*2)/d),S,t),u=(o-n*h)/2-i.x*h,g=(r-d*h)/2-i.y*h;return{panX:u,panY:g,scale:h}}function B(s,i,e,t,o=S,r=R){const n=z(s.scale*t,o,r);if(n===s.scale)return s;const d=i-(i-s.panX)*n/s.scale,h=e-(e-s.panY)*n/s.scale;return{panX:d,panY:h,scale:n}}function G(s,i,e=1.05){const t=s.width||900,o=s.height||700,r=z(e,S,R),n=i.x+i.w/2,d=i.y+i.h/2,h=t/2-n*r,u=o/2-d*r;return{panX:h,panY:u,scale:r}}function re(s,i){return{x:(s.x-i.panX)/i.scale,y:(s.y-i.panY)/i.scale}}function ne(s,i){return{x:s.x*i.scale+i.panX,y:s.y*i.scale+i.panY}}const W=new Set(["SPEC_START","ALIGN_START","VIBE_START","PROCEED_VIBE","COMPLETE","RESET","RESUME"]);function V(s){const i=new Map;for(const t of s){const o=`${t.from}->${t.to}`;i.has(o)||i.set(o,{from:t.from,to:t.to,members:[],userMediated:!1});const r=i.get(o);r.members.push(t),t.userMediated&&(r.userMediated=!0)}const e=[];for(const[t,o]of i.entries()){const r=o.members.length,n=o.members[0],d=o.members.map(u=>u.event||u.label||"").filter(Boolean),h=o.members.map(u=>u.description||"").filter(Boolean);e.push({id:t,from:o.from,to:o.to,self:o.from===o.to,label:r>1?`${r} paths`:n.label||n.event||"",event:r>1?`${n.event||n.label} · ×${r}`:n.event||"",events:d,description:r===1?n.description||"":d.join(", "),descriptions:h,userMediated:o.userMediated})}return e}function U(s,i,e=.5){const t=Math.min(.9,Math.max(.1,e));return i==="left"?{x:s.x,y:s.y+s.h*t}:i==="right"?{x:s.x+s.w,y:s.y+s.h*t}:i==="top"?{x:s.x+s.w*t,y:s.y}:{x:s.x+s.w*t,y:s.y+s.h}}function Z(s,i){const e=new Map;for(const t of s){const o=i[t.from],r=i[t.to];let n;t.self?n=`self:${t.from}`:r&&o&&r.x>o.x?n=`fwd:${t.from}`:r&&o&&r.x<o.x?n=`back:${t.from}`:o&&r&&Math.abs(o.x-r.x)<4?n=`col:${t.from}`:n=`other:${t.from}`,e.has(n)||e.set(n,[]),e.get(n).push(t)}for(const t of e.values())t.sort((o,r)=>{var h,u;const n=((h=i[o.to])==null?void 0:h.y)??0,d=((u=i[r.to])==null?void 0:u.y)??0;return n!==d?n-d:(o.event||o.label).localeCompare(r.event||r.label)}),t.forEach((o,r)=>{o.lane=r,o.totalLanes=t.length});return s}function K(s,i){const e=i[s.from],t=i[s.to];if(!e||!t)return null;const o=s.lane||0,n=(Math.max(1,s.totalLanes||1)-1)/2,d=42;if(s.self){const a=e.y+e.h/2+(o-n)*Math.max(d,32),p=e.x,m=74+o*20;return{points:[[p,a],[p-m,a-28],[p-m,a+28],[p,a+.01]],seatX:p-m-14,seatY:a,seatSide:"h"}}if(e.x>t.x){const a=U(e,"bottom",.45),p=U(t,"bottom",.55);let m=Math.max(e.y+e.h,t.y+t.h);for(const y of Object.values(i))m=Math.max(m,y.y+y.h);const v=m+88+o*40,x=[[a.x,a.y],[a.x,v],[p.x,v],[p.x,p.y]],_=(o-n)*54,k=(a.x+p.x)/2+_;return{points:x,seatX:k,seatY:v,seatSide:"v"}}if(Math.abs(e.x-t.x)<4){const a=e.x+e.w+80+o*32,p=e.y+e.h/2,m=t.y+t.h/2;return{points:[[e.x+e.w,p],[a,p],[a,m],[t.x+t.w,m]],seatX:a,seatY:(p+m)/2,seatSide:"v"}}if(t.x>e.x){const a=e.y+e.h/2+(o-n)*d,p=t.y+t.h/2,m=t.x-(e.x+e.w),v=Math.min(190,Math.max(110,m*.42)),x=e.x+e.w,_=x+v,k=e.x+e.w+m*.56+(o-n)*6,y=t.x;return{points:[[x,e.y+e.h/2],[x+10,a],[_,a],[k,a],[k,p],[y,p]],seatX:(x+10+_)/2,seatY:a,seatSide:"h"}}const h=e.y+e.h/2,u=t.y+t.h/2,g=Math.min(e.y,t.y)-64-o*24;return{points:[[e.x,h],[e.x,g],[t.x+t.w,g],[t.x+t.w,u]],seatX:(e.x+t.x+t.w)/2,seatY:g,seatSide:"v"}}function Q(s){const i=[],o=s.filter(r=>r.route).sort((r,n)=>{const d=r.route.seatY,h=n.route.seatY;return d!==h?d-h:r.route.seatX-n.route.seatX});for(const r of o){let{seatX:n,seatY:d}=r.route;for(let h=0;h<24;h++){const u=i.find(g=>Math.abs(g.seatX-n)<56&&Math.abs(g.seatY-d)<30);if(!u)break;d=u.seatY+30}r.route.seatX=n,r.route.seatY=d,i.push({seatX:n,seatY:d})}}function J(s){return!s||s.length===0?"":s.length===4&&s[0][0]===s[3][0]?`M ${s[0][0]} ${s[0][1]} C ${s[1][0]} ${s[1][1]}, ${s[2][0]} ${s[2][1]}, ${s[3][0]} ${s[3][1]}`:s.map(([i,e],t)=>`${t===0?"M":"L"} ${i} ${e}`).join(" ")}function T(s,i,e,t){return e===s.id||t===s.id?!0:i?s.from===i:!1}function ee(s,i,e,t,o=W){var d,h;if(T(s,i,e,t))return!0;if(i||e)return!1;const r=((d=s.events)==null?void 0:d[0])||s.event;return((s.events||[]).some(u=>o.has(u))||(r?o.has(r):!1))&&((h=s.route)==null?void 0:h.seatSide)==="h"}function te(s,i=64,e=56,t=46){let o=1/0,r=1/0,n=-1/0,d=-1/0;const h=Object.values(s);if(h.length===0)return{x:0,y:0,w:1e3,h:600};for(const u of h)o=Math.min(o,u.x),r=Math.min(r,u.y),n=Math.max(n,u.x+u.w),d=Math.max(d,u.y+u.h);return{x:o-i,y:r-e-t,w:n-o+i*2,h:d-r+e*2+t+90}}function ie(s,i={}){const e=i.colWidth||420,t=i.colGap||180,o=i.rowGap||40,r=i.startX||120,n=i.startY||120,d={};let h=r,u=n;return s.forEach((g,f)=>{d[g.id]={...g,x:g.x??h,y:g.y??u,w:g.w||e,h:g.h||280},(f+1)%3===0?(h+=e+t,u=n):u+=(g.h||280)+o}),d}class Y extends M{constructor(){super(...arguments);l(this,"_node",null);l(this,"_selected",!1)}get node(){return this._node}set node(e){this._node=e,this.requestUpdate()}get selected(){return this._selected}set selected(e){this._selected=!!e,this.requestUpdate()}render(){var d;if(!this.shadowRootNode)return;if(!this._node){this.shadowRootNode.innerHTML="";return}const e=this._node,t=w.accents[e.id]||w.accents[e.kind]||{accent:"#3b82f6",badge:(e.kind||"MODE").toUpperCase(),perm:(e.permission||"READ-ONLY").toUpperCase(),permClass:`perm-${e.permission||"readonly"}`};this.style.setProperty("--node-accent",t.accent);const o=(e.substates||[]).slice(0,3).map(h=>`<span class="substate-pill">${b(h)}</span>`).join(""),r=!o&&(e.procedure||[]).length?`<div class="procedure-counter">${(d=e.procedure)==null?void 0:d.length} instruction steps</div>`:"";this.shadowRootNode.innerHTML=`
+      <div class="node-card ${this._selected?"selected":""}" role="button" tabindex="0">
+        <div class="node-head">
+          <span class="accent-pill"></span>
+          <span class="head-title">${b(e.label||e.id)}</span>
+          <div class="head-badges">
+            <span class="badge badge-kind">${b(t.badge)}</span>
+            <span class="badge badge-perm ${t.permClass}">${b(t.perm)}</span>
+          </div>
+        </div>
+        <div class="node-body">
+          ${e.summary?`<p class="node-summary">${b(e.summary)}</p>`:""}
+          ${o?`<div class="substates-list">${o}</div>`:""}
+          ${r}
+        </div>
+      </div>
+    `;const n=this.shadowRootNode.querySelector(".node-card");n&&n.addEventListener("click",h=>{h.stopPropagation(),this.emit("flow:select-node",{node:this._node})})}}l(Y,"styles",`
+    :host {
+      display: block;
+      user-select: none;
+      font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      color: var(--tuto-text, #e8eaed);
+    }
+    .node-card {
+      background: var(--tuto-card-bg, #12161c);
+      border: 1px solid var(--tuto-border, #30363d);
+      border-radius: 10px;
+      padding: 0;
+      cursor: pointer;
+      transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    .node-card:hover {
+      border-color: var(--node-accent, #3b82f6);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    .node-card.selected {
+      border-color: var(--node-accent, #3b82f6);
+      border-width: 2px;
+      background: var(--tuto-card-selected-bg, #161b22);
+    }
+
+    /* Header row: accent pill · title · badges */
+    .node-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 34px;
+      padding: 0 0.6rem;
+      background: var(--tuto-head-bg, #1a2030);
+      border-bottom: 1px solid var(--tuto-border, #30363d);
+      gap: 0.4rem;
+      position: relative;
+    }
+    .node-card.selected .node-head {
+      background: var(--tuto-head-selected-bg, #1e293b);
+    }
+
+    /* Left accent pill */
+    .accent-pill {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      width: 4px;
+      height: 18px;
+      border-radius: 2px;
+      background: var(--node-accent, #3b82f6);
+    }
+
+    .head-title {
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: var(--tuto-text, #e8eaed);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-left: 0.65rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .head-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.08rem 0.35rem;
+      border-radius: 0.3rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-family: var(--tuto-font-mono, monospace);
+    }
+    .badge-kind {
+      background: var(--tuto-badge-bg, #1e293b);
+      color: var(--tuto-muted, #64748b);
+      border: 1px solid var(--tuto-border, #30363d);
+    }
+
+    /* Permission badges with colored tint bg */
+    .badge-perm {
+      font-size: 0.58rem;
+      padding: 0.08rem 0.3rem;
+      border: 1px solid transparent;
+    }
+    .perm-readonly {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+    .perm-planonly {
+      background: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+    .perm-write {
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .perm-memory {
+      background: rgba(139, 92, 246, 0.12);
+      color: #a78bfa;
+      border-color: rgba(139, 92, 246, 0.3);
+    }
+
+    .node-body {
+      padding: 0.5rem 0.6rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+    }
+    .node-summary {
+      font-size: 0.72rem;
+      line-height: 1.35;
+      color: var(--tuto-text-muted, #94a3b8);
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .substates-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: auto;
+      padding-top: 0.3rem;
+    }
+    .substate-pill {
+      font-size: 0.65rem;
+      font-family: var(--tuto-font-mono, monospace);
+      background: var(--tuto-badge-bg, #1e293b);
+      border: 1px solid var(--tuto-border-subtle, #21262d);
+      color: var(--tuto-text, #e8eaed);
+      padding: 0.1rem 0.35rem;
+      border-radius: 0.3rem;
+    }
+    .procedure-counter {
+      font-size: 0.65rem;
+      font-family: var(--tuto-font-mono, monospace);
+      color: var(--tuto-muted, #64748b);
+      margin-top: auto;
+      padding-top: 0.3rem;
+    }
+  `),customElements.get("tuto-flow-node")||customElements.define("tuto-flow-node",Y);class P extends M{constructor(){super(...arguments);l(this,"_zoom",100);l(this,"_isMinimapActive",!1);l(this,"_isInspectorActive",!1)}get zoom(){return this._zoom}set zoom(e){this._zoom=Math.round(e),this.requestUpdate()}get isMinimapActive(){return this._isMinimapActive}set isMinimapActive(e){this._isMinimapActive=!!e,this.requestUpdate()}get isInspectorActive(){return this._isInspectorActive}set isInspectorActive(e){this._isInspectorActive=!!e,this.requestUpdate()}render(){var e,t,o,r,n,d;this.shadowRootNode&&(this.shadowRootNode.innerHTML=`
+      <div class="toolbar-container">
+        <!-- Camera Controls -->
+        <button class="tool-btn" id="btn-zoom-out" title="Zoom Out" aria-label="Zoom Out">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <span class="zoom-text">${this._zoom}%</span>
+        <button class="tool-btn" id="btn-zoom-in" title="Zoom In" aria-label="Zoom In">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+
+        <div class="divider"></div>
+
+        <button class="tool-btn" id="btn-fit" title="Fit to Screen" aria-label="Fit to Screen">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+          </svg>
+        </button>
+        <button class="tool-btn" id="btn-reset" title="Reset View" aria-label="Reset View">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </button>
+
+        <div class="divider"></div>
+
+        <!-- Toggles -->
+        <button class="tool-btn ${this._isMinimapActive?"active":""}" id="btn-minimap" title="Toggle Minimap (M)" aria-label="Toggle Minimap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+        </button>
+        <button class="tool-btn ${this._isInspectorActive?"active":""}" id="btn-inspector" title="Toggle Inspector (I)" aria-label="Toggle Inspector">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+            <path d="M15 3v18"></path>
+          </svg>
+        </button>
+      </div>
+    `,(e=this.shadowRootNode.getElementById("btn-zoom-in"))==null||e.addEventListener("click",()=>{this.emit("flow:zoom-in")}),(t=this.shadowRootNode.getElementById("btn-zoom-out"))==null||t.addEventListener("click",()=>{this.emit("flow:zoom-out")}),(o=this.shadowRootNode.getElementById("btn-fit"))==null||o.addEventListener("click",()=>{this.emit("flow:fit")}),(r=this.shadowRootNode.getElementById("btn-reset"))==null||r.addEventListener("click",()=>{this.emit("flow:reset")}),(n=this.shadowRootNode.getElementById("btn-minimap"))==null||n.addEventListener("click",()=>{this.emit("flow:toggle-minimap")}),(d=this.shadowRootNode.getElementById("btn-inspector"))==null||d.addEventListener("click",()=>{this.emit("flow:toggle-inspector")}))}}l(P,"styles",`
+    :host {
+      display: block;
+      font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      color: var(--tuto-text, #e8eaed);
+      user-select: none;
+    }
+    .toolbar-container {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem;
+      background: color-mix(in srgb, var(--tuto-panel-bg, #161b22) 92%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--tuto-border, #30363d);
+      border-radius: 0.75rem;
+      box-shadow: var(--tuto-shadow, 0 12px 36px rgba(0, 0, 0, 0.45));
+    }
+    .divider {
+      width: 1px;
+      height: 1.2rem;
+      background: var(--tuto-border, #30363d);
+      margin: 0 0.15rem;
+    }
+    button.tool-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 0.5rem;
+      color: var(--tuto-text, #e8eaed);
+      cursor: pointer;
+      transition: all 120ms ease;
+      font: inherit;
+    }
+    button.tool-btn:hover {
+      background: var(--tuto-panel-head, #1c2128);
+      border-color: var(--tuto-border, #30363d);
+    }
+    button.tool-btn.active {
+      background: var(--tuto-highlight, rgba(59, 130, 246, 0.15));
+      border-color: var(--tuto-hot, #3b82f6);
+      color: var(--tuto-hot, #3b82f6);
+    }
+    .zoom-text {
+      font-family: var(--tuto-font-mono, monospace);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0 0.4rem;
+      color: var(--tuto-muted, #64748b);
+      min-width: 2.6rem;
+      text-align: center;
+    }
+  `),customElements.get("tuto-flow-toolbar")||customElements.define("tuto-flow-toolbar",P);class q extends M{constructor(){super(...arguments);l(this,"_bounds",{x:0,y:0,w:2e3,h:1e3});l(this,"_camera",{panX:0,panY:0,scale:1});l(this,"_viewportSize",{width:900,height:700});l(this,"_nodes",{});l(this,"_selectedNodeId",null);l(this,"_isDragging",!1);l(this,"handlePointerDown",e=>{e.button===0&&(e.preventDefault(),this._isDragging=!0,this.panToEvent(e))});l(this,"handlePointerMove",e=>{this._isDragging&&this.panToEvent(e)});l(this,"handlePointerUp",()=>{this._isDragging=!1})}get bounds(){return this._bounds}set bounds(e){this._bounds=e,this.requestUpdate()}get camera(){return this._camera}set camera(e){this._camera=e,this.requestUpdate()}get viewportSize(){return this._viewportSize}set viewportSize(e){this._viewportSize=e,this.requestUpdate()}get nodes(){return this._nodes}set nodes(e){this._nodes=e,this.requestUpdate()}get selectedNodeId(){return this._selectedNodeId}set selectedNodeId(e){this._selectedNodeId=e,this.requestUpdate()}connectedCallback(){super.connectedCallback(),this.addEventListener("pointerdown",this.handlePointerDown),window.addEventListener("pointermove",this.handlePointerMove),window.addEventListener("pointerup",this.handlePointerUp)}disconnectedCallback(){super.disconnectedCallback(),this.removeEventListener("pointerdown",this.handlePointerDown),window.removeEventListener("pointermove",this.handlePointerMove),window.removeEventListener("pointerup",this.handlePointerUp)}panToEvent(e){const t=this.getBoundingClientRect(),o=e.clientX-t.left,r=e.clientY-t.top,n=t.width||170,d=t.height||120,h=this._bounds.w||2e3,u=this._bounds.h||1e3,g=Math.min(n/h,d/u),f=o/g+this._bounds.x,a=r/g+this._bounds.y;this.emit("flow:pan-to",{worldX:f,worldY:a})}render(){var x,_;if(!this.shadowRootNode)return;this.shadowRootNode.innerHTML="";const e=E("svg",{viewBox:"0 0 170 120",preserveAspectRatio:"xMidYMid meet"},this.shadowRootNode),t=170,o=120,r=this._bounds.w||2e3,n=this._bounds.h||1e3,d=Math.min(t/r,o/n),h=E("g",{transform:`scale(${d}) translate(${-this._bounds.x}, ${-this._bounds.y})`},e);E("rect",{x:this._bounds.x,y:this._bounds.y,width:this._bounds.w,height:this._bounds.h,rx:16,fill:"rgba(59, 130, 246, 0.04)",stroke:"var(--tuto-border, #30363d)","stroke-width":2},h);for(const[k,y]of Object.entries(this._nodes)){const L=((x=w.accents[k])==null?void 0:x.accent)||((_=w.accents[y.kind])==null?void 0:_.accent)||"#3b82f6";E("rect",{x:y.x,y:y.y,width:y.w,height:y.h,rx:10,fill:k===this._selectedNodeId?L:"var(--tuto-head-bg, #1a2030)",stroke:L,"stroke-width":2},h)}const u=this._viewportSize.width||900,g=this._viewportSize.height||700,f=this._camera.scale||1,a=(-this._camera.panX/f-this._bounds.x)*d,p=(-this._camera.panY/f-this._bounds.y)*d,m=u/f*d,v=g/f*d;E("rect",{x:Math.max(0,Math.min(t,a)),y:Math.max(0,Math.min(o,p)),width:Math.max(4,Math.min(t,m)),height:Math.max(4,Math.min(o,v)),fill:"rgba(59, 130, 246, 0.15)",stroke:"var(--tuto-hot, #3b82f6)","stroke-width":1.5,rx:3},e)}}l(q,"styles",`
+    :host {
+      display: block;
+      width: 170px;
+      height: 120px;
+      background: color-mix(in srgb, var(--tuto-panel-bg, #161b22) 92%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--tuto-border, #30363d);
+      border-radius: 12px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+      cursor: crosshair;
+      user-select: none;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  `),customElements.get("tuto-flow-minimap")||customElements.define("tuto-flow-minimap",q);class D extends M{constructor(){super(...arguments);l(this,"_isOpen",!1);l(this,"_node",null);l(this,"_edge",null);l(this,"_tools",[])}get isOpen(){return this._isOpen}set isOpen(e){this._isOpen=!!e,this.requestUpdate()}get node(){return this._node}set node(e){this._node=e,e&&(this._edge=null),this.requestUpdate()}get edge(){return this._edge}set edge(e){this._edge=e,e&&(this._node=null),this.requestUpdate()}get tools(){return this._tools}set tools(e){this._tools=e,this.requestUpdate()}render(){var o,r;if(!this.shadowRootNode)return;let e="",t="";if(this._node){const n=this._node,d=w.accents[n.id]||w.accents[n.kind]||{accent:"#3b82f6",badge:(n.kind||"MODE").toUpperCase(),perm:(n.permission||"READ-ONLY").toUpperCase(),permClass:`perm-${n.permission||"readonly"}`};this.style.setProperty("--drawer-accent",d.accent),e=`
+        <div class="header-titles">
+          <h2>${b(n.label||n.id)}</h2>
+          <div class="header-badges">
+            <span class="badge badge-accent">${b(d.badge)}</span>
+            <span class="badge badge-perm ${d.permClass}">${b(d.perm)}</span>
+          </div>
+        </div>
+      `;const h=(n.substates||[]).length?`<div>
+            <h4 class="section-title">Substates</h4>
+            <div class="chip-group">
+              ${n.substates.map(a=>`<span class="chip">${b(a)}</span>`).join("")}
+            </div>
+          </div>`:"",u=(n.procedure||[]).length?`<div>
+            <h4 class="section-title">Ordered Instructions (${n.procedure.length})</h4>
+            <ol class="instruction-list">
+              ${n.procedure.map((a,p)=>`
+                <li class="instruction-item">
+                  <span class="instruction-idx">${p+1}.</span>
+                  <span>${b(a)}</span>
+                </li>
+              `).join("")}
+            </ol>
+          </div>`:"",g=this._tools.filter(a=>(a.modes||[]).includes(n.id)||(a.modes||[]).includes("any")),f=g.length?`<div>
+            <h4 class="section-title">Permitted Tools & Gates (${g.length})</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+              ${g.map(a=>{var p;return`
+                <div class="tool-card">
+                  <div class="tool-title">
+                    <span>${b(a.name)}</span>
+                    <span class="chip">TOOL</span>
+                  </div>
+                  <p class="section-text" style="font-size: 0.78rem;">${b(a.summary)}</p>
+                  ${(p=a.gate)!=null&&p.length?`<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${b(a.gate.join(" · "))}</div>`:""}
+                </div>
+              `}).join("")}
+            </div>
+          </div>`:"";t=`
+        ${n.summary?`<div><h4 class="section-title">Summary</h4><p class="section-text">${b(n.summary)}</p></div>`:""}
+        ${h}
+        ${u}
+        ${f}
+      `}else if(this._edge){const n=this._edge;this.style.setProperty("--drawer-accent","#3b82f6"),e=`
+        <div class="header-titles">
+          <h2>${b(n.label||n.event||"Transition")}</h2>
+          <div class="header-badges">
+            <span class="badge badge-accent">TRANSITION</span>
+            ${n.userMediated?'<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>':""}
+          </div>
+        </div>
+      `,t=`
+        <div>
+          <h4 class="section-title">Route Connection</h4>
+          <p class="section-text"><strong style="color: var(--tuto-text);">${b(n.from)}</strong> → <strong style="color: var(--tuto-text);">${b(n.to)}</strong></p>
+        </div>
+        ${n.description?`<div><h4 class="section-title">Description</h4><p class="section-text">${b(n.description)}</p></div>`:""}
+        ${(o=n.events)!=null&&o.length?`<div>
+                <h4 class="section-title">Trigger Events</h4>
+                <div class="chip-group">
+                  ${n.events.map(d=>`<span class="chip">${b(d)}</span>`).join("")}
+                </div>
+              </div>`:""}
+      `}else e=`
+        <div class="header-titles">
+          <h2>Inspector</h2>
+        </div>
+      `,t=`
+        <div class="empty-state">
+          Select any state card or transition edge to inspect its instructions and properties.
+        </div>
+      `;this.shadowRootNode.innerHTML=`
+      <aside class="drawer ${this._isOpen?"is-open":""}">
+        <div class="drawer-header">
+          ${e}
+          <button class="btn-close" id="btn-close" title="Close Drawer">×</button>
+        </div>
+        <div class="drawer-body">
+          ${t}
+        </div>
+      </aside>
+    `,(r=this.shadowRootNode.getElementById("btn-close"))==null||r.addEventListener("click",()=>{this.emit("flow:close-inspector")})}}l(D,"styles",`
+    :host {
+      display: block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 420px;
+      max-width: 90vw;
+      z-index: 50;
+      pointer-events: none;
+      font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      color: var(--tuto-text, #e8eaed);
+    }
+    .drawer {
+      width: 100%;
+      height: 100%;
+      background: color-mix(in srgb, var(--tuto-panel-bg, #161b22) 96%, transparent);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-left: 1px solid var(--tuto-border, #30363d);
+      box-shadow: -12px 0 36px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto;
+      box-sizing: border-box;
+    }
+    .drawer.is-open {
+      transform: translateX(0);
+    }
+    .drawer-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--tuto-border, #30363d);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      background: var(--tuto-panel-head, #1c2128);
+    }
+    .header-titles h2 {
+      margin: 0 0 0.4rem 0;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: var(--tuto-font-mono, monospace);
+    }
+    .badge-accent {
+      background: var(--drawer-accent, #3b82f6);
+      color: #ffffff;
+    }
+    .badge-perm {
+      border: 1px solid currentColor;
+      font-size: 0.62rem;
+      padding: 0.1rem 0.35rem;
+    }
+    .perm-readonly { color: #f59e0b; border-color: rgba(245, 158, 11, 0.4); }
+    .perm-planonly { color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); }
+    .perm-write { color: #10b981; border-color: rgba(16, 185, 129, 0.4); }
+    .perm-memory { color: #a855f7; border-color: rgba(168, 85, 247, 0.4); }
+
+    .btn-close {
+      background: transparent;
+      border: 1px solid var(--tuto-border, #30363d);
+      color: var(--tuto-text-muted, #94a3b8);
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 999px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 150ms ease;
+    }
+    .btn-close:hover {
+      background: var(--tuto-head-bg, #1a2030);
+      color: var(--tuto-text, #e8eaed);
+    }
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .section-title {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--tuto-muted, #64748b);
+      font-weight: 700;
+      margin: 0 0 0.6rem 0;
+    }
+    .section-text {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--tuto-text-muted, #94a3b8);
+      margin: 0;
+    }
+    .instruction-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .instruction-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: var(--tuto-text, #e8eaed);
+      background: var(--tuto-head-bg, #1a2030);
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--tuto-border-subtle, #21262d);
+    }
+    .instruction-idx {
+      font-family: var(--tuto-font-mono, monospace);
+      font-weight: 700;
+      color: var(--drawer-accent, #3b82f6);
+      font-size: 0.76rem;
+      min-width: 1.2rem;
+    }
+    .tool-card {
+      background: var(--tuto-tool-bg, #141a24);
+      border: 1px solid var(--tuto-border, #30363d);
+      border-radius: 8px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .tool-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 0.85rem;
+      font-family: var(--tuto-font-mono, monospace);
+      color: var(--tuto-text, #e8eaed);
+    }
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .chip {
+      font-size: 0.72rem;
+      font-family: var(--tuto-font-mono, monospace);
+      background: var(--tuto-badge-bg, #1e293b);
+      border: 1px solid var(--tuto-border, #30363d);
+      color: var(--tuto-text-muted, #94a3b8);
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+    }
+    .empty-state {
+      text-align: center;
+      color: var(--tuto-muted, #64748b);
+      padding: 3rem 1rem;
+      font-size: 0.88rem;
+    }
+  `),customElements.get("tuto-flow-inspector")||customElements.define("tuto-flow-inspector",D);class X extends M{constructor(){super(...arguments);l(this,"_graph",null);l(this,"_camera",{panX:0,panY:0,scale:1});l(this,"_bounds",{x:0,y:0,w:2e3,h:1e3});l(this,"_selectedNodeId",null);l(this,"_selectedEdgeId",null);l(this,"_hoveredEdgeId",null);l(this,"_showMinimap",!0);l(this,"_showInspector",!1);l(this,"_theme","dark");l(this,"_isDragging",!1);l(this,"_dragStart",{x:0,y:0,panX:0,panY:0});l(this,"handleKeyDown",e=>{e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||(e.key==="+"||e.key==="="?this.zoomBy(1.2):e.key==="-"?this.zoomBy(.8333333333333334):e.key==="0"||e.key==="f"?this.fitToViewport():e.key==="i"?(this._showInspector=!this._showInspector,this.requestUpdate()):e.key==="m"?(this._showMinimap=!this._showMinimap,this.requestUpdate()):e.key==="Escape"&&(this._showInspector=!1,this._selectedNodeId=null,this._selectedEdgeId=null,this.requestUpdate()))});l(this,"handleResize",()=>{this.requestUpdate()});l(this,"handleWheel",e=>{e.preventDefault();const t=this.getBoundingClientRect(),o=e.clientX-t.left,r=e.clientY-t.top,n=e.deltaY<0?1.12:.89;this._camera=B(this._camera,o,r,n,S,R),this.requestUpdate()});l(this,"handlePointerDown",e=>{var r;if(e.button!==0||e.target.closest(".flow-edge-pill, tuto-flow-node, .floating-toolbar, .floating-minimap, tuto-flow-inspector"))return;this._isDragging=!0,this._dragStart={x:e.clientX,y:e.clientY,panX:this._camera.panX,panY:this._camera.panY};const o=(r=this.shadowRootNode)==null?void 0:r.querySelector("svg.flow-svg");o==null||o.classList.add("grabbing"),window.addEventListener("pointermove",this.handlePointerMove),window.addEventListener("pointerup",this.handlePointerUp)});l(this,"handlePointerMove",e=>{this._isDragging&&(this._camera={...this._camera,panX:this._dragStart.panX+(e.clientX-this._dragStart.x),panY:this._dragStart.panY+(e.clientY-this._dragStart.y)},this.requestUpdate())});l(this,"handlePointerUp",()=>{var t;this._isDragging=!1;const e=(t=this.shadowRootNode)==null?void 0:t.querySelector("svg.flow-svg");e==null||e.classList.remove("grabbing"),window.removeEventListener("pointermove",this.handlePointerMove),window.removeEventListener("pointerup",this.handlePointerUp)})}get graph(){return this._graph}set graph(e){this._graph=e,e&&(this._bounds=te(e.states),requestAnimationFrame(()=>this.fitToViewport())),this.requestUpdate()}get selectedNodeId(){return this._selectedNodeId}set selectedNodeId(e){this._selectedNodeId=e,this.requestUpdate()}get selectedEdgeId(){return this._selectedEdgeId}set selectedEdgeId(e){this._selectedEdgeId=e,this.requestUpdate()}get showMinimap(){return this._showMinimap}set showMinimap(e){this._showMinimap=!!e,this.requestUpdate()}get showInspector(){return this._showInspector}set showInspector(e){this._showInspector=!!e,this.requestUpdate()}get theme(){return this._theme}set theme(e){this._theme=e,this.setAttribute("data-theme",e),this.requestUpdate()}connectedCallback(){super.connectedCallback(),window.addEventListener("keydown",this.handleKeyDown),window.addEventListener("resize",this.handleResize)}disconnectedCallback(){super.disconnectedCallback(),window.removeEventListener("keydown",this.handleKeyDown),window.removeEventListener("resize",this.handleResize)}fitToViewport(){const e=this.getBoundingClientRect();this._camera=F({width:e.width||900,height:e.height||700},this._bounds),this.requestUpdate()}centerOnState(e){var r;if(!((r=this._graph)!=null&&r.states[e]))return;const t=this._graph.states[e],o=this.getBoundingClientRect();this._camera=G({width:o.width||900,height:o.height||700},t),this._selectedNodeId=e,this._selectedEdgeId=null,this.requestUpdate()}zoomBy(e){const t=this.getBoundingClientRect(),o=t.width/2,r=t.height/2;this._camera=B(this._camera,o,r,e,S,R),this.requestUpdate()}render(){if(!this.shadowRootNode)return;if(!this._graph){this.shadowRootNode.innerHTML=`
+        <div class="canvas-root" style="display:flex;align-items:center;justify-content:center;color:var(--tuto-muted);">
+          No flow graph loaded
+        </div>
+      `;return}const e=this._graph.states,t=this._graph.transitions||[],o=Z(V(t).filter(a=>!a.self),e);for(const a of o){const p=K(a,e);p&&(a.route=p)}Q(o),this.shadowRootNode.innerHTML=`
+      <div class="canvas-root">
+        <svg class="flow-svg" id="flow-svg">
+          <defs>
+            <pattern id="flow-grid-pattern" width="24" height="24" patternUnits="userSpaceOnUse">
+              <path d="M 24 0 L 0 0 0 24" fill="none" stroke="var(--tuto-grid, rgba(148, 163, 184, 0.09))" stroke-width="1" />
+            </pattern>
+            <marker id="flow-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--tuto-edge, #4b5563)" />
+            </marker>
+            <marker id="flow-arrow-hot" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--tuto-hot, #3b82f6)" />
+            </marker>
+            <marker id="flow-arrow-align" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b" />
+            </marker>
+            <marker id="flow-arrow-spec" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+            </marker>
+            <marker id="flow-arrow-vibe" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
+            </marker>
+          </defs>
+
+          <!-- Infinite Grid -->
+          <rect width="100%" height="100%" fill="url(#flow-grid-pattern)" />
+
+          <!-- Root Transform Viewport -->
+          <g id="viewport-root" transform="translate(${this._camera.panX}, ${this._camera.panY}) scale(${this._camera.scale})">
+            <!-- Machine Outer Framing Card -->
+            <g class="machine-frame">
+              <rect x="${this._bounds.x}" y="${this._bounds.y}" width="${this._bounds.w}" height="${this._bounds.h}" rx="16" fill="var(--tuto-panel-bg, #161b22)" fill-opacity="0.35" stroke="var(--tuto-border, #30363d)" stroke-width="1.5" />
+              <path d="M ${this._bounds.x} ${this._bounds.y+16} Q ${this._bounds.x} ${this._bounds.y} ${this._bounds.x+16} ${this._bounds.y} L ${this._bounds.x+this._bounds.w-16} ${this._bounds.y} Q ${this._bounds.x+this._bounds.w} ${this._bounds.y} ${this._bounds.x+this._bounds.w} ${this._bounds.y+16} L ${this._bounds.x+this._bounds.w} ${this._bounds.y+46} L ${this._bounds.x} ${this._bounds.y+46} Z" fill="var(--tuto-panel-head, #1c2128)" />
+              <line x1="${this._bounds.x}" y1="${this._bounds.y+46}" x2="${this._bounds.x+this._bounds.w}" y2="${this._bounds.y+46}" stroke="var(--tuto-border, #30363d)" stroke-width="1" />
+              <text x="${this._bounds.x+20}" y="${this._bounds.y+28}" fill="var(--tuto-text, #e8eaed)" font-size="13" font-weight="700" font-family="var(--tuto-font-sans, sans-serif)">${b(this._graph.title)}</text>
+              <text x="${this._bounds.x+this._bounds.w-20}" y="${this._bounds.y+28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-mono, monospace)" text-anchor="end">${b(this._graph.version||"v1.0")}</text>
+            </g>
+
+            <!-- Edges Group -->
+            <g id="edges-group"></g>
+
+            <!-- Nodes Group -->
+            <g id="nodes-group"></g>
+          </g>
+        </svg>
+
+        <!-- Floating Minimap -->
+        <tuto-flow-minimap class="floating-minimap ${this._showMinimap?"":"hidden"}" id="minimap-el"></tuto-flow-minimap>
+
+        <!-- Floating Toolbar -->
+        <tuto-flow-toolbar class="floating-toolbar" id="toolbar-el"></tuto-flow-toolbar>
+
+        <!-- Slide-over Inspector Drawer -->
+        <tuto-flow-inspector id="inspector-el"></tuto-flow-inspector>
+      </div>
+    `;const r=this.shadowRootNode.querySelector("#flow-svg");r&&(r.addEventListener("wheel",this.handleWheel,{passive:!1}),r.addEventListener("pointerdown",this.handlePointerDown));const n=this.shadowRootNode.getElementById("edges-group"),d=this.shadowRootNode.getElementById("nodes-group"),h=!!(this._selectedNodeId||this._selectedEdgeId);for(const a of o){if(!a.route)continue;const p=T(a,this._selectedNodeId,this._selectedEdgeId,this._hoveredEdgeId),m=h&&!p,v=J(a.route.points),_=E("path",{d:v,class:`flow-edge-path ${p?"hot":""} ${m?"dimmed":""}`,"marker-end":p?"url(#flow-arrow-hot)":"url(#flow-arrow)"},n);if(_.addEventListener("pointerenter",()=>{this._hoveredEdgeId=a.id,this.requestUpdate()}),_.addEventListener("pointerleave",()=>{this._hoveredEdgeId===a.id&&(this._hoveredEdgeId=null,this.requestUpdate())}),_.addEventListener("click",k=>{k.stopPropagation(),this._selectedEdgeId=a.id,this._selectedNodeId=null,this._showInspector=!0,this.emit("flow:select-edge",{edge:a}),this.requestUpdate()}),ee(a,this._selectedNodeId,this._selectedEdgeId,this._hoveredEdgeId)){const k=Math.max(100,Math.min(220,a.label.length*8+24)),y=26,L=a.route.seatX-k/2,ae=a.route.seatY-y/2,N=E("g",{class:"flow-edge-pill",transform:`translate(${L}, ${ae})`},n);E("rect",{width:k,height:y,rx:6,fill:p?"var(--tuto-panel-head, #1c2128)":"var(--tuto-panel-bg, #161b22)",stroke:p?"var(--tuto-hot, #3b82f6)":"var(--tuto-border, #30363d)","stroke-width":p?1.5:1,filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.3))"},N);const de=E("text",{x:k/2,y:y/2+4,"text-anchor":"middle",fill:p?"var(--tuto-text, #e8eaed)":"var(--tuto-text-muted, #94a3b8)","font-size":11,"font-weight":600,"font-family":"var(--tuto-font-mono, monospace)"},N);de.textContent=a.label,N.addEventListener("pointerenter",()=>{this._hoveredEdgeId=a.id,this.requestUpdate()}),N.addEventListener("pointerleave",()=>{this._hoveredEdgeId===a.id&&(this._hoveredEdgeId=null,this.requestUpdate())}),N.addEventListener("click",le=>{le.stopPropagation(),this._selectedEdgeId=a.id,this._selectedNodeId=null,this._showInspector=!0,this.emit("flow:select-edge",{edge:a}),this.requestUpdate()})}}for(const a of Object.values(e)){const p=E("foreignObject",{x:a.x,y:a.y,width:a.w,height:a.h},d),m=document.createElement("tuto-flow-node");m.node=a,m.selected=this._selectedNodeId===a.id,m.addEventListener("flow:select-node",v=>{const x=v;this._selectedNodeId=x.detail.node.id,this._selectedEdgeId=null,this.emit("flow:select-node",{node:x.detail.node}),this.requestUpdate()}),p.appendChild(m)}const u=this.shadowRootNode.getElementById("minimap-el");if(u){u.bounds=this._bounds,u.camera=this._camera,u.nodes=e,u.selectedNodeId=this._selectedNodeId;const a=this.getBoundingClientRect();u.viewportSize={width:a.width||900,height:a.height||700},u.addEventListener("flow:pan-to",p=>{const m=p.detail,v=this.getBoundingClientRect(),x=v.width||900,_=v.height||700;this._camera={...this._camera,panX:x/2-m.worldX*this._camera.scale,panY:_/2-m.worldY*this._camera.scale},this.requestUpdate()})}const g=this.shadowRootNode.getElementById("toolbar-el");g&&(g.zoom=Math.round(this._camera.scale*100),g.isMinimapActive=this._showMinimap,g.isInspectorActive=this._showInspector,g.addEventListener("flow:zoom-in",()=>this.zoomBy(1.2)),g.addEventListener("flow:zoom-out",()=>this.zoomBy(.8333333333333334)),g.addEventListener("flow:fit",()=>this.fitToViewport()),g.addEventListener("flow:reset",()=>{this._selectedNodeId=null,this._selectedEdgeId=null,this._showInspector=!1,this.fitToViewport()}),g.addEventListener("flow:toggle-minimap",()=>{this._showMinimap=!this._showMinimap,this.requestUpdate()}),g.addEventListener("flow:toggle-inspector",()=>{this._showInspector=!this._showInspector,this.requestUpdate()}));const f=this.shadowRootNode.getElementById("inspector-el");if(f){if(f.isOpen=this._showInspector,f.tools=this._graph.tools||[],this._selectedNodeId&&e[this._selectedNodeId])f.node=e[this._selectedNodeId];else if(this._selectedEdgeId){const a=t.find(p=>p.id===this._selectedEdgeId)||o.find(p=>p.id===this._selectedEdgeId);f.edge=a||null}else f.node=null,f.edge=null;f.addEventListener("flow:close-inspector",()=>{this._showInspector=!1,this.requestUpdate()})}}}return l(X,"styles",`
+    :host {
+      display: block;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--tuto-bg, #0c0e12);
+      color: var(--tuto-text, #e8eaed);
+      font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      user-select: none;
+    }
+    .canvas-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    svg.flow-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+    svg.flow-svg.grabbing {
+      cursor: grabbing;
+    }
+    .flow-edge-path {
+      fill: none;
+      stroke: var(--tuto-edge, #4b5563);
+      stroke-width: 2.2;
+      transition: stroke 160ms ease, stroke-width 160ms ease, opacity 160ms ease;
+      cursor: pointer;
+    }
+    .flow-edge-path.dimmed {
+      stroke: var(--tuto-edge-dim, #1a202c);
+      opacity: 0.35;
+    }
+    .flow-edge-path.hot {
+      stroke: var(--tuto-hot, #3b82f6);
+      stroke-width: 3.2;
+      opacity: 1;
+    }
+    .flow-edge-pill {
+      cursor: pointer;
+      transition: transform 120ms ease;
+    }
+    .flow-edge-pill:hover {
+      transform: scale(1.04);
+    }
+    .floating-toolbar {
+      position: absolute;
+      left: 1rem;
+      bottom: 1rem;
+      z-index: 20;
+    }
+    .floating-minimap {
+      position: absolute;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 20;
+      transition: opacity 200ms ease, transform 200ms ease;
+    }
+    .floating-minimap.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+    }
+  `),customElements.get("tuto-flow-canvas")||customElements.define("tuto-flow-canvas",X),O(),c.BaseElement=M,c.DEFAULT_CAMERA_PADDING=j,c.MAX_CAMERA_SCALE=R,c.MIN_CAMERA_SCALE=S,c.PRIMARY_FORWARD_EVENTS=W,c.SVG_NS=H,c.TutoBadge=A,c.TutoButton=C,c.TutoFlowCanvas=X,c.TutoFlowInspector=D,c.TutoFlowMinimap=q,c.TutoFlowNode=Y,c.TutoFlowToolbar=P,c.assignLanes=Z,c.autoLayoutColumns=ie,c.bundleEdges=V,c.centerOnNode=G,c.clamp=z,c.colors=w,c.computeFitBounds=F,c.computeGraphBounds=te,c.escapeHtml=b,c.getPort=U,c.htmlEl=se,c.injectThemeTokens=O,c.isEdgeHighlighted=T,c.pointsToSvgPath=J,c.resolvePillSeats=Q,c.routeEdgeItem=K,c.screenToWorld=re,c.shouldShowPill=ee,c.spacing=oe,c.svgEl=E,c.typography=I,c.worldToScreen=ne,c.zoomAtPoint=B,Object.defineProperty(c,Symbol.toStringTag,{value:"Module"}),c})({});
+
+    </script>
+  </head>
+  <body>
+    <header id="topbar">
+      <div class="topbar-brand">
+        <div class="brand-badge">π</div>
+        <div class="brand-text">
+          <h1>Pi Director Agent Workflow</h1>
+          <p>
+            v2 FSM Visualizer · <span class="version-tag">tuto-ui Web Components</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Comparison Link Switcher -->
+      <div class="version-switcher" aria-label="Version Comparison">
+        <a href="workflow-fsm.html" class="version-link" title="Open Legacy Monolithic Visualizer">v1 (Legacy)</a>
+        <a href="workflow-fsm-v2.html" class="version-link active" title="Open tuto-ui Web Component Visualizer">v2 (tuto-ui)</a>
+      </div>
+
+      <nav class="topbar-modes" aria-label="Workflow Modes">
+        <button type="button" class="mode-pill" data-mode="align">
+          <span class="mode-pill-dot" style="background: #f59e0b"></span>
+          Align
+        </button>
+        <button type="button" class="mode-pill" data-mode="spec">
+          <span class="mode-pill-dot" style="background: #38bdf8"></span>
+          Spec
+        </button>
+        <button type="button" class="mode-pill" data-mode="vibe">
+          <span class="mode-pill-dot" style="background: #10b981"></span>
+          Vibe
+        </button>
+      </nav>
+
+      <div class="topbar-actions">
+        <button type="button" id="btn-theme" class="btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="stage">
+      <tuto-flow-canvas id="flow-canvas"></tuto-flow-canvas>
+    </main>
+
+    <!-- Canonical JSON embedded for build-content & standalone usage -->
+    <script type="application/json" id="workflow-fsm-data">
+{
+  "id": "piDirectorWorkflow",
+  "version": "2.2.0",
+  "title": "Pi Director Agent Workflow",
+  "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
+  "session": {
+    "mode": "latest persisted User choice (align | spec | vibe); new and handed-off interactive sessions start in ALIGN",
+    "artifact": "one versioned .pi/plan/<name>.md continued across modes and handoffs",
+    "scope": "initial Goal + accepted follow-ups + every unresolved Checklist (C) outcome",
+    "review": "unresolved Agent decisions (D) that still need explicit User acceptance in ALIGN"
+  },
+  "ownership": [
+    "Mode belongs to the User: latest persisted choice wins; new and handed-off interactive sessions start in ALIGN.",
+    "The /mode command is the universal manual bypass to open the option picker and choose what to do next.",
+    "Manual /mode bypass transitions are User-owned escape hatches — never gated on workflow completeness or unresolved D reviews.",
+    "CALL means invoke ask, decide, start, or next; READ, EDIT, APPEND, and RETURN are Agent-owned actions.",
+    "Project-write boundaries are Agent rules, not a runtime filesystem guard.",
+    "A genuinely unrelated goal requires a fresh session; NEVER delete plan artifacts automatically.",
+    "NEVER advance the hidden memory-review marker outside /init.",
+    "NEVER create or edit .pi/plan/* until start writes the named artifact.",
+    "NEVER CALL ask, decide, or next before start writes the named artifact."
+  ],
+  "invariants": [
+    "ONLY VIBE MAY change files outside .pi; ALIGN and SPEC update .pi workflow state only.",
+    "One versioned .pi/plan/<name>.md continues across modes and handoffs.",
+    "Retain Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.",
+    "Work log, User transcript, and Agent transcript are append-only.",
+    "Checklist is cumulative; latest explicit state wins without hiding earlier lifecycle context.",
+    "Assign every question, Agent decision, and checklist outcome one stable Agent-chosen Q, D, or C id; NEVER reuse or rename.",
+    "KEEP **Current work:** as one short in-flight phrase of the active C or D, or empty while waiting on User.",
+    "NEVER copy Checklist, HTML comments, or format markers into Current work and NEVER add a todo tool.",
+    "KEEP the artifact resumable without relying on chat history after every turn.",
+    "Runtime does not parse artifact prose (only time-spent envelope and Current work line)."
+  ],
+  "always": [
+    "SIZE process and output to the work.",
+    "LEAD with the result and NAME paths, symbols, evidence, and unresolved choices instead of restating files.",
+    "DO NOT repeat transcript or artifact prose in the final response.",
+    "NEVER claim a mutation, decision, check, or acceptance that did not occur.",
+    "NEVER silently remove an initial goal, accepted outcome, unresolved C item, or unresolved D review."
+  ],
+  "turn": [
+    "RUN CAPTURE_TURN(message).",
+    "IF message adds, conflicts with, or appears to replace scope THEN RUN RECONCILE_SCOPE(message); IF unresolved THEN RETURN.",
+    "IF mode = ALIGN THEN RUN ALIGN body.",
+    "ELSE IF mode = SPEC THEN RUN SPEC body.",
+    "ELSE IF mode = VIBE THEN RUN VIBE body."
+  ],
+  "procedures": {
+    "CAPTURE_TURN": [
+      "IF message is workflow-generated or a command THEN RETURN.",
+      "Redact credentials, secret values, and attachment bodies.",
+      "IF no named artifact exists THEN RETAIN captured message in session only.",
+      "ELSE APPEND captured message verbatim to User transcript before substantive work.",
+      "RUN WRITE_ARTIFACT when the artifact exists."
+    ],
+    "RECONCILE_SCOPE": [
+      "COMPARE message with Goal, accepted follow-ups, and every unresolved C outcome.",
+      "IF unambiguous and additive THEN APPEND a stable C outcome without deleting or renaming earlier outcomes; RETURN resolved.",
+      "IF mode = ALIGN THEN CALL ask with concrete keep/defer/replace/resolve options; on cancel RETURN unresolved; else APPEND full exchange to User transcript; RECORD synthesis in Goal, Align, Decisions, Checklist; ANNOTATE superseded/deferred/skipped/failed C with reasons; NEVER erase; RETURN resolved.",
+      "IF mode = SPEC or VIBE THEN CALL decide with the same option shape; ACCEPT highest-confidence pick as working choice; ANNOTATE C and leave D review unresolved; RETURN resolved."
+    ],
+    "WRITE_ARTIFACT": [
+      "IF no named artifact exists THEN RETURN success without creating .pi/plan/*.",
+      "INCLUDE **Current work:** when the in-flight outcome changed.",
+      "TRY EDIT or APPEND; IF fail THEN RETRY once.",
+      "IF retry fails THEN WARN concisely and CONTINUE only when still safely resumable; IF HANDOFF requires the change THEN RETURN failure."
+    ],
+    "RECORD_DECISION": [
+      "IF choice is NOT (material AND reversible AND autonomous AND in scope) AND does not cross a consequential or safety boundary THEN RETURN.",
+      "CALL decide with the question, context, and 2-3 viable compared options.",
+      "TREAT the returned pick as the working choice with review state unresolved.",
+      "DO NOT assign a second D identifier for that decide call.",
+      "DO NOT add the choice to Decisions until explicit User acceptance in ALIGN.",
+      "ALLOW implementation, verification, and CLOSE_OUT to update lifecycle but NEVER imply User approval."
+    ],
+    "BLOCKED": [
+      "STOP affected work without improvising or widening scope.",
+      "RECORD reason, evidence, viable options, recommendation, and affected C/D identifiers.",
+      "IF a decide-shaped choice remains THEN CALL decide and CONTINUE only when that pick unblocks the work.",
+      "RECORD broader ALIGN review as the recommended continuation.",
+      "RUN CLOSE_OUT.",
+      "RETURN unresolved."
+    ],
+    "CLOSE_OUT": [
+      "APPEND phase result, actual changed paths, checks run, checks not run, limitations, and concerns to Work log.",
+      "RECONCILE initial Goal, accepted follow-ups, every C outcome, and every D lifecycle from the artifact as a whole.",
+      "FOR EACH C outcome: MARK completed only with evidence; OTHERWISE keep unresolved, or annotate deferred/skipped/failed with a reason.",
+      "NEVER present the task as complete while an accepted outcome remains unresolved.",
+      "NEVER mark a D User-approved without an explicit review answer.",
+      "PROMOTE only durable orientation or costly quirks to project memory; NEVER advance the hidden memory-review marker.",
+      "IF routing disabled THEN ENSURE artifact is resumable and RETURN.",
+      "IF actionable work remains THEN CALL next with ranked modes/handoff; each non-handoff action needs plain-English reason (Q/C/D ids only as trailing [] or ()) and a custom instruction grounded in current C/D, intended result, and verification target; runtime prepends Switch/Continue only.",
+      "ELSE IF decision review remains THEN SUMMARIZE and CALL next with ALIGN plus instruction grounded in unresolved D.",
+      "ELSE DO NOT CALL next.",
+      "ENSURE artifact is resumable and final output is truthful and concise."
+    ],
+    "HANDOFF": [
+      "IF no named artifact exists THEN DO NOT invent a temporary plan; RETURN without handing off.",
+      "IF artifact is current format THEN USE the already-written artifact; DO NOT start a checkpoint turn; KEEP leftover current-format files as-is.",
+      "ELSE DO NOT mutate the legacy artifact.",
+      "CONTINUE in fresh ALIGN with the ordinary continue line.",
+      "READ the whole current artifact or immutable legacy reference.",
+      "CHOOSE the most important unresolved item before asking the next question."
+    ],
+    "LEGACY_CONTINUATION": [
+      "ACCEPT persisted legacy modes as readable; /questionnaire does not exist.",
+      "NEVER mutate an artifact without the current format marker.",
+      "CALL start before the first .pi write to create a linked current-format continuation.",
+      "LET runtime carry recognized historical timing into the continuation.",
+      "CONVERT meaningful legacy goal, evidence, decisions, and checklist history into flat sections.",
+      "PRESERVE the legacy file unchanged.",
+      "CALL ask only when the meaning or desired carry-forward is genuinely uncertain."
+    ]
+  },
+  "states": {
+    "align": {
+      "id": "align",
+      "label": "ALIGN",
+      "kind": "mode",
+      "summary": "Session start and preflight: start tool begins here, then clarify scope, review D items, ask User.",
+      "permission": "readonly",
+      "substates": [
+        "orientation",
+        "ensureArtifact",
+        "askLoop",
+        "routeNext"
+      ],
+      "procedure": [
+        "Session story starts here: first entry CALL start (when no named artifact) then ask for direction — Align is the beginning of the guided graph.",
+        "READ only bounded AGENTS.md, .pi state including MEMORY.md, README, named plans, or documentation for orientation.",
+        "TREAT those sources as the starting point even when they may be stale.",
+        "DO NOT research source implementation, search the codebase, or change files outside .pi.",
+        "IF known orientation cannot answer an implementation question THEN RECORD that gap as unresolved work for SPEC; DO NOT open source files or run codebase search to fill it.",
+        "AFTER orientation reads, IF no named artifact exists THEN CALL start exactly once.",
+        "IF start created the artifact this turn THEN APPEND any session-retained captured message to User transcript.",
+        "AFTER the artifact exists, CALL ask immediately when any goal, scope, constraint, outcome, or D review question remains.",
+        "DO NOT use non-orientation tools other than start before that first ask.",
+        "NEVER CALL decide.",
+        "WHILE a goal, scope, constraint, outcome, or D review question remains: CALL ask as the first User-facing action with 1-4 independent questions, stable Q ids, 2-3 concrete options each, confidence 1-5.",
+        "ASK dependent follow-ups in a later CALL after incorporating earlier answers.",
+        "IF Ask is cancelled THEN DISCARD the entire cancelled exchange; LEAVE artifact meaning unchanged; RETURN without CALL next.",
+        "IF Ask routes directly to SPEC or VIBE THEN LET runtime settle ALIGN and start a fresh target-mode turn with only mechanical transition context; IN that turn reconstruct the full exchange before substantive work; RETURN.",
+        "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
+        "EDIT Goal, Align, Decisions, and Checklist with accepted meaning without duplicating transcript prose.",
+        "MARK a D review accepted ONLY for an explicit review answer.",
+        "IF a reviewed D changes direction THEN APPEND the resulting unresolved C outcome.",
+        "IF useful work remains THEN CALL next with only meaningful ranked ALIGN, SPEC, VIBE, and/or handoff actions.",
+        "IF remaining work is source exploration THEN rank SPEC first with a custom instruction for that gap.",
+        "FOR EACH non-handoff action INCLUDE a user-facing reason in plain English (Q/C/D ids only as trailing [] or ()) and a custom instruction grounded in the current C/D identifier or concrete outcome, intended result, and verification target.",
+        "FOR handoff OMIT the kickoff.",
+        "ELSE RETURN to the editor (DO NOT CALL next)."
+      ]
+    },
+    "spec": {
+      "id": "spec",
+      "label": "SPEC",
+      "kind": "mode",
+      "summary": "Research and proposal only; plan-only .pi writes; no project file mutations.",
+      "permission": "planonly",
+      "substates": [
+        "ensureArtifact",
+        "research",
+        "proposal",
+        "recordDecision",
+        "closeOut"
+      ],
+      "procedure": [
+        "IF ALIGN was bypassed AND no named artifact exists THEN CALL start before substantive work.",
+        "NEVER CALL ask.",
+        "BEGIN with one bounded exact symbol or path search.",
+        "BROADEN only for a named unresolved reason and STOP when evidence answers it.",
+        "EXCLUDE node_modules, generated, vendor, cache trees, and source maps unless explicitly targeted.",
+        "EDIT Evidence, Proposal, Checklist, and Work log without changing files outside .pi.",
+        "PREFER the smallest sufficient proposal and RECORD meaningful rejected alternatives.",
+        "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
+        "IF a product, destructive, external, irreversible, credential, dependency, or consequential choice appears THEN RUN RECORD_DECISION(choice).",
+        "IF research or a check exposes an unrelated or pre-existing failure THEN RECORD and REPORT it without widening scope or claiming the proposal caused it.",
+        "IF the proposal is not yet actionable THEN RUN BLOCKED(missing evidence or decision) and RETURN.",
+        "RUN CLOSE_OUT.",
+        "RETURN a concise proposal summary with artifact path; DO NOT repeat the full artifact."
+      ]
+    },
+    "vibe": {
+      "id": "vibe",
+      "label": "VIBE",
+      "kind": "mode",
+      "summary": "Implement accepted scope, verify with checks, only mode that may write outside .pi.",
+      "permission": "write",
+      "substates": [
+        "ensureArtifact",
+        "execute",
+        "verify",
+        "recordDecision",
+        "closeOut"
+      ],
+      "procedure": [
+        "IF ALIGN was bypassed AND no named artifact exists THEN CALL start before substantive work.",
+        "NEVER CALL ask.",
+        "IMPLEMENT accepted scope and RESOLVE routine implementation research in place.",
+        "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
+        "IF a product, destructive, external, irreversible, credential, dependency, or consequential choice appears THEN RUN RECORD_DECISION(choice) before crossing the boundary.",
+        "RUN the smallest appropriate repository checks, then broader retained checks when risk warrants.",
+        "IF a check fails because of this work THEN: IF fixable within scope THEN FIX and RERUN; ELSE RUN BLOCKED(failure) and RETURN.",
+        "ELSE IF a check exposes an unrelated or pre-existing failure THEN RECORD and REPORT it without widening scope.",
+        "UPDATE cumulative Checklist and append-only Work log throughout the work.",
+        "RUN CLOSE_OUT when work pauses or finishes.",
+        "RETURN a concise result, including limitations and checks not run."
+      ]
+    },
+    "closeOut": {
+      "id": "closeOut",
+      "label": "CLOSE_OUT",
+      "kind": "procedure",
+      "summary": "Finish of a Spec/Vibe (or Blocked) phase: reconcile, work-log, memory promote, optional next or handoff restart.",
+      "permission": "memory",
+      "substates": [
+        "workLog",
+        "reconcile",
+        "promoteMemory",
+        "routeNext"
+      ],
+      "procedure": [
+        "CLOSE_OUT is a procedure invoked from SPEC/VIBE (and BLOCKED), not a persisted User mode.",
+        "Follow procedures.CLOSE_OUT exactly.",
+        "Routing uses CALL next; User picker or command selects the next mode."
+      ]
+    },
+    "blocked": {
+      "id": "blocked",
+      "label": "BLOCKED",
+      "kind": "procedure",
+      "summary": "Stop in-scope work, record options, prefer ALIGN review via next.",
+      "permission": "planonly",
+      "procedure": [
+        "Follow procedures.BLOCKED exactly.",
+        "After CLOSE_OUT, recommend ALIGN when broader review is needed."
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "HANDOFF",
+      "kind": "procedure",
+      "summary": "Fresh context window on the same artifact; restart the guided process from Align (beginning).",
+      "permission": "standby",
+      "procedure": [
+        "Follow procedures.HANDOFF exactly.",
+        "Fresh session starts in ALIGN on the same artifact — restart from the beginning, not an editor hub."
+      ]
+    }
+  },
+  "transitions": [
+    {
+      "id": "align-ask-route-spec",
+      "from": "align",
+      "event": "ASK_ROUTED_SPEC",
+      "to": "spec",
+      "label": "Proceed-with-best → SPEC",
+      "description": "User accepts prior answers plus remaining highest-confidence options and routes to SPEC.",
+      "userMediated": true
+    },
+    {
+      "id": "align-ask-route-vibe",
+      "from": "align",
+      "event": "ASK_ROUTED_VIBE",
+      "to": "vibe",
+      "label": "Proceed-with-best → VIBE",
+      "description": "User accepts prior answers plus remaining highest-confidence options and routes to VIBE.",
+      "userMediated": true
+    },
+    {
+      "id": "align-next-spec",
+      "from": "align",
+      "event": "NEXT_SPEC",
+      "to": "spec",
+      "label": "next → SPEC",
+      "description": "User chooses SPEC mode via next picker with auto-start prompt.",
+      "userMediated": true
+    },
+    {
+      "id": "align-next-vibe",
+      "from": "align",
+      "event": "NEXT_VIBE",
+      "to": "vibe",
+      "label": "next → VIBE",
+      "description": "User chooses VIBE mode via next picker with auto-start prompt.",
+      "userMediated": true
+    },
+    {
+      "id": "align-next-handoff",
+      "from": "align",
+      "event": "NEXT_HANDOFF",
+      "to": "handoff",
+      "label": "next → handoff",
+      "description": "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
+      "userMediated": true
+    },
+    {
+      "id": "spec-closeout",
+      "from": "spec",
+      "event": "CLOSE_OUT",
+      "to": "closeOut",
+      "label": "CLOSE_OUT",
+      "description": "Preferred end-of-phase path: reconcile and optionally CALL next."
+    },
+    {
+      "id": "spec-blocked",
+      "from": "spec",
+      "event": "BLOCKED",
+      "to": "blocked",
+      "label": "BLOCKED",
+      "description": "Missing evidence or decision; stop without widening scope."
+    },
+    {
+      "id": "spec-next-align",
+      "from": "spec",
+      "event": "NEXT_ALIGN",
+      "to": "align",
+      "label": "next → ALIGN",
+      "description": "Direct next from SPEC; preferred agent path still runs CLOSE_OUT first.",
+      "userMediated": true
+    },
+    {
+      "id": "spec-next-vibe",
+      "from": "spec",
+      "event": "NEXT_VIBE",
+      "to": "vibe",
+      "label": "next → VIBE",
+      "description": "User selects recommended SPEC→VIBE next action.",
+      "userMediated": true
+    },
+    {
+      "id": "spec-next-handoff",
+      "from": "spec",
+      "event": "NEXT_HANDOFF",
+      "to": "handoff",
+      "label": "next → handoff",
+      "description": "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
+      "userMediated": true
+    },
+    {
+      "id": "vibe-closeout",
+      "from": "vibe",
+      "event": "CLOSE_OUT",
+      "to": "closeOut",
+      "label": "CLOSE_OUT",
+      "description": "Preferred end-of-phase path: reconcile and optionally CALL next."
+    },
+    {
+      "id": "vibe-blocked",
+      "from": "vibe",
+      "event": "BLOCKED",
+      "to": "blocked",
+      "label": "BLOCKED",
+      "description": "Unfixable in-scope failure or consequential stop."
+    },
+    {
+      "id": "vibe-next-align",
+      "from": "vibe",
+      "event": "NEXT_ALIGN",
+      "to": "align",
+      "label": "next → ALIGN",
+      "description": "Decision review or re-clarify via next (prefer after CLOSE_OUT).",
+      "userMediated": true
+    },
+    {
+      "id": "vibe-next-spec",
+      "from": "vibe",
+      "event": "NEXT_SPEC",
+      "to": "spec",
+      "label": "next → SPEC",
+      "description": "More research needed via next (prefer after CLOSE_OUT).",
+      "userMediated": true
+    },
+    {
+      "id": "vibe-next-handoff",
+      "from": "vibe",
+      "event": "NEXT_HANDOFF",
+      "to": "handoff",
+      "label": "next → handoff",
+      "description": "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
+      "userMediated": true
+    },
+    {
+      "id": "blocked-closeout",
+      "from": "blocked",
+      "event": "CLOSE_OUT",
+      "to": "closeOut",
+      "label": "CLOSE_OUT",
+      "description": "Record blockage then close out with ALIGN often recommended."
+    },
+    {
+      "id": "blocked-unblock-spec",
+      "from": "blocked",
+      "event": "DECIDE_CONTINUE_SPEC",
+      "to": "spec",
+      "label": "Decide unblocks → SPEC",
+      "description": "Decide auto-picks working choice that unblocks research; continue SPEC."
+    },
+    {
+      "id": "blocked-unblock-vibe",
+      "from": "blocked",
+      "event": "DECIDE_CONTINUE_VIBE",
+      "to": "vibe",
+      "label": "Decide unblocks → VIBE",
+      "description": "Decide auto-picks working choice that unblocks execution; continue VIBE."
+    },
+    {
+      "id": "closeout-next-align",
+      "from": "closeOut",
+      "event": "NEXT_ALIGN",
+      "to": "align",
+      "label": "next → ALIGN",
+      "description": "Actionable review or follow-up clarification; or unresolved D review.",
+      "userMediated": true
+    },
+    {
+      "id": "closeout-next-spec",
+      "from": "closeOut",
+      "event": "NEXT_SPEC",
+      "to": "spec",
+      "label": "next → SPEC",
+      "description": "More research/proposal work remains.",
+      "userMediated": true
+    },
+    {
+      "id": "closeout-next-vibe",
+      "from": "closeOut",
+      "event": "NEXT_VIBE",
+      "to": "vibe",
+      "label": "next → VIBE",
+      "description": "Implementation work remains.",
+      "userMediated": true
+    },
+    {
+      "id": "closeout-next-handoff",
+      "from": "closeOut",
+      "event": "NEXT_HANDOFF",
+      "to": "handoff",
+      "label": "next → handoff",
+      "description": "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
+      "userMediated": true
+    },
+    {
+      "id": "handoff-continue",
+      "from": "handoff",
+      "event": "SESSION_CONTINUED",
+      "to": "align",
+      "label": "Fresh ALIGN",
+      "description": "Replacement session starts in ALIGN on the same artifact — restart the guided process from the beginning."
+    }
+  ],
+  "exceptions": {
+    "title": "Manual Bypass & Escape Hatches",
+    "summary": "The /mode command is the universal manual bypass. Running /mode opens the option picker at any time so the User can choose what to do next (jump to ALIGN, SPEC, VIBE, or hand off) without being gated by agent completion.",
+    "commands": [
+      {
+        "command": "/mode",
+        "label": "Open Option Picker (Universal Bypass)",
+        "summary": "Opens the mode option picker to choose any target mode or action.",
+        "description": "User-triggered escape hatch. Opens the interactive option picker in editor standby so the User can choose what to do next (switch mode, hand off, or return)."
+      },
+      {
+        "command": "/handoff [name]",
+        "label": "Direct Handoff Shortcut",
+        "summary": "Swaps active session onto a named plan in fresh ALIGN.",
+        "description": "Direct shortcut for session continuation on a named plan artifact, seeding a fresh ALIGN session."
+      }
+    ],
+    "rules": [
+      "The /mode command is the canonical User-owned bypass to open the option picker and choose what to do next.",
+      "Manual bypass transitions are never gated on workflow completeness, pending recommendations, or unresolved D items.",
+      "Selecting an unrecommended mode in the picker switches the session mode in editor standby.",
+      "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN."
+    ]
+  },
+  "tools": [
+    {
+      "name": "start",
+      "summary": "First .pi/plan write triggered by user input on start: named artifact or linked legacy continuation.",
+      "modes": [
+        "any"
+      ],
+      "gate": [
+        "Creates or continues the named plan; no plan file exists until start succeeds."
+      ],
+      "mechanics": [
+        "User input triggers start tool to create the named artifact before substantive ALIGN work.",
+        "CALL start with a context-informed 2-4 word task name; include a ticket ID when applicable.",
+        "start is the first CALL tool when no named artifact exists.",
+        "Legacy artifacts stay immutable; start forks a linked current-format continuation."
+      ]
+    },
+    {
+      "name": "ask",
+      "summary": "Native ALIGN question loop; clarifies scope while staying in ALIGN until ready for next mode.",
+      "modes": [
+        "align"
+      ],
+      "gate": [
+        "ALIGN-only; SPEC/VIBE ask is a harmless no-op (no picker).",
+        "Empty ask is a harmless no-op.",
+        "Non-empty ask requires a named session plan file; otherwise error without picker.",
+        "Interactive UI required only when questions will be shown."
+      ],
+      "mechanics": [
+        "ALIGN triggers ask to clarify scope, constraints, and decisions before moving to SPEC/VIBE.",
+        "Answers stay in ALIGN (ask loop) to process follow-up questions.",
+        "CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly.",
+        "KEEP question identifiers, option values, and option labels distinct.",
+        "NEVER imitate native action labels.",
+        "USE customAnswerLabel for User-supplied detail; NEVER offer a selectable option that merely says specify.",
+        "BATCH only independent questions; dependent follow-ups in a later CALL.",
+        "An optionless ask question offers custom input but no Proceed-with-best route.",
+        "Proceed-with-best accepts prior answers plus remaining highest-confidence answers and starts fresh SPEC/VIBE.",
+        "Agent persists User-transcript meaning; runtime does not write the User transcript."
+      ]
+    },
+    {
+      "name": "decide",
+      "summary": "SPEC/VIBE auto-pick highest-confidence option; that call IS RECORD_DECISION.",
+      "modes": [
+        "spec",
+        "vibe"
+      ],
+      "gate": [
+        "SPEC/VIBE-only; ALIGN decide is a harmless no-op.",
+        "Empty decide is a harmless no-op.",
+        "Optionless decide is a harmless no-op.",
+        "Non-empty decide with options requires a named session plan file; otherwise error."
+      ],
+      "mechanics": [
+        "Never opens a picker and never changes mode.",
+        "Auto-picks the highest-confidence option per question.",
+        "Records agent-workflow:decision and appends Agent transcript after start.",
+        "Leaves D review unresolved until explicit ALIGN acceptance."
+      ]
+    },
+    {
+      "name": "next",
+      "summary": "Queue ranked post-turn actions; user chooses the next mode (SPEC, VIBE, ALIGN, or handoff).",
+      "modes": [
+        "any"
+      ],
+      "gate": [
+        "Empty next records no recommendation and opens no picker.",
+        "Non-empty next requires valid targets and prompts; requires named session plan.",
+        "Every ALIGN/SPEC/VIBE action needs contextual prompt; handoff must omit prompt."
+      ],
+      "mechanics": [
+        "After alignment or phase completion, CALL next so the user chooses the next mode.",
+        "Agent-authored actions REQUIRE a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
+        "Runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction.",
+        "Recommended row with a reason shows {mode} — {reason}.",
+        "Prefer CALL next from CLOSE_OUT; runtime still opens the picker if next is called from ALIGN/SPEC/VIBE directly.",
+        "Manual ALIGN/SPEC/VIBE commands and unrecommended picker choices return to the editor.",
+        "Manual mode commands accept no unanswered recommendation or unresolved D review (escape hatches).",
+        "Only a recommended next prompt starts the agent.",
+        "Duplicate next modes collapse; picker-selected handoff prepares /handoff for explicit User execution.",
+        "Ask-routed SPEC/VIBE and /handoff still auto-start."
+      ]
+    }
+  ],
+  "artifact": {
+    "sections": [
+      "Goal",
+      "Align",
+      "Decisions",
+      "Evidence",
+      "Proposal",
+      "Checklist",
+      "Work log",
+      "User transcript",
+      "Agent transcript"
+    ],
+    "identifiers": {
+      "Q": "Stable immutable question id (e.g. Q1)",
+      "D": "Stable immutable decision id (e.g. D1)",
+      "C": "Stable immutable checklist outcome id (e.g. C1)"
+    },
+    "rules": [
+      "PRESERVE historical prose and APPEND lifecycle developments instead of rewriting history.",
+      "KEEP Decisions as the concise accepted synthesis of User answers and reviewed Agent choices.",
+      "INTERPRET status from the artifact as a whole.",
+      "TREAT CLOSE_OUT as a procedure, not an artifact section."
+    ]
+  },
+  "initial": "align",
+  "notes": [
+    "Guided session story: Align (start tool + ask) begins; Spec/Vibe do work; Close-out finishes a phase; Handoff = fresh context, same artifact, restart at Align. Idle product UI when nothing is running is not a graph node.",
+    "Persisted User mode is only align|spec|vibe. closeOut, blocked, and handoff are procedural helpers on the shared flow chart.",
+    "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
+    "Transition table is the guided graph only. Stay-in-mode continue, picker dismiss, ask cancel, end-without-next, and idle UI are runtime — not graph edges. Manual /align /spec /vibe /mode bypasses live under Exceptions. Preferred agent path still ends SPEC/VIBE via CLOSE_OUT before CALL next.",
+    "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
+    "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
+    "tools validate required shapes and protocol enums, not workflow quality."
+  ]
+}
+
+    </script>
+
+    <!-- Flow Diagram Initialization (file:// safe, standard script) -->
+    <script>
+      const fsmData = JSON.parse(document.getElementById("workflow-fsm-data").textContent);
+      const canvas = document.getElementById("flow-canvas");
+
+      // Node coordinate layout
+      const NODE_LAYOUT = {
+        editor: { x: 100, y: 360, w: 240, h: 165 },
+        align: { x: 640, y: 60, w: 260, h: 175 },
+        spec: { x: 640, y: 355, w: 260, h: 175 },
+        vibe: { x: 640, y: 650, w: 260, h: 175 },
+        closeOut: { x: 1200, y: 190, w: 260, h: 175 },
+        blocked: { x: 1200, y: 520, w: 260, h: 175 },
+        handoff: { x: 1760, y: 360, w: 240, h: 165 },
+      };
+
+      const states = {};
+      for (const [id, pos] of Object.entries(NODE_LAYOUT)) {
+        const raw = (fsmData.states && fsmData.states[id]) || {};
+        states[id] = {
+          ...raw,
+          ...pos,
+          id,
+        };
+      }
+
+      canvas.graph = {
+        ...fsmData,
+        states,
+      };
+
+      // Topbar mode buttons
+      document.querySelectorAll(".mode-pill").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const mode = btn.dataset.mode;
+          if (mode) {
+            canvas.centerOnState(mode);
+            document.querySelectorAll(".mode-pill").forEach((b) => {
+              b.classList.toggle("active", b.dataset.mode === mode);
+            });
+          }
+        });
+      });
+
+      // Synchronize selection back to mode pills
+      canvas.addEventListener("flow:select-node", (e) => {
+        const node = e.detail?.node;
+        document.querySelectorAll(".mode-pill").forEach((b) => {
+          b.classList.toggle("active", b.dataset.mode === node?.id);
+        });
+      });
+
+      // Theme toggle
+      const btnTheme = document.getElementById("btn-theme");
+      try {
+        const savedTheme = localStorage.getItem("pi_workflow_theme");
+        if (savedTheme === "light" || savedTheme === "dark") {
+          document.documentElement.setAttribute("data-theme", savedTheme);
+          canvas.theme = savedTheme;
+        }
+      } catch {}
+
+      btnTheme.addEventListener("click", () => {
+        const current = document.documentElement.getAttribute("data-theme") || "dark";
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        canvas.theme = next;
+        try {
+          localStorage.setItem("pi_workflow_theme", next);
+        } catch {}
+      });
+    </script>
+  </body>
+</html>

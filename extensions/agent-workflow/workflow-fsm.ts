@@ -12,7 +12,7 @@
 
 export const WORKFLOW_FSM_VERSION = "2.2.0";
 
-export type FsmStateId = "align" | "spec" | "vibe" | "closeOut" | "blocked" | "handoff" | "editor";
+export type FsmStateId = "align" | "spec" | "vibe" | "closeOut" | "blocked" | "handoff";
 
 export type FsmStateKind = "mode" | "procedure" | "standby";
 
@@ -49,6 +49,13 @@ export interface FsmToolSpec {
   mechanics: string[];
 }
 
+export interface FsmException {
+  command: string;
+  label: string;
+  summary: string;
+  description: string;
+}
+
 export interface WorkflowFsm {
   id: "piDirectorWorkflow";
   version: string;
@@ -68,6 +75,12 @@ export interface WorkflowFsm {
   procedures: Record<string, string[]>;
   states: Record<FsmStateId, FsmState>;
   transitions: FsmTransition[];
+  exceptions: {
+    title: string;
+    summary: string;
+    commands: FsmException[];
+    rules: string[];
+  };
   tools: FsmToolSpec[];
   artifact: {
     sections: string[];
@@ -95,8 +108,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
   },
   ownership: [
     "Mode belongs to the User: latest persisted choice wins; new and handed-off interactive sessions start in ALIGN.",
-    "Explicit /align, /spec, /vibe, /mode, and /handoff are User-owned escape hatches.",
-    "Manual mode commands accept no unanswered recommendation or unresolved D review — they are escape hatches, not gated on workflow completeness.",
+    "The /mode command is the universal manual bypass to open the option picker and choose what to do next.",
+    "Manual /mode bypass transitions are User-owned escape hatches — never gated on workflow completeness or unresolved D reviews.",
     "CALL means invoke ask, decide, start, or next; READ, EDIT, APPEND, and RETURN are Agent-owned actions.",
     "Project-write boundaries are Agent rules, not a runtime filesystem guard.",
     "A genuinely unrelated goal requires a fresh session; NEVER delete plan artifacts automatically.",
@@ -202,10 +215,11 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       id: "align",
       label: "ALIGN",
       kind: "mode",
-      summary: "Recommended preflight: bounded orientation, clarify scope, review D items, ask User.",
+      summary: "Session start and preflight: start tool begins here, then clarify scope, review D items, ask User.",
       permission: "readonly",
       substates: ["orientation", "ensureArtifact", "askLoop", "routeNext"],
       procedure: [
+        "Session story starts here: first entry CALL start (when no named artifact) then ask for direction — Align is the beginning of the guided graph.",
         "READ only bounded AGENTS.md, .pi state including MEMORY.md, README, named plans, or documentation for orientation.",
         "TREAT those sources as the starting point even when they may be stale.",
         "DO NOT research source implementation, search the codebase, or change files outside .pi.",
@@ -278,7 +292,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       id: "closeOut",
       label: "CLOSE_OUT",
       kind: "procedure",
-      summary: "Shared end-of-phase reconcile, work-log, memory promote, and optional next routing.",
+      summary:
+        "Finish of a Spec/Vibe (or Blocked) phase: reconcile, work-log, memory promote, optional next or handoff restart.",
       permission: "memory",
       substates: ["workLog", "reconcile", "promoteMemory", "routeNext"],
       procedure: [
@@ -302,22 +317,11 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       id: "handoff",
       label: "HANDOFF",
       kind: "procedure",
-      summary: "Continue the same artifact in a fresh ALIGN session.",
-      permission: "standby",
-      procedure: ["Follow procedures.HANDOFF exactly.", "Fresh session starts in ALIGN."],
-    },
-    editor: {
-      id: "editor",
-      label: "EDITOR",
-      kind: "standby",
-      summary: "Idle standby waiting for User message, command, or picker input.",
+      summary: "Fresh context window on the same artifact; restart the guided process from Align (beginning).",
       permission: "standby",
       procedure: [
-        "Initial session starts here with default ALIGN mode.",
-        "Reached when mode commands run, unrecommended picker choices are selected, picker is dismissed, or ask is cancelled.",
-        "Manual /align /spec /vibe /mode and unrecommended picker choices return here after changing mode.",
-        "Manual mode commands accept no unanswered recommendation or unresolved D review (escape hatches).",
-        "Only a recommended next prompt or ask-route auto-starts the agent.",
+        "Follow procedures.HANDOFF exactly.",
+        "Fresh session starts in ALIGN on the same artifact — restart from the beginning, not an editor hub.",
       ],
     },
   },
@@ -342,30 +346,12 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "align-ask-answered",
-      from: "align",
-      event: "ASK_ANSWERED",
-      to: "align",
-      label: "Ask answered",
-      description: "Incorporate user answers into session transcript and artifact; continue ALIGN loop.",
-      userMediated: true,
-    },
-    {
-      id: "align-ask-cancelled",
-      from: "align",
-      event: "ASK_CANCELLED",
-      to: "editor",
-      label: "Ask cancelled",
-      description: "Discard exchange; do not open next picker; return to editor.",
-      userMediated: true,
-    },
-    {
       id: "align-next-spec",
       from: "align",
       event: "NEXT_SPEC",
       to: "spec",
       label: "next → SPEC",
-      description: "User selects recommended SPEC action with auto-start prompt.",
+      description: "User chooses SPEC mode via next picker with auto-start prompt.",
       userMediated: true,
     },
     {
@@ -374,87 +360,16 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       event: "NEXT_VIBE",
       to: "vibe",
       label: "next → VIBE",
-      description: "User selects recommended VIBE action with auto-start prompt.",
-      userMediated: true,
-    },
-    {
-      id: "align-next-align",
-      from: "align",
-      event: "NEXT_ALIGN",
-      to: "align",
-      label: "next → ALIGN",
-      description: "Continue in ALIGN with recommended prompt.",
+      description: "User chooses VIBE mode via next picker with auto-start prompt.",
       userMediated: true,
     },
     {
       id: "align-next-handoff",
       from: "align",
       event: "NEXT_HANDOFF",
-      to: "editor",
-      label: "next → handoff prep",
-      description: "Picker prepares /handoff command for user execution in editor.",
-      userMediated: true,
-    },
-    {
-      id: "align-picker-dismiss",
-      from: "align",
-      event: "PICKER_DISMISS",
-      to: "editor",
-      label: "Picker dismiss/unrecommended",
-      description: "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
-      userMediated: true,
-    },
-    {
-      id: "align-no-work",
-      from: "align",
-      event: "NO_WORK",
-      to: "editor",
-      label: "Return to editor",
-      description: "No useful work remains; do not call next.",
-    },
-    {
-      id: "align-cmd-align",
-      from: "align",
-      event: "CMD_ALIGN",
-      to: "editor",
-      label: "/align",
-      description: "Manual mode command escape hatch; records ALIGN mode; returns to editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "align-cmd-spec",
-      from: "align",
-      event: "CMD_SPEC",
-      to: "editor",
-      label: "/spec",
-      description: "Manual mode command escape hatch; switches to SPEC mode; returns to editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "align-cmd-vibe",
-      from: "align",
-      event: "CMD_VIBE",
-      to: "editor",
-      label: "/vibe",
-      description: "Manual mode command escape hatch; switches to VIBE mode; returns to editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "align-cmd-mode",
-      from: "align",
-      event: "CMD_MODE",
-      to: "editor",
-      label: "/mode",
-      description: "Manual mode picker command; opens picker in editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "align-cmd-handoff",
-      from: "align",
-      event: "CMD_HANDOFF",
       to: "handoff",
-      label: "/handoff",
-      description: "Explicit handoff command; swaps session onto named plan.",
+      label: "next → handoff",
+      description: "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
       userMediated: true,
     },
     // SPEC
@@ -475,29 +390,12 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       description: "Missing evidence or decision; stop without widening scope.",
     },
     {
-      id: "spec-no-work",
-      from: "spec",
-      event: "NO_WORK",
-      to: "editor",
-      label: "Proposal returned",
-      description: "Agent completes proposal without CALL next; returns to editor.",
-    },
-    {
       id: "spec-next-align",
       from: "spec",
       event: "NEXT_ALIGN",
       to: "align",
       label: "next → ALIGN",
       description: "Direct next from SPEC; preferred agent path still runs CLOSE_OUT first.",
-      userMediated: true,
-    },
-    {
-      id: "spec-next-spec",
-      from: "spec",
-      event: "NEXT_SPEC",
-      to: "spec",
-      label: "next → SPEC",
-      description: "Continue SPEC via recommended next prompt.",
       userMediated: true,
     },
     {
@@ -513,63 +411,9 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       id: "spec-next-handoff",
       from: "spec",
       event: "NEXT_HANDOFF",
-      to: "editor",
-      label: "next → handoff prep",
-      description: "Picker prepares /handoff command for user execution.",
-      userMediated: true,
-    },
-    {
-      id: "spec-picker-dismiss",
-      from: "spec",
-      event: "PICKER_DISMISS",
-      to: "editor",
-      label: "Picker dismiss/unrecommended",
-      description: "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
-      userMediated: true,
-    },
-    {
-      id: "spec-cmd-align",
-      from: "spec",
-      event: "CMD_ALIGN",
-      to: "editor",
-      label: "/align",
-      description: "User escape hatch to ALIGN; returns to editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "spec-cmd-spec",
-      from: "spec",
-      event: "CMD_SPEC",
-      to: "editor",
-      label: "/spec",
-      description: "Manual re-assert SPEC; returns to editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "spec-cmd-vibe",
-      from: "spec",
-      event: "CMD_VIBE",
-      to: "editor",
-      label: "/vibe",
-      description: "User escape hatch to VIBE; returns to editor standby after mode change.",
-      userMediated: true,
-    },
-    {
-      id: "spec-cmd-mode",
-      from: "spec",
-      event: "CMD_MODE",
-      to: "editor",
-      label: "/mode",
-      description: "Manual mode picker command; opens picker in editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "spec-cmd-handoff",
-      from: "spec",
-      event: "CMD_HANDOFF",
       to: "handoff",
-      label: "/handoff",
-      description: "Explicit handoff command; swaps session onto named plan.",
+      label: "next → handoff",
+      description: "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
       userMediated: true,
     },
     // VIBE
@@ -590,14 +434,6 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       description: "Unfixable in-scope failure or consequential stop.",
     },
     {
-      id: "vibe-no-work",
-      from: "vibe",
-      event: "NO_WORK",
-      to: "editor",
-      label: "Implementation returned",
-      description: "Agent completes work without CALL next; returns to editor.",
-    },
-    {
       id: "vibe-next-align",
       from: "vibe",
       event: "NEXT_ALIGN",
@@ -616,75 +452,12 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "vibe-next-vibe",
-      from: "vibe",
-      event: "NEXT_VIBE",
-      to: "vibe",
-      label: "next → VIBE",
-      description: "Continue VIBE via recommended next prompt.",
-      userMediated: true,
-    },
-    {
       id: "vibe-next-handoff",
       from: "vibe",
       event: "NEXT_HANDOFF",
-      to: "editor",
-      label: "next → handoff prep",
-      description: "Picker prepares /handoff from VIBE.",
-      userMediated: true,
-    },
-    {
-      id: "vibe-picker-dismiss",
-      from: "vibe",
-      event: "PICKER_DISMISS",
-      to: "editor",
-      label: "Picker dismiss/unrecommended",
-      description: "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
-      userMediated: true,
-    },
-    {
-      id: "vibe-cmd-align",
-      from: "vibe",
-      event: "CMD_ALIGN",
-      to: "editor",
-      label: "/align",
-      description: "User escape hatch to ALIGN; returns to editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "vibe-cmd-spec",
-      from: "vibe",
-      event: "CMD_SPEC",
-      to: "editor",
-      label: "/spec",
-      description: "User escape hatch to SPEC; returns to editor standby after mode change.",
-      userMediated: true,
-    },
-    {
-      id: "vibe-cmd-vibe",
-      from: "vibe",
-      event: "CMD_VIBE",
-      to: "editor",
-      label: "/vibe",
-      description: "Manual re-assert VIBE; returns to editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "vibe-cmd-mode",
-      from: "vibe",
-      event: "CMD_MODE",
-      to: "editor",
-      label: "/mode",
-      description: "Manual mode picker command; opens picker in editor standby.",
-      userMediated: true,
-    },
-    {
-      id: "vibe-cmd-handoff",
-      from: "vibe",
-      event: "CMD_HANDOFF",
       to: "handoff",
-      label: "/handoff",
-      description: "Explicit handoff command; swaps session onto named plan.",
+      label: "next → handoff",
+      description: "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
       userMediated: true,
     },
     // BLOCKED
@@ -744,27 +517,10 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       id: "closeout-next-handoff",
       from: "closeOut",
       event: "NEXT_HANDOFF",
-      to: "editor",
-      label: "next → handoff prep",
-      description: "Picker prepares /handoff from post-turn picker.",
+      to: "handoff",
+      label: "next → handoff",
+      description: "User chooses handoff: fresh context window, same artifact, restart from Align via HANDOFF.",
       userMediated: true,
-    },
-    {
-      id: "closeout-picker-dismiss",
-      from: "closeOut",
-      event: "PICKER_DISMISS",
-      to: "editor",
-      label: "Picker dismiss/unrecommended",
-      description: "User dismisses picker or picks unrecommended action without prompt; stays in editor.",
-      userMediated: true,
-    },
-    {
-      id: "closeout-complete",
-      from: "closeOut",
-      event: "ALL_COMPLETE",
-      to: "editor",
-      label: "Complete",
-      description: "No next call; return to editor.",
     },
     // HANDOFF
     {
@@ -773,86 +529,53 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       event: "SESSION_CONTINUED",
       to: "align",
       label: "Fresh ALIGN",
-      description: "Replacement session starts in ALIGN on the same artifact.",
-    },
-    // EDITOR re-entry & commands
-    {
-      id: "editor-user-align",
-      from: "editor",
-      event: "USER_MESSAGE_ALIGN",
-      to: "align",
-      label: "User message (ALIGN)",
-      description: "User sends message while mode is ALIGN (or initial default).",
-      userMediated: true,
-    },
-    {
-      id: "editor-user-spec",
-      from: "editor",
-      event: "USER_MESSAGE_SPEC",
-      to: "spec",
-      label: "User message (SPEC)",
-      description: "User sends message while mode is SPEC.",
-      userMediated: true,
-    },
-    {
-      id: "editor-user-vibe",
-      from: "editor",
-      event: "USER_MESSAGE_VIBE",
-      to: "vibe",
-      label: "User message (VIBE)",
-      description: "User sends message while mode is VIBE.",
-      userMediated: true,
-    },
-    {
-      id: "editor-cmd-align",
-      from: "editor",
-      event: "CMD_ALIGN",
-      to: "editor",
-      label: "/align",
-      description: "Manual mode command switches mode to ALIGN; stays in editor.",
-      userMediated: true,
-    },
-    {
-      id: "editor-cmd-spec",
-      from: "editor",
-      event: "CMD_SPEC",
-      to: "editor",
-      label: "/spec",
-      description: "Manual mode command switches mode to SPEC; stays in editor.",
-      userMediated: true,
-    },
-    {
-      id: "editor-cmd-vibe",
-      from: "editor",
-      event: "CMD_VIBE",
-      to: "editor",
-      label: "/vibe",
-      description: "Manual mode command switches mode to VIBE; stays in editor.",
-      userMediated: true,
-    },
-    {
-      id: "editor-cmd-mode",
-      from: "editor",
-      event: "CMD_MODE",
-      to: "editor",
-      label: "/mode",
-      description: "Manual mode command opens mode picker; stays in editor.",
-      userMediated: true,
-    },
-    {
-      id: "editor-cmd-handoff",
-      from: "editor",
-      event: "CMD_HANDOFF",
-      to: "handoff",
-      label: "/handoff",
-      description: "User runs /handoff; initiates session handoff on named plan.",
-      userMediated: true,
+      description:
+        "Replacement session starts in ALIGN on the same artifact — restart the guided process from the beginning.",
     },
   ],
+  exceptions: {
+    title: "Manual Bypass & Escape Hatches",
+    summary:
+      "The /mode command is the universal manual bypass. Running /mode opens the option picker at any time so the User can choose what to do next (jump to ALIGN, SPEC, VIBE, or hand off) without being gated by agent completion.",
+    commands: [
+      {
+        command: "/mode",
+        label: "Open Option Picker (Universal Bypass)",
+        summary: "Opens the mode option picker to choose any target mode or action.",
+        description:
+          "User-triggered escape hatch. Opens the interactive option picker in editor standby so the User can choose what to do next (switch mode, hand off, or return).",
+      },
+      {
+        command: "/handoff [name]",
+        label: "Direct Handoff Shortcut",
+        summary: "Swaps active session onto a named plan in fresh ALIGN.",
+        description:
+          "Direct shortcut for session continuation on a named plan artifact, seeding a fresh ALIGN session.",
+      },
+    ],
+    rules: [
+      "The /mode command is the canonical User-owned bypass to open the option picker and choose what to do next.",
+      "Manual bypass transitions are never gated on workflow completeness, pending recommendations, or unresolved D items.",
+      "Selecting an unrecommended mode in the picker switches the session mode in editor standby.",
+      "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN.",
+    ],
+  },
   tools: [
     {
+      name: "start",
+      summary: "First .pi/plan write triggered by user input on start: named artifact or linked legacy continuation.",
+      modes: ["any"],
+      gate: ["Creates or continues the named plan; no plan file exists until start succeeds."],
+      mechanics: [
+        "User input triggers start tool to create the named artifact before substantive ALIGN work.",
+        "CALL start with a context-informed 2-4 word task name; include a ticket ID when applicable.",
+        "start is the first CALL tool when no named artifact exists.",
+        "Legacy artifacts stay immutable; start forks a linked current-format continuation.",
+      ],
+    },
+    {
       name: "ask",
-      summary: "Native ALIGN questions; answers, cancel, or Proceed-with-best SPEC/VIBE route.",
+      summary: "Native ALIGN question loop; clarifies scope while staying in ALIGN until ready for next mode.",
       modes: ["align"],
       gate: [
         "ALIGN-only; SPEC/VIBE ask is a harmless no-op (no picker).",
@@ -861,6 +584,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "Interactive UI required only when questions will be shown.",
       ],
       mechanics: [
+        "ALIGN triggers ask to clarify scope, constraints, and decisions before moving to SPEC/VIBE.",
+        "Answers stay in ALIGN (ask loop) to process follow-up questions.",
         "CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly.",
         "KEEP question identifiers, option values, and option labels distinct.",
         "NEVER imitate native action labels.",
@@ -889,19 +614,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       ],
     },
     {
-      name: "start",
-      summary: "First .pi/plan write: named artifact or linked legacy continuation.",
-      modes: ["any"],
-      gate: ["Creates or continues the named plan; no plan file exists until start succeeds."],
-      mechanics: [
-        "CALL start with a context-informed 2-4 word task name; include a ticket ID when applicable.",
-        "start is the first CALL tool when no named artifact exists.",
-        "Legacy artifacts stay immutable; start forks a linked current-format continuation.",
-      ],
-    },
-    {
       name: "next",
-      summary: "Queue ranked post-turn actions; runtime opens picker only for explicit next.",
+      summary: "Queue ranked post-turn actions; user chooses the next mode (SPEC, VIBE, ALIGN, or handoff).",
       modes: ["any"],
       gate: [
         "Empty next records no recommendation and opens no picker.",
@@ -909,6 +623,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "Every ALIGN/SPEC/VIBE action needs contextual prompt; handoff must omit prompt.",
       ],
       mechanics: [
+        "After alignment or phase completion, CALL next so the user chooses the next mode.",
         "Agent-authored actions REQUIRE a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
         "Runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction.",
         "Recommended row with a reason shows {mode} — {reason}.",
@@ -945,11 +660,12 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       "TREAT CLOSE_OUT as a procedure, not an artifact section.",
     ],
   },
-  initial: "editor",
+  initial: "align",
   notes: [
-    "Persisted User mode is only align|spec|vibe. closeOut, blocked, handoff, and editor are procedural/standby states for the shared flow chart.",
+    "Guided session story: Align (start tool + ask) begins; Spec/Vibe do work; Close-out finishes a phase; Handoff = fresh context, same artifact, restart at Align. Idle product UI when nothing is running is not a graph node.",
+    "Persisted User mode is only align|spec|vibe. closeOut, blocked, and handoff are procedural helpers on the shared flow chart.",
     "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-    "Transition table covers the runtime surface (next and CMD_* from each mode). Preferred agent path still ends SPEC/VIBE via CLOSE_OUT before CALL next.",
+    "Transition table is the guided graph only. Stay-in-mode continue, picker dismiss, ask cancel, end-without-next, and idle UI are runtime — not graph edges. Manual /align /spec /vibe /mode bypasses live under Exceptions. Preferred agent path still ends SPEC/VIBE via CLOSE_OUT before CALL next.",
     "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
     "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
     "tools validate required shapes and protocol enums, not workflow quality.",
@@ -1034,6 +750,16 @@ export function formatWorkflowPrompt(fsm: WorkflowFsm = WORKFLOW_FSM): string {
       "Mechanics:",
       ...tool.mechanics.map((m) => `- ${m}`),
     );
+  }
+
+  if (fsm.exceptions) {
+    lines.push("", "## Exceptions & Escape Hatches", fsm.exceptions.summary, "");
+    for (const cmd of fsm.exceptions.commands) {
+      lines.push(`### ${cmd.command} (${cmd.label})`, cmd.description, "");
+    }
+    for (const rule of fsm.exceptions.rules) {
+      lines.push(`- ${rule}`);
+    }
   }
 
   lines.push(

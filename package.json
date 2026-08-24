@@ -31,6 +31,9 @@
     "typescript": "^5.9.0"
   },
   "pi": {
+    "skills": [
+      "./skills"
+    ],
     "extensions": [
       "./extensions/extension-preferences/index.ts",
       "./extensions/interrupt-confirmation/index.ts",

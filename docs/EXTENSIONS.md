@@ -17,6 +17,10 @@ extension.
 - **Pi Inspector Bridge** — Reports display-only Director mode and session status whenever a local Inspector is discoverable
 - **Session Dashboard** — Pi-glyph welcome, project-memory freshness notice, 30-day per-model spend chart, and initial context-source snapshot
 
+## Active skills
+
+- **agy** (`skills/agy/SKILL.md`) — Manual-invocation skill (`/skill:agy`) that offloads a spec or research task to the locally installed Antigravity CLI binary. Uses the current plan artifact as context, runs `agy --print --dangerously-skip-permissions`, and returns the output for synthesis. Never invoked automatically.
+
 ## Supporting resources
 
 - **Init prompt** (`prompts/init.md`) — Initialize or realign shared/Pi-local instruction layers and selective project memory
