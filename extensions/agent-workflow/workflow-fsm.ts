@@ -9,15 +9,16 @@
  * Runtime tool gates live in `workflow-machine.ts` and must stay aligned with
  * `tools.*.gate` and the transition table below.
  *
- * v2.5.0 — primary homes + secondary gates:
+ * v2.6.0 — primary homes + secondary gates:
  * - ALIGN: envision (entry: start then ≥1 scope ask) → evaluate (primary, later asks) ⇄ establish (secondary / next; never ask)
  * - SPEC: explore (primary) ⇄ elaborate (secondary / next)
  * - VIBE: execute (primary) ⇄ examine (secondary / next)
+ * - In-mode body edges are bidirectional mode-named events (ALIGN / SPEC / VIBE)
  * - next only from secondaries; never recommend current mode
- * - Align dual landing: default establish (editor standby); evaluate only for D-review ask
+ * - Align dual landing: NEXT_ALIGN → establish (idle); RETURN_ALIGN → evaluate (D-review ask)
  */
 
-export const WORKFLOW_FSM_VERSION = "2.5.0";
+export const WORKFLOW_FSM_VERSION = "2.6.0";
 
 export type FsmStateId = "envision" | "establish" | "explore" | "elaborate" | "execute" | "examine" | "evaluate";
 
@@ -43,6 +44,8 @@ export interface FsmTransition {
   description: string;
   /** User must confirm via picker/command (not agent-autonomous) */
   userMediated?: boolean;
+  /** In-mode primary⇄secondary body loop; both directions are valid (from=primary, to=secondary). */
+  bidirectional?: boolean;
 }
 
 export interface FsmState {
@@ -331,7 +334,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       permission: "read",
       substates: ["artifactCheck", "askLoop", "synthesize"],
       procedure: [
-        "Land here after envision scope ask is answered, after next Align review (landing evaluate), and after establish returns.",
+        "Land here after envision scope ask is answered, after RETURN_ALIGN (landing evaluate), and after establish returns via the ALIGN body edge.",
         "READ Goal, Decisions (unresolved D), Checklist, Work log residuals, Current work, and the kickoff prompt if any.",
         "IF kickoff/review lists specific D ids: CALL ask ONLY to accept/change/defer those Ds — do not invent new scope questions.",
         "ELSE IF the User message explicitly requests clarification: CALL ask for that request only.",
@@ -357,7 +360,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       permission: "read",
       substates: ["gateCheck", "routeNext"],
       procedure: [
-        "Land here after next Align idle (landing establish, no auto-start) and after evaluate sends TO_GATE.",
+        "Land here after next Align idle (NEXT_ALIGN, landing establish, no auto-start) and after evaluate proceeds on the ALIGN body edge.",
         "NEVER CALL ask from establish — entry scope ask is envision; other Align asks run in evaluate.",
         "IF more Align primary or ask work remains THEN RETURN to EVALUATE.",
         "WHEN ready to leave Align: CALL next with ranked other modes and handoff only — NEVER include align.",
@@ -502,20 +505,14 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "evaluate-to-establish",
+      id: "align-body",
       from: "evaluate",
-      event: "TO_GATE",
+      event: "ALIGN",
       to: "establish",
-      label: "To gate → ESTABLISH",
-      description: "Ask/primary work done enough to decide return vs next at the Align secondary gate.",
-    },
-    {
-      id: "establish-to-evaluate",
-      from: "establish",
-      event: "TO_HOME",
-      to: "evaluate",
-      label: "To home → EVALUATE",
-      description: "More Align primary or ask work remains; re-enter evaluate.",
+      label: "ALIGN",
+      description:
+        "Align mode body: primary ⇄ secondary gate — proceed to establish when ready for next/handoff; return to evaluate when more primary or ask work remains.",
+      bidirectional: true,
     },
     {
       id: "establish-next-spec",
@@ -546,20 +543,14 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "explore-to-elaborate",
+      id: "spec-body",
       from: "explore",
-      event: "TO_GATE",
+      event: "SPEC",
       to: "elaborate",
-      label: "To gate → ELABORATE",
-      description: "Evidence gathered enough to propose, close out, or route.",
-    },
-    {
-      id: "elaborate-to-explore",
-      from: "elaborate",
-      event: "TO_HOME",
-      to: "explore",
-      label: "To home → EXPLORE",
-      description: "More research needed; return to Spec primary without using next.",
+      label: "SPEC",
+      description:
+        "Spec mode body: primary ⇄ secondary gate — proceed to elaborate when ready to propose/close out/route; return to explore when more research remains.",
+      bidirectional: true,
     },
     {
       id: "elaborate-next-align",
@@ -571,12 +562,12 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "elaborate-next-align-review",
+      id: "elaborate-return-align",
       from: "elaborate",
-      event: "NEXT_ALIGN_REVIEW",
+      event: "RETURN_ALIGN",
       to: "evaluate",
-      label: "next Align review → EVALUATE",
-      description: "Align review when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
+      label: "RETURN_ALIGN → EVALUATE",
+      description: "Align return when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
       userMediated: true,
     },
     {
@@ -599,20 +590,14 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "execute-to-examine",
+      id: "vibe-body",
       from: "execute",
-      event: "TO_GATE",
+      event: "VIBE",
       to: "examine",
-      label: "To gate → EXAMINE",
-      description: "Implementation ready for checks, close-out, or routing.",
-    },
-    {
-      id: "examine-to-execute",
-      from: "examine",
-      event: "TO_HOME",
-      to: "execute",
-      label: "To home → EXECUTE",
-      description: "More implementation or in-scope fixes; return to Vibe primary without using next.",
+      label: "VIBE",
+      description:
+        "Vibe mode body: primary ⇄ secondary gate — proceed to examine when ready for checks/close out/route; return to execute when more implementation or in-scope fixes remain.",
+      bidirectional: true,
     },
     {
       id: "examine-next-align",
@@ -624,12 +609,12 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "examine-next-align-review",
+      id: "examine-return-align",
       from: "examine",
-      event: "NEXT_ALIGN_REVIEW",
+      event: "RETURN_ALIGN",
       to: "evaluate",
-      label: "next Align review → EVALUATE",
-      description: "Align review when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
+      label: "RETURN_ALIGN → EVALUATE",
+      description: "Align return when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
       userMediated: true,
     },
     {
@@ -811,9 +796,9 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     "Guided session story: envision (start → ≥1 scope ask) → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
     "Persisted User mode is only align|spec|vibe. Guided states compose modeBodies with roles entry|primary|secondary. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
     "Project permission is read|write only: read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact.",
-    "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then SCOPE_READY→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), NEXT_ALIGN_REVIEW→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
+    "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then SCOPE_READY→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
     "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-    "Transition table is the guided graph only. Stay-in-mode via TO_HOME, ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
+    "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
     "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next.",
     "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
     "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
@@ -834,7 +819,8 @@ export function toMermaid(): string {
   }
   for (const edge of WORKFLOW_FSM.transitions) {
     const tag = edge.userMediated ? `${edge.event} / user` : edge.event;
-    lines.push(`  ${edge.from} --> ${edge.to}: ${tag}`);
+    const arrow = edge.bidirectional ? "<-->" : "-->";
+    lines.push(`  ${edge.from} ${arrow} ${edge.to}: ${tag}`);
   }
   return `${lines.join("\n")}\n`;
 }
@@ -906,7 +892,10 @@ export function formatWorkflowPrompt(fsm: WorkflowFsm = WORKFLOW_FSM): string {
   lines.push("## Transitions", "Canonical edges (visualizer and agent use this table):", "");
   for (const edge of fsm.transitions) {
     const who = edge.userMediated ? "user-mediated" : "agent/procedure";
-    lines.push(`- ${edge.from} --${edge.event}--> ${edge.to} [${who}]: ${edge.description}`);
+    const link = edge.bidirectional
+      ? `${edge.from} <--${edge.event}--> ${edge.to}`
+      : `${edge.from} --${edge.event}--> ${edge.to}`;
+    lines.push(`- ${link} [${who}]: ${edge.description}`);
   }
 
   lines.push("", "## Tools");

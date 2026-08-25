@@ -1515,7 +1515,7 @@
             ((this._isEditModeActive = !!t), this.requestUpdate());
           }
           render() {
-            var t, i, a, r, s, o, l, g, u;
+            var t, i, a, r, s, o, p, l, g, u;
             this.shadowRootNode &&
               ((this.shadowRootNode.innerHTML = `
       <div class="toolbar-container">
@@ -1569,6 +1569,12 @@
             <circle cx="12" cy="13" r="4"></circle>
           </svg>
         </button>
+        <button class="tool-btn" id="btn-clear-breakpoints" title="Remove All Breakpoints / Reset Lines" aria-label="Remove All Breakpoints">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12h4l3-6 4 12 3-6h2"></path>
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+          </svg>
+        </button>
         <button class="tool-btn" id="btn-reset-layout" title="Reset Node Positions to Default" aria-label="Reset Layout">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 4v6h6"></path>
@@ -1620,6 +1626,10 @@
               (o = this.shadowRootNode.getElementById("btn-snapshot")) == null ||
                 o.addEventListener("click", () => {
                   this.emit("flow:snapshot-layout");
+                }),
+              (p = this.shadowRootNode.getElementById("btn-clear-breakpoints")) == null ||
+                p.addEventListener("click", () => {
+                  this.emit("flow:clear-breakpoints");
                 }),
               (l = this.shadowRootNode.getElementById("btn-reset-layout")) == null ||
                 l.addEventListener("click", () => {
@@ -1989,6 +1999,7 @@
           <div class="header-badges">
             <span class="badge badge-accent">TRANSITION</span>
             ${o.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
+            ${o.bidirectional ? '<span class="badge badge-accent">BIDIRECTIONAL</span>' : ""}
           </div>
         </div>
       `),
@@ -1997,7 +2008,7 @@
           <h4 class="section-title">Route Connection</h4>
           <p class="section-text" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
             <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${w(o.from.toUpperCase())}</span>
-            <span style="color: var(--tuto-muted);">──►</span>
+            <span style="color: var(--tuto-muted);">${o.bidirectional ? "◄──►" : "──►"}</span>
             <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${w(o.to.toUpperCase())}</span>
           </p>
         </div>
@@ -2565,6 +2576,16 @@
               s
             );
           }
+          clearAllBreakpoints() {
+            this._edgeWaypoints.clear();
+            if (this._graph && this._graph.transitions) {
+              for (const a of this._graph.transitions) delete a.waypoints;
+            }
+            try {
+              localStorage.removeItem("pi_workflow_edge_override");
+            } catch {}
+            (this.showToast("✓ Removed all breakpoints"), this.emit("flow:clear-breakpoints"), this.requestUpdate());
+          }
           resetLayout() {
             var i;
             if (!this._defaultLayout || !((i = this._graph) != null && i.states)) return;
@@ -2575,6 +2596,9 @@
                 (this._graph.states[a].w = r.w),
                 (this._graph.states[a].h = r.h));
             this._edgeWaypoints.clear();
+            if (this._graph && this._graph.transitions) {
+              for (const a of this._graph.transitions) delete a.waypoints;
+            }
             try {
               (localStorage.removeItem("pi_workflow_layout_override"),
                 localStorage.removeItem("pi_workflow_edge_override"));
@@ -2640,7 +2664,7 @@
               i = this._graph.transitions || [],
               a = ut(pt(i).filter((n) => !n.self));
             for (const n of a) {
-              this._edgeWaypoints.has(n.id) && (n.waypoints = this._edgeWaypoints.get(n.id));
+              this._edgeWaypoints.has(n.id) ? (n.waypoints = this._edgeWaypoints.get(n.id)) : delete n.waypoints;
               const f = ft(n, t);
               f && (n.route = f);
             }
@@ -2802,6 +2826,7 @@
                     d: x,
                     class: `flow-edge-path ${m ? "available" : "dimmed"}`,
                     "marker-end": m ? "url(#flow-arrow-hot)" : "url(#flow-arrow)",
+                    ...(n.bidirectional ? { "marker-start": m ? "url(#flow-arrow-hot)" : "url(#flow-arrow)" } : {}),
                     style: !f && this._selectedNodeId ? "opacity: 0.05; pointer-events: none;" : "",
                   },
                   l,
@@ -3081,6 +3106,9 @@
               }),
               c.addEventListener("flow:snapshot-layout", () => {
                 this.copyLayoutSnapshot();
+              }),
+              c.addEventListener("flow:clear-breakpoints", () => {
+                this.clearAllBreakpoints();
               }),
               c.addEventListener("flow:reset-layout", () => {
                 this.resetLayout();
@@ -3452,7 +3480,7 @@
     <script type="application/json" id="workflow-fsm-data">
       {
         "id": "piDirectorWorkflow",
-        "version": "2.5.0",
+        "version": "2.6.0",
         "title": "Pi Director Agent Workflow",
         "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Each mode has a primary home and a secondary gate: primaries do the work; secondaries capture/verify and CALL next. Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
         "session": {
@@ -3644,7 +3672,7 @@
             "permission": "read",
             "substates": ["artifactCheck", "askLoop", "synthesize"],
             "procedure": [
-              "Land here after envision scope ask is answered, after next Align review (landing evaluate), and after establish returns.",
+              "Land here after envision scope ask is answered, after RETURN_ALIGN (landing evaluate), and after establish returns via the ALIGN body edge.",
               "READ Goal, Decisions (unresolved D), Checklist, Work log residuals, Current work, and the kickoff prompt if any.",
               "IF kickoff/review lists specific D ids: CALL ask ONLY to accept/change/defer those Ds — do not invent new scope questions.",
               "ELSE IF the User message explicitly requests clarification: CALL ask for that request only.",
@@ -3669,7 +3697,7 @@
             "permission": "read",
             "substates": ["gateCheck", "routeNext"],
             "procedure": [
-              "Land here after next Align idle (landing establish, no auto-start) and after evaluate sends TO_GATE.",
+              "Land here after next Align idle (NEXT_ALIGN, landing establish, no auto-start) and after evaluate proceeds on the ALIGN body edge.",
               "NEVER CALL ask from establish — entry scope ask is envision; other Align asks run in evaluate.",
               "IF more Align primary or ask work remains THEN RETURN to EVALUATE.",
               "WHEN ready to leave Align: CALL next with ranked other modes and handoff only — NEVER include align.",
@@ -3811,20 +3839,13 @@
             "userMediated": true
           },
           {
-            "id": "evaluate-to-establish",
+            "id": "align-body",
             "from": "evaluate",
-            "event": "TO_GATE",
+            "event": "ALIGN",
             "to": "establish",
-            "label": "To gate → ESTABLISH",
-            "description": "Ask/primary work done enough to decide return vs next at the Align secondary gate."
-          },
-          {
-            "id": "establish-to-evaluate",
-            "from": "establish",
-            "event": "TO_HOME",
-            "to": "evaluate",
-            "label": "To home → EVALUATE",
-            "description": "More Align primary or ask work remains; re-enter evaluate."
+            "label": "ALIGN",
+            "description": "Align mode body: primary ⇄ secondary gate — proceed to establish when ready for next/handoff; return to evaluate when more primary or ask work remains.",
+            "bidirectional": true
           },
           {
             "id": "establish-next-spec",
@@ -3854,20 +3875,13 @@
             "userMediated": true
           },
           {
-            "id": "explore-to-elaborate",
+            "id": "spec-body",
             "from": "explore",
-            "event": "TO_GATE",
+            "event": "SPEC",
             "to": "elaborate",
-            "label": "To gate → ELABORATE",
-            "description": "Evidence gathered enough to propose, close out, or route."
-          },
-          {
-            "id": "elaborate-to-explore",
-            "from": "elaborate",
-            "event": "TO_HOME",
-            "to": "explore",
-            "label": "To home → EXPLORE",
-            "description": "More research needed; return to Spec primary without using next."
+            "label": "SPEC",
+            "description": "Spec mode body: primary ⇄ secondary gate — proceed to elaborate when ready to propose/close out/route; return to explore when more research remains.",
+            "bidirectional": true
           },
           {
             "id": "elaborate-next-align",
@@ -3879,12 +3893,12 @@
             "userMediated": true
           },
           {
-            "id": "elaborate-next-align-review",
+            "id": "elaborate-return-align",
             "from": "elaborate",
-            "event": "NEXT_ALIGN_REVIEW",
+            "event": "RETURN_ALIGN",
             "to": "evaluate",
-            "label": "next Align review → EVALUATE",
-            "description": "Align review when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
+            "label": "RETURN_ALIGN → EVALUATE",
+            "description": "Align return when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
             "userMediated": true
           },
           {
@@ -3906,20 +3920,13 @@
             "userMediated": true
           },
           {
-            "id": "execute-to-examine",
+            "id": "vibe-body",
             "from": "execute",
-            "event": "TO_GATE",
+            "event": "VIBE",
             "to": "examine",
-            "label": "To gate → EXAMINE",
-            "description": "Implementation ready for checks, close-out, or routing."
-          },
-          {
-            "id": "examine-to-execute",
-            "from": "examine",
-            "event": "TO_HOME",
-            "to": "execute",
-            "label": "To home → EXECUTE",
-            "description": "More implementation or in-scope fixes; return to Vibe primary without using next."
+            "label": "VIBE",
+            "description": "Vibe mode body: primary ⇄ secondary gate — proceed to examine when ready for checks/close out/route; return to execute when more implementation or in-scope fixes remain.",
+            "bidirectional": true
           },
           {
             "id": "examine-next-align",
@@ -3931,12 +3938,12 @@
             "userMediated": true
           },
           {
-            "id": "examine-next-align-review",
+            "id": "examine-return-align",
             "from": "examine",
-            "event": "NEXT_ALIGN_REVIEW",
+            "event": "RETURN_ALIGN",
             "to": "evaluate",
-            "label": "next Align review → EVALUATE",
-            "description": "Align review when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
+            "label": "RETURN_ALIGN → EVALUATE",
+            "description": "Align return when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
             "userMediated": true
           },
           {
@@ -4113,9 +4120,9 @@
           "Guided session story: envision (start → ≥1 scope ask) → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
           "Persisted User mode is only align|spec|vibe. Guided states compose modeBodies with roles entry|primary|secondary. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
           "Project permission is read|write only: read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact.",
-          "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then SCOPE_READY→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), NEXT_ALIGN_REVIEW→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
+          "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then SCOPE_READY→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
           "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-          "Transition table is the guided graph only. Stay-in-mode via TO_HOME, ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
+          "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
           "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next.",
           "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
           "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
@@ -4189,11 +4196,7 @@
             [740, 70],
             [740, 550]
           ],
-          "evaluate-to-establish": [[530, 90]],
-          "establish-to-evaluate": [
-            [370, 120],
-            [360, 50]
-          ],
+          "align-body": [[530, 90]],
           "establish-next-spec": [[550, 230]],
           "establish-next-vibe": [
             [680, 220],
@@ -4203,16 +4206,12 @@
             [340, 120],
             [340, -70]
           ],
-          "explore-to-elaborate": [[530, 360]],
-          "elaborate-to-explore": [
-            [340, 390],
-            [330, 330]
-          ],
+          "spec-body": [[530, 360]],
           "elaborate-next-align": [
             [290, 370],
             [300, 190]
           ],
-          "elaborate-next-align-review": [
+          "elaborate-return-align": [
             [260, 390],
             [260, 70]
           ],
@@ -4221,16 +4220,12 @@
             [220, 400],
             [230, -20]
           ],
-          "execute-to-examine": [[520, 670]],
-          "examine-to-execute": [
-            [350, 670],
-            [340, 600]
-          ],
+          "vibe-body": [[520, 670]],
           "examine-next-align": [
             [150, 600],
             [150, 190]
           ],
-          "examine-next-align-review": [
+          "examine-return-align": [
             [100, 600],
             [90, 60]
           ],
@@ -4304,7 +4299,7 @@
         ...fsmData,
         framing: false,
         title: "Pi Director Agent Workflow",
-        subtitle: "ARTIFACT · PWB · TO_GATE / TO_HOME · NEXT",
+        subtitle: "ARTIFACT · PWB · ALIGN/SPEC/VIBE · NEXT · RETURN",
         groups: [],
         states,
         transitions,

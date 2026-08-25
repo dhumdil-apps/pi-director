@@ -8,7 +8,7 @@
     },
     "evaluate": {
       "x": 440,
-      "y": -10,
+      "y": 50,
       "w": 210,
       "h": 48
     },
@@ -20,7 +20,7 @@
     },
     "explore": {
       "x": 430,
-      "y": 270,
+      "y": 320,
       "w": 210,
       "h": 48
     },
@@ -32,7 +32,7 @@
     },
     "execute": {
       "x": 420,
-      "y": 570,
+      "y": 630,
       "w": 210,
       "h": 48
     },
@@ -46,60 +46,50 @@
   "edges": {
     "envision-ask-route-spec": [
       [
-        790,
-        -40
+        740,
+        20
       ],
       [
-        790,
-        260
-      ]
-    ],
-    "envision-ask-route-vibe": [
-      [
-        830,
-        -40
-      ],
-      [
-        840,
-        560
+        750,
+        280
       ]
     ],
     "envision-to-evaluate": [
       [
         550,
-        -60
+        -40
       ]
     ],
     "evaluate-ask-route-spec": [
       [
         700,
-        100
+        140
       ],
       [
-        710,
-        260
+        700,
+        280
       ]
     ],
     "evaluate-ask-route-vibe": [
       [
-        740,
-        70
+        720,
+        120
       ],
       [
-        740,
+        730,
         550
       ]
     ],
-    "evaluate-to-establish": [
+    "align-body": [
       [
         540,
-        90
+        120
       ]
     ],
     "establish-next-spec": [
       [
-        550,
-        230
+        530,
+        250
       ]
     ],
     "establish-next-vibe": [
@@ -114,118 +104,110 @@
     ],
     "establish-handoff": [
       [
-        340,
-        120
+        390,
+        100
       ],
       [
-        340,
-        -40
+        400,
+        -70
       ]
     ],
-    "explore-to-elaborate": [
+    "spec-body": [
       [
         530,
-        360
-      ]
-    ],
-    "elaborate-to-explore": [
-      [
-        400,
-        360
+        390
       ]
     ],
     "elaborate-next-align": [
       [
-        290,
+        380,
         380
       ],
       [
-        290,
+        380,
         200
       ]
     ],
-    "elaborate-next-align-review": [
+    "elaborate-return-align": [
       [
-        260,
-        390
+        340,
+        380
       ],
       [
-        260,
-        70
+        350,
+        100
       ]
     ],
     "elaborate-next-vibe": [
       [
-        530,
-        530
+        520,
+        550
       ]
     ],
     "elaborate-handoff": [
       [
-        240,
-        400
+        300,
+        390
       ],
       [
-        240,
-        -20
+        310,
+        -30
       ]
     ],
-    "execute-to-examine": [
+    "vibe-body": [
       [
         520,
-        670
+        700
       ]
     ],
     "examine-next-align": [
       [
-        150,
-        600
+        240,
+        630
       ],
       [
-        150,
-        190
+        250,
+        170
       ]
     ],
-    "examine-next-align-review": [
+    "examine-return-align": [
       [
-        120,
-        620
+        200,
+        630
       ],
       [
-        120,
-        90
+        200,
+        110
       ]
     ],
     "examine-next-spec": [
       [
-        190,
-        590
+        270,
+        620
       ],
       [
-        190,
-        340
+        270,
+        350
       ]
     ],
     "examine-handoff": [
       [
-        100,
-        640
+        160,
+        620
       ],
       [
-        90,
-        -10
+        170,
+        -30
       ]
     ],
-    "establish-to-evaluate": [
+    "envision-ask-route-vibe": [
       [
-        400,
-        80
-      ]
-    ],
-    "examine-to-execute": [
+        770,
+        20
+      ],
       [
-        390,
-        670
+        790,
+        570
       ]
     ]
   }
