@@ -4,17 +4,11 @@ import type { ExtensionAPI, ExtensionContext, SessionEntry } from "@earendil-wor
 import { Type, type Static } from "@sinclair/typebox";
 import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
-import {
-  MODE_EVENT,
-  MODE_LABEL,
-  recordWorkflowMode,
-  resolveWorkflowMode,
-  WORKFLOW_MODES,
-  type WorkflowMode,
-} from "./mode.js";
+import { MODE_LABEL, recordWorkflowMode, resolveWorkflowMode, WORKFLOW_MODES, type WorkflowMode } from "./mode.js";
 import { duringUserWait } from "./user-wait.js";
 import {
   ASK_SETTLEMENT_EVENT,
+  currentTurnSignal,
   dispatchSettlement,
   formatGateText,
   NEXT_STEP_EVENT,
@@ -62,21 +56,6 @@ type PickerAction =
 interface PickerState {
   options: string[];
   actions: Map<string, PickerAction>;
-}
-
-function currentTurnSignal<T>(
-  entries: SessionEntry[],
-  customType: string,
-  read: (entry: SessionEntry & { type: "custom" }) => T | undefined,
-): T | undefined {
-  for (let index = entries.length - 1; index >= 0; index -= 1) {
-    const entry = entries[index];
-    if (entry?.type === "message" && entry.message.role === "user") return undefined;
-    if (entry?.type !== "custom") continue;
-    if (entry.customType === customType) return read(entry);
-    if (entry.customType === MODE_EVENT) return undefined;
-  }
-  return undefined;
 }
 
 function normalizeReason(value: unknown): string | undefined {

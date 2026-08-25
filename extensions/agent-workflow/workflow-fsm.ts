@@ -10,11 +10,17 @@
  * `tools.*.gate` and the transition table below.
  */
 
-export const WORKFLOW_FSM_VERSION = "2.2.0";
+export const WORKFLOW_FSM_VERSION = "2.3.0";
 
 export type FsmStateId = "envision" | "establish" | "explore" | "elaborate" | "execute" | "examine" | "evaluate";
 
-export type FsmStateKind = "mode";
+export type FsmUserMode = "align" | "spec" | "vibe";
+
+/** Guided graph node (not a persisted User mode). */
+export type FsmStateKind = "guided";
+
+/** Project-file permission. All modes may update `.pi` plan state; only write may change project files. */
+export type FsmPermission = "read" | "write";
 
 export interface FsmTransition {
   id: string;
@@ -33,12 +39,27 @@ export interface FsmState {
   id: FsmStateId;
   label: string;
   kind: FsmStateKind;
+  /** Persisted User mode this guided step belongs to. */
+  userMode: FsmUserMode;
   summary: string;
-  /** Project-write permission shown in visualizer */
-  permission: "readonly" | "planonly" | "write";
+  /**
+   * Project-file permission:
+   * - read: may update `.pi` plan only; do not change project files
+   * - write: may change project files (VIBE)
+   */
+  permission: FsmPermission;
   /** Ordered agent procedure lines (imperative; injected into prompt) */
   procedure: string[];
   substates?: string[];
+}
+
+export interface FsmModeBody {
+  mode: FsmUserMode;
+  label: string;
+  /** Ordered guided state ids that compose this User mode body. */
+  states: FsmStateId[];
+  /** How to run when this mode is active. */
+  steps: string[];
 }
 
 export interface FsmToolSpec {
@@ -72,6 +93,8 @@ export interface WorkflowFsm {
   invariants: string[];
   always: string[];
   turn: string[];
+  /** User mode → guided steps (injected into the agent prompt). */
+  modeBodies: FsmModeBody[];
   procedures: Record<string, string[]>;
   states: Record<FsmStateId, FsmState>;
   transitions: FsmTransition[];
@@ -139,9 +162,38 @@ export const WORKFLOW_FSM: WorkflowFsm = {
   turn: [
     "RUN CAPTURE_TURN(message).",
     "IF message adds, conflicts with, or appears to replace scope THEN RUN RECONCILE_SCOPE(message); IF unresolved THEN RETURN.",
-    "IF mode = ALIGN THEN RUN ALIGN body.",
-    "ELSE IF mode = SPEC THEN RUN SPEC body.",
-    "ELSE IF mode = VIBE THEN RUN VIBE body.",
+    "RUN the modeBodies entry for the persisted User mode (align | spec | vibe).",
+  ],
+  modeBodies: [
+    {
+      mode: "align",
+      label: "ALIGN",
+      states: ["envision", "establish", "evaluate"],
+      steps: [
+        "IF no named artifact yet: RUN envision (orientation + start), then establish.",
+        "IF post-phase review (unresolved D, milestone just closed, or next landed on evaluate): RUN evaluate first — review D with ask when needed, reconcile C, then CALL next or continue establish for new scope.",
+        "OTHERWISE RUN establish (ask loop for goal/scope/constraints/outcomes).",
+        "Phase-end: CALL next with ranked Align/Spec/Vibe (and handoff when useful); do not rely only on ask Proceed-with-best.",
+      ],
+    },
+    {
+      mode: "spec",
+      label: "SPEC",
+      states: ["explore", "elaborate"],
+      steps: [
+        "RUN explore (bounded research into Evidence) then elaborate (Proposal, Checklist, RECORD_DECISION).",
+        "RUN CLOSE_OUT at elaborate; CALL next so the User picks Align, Spec, or Vibe.",
+      ],
+    },
+    {
+      mode: "vibe",
+      label: "VIBE",
+      states: ["execute", "examine"],
+      steps: [
+        "RUN execute (implement accepted scope) then examine (checks + evidence).",
+        "RUN CLOSE_OUT at examine; preferred next is Align/evaluate for review, or Spec/Vibe when more work is clear.",
+      ],
+    },
   ],
   procedures: {
     CAPTURE_TURN: [
@@ -214,10 +266,11 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     envision: {
       id: "envision",
       label: "ENVISION",
-      kind: "mode",
+      kind: "guided",
+      userMode: "align",
       summary:
         "Cold start and preflight: capture initial user goal, bounded orientation, and initialize named artifact via start.",
-      permission: "readonly",
+      permission: "read",
       substates: ["goalCapture", "orientation", "ensureArtifact"],
       procedure: [
         "Session story starts here: capture user goal and intent.",
@@ -229,23 +282,26 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     establish: {
       id: "establish",
       label: "ESTABLISH",
-      kind: "mode",
+      kind: "guided",
+      userMode: "align",
       summary: "Clarify scope, constraints, and requirements via native ask Q&A loop; anchor baseline plan.",
-      permission: "readonly",
+      permission: "read",
       substates: ["askLoop", "anchorScope", "routeTarget"],
       procedure: [
         "WHILE a goal, scope, constraint, or outcome question remains: CALL ask as the first User-facing action with 1-4 independent questions.",
         "ASK dependent follow-ups in a later CALL after incorporating earlier answers.",
         "IF Ask routes directly to SPEC or VIBE THEN proceed to EXPLORE or EXECUTE.",
+        "WHEN scope is ready: CALL next with ranked Align/Spec/Vibe (preferred path); do not rely only on Proceed-with-best.",
         "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
       ],
     },
     explore: {
       id: "explore",
       label: "EXPLORE",
-      kind: "mode",
-      summary: "Read-only codebase research, symbol tracing, and fact-finding without project file mutations.",
-      permission: "planonly",
+      kind: "guided",
+      userMode: "spec",
+      summary: "Codebase research and fact-finding; update the plan only — no project file mutations.",
+      permission: "read",
       substates: ["symbolSearch", "evidenceGathering"],
       procedure: [
         "BEGIN with one bounded exact symbol or path search.",
@@ -257,9 +313,10 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     elaborate: {
       id: "elaborate",
       label: "ELABORATE",
-      kind: "mode",
+      kind: "guided",
+      userMode: "spec",
       summary: "Synthesize findings, detail checklist outcomes (C), and draft technical proposal.",
-      permission: "planonly",
+      permission: "read",
       substates: ["draftProposal", "checklistSynthesis", "closeOut"],
       procedure: [
         "EDIT Proposal and Checklist with the recommended approach.",
@@ -271,7 +328,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     execute: {
       id: "execute",
       label: "EXECUTE",
-      kind: "mode",
+      kind: "guided",
+      userMode: "vibe",
       summary: "Implement approved scope; make scoped autonomous decisions (D); project file mutations.",
       permission: "write",
       substates: ["codeMutation", "recordDecision"],
@@ -284,7 +342,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     examine: {
       id: "examine",
       label: "EXAMINE",
-      kind: "mode",
+      kind: "guided",
+      userMode: "vibe",
       summary: "Run checks, test suite, record evidence in Work log, and run CLOSE_OUT.",
       permission: "write",
       substates: ["runChecks", "recordEvidence", "closeOut"],
@@ -292,20 +351,23 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "RUN the smallest appropriate repository checks, then broader retained checks when risk warrants.",
         "IF a check fails within scope THEN FIX and RERUN; ELSE RUN BLOCKED(failure) and route to EVALUATE.",
         "RECORD check evidence in Work log.",
-        "RUN CLOSE_OUT and proceed to EVALUATE for review.",
+        "RUN CLOSE_OUT; then CALL next (preferred Align/evaluate for review).",
       ],
     },
     evaluate: {
       id: "evaluate",
       label: "EVALUATE",
-      kind: "mode",
-      summary: "Review unconfirmed decisions (D), evaluate completed milestones, and call next to pick the next phase.",
-      permission: "readonly",
+      kind: "guided",
+      userMode: "align",
+      summary:
+        "Post-phase ALIGN review: unconfirmed decisions (D), checklist reconciliation, ask when needed, then next.",
+      permission: "read",
       substates: ["reviewDecisions", "reconcileScope", "routeNext"],
       procedure: [
-        "REVIEW unconfirmed D items with the user when actionable choices require feedback.",
+        "REVIEW unconfirmed D items first; CALL ask when the User must accept, change, or defer a decision.",
         "RECONCILE checklist outcomes against completed work.",
-        "CALL next with ranked recommended actions (EXPLORE, EXECUTE, ESTABLISH, or HANDOFF).",
+        "IF new scope questions remain AFTER review THEN continue in ESTABLISH-style ask.",
+        "CALL next with ranked Align, Spec, or Vibe (and handoff when useful).",
       ],
     },
   },
@@ -319,7 +381,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       label: "Goal Captured → ESTABLISH",
       description: "Initial user goal captured and named artifact created; proceed to scope clarification.",
     },
-    // ALIGN: Establish
+    // ALIGN: Establish ask + phase-end next
     {
       id: "establish-ask-loop",
       from: "establish",
@@ -329,7 +391,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       description: "Dependent follow-up questions stay in ESTABLISH until ready for next mode.",
     },
     {
-      id: "establish-to-explore",
+      id: "establish-ask-route-spec",
       from: "establish",
       event: "ASK_ROUTED_SPEC",
       to: "explore",
@@ -338,12 +400,39 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "establish-to-execute",
+      id: "establish-ask-route-vibe",
       from: "establish",
       event: "ASK_ROUTED_VIBE",
       to: "execute",
       label: "Proceed-with-best → EXECUTE",
       description: "User accepts scope and routes directly to VIBE implementation.",
+      userMediated: true,
+    },
+    {
+      id: "establish-next-align",
+      from: "establish",
+      event: "NEXT_ALIGN",
+      to: "evaluate",
+      label: "next → EVALUATE",
+      description: "User stays in ALIGN for decision review or further clarification after establish.",
+      userMediated: true,
+    },
+    {
+      id: "establish-next-spec",
+      from: "establish",
+      event: "NEXT_SPEC",
+      to: "explore",
+      label: "next → EXPLORE",
+      description: "User chooses SPEC research after scope is ready (preferred ALIGN exit via next).",
+      userMediated: true,
+    },
+    {
+      id: "establish-next-vibe",
+      from: "establish",
+      event: "NEXT_VIBE",
+      to: "execute",
+      label: "next → EXECUTE",
+      description: "User chooses VIBE implementation after scope is ready.",
       userMediated: true,
     },
     // SPEC: Explore -> Elaborate
@@ -355,23 +444,32 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       label: "Research complete → ELABORATE",
       description: "Evidence gathered; synthesize technical approach and checklist outcomes.",
     },
-    // SPEC: Elaborate -> Execute / Evaluate
+    // SPEC: Elaborate phase-end next
     {
-      id: "elaborate-to-execute",
-      from: "elaborate",
-      event: "NEXT_VIBE",
-      to: "execute",
-      label: "CLOSE_OUT → next → EXECUTE",
-      description: "Proposal ready; user confirms and proceeds to implementation.",
-      userMediated: true,
-    },
-    {
-      id: "elaborate-to-evaluate",
+      id: "elaborate-next-align",
       from: "elaborate",
       event: "NEXT_ALIGN",
       to: "evaluate",
       label: "CLOSE_OUT → next → EVALUATE",
       description: "Proposal ready for user review and decision confirmation.",
+      userMediated: true,
+    },
+    {
+      id: "elaborate-next-spec",
+      from: "elaborate",
+      event: "NEXT_SPEC",
+      to: "explore",
+      label: "CLOSE_OUT → next → EXPLORE",
+      description: "More research needed before a proposal is actionable.",
+      userMediated: true,
+    },
+    {
+      id: "elaborate-next-vibe",
+      from: "elaborate",
+      event: "NEXT_VIBE",
+      to: "execute",
+      label: "CLOSE_OUT → next → EXECUTE",
+      description: "Proposal ready; user confirms and proceeds to implementation.",
       userMediated: true,
     },
     // VIBE: Execute -> Examine
@@ -383,28 +481,80 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       label: "Changes Made → EXAMINE",
       description: "Code implemented; run repository checks and test suites.",
     },
-    // VIBE: Examine -> Evaluate / Explore
+    // VIBE: Examine close-out (agent) then phase-end next
     {
-      id: "examine-to-evaluate",
+      id: "examine-close-out",
       from: "examine",
       event: "CLOSE_OUT",
       to: "evaluate",
       label: "CLOSE_OUT → EVALUATE",
-      description: "Verification passed; reconcile checklist and review unconfirmed decisions.",
+      description: "Agent finishes verification and close-out; preferred path continues at evaluate for review.",
+    },
+    {
+      id: "examine-next-align",
+      from: "examine",
+      event: "NEXT_ALIGN",
+      to: "evaluate",
+      label: "next → EVALUATE",
+      description: "User chooses ALIGN review after verification.",
       userMediated: true,
     },
     {
-      id: "examine-to-explore",
+      id: "examine-next-spec",
       from: "examine",
       event: "NEXT_SPEC",
       to: "explore",
-      label: "CLOSE_OUT → next → EXPLORE",
-      description: "Verification revealed need for deeper architectural research.",
+      label: "next → EXPLORE",
+      description: "Verification revealed need for deeper research.",
       userMediated: true,
     },
-    // ALIGN: Evaluate routes
     {
-      id: "evaluate-to-explore",
+      id: "examine-next-vibe",
+      from: "examine",
+      event: "NEXT_VIBE",
+      to: "execute",
+      label: "next → EXECUTE",
+      description: "User chooses more implementation after checks.",
+      userMediated: true,
+    },
+    // ALIGN: Evaluate ask + phase-end next
+    {
+      id: "evaluate-ask-loop",
+      from: "evaluate",
+      event: "ASK_LOOP",
+      to: "evaluate",
+      label: "Ask follow-up (review)",
+      description: "Decision-review or post-phase questions stay in EVALUATE until ready to route.",
+    },
+    {
+      id: "evaluate-ask-route-spec",
+      from: "evaluate",
+      event: "ASK_ROUTED_SPEC",
+      to: "explore",
+      label: "Proceed-with-best → EXPLORE",
+      description: "User accepts remaining review answers and routes to SPEC.",
+      userMediated: true,
+    },
+    {
+      id: "evaluate-ask-route-vibe",
+      from: "evaluate",
+      event: "ASK_ROUTED_VIBE",
+      to: "execute",
+      label: "Proceed-with-best → EXECUTE",
+      description: "User accepts remaining review answers and routes to VIBE.",
+      userMediated: true,
+    },
+    {
+      id: "evaluate-next-align",
+      from: "evaluate",
+      event: "NEXT_ALIGN",
+      to: "establish",
+      label: "next → ESTABLISH",
+      description: "Scope expansion or new requirements require further Q&A after review.",
+      userMediated: true,
+    },
+    {
+      id: "evaluate-next-spec",
       from: "evaluate",
       event: "NEXT_SPEC",
       to: "explore",
@@ -413,7 +563,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "evaluate-to-execute",
+      id: "evaluate-next-vibe",
       from: "evaluate",
       event: "NEXT_VIBE",
       to: "execute",
@@ -422,21 +572,13 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "evaluate-to-establish",
-      from: "evaluate",
-      event: "NEXT_ALIGN",
-      to: "establish",
-      label: "next → ESTABLISH",
-      description: "Scope expansion or new requirements require further Q&A.",
-      userMediated: true,
-    },
-    {
       id: "evaluate-handoff",
       from: "evaluate",
       event: "NEXT_HANDOFF",
       to: "envision",
-      label: "CLOSE_OUT → handoff (restart ENVISION)",
-      description: "Fresh context window on same artifact, restarting from ENVISION.",
+      label: "next → handoff (new session ENVISION)",
+      description:
+        "Picker prepares /handoff; after the User runs it, a fresh session restarts at ENVISION on the same artifact.",
       userMediated: true,
     },
   ],
@@ -453,6 +595,24 @@ export const WORKFLOW_FSM: WorkflowFsm = {
           "User-triggered escape hatch. Opens the interactive option picker in editor standby so the User can choose what to do next (switch mode, hand off, or return).",
       },
       {
+        command: "/align",
+        label: "Switch to ALIGN (standby)",
+        summary: "Records ALIGN mode and returns to the editor without starting a turn.",
+        description: "Manual escape hatch. Sets persisted mode to ALIGN and notifies; does not auto-start the agent.",
+      },
+      {
+        command: "/spec",
+        label: "Switch to SPEC (standby)",
+        summary: "Records SPEC mode and returns to the editor without starting a turn.",
+        description: "Manual escape hatch. Sets persisted mode to SPEC and notifies; does not auto-start the agent.",
+      },
+      {
+        command: "/vibe",
+        label: "Switch to VIBE (standby)",
+        summary: "Records VIBE mode and returns to the editor without starting a turn.",
+        description: "Manual escape hatch. Sets persisted mode to VIBE and notifies; does not auto-start the agent.",
+      },
+      {
         command: "/handoff [name]",
         label: "Direct Handoff Shortcut",
         summary: "Swaps active session onto a named plan in fresh ALIGN.",
@@ -464,6 +624,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       "The /mode command is the canonical User-owned bypass to open the option picker and choose what to do next.",
       "Manual bypass transitions are never gated on workflow completeness, pending recommendations, or unresolved D items.",
       "Selecting an unrecommended mode in the picker switches the session mode in editor standby.",
+      "Manual /align /spec /vibe only record mode and return to the editor; they do not start the agent.",
       "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN.",
     ],
   },
@@ -507,11 +668,16 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       name: "decide",
       summary: "Agent autonomous decision logger; records rationale and unblocks execution without prompt.",
       modes: ["spec", "vibe"],
-      gate: ["Non-empty decide with options requires a named session plan file; otherwise error."],
+      gate: [
+        "SPEC/VIBE-only; ALIGN decide is a harmless no-op (no decision recorded).",
+        "Empty decide is a harmless no-op.",
+        "Optionless decide is a harmless no-op (compared options required).",
+        "Non-empty decide with options requires a named session plan file; otherwise error.",
+      ],
       mechanics: [
         "Never opens a picker and never changes mode.",
         "Auto-picks the highest-confidence option per question.",
-        "Records agent-workflow:decision and appends Agent transcript after start.",
+        "Records agent-workflow:decision and appends under Agent transcript after start.",
         "Leaves D review unresolved until explicit ALIGN acceptance.",
       ],
     },
@@ -526,7 +692,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       ],
       mechanics: [
         "After alignment or phase completion, CALL next so the user chooses the next mode.",
-        "Agent-authored actions REQUIRE a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
+        "Agent-authored actions SHOULD include a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and REQUIRE contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
         "Runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction.",
         "Recommended row with a reason shows {mode} — {reason}.",
         "Prefer CALL next from CLOSE_OUT; runtime still opens the picker if next is called from ALIGN/SPEC/VIBE directly.",
@@ -565,7 +731,9 @@ export const WORKFLOW_FSM: WorkflowFsm = {
   initial: "envision",
   notes: [
     "Guided session story: Align (start tool + ask) begins; Spec/Vibe do work; Close-out finishes a phase; Handoff = fresh context, same artifact, restart at Align. Idle product UI when nothing is running is not a graph node.",
-    "Persisted User mode is only align|spec|vibe. closeOut, blocked, and handoff are procedural helpers on the shared flow chart.",
+    "Persisted User mode is only align|spec|vibe. Guided states (envision…evaluate) compose modeBodies. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
+    "Project permission is read|write only: read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact.",
+    "Phase-end states establish, elaborate, examine, and evaluate expose next exits to Align/Spec/Vibe. Handoff is evaluate + /handoff (picker prepares the command).",
     "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
     "Transition table is the guided graph only. Stay-in-mode continue, picker dismiss, ask cancel, end-without-next, and idle UI are runtime — not graph edges. Manual /align /spec /vibe /mode bypasses live under Exceptions. Preferred agent path still ends SPEC/VIBE via CLOSE_OUT before CALL next.",
     "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
@@ -617,8 +785,21 @@ export function formatWorkflowPrompt(fsm: WorkflowFsm = WORKFLOW_FSM): string {
     "## Turn",
     ...fsm.turn.map((item) => `- ${item}`),
     "",
-    "## Shared procedures",
+    "## Mode bodies",
+    "Persisted User mode selects one body. Guided states below implement the steps.",
   ];
+
+  for (const body of fsm.modeBodies) {
+    lines.push(
+      "",
+      `### ${body.label} (${body.mode})`,
+      `Guided states: ${body.states.join(" → ")}`,
+      "",
+      ...body.steps.map((step) => `- ${step}`),
+    );
+  }
+
+  lines.push("", "## Shared procedures");
 
   for (const [name, steps] of Object.entries(fsm.procedures)) {
     lines.push("", `### ${name}`, ...steps.map((step) => `- ${step}`));
@@ -626,7 +807,7 @@ export function formatWorkflowPrompt(fsm: WorkflowFsm = WORKFLOW_FSM): string {
 
   lines.push("", "## States", "");
   for (const state of Object.values(fsm.states)) {
-    lines.push(`### ${state.label} (${state.id}, ${state.kind}, ${state.permission})`, state.summary, "");
+    lines.push(`### ${state.label} (${state.id}, ${state.userMode}, project ${state.permission})`, state.summary, "");
     if (state.substates?.length) {
       lines.push(`Substates: ${state.substates.join(" → ")}`, "");
     }

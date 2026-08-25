@@ -58,11 +58,25 @@ function transcriptBlock(pick: DecidePick): string {
   ].join("\n");
 }
 
+const AGENT_TRANSCRIPT_HEADING = /^## Agent transcript\s*$/m;
+
 async function appendAgentTranscript(cwd: string, name: string, block: string): Promise<void> {
   const path = planPath(cwd, name);
   const contents = await readFile(path, "utf8").catch(() => "");
   if (!contents || !isCurrentPlanFormat(contents)) return;
-  await writePlanAtomically(path, `${contents.trimEnd()}\n\n${block}\n`);
+
+  const heading = contents.match(AGENT_TRANSCRIPT_HEADING);
+  if (!heading || heading.index === undefined) {
+    await writePlanAtomically(path, `${contents.trimEnd()}\n\n${block}\n`);
+    return;
+  }
+
+  const headingEnd = heading.index + heading[0].length;
+  const before = contents.slice(0, headingEnd).trimEnd();
+  const after = contents.slice(headingEnd).replace(/^\s*/, "").trimEnd();
+  // Append-only under the heading (Agent transcript is last section in the template).
+  const next = after ? `${before}\n\n${after}\n\n${block}\n` : `${before}\n\n${block}\n`;
+  await writePlanAtomically(path, next);
 }
 
 export function registerDecide(pi: ExtensionAPI): void {

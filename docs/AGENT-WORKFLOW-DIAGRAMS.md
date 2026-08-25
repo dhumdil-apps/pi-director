@@ -2,6 +2,8 @@
 
 This guide is a derived visual map of the Agent Workflow contract. The sole operational source is [`extensions/agent-workflow/workflow-fsm.ts`](../extensions/agent-workflow/workflow-fsm.ts); when a diagram and that FSM disagree, the FSM wins. Runtime gates live in [`workflow-machine.ts`](../extensions/agent-workflow/workflow-machine.ts). For an interactive diagram of the same transition table, open [`workflow-fsm.html`](../extensions/agent-workflow/workflow-fsm.html) after `npm run build:content`. The page is a diagram-only flat XState-style view: full FSM states and transitions in a machine frame, event/DO edge pills with optional CMD/ESC bundles, orthogonal routing, and double-click sidebar panels with full instruction bodies.
 
+**Two layers:** persisted User modes are only Align / Spec / Vibe. The guided graph has seven steps (`envision`, `establish`, `explore`, `elaborate`, `execute`, `examine`, `evaluate`) composed by `modeBodies` in the FSM. Project permission is **read** (`.pi` plan only) or **write** (project files). Phase-end steps (`establish`, `elaborate`, `examine`, `evaluate`) expose `next` exits to Align / Spec / Vibe.
+
 Read the layers in order to build a mental model: **Map → Modes → Machinery → Full picture**. Each view summarizes rules instead of duplicating the complete contract. Use the [coverage index](#source-symbol-coverage) to jump from an FSM symbol to its visual home.
 
 Stable diagram ids (for anchors and downstream copies): `map-overview`, `ownership`, `modes-core`, `mode-align`, `mode-spec`, `mode-vibe`, `turn-spine`, `artifact`, `review`, `tools`, `handoff`, `full-turn`.
@@ -437,14 +439,14 @@ flowchart TD
 
 ## Source-symbol coverage
 
-- `MODES`, `STATE` (everyday mode hops): L0 `map-overview`, L1 `modes-core`.
-- `TOOLS`, write-boundary `INVARIANTS`: L0 `ownership`, L2 `tools`.
-- `ALWAYS` and source-of-truth rules: introduction, L0, and `workflow-fsm.ts` / `workflow-fsm.html`.
-- `TURN`, `CAPTURE_TURN`, `RECONCILE_SCOPE`, `WRITE_ARTIFACT`: L2 `turn-spine`, L2 `tools`, L3 `full-turn`.
-- `ALIGN`, `SPEC`, `VIBE`: L1 `mode-align` / `mode-spec` / `mode-vibe`, plus L3 `full-turn`.
-- `ARTIFACT`, `RECORD_DECISION`: L2 `artifact` and `review`; decision gates also in L1 Spec/Vibe and L3.
+- `modeBodies`, User modes align/spec/vibe: L0 `map-overview`, L1 `modes-core` / `mode-align` / `mode-spec` / `mode-vibe`; full guided graph in `workflow-fsm.html` / `toMermaid()`.
+- Guided states `envision` … `evaluate`, `transitions` (including phase-end `NEXT_*`): interactive FSM HTML; L1 mode procedures summarize without listing every edge.
+- `tools` (`start`/`ask`/`decide`/`next`), write-boundary `invariants`, project `permission` read|write: L0 `ownership`, L2 `tools`.
+- `always` and source-of-truth rules: introduction, L0, and `workflow-fsm.ts` / `workflow-fsm.html`.
+- `turn`, `CAPTURE_TURN`, `RECONCILE_SCOPE`, `WRITE_ARTIFACT`: L2 `turn-spine`, L2 `tools`, L3 `full-turn`.
+- `artifact`, `RECORD_DECISION`: L2 `artifact` and `review`; decision gates also in L1 Spec/Vibe and L3.
 - `BLOCKED`, `CLOSE_OUT`: L1 Spec/Vibe, L2 `turn-spine`, L3 `full-turn`; picker-ready close-out before L2 `handoff`.
 - `HANDOFF`, `LEGACY_CONTINUATION`, continuity exits: L2 `handoff` (L0 shows handoff only as an exit node).
-- `TOOL_MECHANICS`: L2 `tools` and L0 `ownership`.
+- `exceptions` (`/mode`, `/align`, `/spec`, `/vibe`, `/handoff`): L1 `modes-core`, L2 `handoff`, FSM exceptions block.
 
 When changing a covered symbol, update the relevant view and rerun the Mermaid render checks alongside `npm run verify`.

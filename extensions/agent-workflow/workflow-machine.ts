@@ -72,7 +72,8 @@ export function formatGateText(gate: Extract<GuardResult, { ok: false }>): strin
   return gate.message.startsWith("Error:") ? gate.message : `Error: ${gate.message}`;
 }
 
-function currentTurnSignal<T>(
+/** Latest matching custom entry in the current turn (stops at user message or mode change). */
+export function currentTurnSignal<T>(
   entries: SessionEntry[],
   customType: string,
   read: (entry: SessionEntry & { type: "custom" }) => T | undefined,

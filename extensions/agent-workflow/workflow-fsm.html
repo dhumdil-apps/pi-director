@@ -464,16 +464,9 @@
               align: { accent: "#f59e0b", badge: "ALIGN", perm: "READ", permClass: "perm-read" },
               spec: { accent: "#38bdf8", badge: "SPEC", perm: "READ", permClass: "perm-read" },
               vibe: { accent: "#10b981", badge: "VIBE", perm: "WRITE", permClass: "perm-write" },
-              envision: { accent: "#f59e0b", badge: "ALIGN", perm: "READ", permClass: "perm-read" },
-              establish: { accent: "#f59e0b", badge: "ALIGN", perm: "READ", permClass: "perm-read" },
-              evaluate: { accent: "#f59e0b", badge: "ALIGN", perm: "READ", permClass: "perm-read" },
-              explore: { accent: "#38bdf8", badge: "SPEC", perm: "READ", permClass: "perm-read" },
-              elaborate: { accent: "#38bdf8", badge: "SPEC", perm: "READ", permClass: "perm-read" },
-              execute: { accent: "#10b981", badge: "VIBE", perm: "WRITE", permClass: "perm-write" },
-              examine: { accent: "#10b981", badge: "VIBE", perm: "WRITE", permClass: "perm-write" },
-              closeOut: { accent: "#8b5cf6", badge: "PROCEDURE", perm: "READ", permClass: "perm-read" },
-              blocked: { accent: "#ef4444", badge: "PROCEDURE", perm: "READ", permClass: "perm-read" },
-              handoff: { accent: "#64748b", badge: "PROCEDURE", perm: "STANDBY", permClass: "perm-standby" },
+              read: { accent: "#38bdf8", badge: "READ", perm: "READ", permClass: "perm-read" },
+              write: { accent: "#10b981", badge: "WRITE", perm: "WRITE", permClass: "perm-write" },
+              guided: { accent: "#3b82f6", badge: "GUIDED", perm: "READ", permClass: "perm-read" },
             },
           },
           I = {
@@ -1253,7 +1246,11 @@
           render() {
             if (!this.shadowRootNode || !this._node) return;
             const t = this._node,
-              i = _.accents[t.id] || (t.permission ? _.accents[t.permission] : null) || _.accents.spec;
+              i =
+                _.accents[t.userMode] ||
+                _.accents[t.id] ||
+                (t.permission ? _.accents[t.permission] : null) ||
+                _.accents.align;
             this.style.setProperty("--node-accent", i.accent);
             const d =
               i.perm === "WRITE"
@@ -1768,13 +1765,17 @@
               i = "";
             if (this._node) {
               const e = this._node,
-                l = _.accents[e.id] ||
-                  _.accents[e.kind] || {
-                    accent: "#3b82f6",
-                    badge: (e.kind || "MODE").toUpperCase(),
-                    perm: (e.permission || "READ-ONLY").toUpperCase(),
-                    permClass: `perm-${e.permission || "readonly"}`,
-                  },
+                l = (() => {
+                  const modeKey = e.userMode || e.id || e.kind;
+                  const base = _.accents[modeKey] || _.accents[e.kind] || _.accents.align;
+                  const perm = (e.permission || base.perm || "read").toLowerCase() === "write" ? "WRITE" : "READ";
+                  return {
+                    accent: base.accent,
+                    badge: (e.userMode || e.kind || "guided").toUpperCase(),
+                    perm,
+                    permClass: perm === "WRITE" ? "perm-write" : "perm-read",
+                  };
+                })(),
                 f =
                   l.perm === "WRITE"
                     ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
@@ -2849,7 +2850,7 @@
     <script type="application/json" id="workflow-fsm-data">
       {
         "id": "piDirectorWorkflow",
-        "version": "2.2.0",
+        "version": "2.3.0",
         "title": "Pi Director Agent Workflow",
         "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
         "session": {
@@ -2891,9 +2892,38 @@
         "turn": [
           "RUN CAPTURE_TURN(message).",
           "IF message adds, conflicts with, or appears to replace scope THEN RUN RECONCILE_SCOPE(message); IF unresolved THEN RETURN.",
-          "IF mode = ALIGN THEN RUN ALIGN body.",
-          "ELSE IF mode = SPEC THEN RUN SPEC body.",
-          "ELSE IF mode = VIBE THEN RUN VIBE body."
+          "RUN the modeBodies entry for the persisted User mode (align | spec | vibe)."
+        ],
+        "modeBodies": [
+          {
+            "mode": "align",
+            "label": "ALIGN",
+            "states": ["envision", "establish", "evaluate"],
+            "steps": [
+              "IF no named artifact yet: RUN envision (orientation + start), then establish.",
+              "IF post-phase review (unresolved D, milestone just closed, or next landed on evaluate): RUN evaluate first — review D with ask when needed, reconcile C, then CALL next or continue establish for new scope.",
+              "OTHERWISE RUN establish (ask loop for goal/scope/constraints/outcomes).",
+              "Phase-end: CALL next with ranked Align/Spec/Vibe (and handoff when useful); do not rely only on ask Proceed-with-best."
+            ]
+          },
+          {
+            "mode": "spec",
+            "label": "SPEC",
+            "states": ["explore", "elaborate"],
+            "steps": [
+              "RUN explore (bounded research into Evidence) then elaborate (Proposal, Checklist, RECORD_DECISION).",
+              "RUN CLOSE_OUT at elaborate; CALL next so the User picks Align, Spec, or Vibe."
+            ]
+          },
+          {
+            "mode": "vibe",
+            "label": "VIBE",
+            "states": ["execute", "examine"],
+            "steps": [
+              "RUN execute (implement accepted scope) then examine (checks + evidence).",
+              "RUN CLOSE_OUT at examine; preferred next is Align/evaluate for review, or Spec/Vibe when more work is clear."
+            ]
+          }
         ],
         "procedures": {
           "CAPTURE_TURN": [
@@ -2966,9 +2996,10 @@
           "envision": {
             "id": "envision",
             "label": "ENVISION",
-            "kind": "mode",
+            "kind": "guided",
+            "userMode": "align",
             "summary": "Cold start and preflight: capture initial user goal, bounded orientation, and initialize named artifact via start.",
-            "permission": "readonly",
+            "permission": "read",
             "substates": ["goalCapture", "orientation", "ensureArtifact"],
             "procedure": [
               "Session story starts here: capture user goal and intent.",
@@ -2980,23 +3011,26 @@
           "establish": {
             "id": "establish",
             "label": "ESTABLISH",
-            "kind": "mode",
+            "kind": "guided",
+            "userMode": "align",
             "summary": "Clarify scope, constraints, and requirements via native ask Q&A loop; anchor baseline plan.",
-            "permission": "readonly",
+            "permission": "read",
             "substates": ["askLoop", "anchorScope", "routeTarget"],
             "procedure": [
               "WHILE a goal, scope, constraint, or outcome question remains: CALL ask as the first User-facing action with 1-4 independent questions.",
               "ASK dependent follow-ups in a later CALL after incorporating earlier answers.",
               "IF Ask routes directly to SPEC or VIBE THEN proceed to EXPLORE or EXECUTE.",
+              "WHEN scope is ready: CALL next with ranked Align/Spec/Vibe (preferred path); do not rely only on Proceed-with-best.",
               "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript."
             ]
           },
           "explore": {
             "id": "explore",
             "label": "EXPLORE",
-            "kind": "mode",
-            "summary": "Read-only codebase research, symbol tracing, and fact-finding without project file mutations.",
-            "permission": "planonly",
+            "kind": "guided",
+            "userMode": "spec",
+            "summary": "Codebase research and fact-finding; update the plan only — no project file mutations.",
+            "permission": "read",
             "substates": ["symbolSearch", "evidenceGathering"],
             "procedure": [
               "BEGIN with one bounded exact symbol or path search.",
@@ -3008,9 +3042,10 @@
           "elaborate": {
             "id": "elaborate",
             "label": "ELABORATE",
-            "kind": "mode",
+            "kind": "guided",
+            "userMode": "spec",
             "summary": "Synthesize findings, detail checklist outcomes (C), and draft technical proposal.",
-            "permission": "planonly",
+            "permission": "read",
             "substates": ["draftProposal", "checklistSynthesis", "closeOut"],
             "procedure": [
               "EDIT Proposal and Checklist with the recommended approach.",
@@ -3022,7 +3057,8 @@
           "execute": {
             "id": "execute",
             "label": "EXECUTE",
-            "kind": "mode",
+            "kind": "guided",
+            "userMode": "vibe",
             "summary": "Implement approved scope; make scoped autonomous decisions (D); project file mutations.",
             "permission": "write",
             "substates": ["codeMutation", "recordDecision"],
@@ -3035,7 +3071,8 @@
           "examine": {
             "id": "examine",
             "label": "EXAMINE",
-            "kind": "mode",
+            "kind": "guided",
+            "userMode": "vibe",
             "summary": "Run checks, test suite, record evidence in Work log, and run CLOSE_OUT.",
             "permission": "write",
             "substates": ["runChecks", "recordEvidence", "closeOut"],
@@ -3043,20 +3080,22 @@
               "RUN the smallest appropriate repository checks, then broader retained checks when risk warrants.",
               "IF a check fails within scope THEN FIX and RERUN; ELSE RUN BLOCKED(failure) and route to EVALUATE.",
               "RECORD check evidence in Work log.",
-              "RUN CLOSE_OUT and proceed to EVALUATE for review."
+              "RUN CLOSE_OUT; then CALL next (preferred Align/evaluate for review)."
             ]
           },
           "evaluate": {
             "id": "evaluate",
             "label": "EVALUATE",
-            "kind": "mode",
-            "summary": "Review unconfirmed decisions (D), evaluate completed milestones, and call next to pick the next phase.",
-            "permission": "readonly",
+            "kind": "guided",
+            "userMode": "align",
+            "summary": "Post-phase ALIGN review: unconfirmed decisions (D), checklist reconciliation, ask when needed, then next.",
+            "permission": "read",
             "substates": ["reviewDecisions", "reconcileScope", "routeNext"],
             "procedure": [
-              "REVIEW unconfirmed D items with the user when actionable choices require feedback.",
+              "REVIEW unconfirmed D items first; CALL ask when the User must accept, change, or defer a decision.",
               "RECONCILE checklist outcomes against completed work.",
-              "CALL next with ranked recommended actions (EXPLORE, EXECUTE, ESTABLISH, or HANDOFF)."
+              "IF new scope questions remain AFTER review THEN continue in ESTABLISH-style ask.",
+              "CALL next with ranked Align, Spec, or Vibe (and handoff when useful)."
             ]
           }
         },
@@ -3078,7 +3117,7 @@
             "description": "Dependent follow-up questions stay in ESTABLISH until ready for next mode."
           },
           {
-            "id": "establish-to-explore",
+            "id": "establish-ask-route-spec",
             "from": "establish",
             "event": "ASK_ROUTED_SPEC",
             "to": "explore",
@@ -3087,12 +3126,39 @@
             "userMediated": true
           },
           {
-            "id": "establish-to-execute",
+            "id": "establish-ask-route-vibe",
             "from": "establish",
             "event": "ASK_ROUTED_VIBE",
             "to": "execute",
             "label": "Proceed-with-best → EXECUTE",
             "description": "User accepts scope and routes directly to VIBE implementation.",
+            "userMediated": true
+          },
+          {
+            "id": "establish-next-align",
+            "from": "establish",
+            "event": "NEXT_ALIGN",
+            "to": "evaluate",
+            "label": "next → EVALUATE",
+            "description": "User stays in ALIGN for decision review or further clarification after establish.",
+            "userMediated": true
+          },
+          {
+            "id": "establish-next-spec",
+            "from": "establish",
+            "event": "NEXT_SPEC",
+            "to": "explore",
+            "label": "next → EXPLORE",
+            "description": "User chooses SPEC research after scope is ready (preferred ALIGN exit via next).",
+            "userMediated": true
+          },
+          {
+            "id": "establish-next-vibe",
+            "from": "establish",
+            "event": "NEXT_VIBE",
+            "to": "execute",
+            "label": "next → EXECUTE",
+            "description": "User chooses VIBE implementation after scope is ready.",
             "userMediated": true
           },
           {
@@ -3104,21 +3170,30 @@
             "description": "Evidence gathered; synthesize technical approach and checklist outcomes."
           },
           {
-            "id": "elaborate-to-execute",
-            "from": "elaborate",
-            "event": "NEXT_VIBE",
-            "to": "execute",
-            "label": "CLOSE_OUT → next → EXECUTE",
-            "description": "Proposal ready; user confirms and proceeds to implementation.",
-            "userMediated": true
-          },
-          {
-            "id": "elaborate-to-evaluate",
+            "id": "elaborate-next-align",
             "from": "elaborate",
             "event": "NEXT_ALIGN",
             "to": "evaluate",
             "label": "CLOSE_OUT → next → EVALUATE",
             "description": "Proposal ready for user review and decision confirmation.",
+            "userMediated": true
+          },
+          {
+            "id": "elaborate-next-spec",
+            "from": "elaborate",
+            "event": "NEXT_SPEC",
+            "to": "explore",
+            "label": "CLOSE_OUT → next → EXPLORE",
+            "description": "More research needed before a proposal is actionable.",
+            "userMediated": true
+          },
+          {
+            "id": "elaborate-next-vibe",
+            "from": "elaborate",
+            "event": "NEXT_VIBE",
+            "to": "execute",
+            "label": "CLOSE_OUT → next → EXECUTE",
+            "description": "Proposal ready; user confirms and proceeds to implementation.",
             "userMediated": true
           },
           {
@@ -3130,25 +3205,77 @@
             "description": "Code implemented; run repository checks and test suites."
           },
           {
-            "id": "examine-to-evaluate",
+            "id": "examine-close-out",
             "from": "examine",
             "event": "CLOSE_OUT",
             "to": "evaluate",
             "label": "CLOSE_OUT → EVALUATE",
-            "description": "Verification passed; reconcile checklist and review unconfirmed decisions.",
+            "description": "Agent finishes verification and close-out; preferred path continues at evaluate for review."
+          },
+          {
+            "id": "examine-next-align",
+            "from": "examine",
+            "event": "NEXT_ALIGN",
+            "to": "evaluate",
+            "label": "next → EVALUATE",
+            "description": "User chooses ALIGN review after verification.",
             "userMediated": true
           },
           {
-            "id": "examine-to-explore",
+            "id": "examine-next-spec",
             "from": "examine",
             "event": "NEXT_SPEC",
             "to": "explore",
-            "label": "CLOSE_OUT → next → EXPLORE",
-            "description": "Verification revealed need for deeper architectural research.",
+            "label": "next → EXPLORE",
+            "description": "Verification revealed need for deeper research.",
             "userMediated": true
           },
           {
-            "id": "evaluate-to-explore",
+            "id": "examine-next-vibe",
+            "from": "examine",
+            "event": "NEXT_VIBE",
+            "to": "execute",
+            "label": "next → EXECUTE",
+            "description": "User chooses more implementation after checks.",
+            "userMediated": true
+          },
+          {
+            "id": "evaluate-ask-loop",
+            "from": "evaluate",
+            "event": "ASK_LOOP",
+            "to": "evaluate",
+            "label": "Ask follow-up (review)",
+            "description": "Decision-review or post-phase questions stay in EVALUATE until ready to route."
+          },
+          {
+            "id": "evaluate-ask-route-spec",
+            "from": "evaluate",
+            "event": "ASK_ROUTED_SPEC",
+            "to": "explore",
+            "label": "Proceed-with-best → EXPLORE",
+            "description": "User accepts remaining review answers and routes to SPEC.",
+            "userMediated": true
+          },
+          {
+            "id": "evaluate-ask-route-vibe",
+            "from": "evaluate",
+            "event": "ASK_ROUTED_VIBE",
+            "to": "execute",
+            "label": "Proceed-with-best → EXECUTE",
+            "description": "User accepts remaining review answers and routes to VIBE.",
+            "userMediated": true
+          },
+          {
+            "id": "evaluate-next-align",
+            "from": "evaluate",
+            "event": "NEXT_ALIGN",
+            "to": "establish",
+            "label": "next → ESTABLISH",
+            "description": "Scope expansion or new requirements require further Q&A after review.",
+            "userMediated": true
+          },
+          {
+            "id": "evaluate-next-spec",
             "from": "evaluate",
             "event": "NEXT_SPEC",
             "to": "explore",
@@ -3157,7 +3284,7 @@
             "userMediated": true
           },
           {
-            "id": "evaluate-to-execute",
+            "id": "evaluate-next-vibe",
             "from": "evaluate",
             "event": "NEXT_VIBE",
             "to": "execute",
@@ -3166,21 +3293,12 @@
             "userMediated": true
           },
           {
-            "id": "evaluate-to-establish",
-            "from": "evaluate",
-            "event": "NEXT_ALIGN",
-            "to": "establish",
-            "label": "next → ESTABLISH",
-            "description": "Scope expansion or new requirements require further Q&A.",
-            "userMediated": true
-          },
-          {
             "id": "evaluate-handoff",
             "from": "evaluate",
             "event": "NEXT_HANDOFF",
             "to": "envision",
-            "label": "CLOSE_OUT → handoff (restart ENVISION)",
-            "description": "Fresh context window on same artifact, restarting from ENVISION.",
+            "label": "next → handoff (new session ENVISION)",
+            "description": "Picker prepares /handoff; after the User runs it, a fresh session restarts at ENVISION on the same artifact.",
             "userMediated": true
           }
         ],
@@ -3195,6 +3313,24 @@
               "description": "User-triggered escape hatch. Opens the interactive option picker in editor standby so the User can choose what to do next (switch mode, hand off, or return)."
             },
             {
+              "command": "/align",
+              "label": "Switch to ALIGN (standby)",
+              "summary": "Records ALIGN mode and returns to the editor without starting a turn.",
+              "description": "Manual escape hatch. Sets persisted mode to ALIGN and notifies; does not auto-start the agent."
+            },
+            {
+              "command": "/spec",
+              "label": "Switch to SPEC (standby)",
+              "summary": "Records SPEC mode and returns to the editor without starting a turn.",
+              "description": "Manual escape hatch. Sets persisted mode to SPEC and notifies; does not auto-start the agent."
+            },
+            {
+              "command": "/vibe",
+              "label": "Switch to VIBE (standby)",
+              "summary": "Records VIBE mode and returns to the editor without starting a turn.",
+              "description": "Manual escape hatch. Sets persisted mode to VIBE and notifies; does not auto-start the agent."
+            },
+            {
               "command": "/handoff [name]",
               "label": "Direct Handoff Shortcut",
               "summary": "Swaps active session onto a named plan in fresh ALIGN.",
@@ -3205,6 +3341,7 @@
             "The /mode command is the canonical User-owned bypass to open the option picker and choose what to do next.",
             "Manual bypass transitions are never gated on workflow completeness, pending recommendations, or unresolved D items.",
             "Selecting an unrecommended mode in the picker switches the session mode in editor standby.",
+            "Manual /align /spec /vibe only record mode and return to the editor; they do not start the agent.",
             "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN."
           ]
         },
@@ -3248,11 +3385,16 @@
             "name": "decide",
             "summary": "Agent autonomous decision logger; records rationale and unblocks execution without prompt.",
             "modes": ["spec", "vibe"],
-            "gate": ["Non-empty decide with options requires a named session plan file; otherwise error."],
+            "gate": [
+              "SPEC/VIBE-only; ALIGN decide is a harmless no-op (no decision recorded).",
+              "Empty decide is a harmless no-op.",
+              "Optionless decide is a harmless no-op (compared options required).",
+              "Non-empty decide with options requires a named session plan file; otherwise error."
+            ],
             "mechanics": [
               "Never opens a picker and never changes mode.",
               "Auto-picks the highest-confidence option per question.",
-              "Records agent-workflow:decision and appends Agent transcript after start.",
+              "Records agent-workflow:decision and appends under Agent transcript after start.",
               "Leaves D review unresolved until explicit ALIGN acceptance."
             ]
           },
@@ -3267,7 +3409,7 @@
             ],
             "mechanics": [
               "After alignment or phase completion, CALL next so the user chooses the next mode.",
-              "Agent-authored actions REQUIRE a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
+              "Agent-authored actions SHOULD include a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and REQUIRE contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
               "Runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction.",
               "Recommended row with a reason shows {mode} — {reason}.",
               "Prefer CALL next from CLOSE_OUT; runtime still opens the picker if next is called from ALIGN/SPEC/VIBE directly.",
@@ -3306,7 +3448,9 @@
         "initial": "envision",
         "notes": [
           "Guided session story: Align (start tool + ask) begins; Spec/Vibe do work; Close-out finishes a phase; Handoff = fresh context, same artifact, restart at Align. Idle product UI when nothing is running is not a graph node.",
-          "Persisted User mode is only align|spec|vibe. closeOut, blocked, and handoff are procedural helpers on the shared flow chart.",
+          "Persisted User mode is only align|spec|vibe. Guided states (envision…evaluate) compose modeBodies. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
+          "Project permission is read|write only: read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact.",
+          "Phase-end states establish, elaborate, examine, and evaluate expose next exits to Align/Spec/Vibe. Handoff is evaluate + /handoff (picker prepares the command).",
           "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
           "Transition table is the guided graph only. Stay-in-mode continue, picker dismiss, ask cancel, end-without-next, and idle UI are runtime — not graph edges. Manual /align /spec /vibe /mode bypasses live under Exceptions. Preferred agent path still ends SPEC/VIBE via CLOSE_OUT before CALL next.",
           "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
