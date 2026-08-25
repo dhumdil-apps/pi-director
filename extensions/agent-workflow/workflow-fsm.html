@@ -923,7 +923,8 @@
             events: d.event ? [d.event] : [],
             description: d.description || "",
             descriptions: d.description ? [d.description] : [],
-            userMediated: !1,
+            userMediated: !!d.userMediated,
+            bidirectional: !!d.bidirectional,
             waypoints: d.waypoints ? [...d.waypoints] : void 0,
           }));
         }
@@ -2386,19 +2387,22 @@
               ((this._draggedNodeId = null),
                 (this._dragNodeStart = null),
                 window.removeEventListener("pointermove", this.handleNodePointerMove),
-                window.removeEventListener("pointerup", this.handleNodePointerUp),
-                this._nodeDragMoved
-                  ? this.emit("flow:layout-change", { nodeId: t, layout: this.exportLayoutSnapshot() })
-                  : this._selectedNodeId === t
-                    ? ((this._selectedNodeId = null),
-                      (this._activeStateId = null),
-                      this.emit("flow:select-node", { node: null }))
-                    : ((this._selectedNodeId = t),
-                      (this._activeStateId = t),
-                      (i = this._graph) != null &&
-                        i.states[t] &&
-                        this.emit("flow:select-node", { node: this._graph.states[t] })),
-                this.requestUpdate());
+                window.removeEventListener("pointerup", this.handleNodePointerUp));
+              if (this._nodeDragMoved) {
+                this._saveNodeLayout();
+                this.emit("flow:layout-change", { nodeId: t, layout: this.exportLayoutSnapshot() });
+              } else if (this._selectedNodeId === t) {
+                ((this._selectedNodeId = null),
+                  (this._activeStateId = null),
+                  this.emit("flow:select-node", { node: null }));
+              } else {
+                ((this._selectedNodeId = t),
+                  (this._activeStateId = t),
+                  (i = this._graph) != null &&
+                    i.states[t] &&
+                    this.emit("flow:select-node", { node: this._graph.states[t] }));
+              }
+              this.requestUpdate();
             });
             h(this, "handleWaypointPointerMove", (t) => {
               if (!this._draggedWaypoint) return;
@@ -2422,16 +2426,17 @@
                 this.requestUpdate());
             });
           }
+          get defaultLayout() {
+            return this._defaultLayout;
+          }
+          set defaultLayout(t) {
+            this._defaultLayout = t;
+          }
           get graph() {
             return this._graph;
           }
           set graph(t) {
             if (((this._graph = t), t)) {
-              if (!this._defaultLayout && t.states) {
-                this._defaultLayout = {};
-                for (const [a, r] of Object.entries(t.states))
-                  this._defaultLayout[a] = { x: r.x, y: r.y, w: r.w, h: r.h };
-              }
               if (t.transitions)
                 for (const a of t.transitions)
                   a.waypoints &&
@@ -2444,7 +2449,9 @@
                 const a = localStorage.getItem("pi_workflow_edge_override");
                 if (a) {
                   const r = JSON.parse(a);
-                  for (const [s, o] of Object.entries(r)) Array.isArray(o) && this._edgeWaypoints.set(s, o);
+                  this._edgeWaypoints.clear();
+                  for (const [s, o] of Object.entries(r))
+                    Array.isArray(o) && o.length > 0 && this._edgeWaypoints.set(s, o);
                 }
               } catch {}
               this._activeStateId || (this._activeStateId = t.initial || Object.keys(t.states || {})[0] || null);
@@ -2564,17 +2571,28 @@
                 (await navigator.clipboard.writeText(s));
             } catch {}
             try {
-              (localStorage.setItem("pi_workflow_layout_override", JSON.stringify(i)), this._saveEdgeWaypoints());
+              (localStorage.removeItem("pi_workflow_layout_override"),
+                localStorage.removeItem("pi_workflow_edge_override"));
             } catch {}
             return (
               console.log(
                 `Exported layout JSON:
 ` + s,
               ),
-              this.showToast("✓ Layout JSON copied to clipboard!"),
+              this.showToast("✓ Layout JSON copied! Paste into workflow-layout.json"),
               this.emit("flow:snapshot-layout", { snapshot: t, code: s, json: r }),
               s
             );
+          }
+          _saveNodeLayout() {
+            try {
+              if (this._graph && this._graph.states) {
+                const t = {};
+                for (const [i, a] of Object.entries(this._graph.states))
+                  t[i] = { x: Math.round(a.x), y: Math.round(a.y), w: Math.round(a.w), h: Math.round(a.h) };
+                localStorage.setItem("pi_workflow_layout_override", JSON.stringify(t));
+              }
+            } catch {}
           }
           clearAllBreakpoints() {
             this._edgeWaypoints.clear();
@@ -2582,22 +2600,45 @@
               for (const a of this._graph.transitions) delete a.waypoints;
             }
             try {
-              localStorage.removeItem("pi_workflow_edge_override");
+              localStorage.setItem("pi_workflow_edge_override", JSON.stringify({}));
             } catch {}
             (this.showToast("✓ Removed all breakpoints"), this.emit("flow:clear-breakpoints"), this.requestUpdate());
           }
-          resetLayout() {
-            var i;
-            if (!this._defaultLayout || !((i = this._graph) != null && i.states)) return;
-            for (const [a, r] of Object.entries(this._defaultLayout))
+          async resetLayout() {
+            if (!this._graph || !this._graph.states) return;
+            try {
+              const res = await fetch("./workflow-layout.json?t=" + Date.now());
+              if (res.ok) {
+                const fresh = await res.json();
+                if (fresh) {
+                  this._defaultLayout = {
+                    nodes: fresh.nodes || (this._defaultLayout && this._defaultLayout.nodes) || {},
+                    edges: fresh.edges || (this._defaultLayout && this._defaultLayout.edges) || {},
+                  };
+                }
+              }
+            } catch {}
+            const defNodes = (this._defaultLayout && this._defaultLayout.nodes) || this._defaultLayout || {};
+            const defEdges = (this._defaultLayout && this._defaultLayout.edges) || {};
+            for (const [a, r] of Object.entries(defNodes))
               this._graph.states[a] &&
                 ((this._graph.states[a].x = r.x),
                 (this._graph.states[a].y = r.y),
                 (this._graph.states[a].w = r.w),
                 (this._graph.states[a].h = r.h));
             this._edgeWaypoints.clear();
-            if (this._graph && this._graph.transitions) {
-              for (const a of this._graph.transitions) delete a.waypoints;
+            if (this._graph.transitions) {
+              for (const tr of this._graph.transitions) {
+                if (defEdges[tr.id] && Array.isArray(defEdges[tr.id]) && defEdges[tr.id].length > 0) {
+                  tr.waypoints = defEdges[tr.id].map((pt) => [...pt]);
+                  this._edgeWaypoints.set(
+                    tr.id,
+                    tr.waypoints.map((pt) => [...pt]),
+                  );
+                } else {
+                  delete tr.waypoints;
+                }
+              }
             }
             try {
               (localStorage.removeItem("pi_workflow_layout_override"),
@@ -2678,13 +2719,13 @@
             <pattern id="flow-grid-pattern" width="24" height="24" patternUnits="userSpaceOnUse">
               <circle cx="12" cy="12" r="1" fill="var(--tuto-grid, rgba(255, 255, 255, 0.04))" />
             </pattern>
-            <marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <marker id="flow-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--tuto-edge, #5b6477)" />
             </marker>
-            <marker id="flow-arrow-hot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <marker id="flow-arrow-hot" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--tuto-hot, #3b82f6)" />
             </marker>
-            <marker id="flow-arrow-init" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <marker id="flow-arrow-init" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#ffffff" />
             </marker>
           </defs>
@@ -2848,12 +2889,22 @@
                     z = (v.clientX - S.left - this._camera.panX) / N,
                     k = (v.clientY - S.top - this._camera.panY) / N;
                   let R = this._edgeWaypoints.get(n.id) ? [...this._edgeWaypoints.get(n.id)] : [];
-                  const G = Math.round(z / 10) * 10,
-                    C = Math.round(k / 10) * 10;
-                  (R.push([G, C]),
-                    this._edgeWaypoints.set(n.id, R),
-                    this._saveEdgeWaypoints(),
-                    this._startWaypointDrag(n.id, R.length - 1, v));
+                  if (R.length === 0) {
+                    const G = Math.round(z / 10) * 10,
+                      C = Math.round(k / 10) * 10;
+                    (R.push([G, C]),
+                      this._edgeWaypoints.set(n.id, R),
+                      this._saveEdgeWaypoints(),
+                      this._startWaypointDrag(n.id, 0, v));
+                  } else {
+                    let closestIdx = 0,
+                      minDist = 1 / 0;
+                    for (let B = 0; B < R.length; B++) {
+                      const dist = Math.hypot(R[B][0] - z, R[B][1] - k);
+                      dist < minDist && ((minDist = dist), (closestIdx = B));
+                    }
+                    this._startWaypointDrag(n.id, closestIdx, v);
+                  }
                 });
               const W = (A) => {
                 (A.stopPropagation(),
@@ -2935,6 +2986,14 @@
                           const V = Math.round(q / 10) * 10,
                             j = Math.round(O / 10) * 10;
                           (($ = [[V, j]]), this._edgeWaypoints.set(n.id, $), (T = 0));
+                        } else if ($.length === 1) {
+                          let V = 0,
+                            j = Math.hypot($[0][0] - q, $[0][1] - O);
+                          if (j > 50) {
+                            const B = Math.round(q / 10) * 10,
+                              K = Math.round(O / 10) * 10;
+                            ($.push([B, K]), this._edgeWaypoints.set(n.id, $), (T = 1));
+                          } else T = 0;
                         } else {
                           let V = 0,
                             j = 1 / 0;
@@ -2942,11 +3001,7 @@
                             const K = Math.hypot($[B][0] - q, $[B][1] - O);
                             K < j && ((j = K), (V = B));
                           }
-                          if (j > 50) {
-                            const B = Math.round(q / 10) * 10,
-                              K = Math.round(O / 10) * 10;
-                            ($.push([B, K]), this._edgeWaypoints.set(n.id, $), (T = $.length - 1));
-                          } else T = V;
+                          T = V;
                         }
                         (this._saveEdgeWaypoints(), this._startWaypointDrag(n.id, T, C));
                       }),
@@ -2961,38 +3016,42 @@
                     : R.addEventListener("click", W));
               }
               if (this._isEditMode && n.route && n.route.points.length >= 2) {
-                const A = n.route.points;
-                for (let v = 0; v < A.length - 1; v++) {
-                  const S = A[v],
-                    N = A[v + 1];
-                  if (Math.hypot(N[0] - S[0], N[1] - S[1]) < 16) continue;
-                  const k = (S[0] + N[0]) / 2,
-                    R = (S[1] + N[1]) / 2;
-                  y(
-                    "circle",
-                    {
-                      cx: k,
-                      cy: R,
-                      r: 4.5,
-                      class: "flow-waypoint-split",
-                      fill: "#38bdf8",
-                      "fill-opacity": "0.55",
-                      stroke: "#0284c7",
-                      "stroke-width": 1.5,
-                    },
-                    l,
-                  ).addEventListener("pointerdown", (C) => {
-                    if (C.button !== 0) return;
-                    C.stopPropagation();
-                    const $ = this._edgeWaypoints.get(n.id) ? [...this._edgeWaypoints.get(n.id)] : [],
-                      T = Math.min(v, $.length),
-                      q = Math.round(k / 10) * 10,
-                      O = Math.round(R / 10) * 10;
-                    ($.splice(T, 0, [q, O]),
-                      this._edgeWaypoints.set(n.id, $),
-                      this._saveEdgeWaypoints(),
-                      this._startWaypointDrag(n.id, T, C));
-                  });
+                const currentWaypoints = this._edgeWaypoints.get(n.id) || n.waypoints || [];
+                if (currentWaypoints.length < 2) {
+                  const A = n.route.points;
+                  for (let v = 0; v < A.length - 1; v++) {
+                    const S = A[v],
+                      N = A[v + 1];
+                    if (Math.hypot(N[0] - S[0], N[1] - S[1]) < 16) continue;
+                    const k = (S[0] + N[0]) / 2,
+                      R = (S[1] + N[1]) / 2;
+                    y(
+                      "circle",
+                      {
+                        cx: k,
+                        cy: R,
+                        r: 4.5,
+                        class: "flow-waypoint-split",
+                        fill: "#38bdf8",
+                        "fill-opacity": "0.55",
+                        stroke: "#0284c7",
+                        "stroke-width": 1.5,
+                      },
+                      l,
+                    ).addEventListener("pointerdown", (C) => {
+                      if (C.button !== 0) return;
+                      C.stopPropagation();
+                      const $ = this._edgeWaypoints.get(n.id) ? [...this._edgeWaypoints.get(n.id)] : [];
+                      if ($.length >= 2) return;
+                      const T = Math.min(v, $.length),
+                        q = Math.round(k / 10) * 10,
+                        O = Math.round(R / 10) * 10;
+                      ($.splice(T, 0, [q, O]),
+                        this._edgeWaypoints.set(n.id, $),
+                        this._saveEdgeWaypoints(),
+                        this._startWaypointDrag(n.id, T, C));
+                    });
+                  }
                 }
                 if (n.waypoints && n.waypoints.length > 0)
                   for (let v = 0; v < n.waypoints.length; v++) {
@@ -3480,7 +3539,7 @@
     <script type="application/json" id="workflow-fsm-data">
       {
         "id": "piDirectorWorkflow",
-        "version": "2.6.0",
+        "version": "2.6.1",
         "title": "Pi Director Agent Workflow",
         "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Each mode has a primary home and a secondary gate: primaries do the work; secondaries capture/verify and CALL next. Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
         "session": {
@@ -3807,9 +3866,9 @@
           {
             "id": "envision-to-evaluate",
             "from": "envision",
-            "event": "SCOPE_READY",
+            "event": "ARTIFACT",
             "to": "evaluate",
-            "label": "Scope ready → EVALUATE",
+            "label": "ARTIFACT → EVALUATE",
             "description": "Named artifact exists and ≥1 goal-scope ask was answered after start/reuse; enter Align primary home."
           },
           {
@@ -4120,7 +4179,7 @@
           "Guided session story: envision (start → ≥1 scope ask) → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
           "Persisted User mode is only align|spec|vibe. Guided states compose modeBodies with roles entry|primary|secondary. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
           "Project permission is read|write only: read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact.",
-          "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then SCOPE_READY→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
+          "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
           "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
           "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
           "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next.",
@@ -4143,7 +4202,7 @@
           },
           "evaluate": {
             "x": 440,
-            "y": -10,
+            "y": 50,
             "w": 210,
             "h": 48
           },
@@ -4155,7 +4214,7 @@
           },
           "explore": {
             "x": 430,
-            "y": 270,
+            "y": 320,
             "w": 210,
             "h": 48
           },
@@ -4167,7 +4226,7 @@
           },
           "execute": {
             "x": 420,
-            "y": 570,
+            "y": 630,
             "w": 210,
             "h": 48
           },
@@ -4180,62 +4239,62 @@
         },
         "edges": {
           "envision-ask-route-spec": [
-            [790, -40],
-            [790, 260]
+            [740, 20],
+            [750, 280]
           ],
           "envision-ask-route-vibe": [
-            [830, -40],
-            [840, 560]
+            [770, 20],
+            [780, 540]
           ],
-          "envision-to-evaluate": [[550, -60]],
+          "envision-to-evaluate": [[550, -40]],
           "evaluate-ask-route-spec": [
-            [700, 100],
-            [710, 260]
+            [700, 140],
+            [700, 280]
           ],
           "evaluate-ask-route-vibe": [
-            [740, 70],
-            [740, 550]
+            [720, 120],
+            [730, 550]
           ],
-          "align-body": [[530, 90]],
-          "establish-next-spec": [[550, 230]],
+          "align-body": [[540, 120]],
+          "establish-next-spec": [[530, 250]],
           "establish-next-vibe": [
             [680, 220],
             [680, 530]
           ],
           "establish-handoff": [
-            [340, 120],
-            [340, -70]
+            [390, 100],
+            [400, -70]
           ],
-          "spec-body": [[530, 360]],
+          "spec-body": [[530, 390]],
           "elaborate-next-align": [
-            [290, 370],
-            [300, 190]
+            [380, 380],
+            [380, 200]
           ],
           "elaborate-return-align": [
-            [260, 390],
-            [260, 70]
+            [340, 380],
+            [350, 100]
           ],
-          "elaborate-next-vibe": [[530, 530]],
+          "elaborate-next-vibe": [[520, 550]],
           "elaborate-handoff": [
-            [220, 400],
-            [230, -20]
+            [300, 390],
+            [310, -30]
           ],
-          "vibe-body": [[520, 670]],
+          "vibe-body": [[520, 700]],
           "examine-next-align": [
-            [150, 600],
-            [150, 190]
+            [240, 630],
+            [250, 170]
           ],
           "examine-return-align": [
-            [100, 600],
-            [90, 60]
+            [200, 630],
+            [200, 110]
           ],
           "examine-next-spec": [
-            [190, 590],
-            [190, 340]
+            [270, 620],
+            [270, 350]
           ],
           "examine-handoff": [
-            [70, 620],
-            [60, -90]
+            [160, 620],
+            [170, -30]
           ]
         }
       }
@@ -4244,66 +4303,86 @@
     <!-- Flow Diagram Initialization (file:// safe, standard script) -->
     <script>
       const fsmData = JSON.parse(document.getElementById("workflow-fsm-data").textContent);
-      const layoutConfig = JSON.parse(document.getElementById("workflow-layout-data").textContent || "{}");
       const canvas = document.getElementById("flow-canvas");
 
-      // 7-"E" Lifecycle Step Node Layout from workflow-layout.json
-      const defaultNodes = layoutConfig.nodes || {
-        envision: { x: 40, y: 310, w: 200, h: 48 },
-        evaluate: { x: 420, y: 70, w: 210, h: 48 },
-        establish: { x: 420, y: 540, w: 210, h: 48 },
-        explore: { x: 920, y: 70, w: 210, h: 48 },
-        elaborate: { x: 920, y: 540, w: 210, h: 48 },
-        execute: { x: 1420, y: 70, w: 210, h: 48 },
-        examine: { x: 1420, y: 540, w: 210, h: 48 },
-      };
-
-      // Edge Custom Waypoints from workflow-layout.json
-      const defaultEdges = layoutConfig.edges || {};
-
-      let activeLayout = defaultNodes;
-      try {
-        const saved = localStorage.getItem("pi_workflow_layout_override");
-        if (saved) {
-          activeLayout = { ...defaultNodes, ...JSON.parse(saved) };
+      async function initDiagram() {
+        let layoutConfig = {};
+        try {
+          const res = await fetch("./workflow-layout.json?t=" + Date.now());
+          if (res.ok) {
+            layoutConfig = await res.json();
+          }
+        } catch {}
+        if (!layoutConfig || !layoutConfig.nodes) {
+          try {
+            layoutConfig = JSON.parse(document.getElementById("workflow-layout-data")?.textContent || "{}");
+          } catch {}
         }
-      } catch {}
 
-      let activeEdges = defaultEdges;
-      try {
-        const savedEdges = localStorage.getItem("pi_workflow_edge_override");
-        if (savedEdges) {
-          activeEdges = { ...defaultEdges, ...JSON.parse(savedEdges) };
+        // 7-"E" Lifecycle Step Node Layout from workflow-layout.json
+        const defaultNodes = layoutConfig.nodes || {
+          envision: { x: 40, y: 310, w: 200, h: 48 },
+          evaluate: { x: 420, y: 70, w: 210, h: 48 },
+          establish: { x: 420, y: 540, w: 210, h: 48 },
+          explore: { x: 920, y: 70, w: 210, h: 48 },
+          elaborate: { x: 920, y: 540, w: 210, h: 48 },
+          execute: { x: 1420, y: 70, w: 210, h: 48 },
+          examine: { x: 1420, y: 540, w: 210, h: 48 },
+        };
+
+        // Edge Custom Waypoints from workflow-layout.json
+        const defaultEdges = layoutConfig.edges || {};
+
+        let activeLayout = defaultNodes;
+        try {
+          const saved = localStorage.getItem("pi_workflow_layout_override");
+          if (saved) {
+            activeLayout = { ...defaultNodes, ...JSON.parse(saved) };
+          }
+        } catch {}
+
+        let activeEdges = defaultEdges;
+        try {
+          const savedEdges = localStorage.getItem("pi_workflow_edge_override");
+          if (savedEdges) {
+            activeEdges = { ...defaultEdges, ...JSON.parse(savedEdges) };
+          }
+        } catch {}
+
+        const states = {};
+        for (const [id, pos] of Object.entries(activeLayout)) {
+          const raw = (fsmData.states && fsmData.states[id]) || {};
+          states[id] = {
+            ...raw,
+            ...pos,
+            id,
+          };
         }
-      } catch {}
 
-      const states = {};
-      for (const [id, pos] of Object.entries(activeLayout)) {
-        const raw = (fsmData.states && fsmData.states[id]) || {};
-        states[id] = {
-          ...raw,
-          ...pos,
-          id,
+        const transitions = (fsmData.transitions || []).map((t, idx) => {
+          const edgeId = t.id || t.from + "->" + t.to + "-" + idx;
+          if (activeEdges[edgeId]) {
+            return { ...t, id: edgeId, waypoints: activeEdges[edgeId] };
+          }
+          return { ...t, id: edgeId };
+        });
+
+        canvas.defaultLayout = {
+          nodes: defaultNodes,
+          edges: defaultEdges,
+        };
+        canvas.graph = {
+          ...fsmData,
+          framing: false,
+          title: "Pi Director Agent Workflow",
+          subtitle: "ARTIFACT · PWB · ALIGN/SPEC/VIBE · NEXT · RETURN",
+          groups: [],
+          states,
+          transitions,
         };
       }
 
-      const transitions = (fsmData.transitions || []).map((t, idx) => {
-        const edgeId = t.id || t.from + "->" + t.to + "-" + idx;
-        if (activeEdges[edgeId]) {
-          return { ...t, id: edgeId, waypoints: activeEdges[edgeId] };
-        }
-        return { ...t, id: edgeId };
-      });
-
-      canvas.graph = {
-        ...fsmData,
-        framing: false,
-        title: "Pi Director Agent Workflow",
-        subtitle: "ARTIFACT · PWB · ALIGN/SPEC/VIBE · NEXT · RETURN",
-        groups: [],
-        states,
-        transitions,
-      };
+      initDiagram();
 
       // Set footer version badge
       const footerVersion = document.getElementById("footer-version");

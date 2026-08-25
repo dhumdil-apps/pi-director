@@ -9,7 +9,7 @@
  * Runtime tool gates live in `workflow-machine.ts` and must stay aligned with
  * `tools.*.gate` and the transition table below.
  *
- * v2.6.0 — primary homes + secondary gates:
+ * v2.6.1 — primary homes + secondary gates:
  * - ALIGN: envision (entry: start then ≥1 scope ask) → evaluate (primary, later asks) ⇄ establish (secondary / next; never ask)
  * - SPEC: explore (primary) ⇄ elaborate (secondary / next)
  * - VIBE: execute (primary) ⇄ examine (secondary / next)
@@ -18,7 +18,7 @@
  * - Align dual landing: NEXT_ALIGN → establish (idle); RETURN_ALIGN → evaluate (D-review ask)
  */
 
-export const WORKFLOW_FSM_VERSION = "2.6.0";
+export const WORKFLOW_FSM_VERSION = "2.6.1";
 
 export type FsmStateId = "envision" | "establish" | "explore" | "elaborate" | "execute" | "examine" | "evaluate";
 
@@ -472,9 +472,9 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     {
       id: "envision-to-evaluate",
       from: "envision",
-      event: "SCOPE_READY",
+      event: "ARTIFACT",
       to: "evaluate",
-      label: "Scope ready → EVALUATE",
+      label: "ARTIFACT → EVALUATE",
       description:
         "Named artifact exists and ≥1 goal-scope ask was answered after start/reuse; enter Align primary home.",
     },
@@ -796,7 +796,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     "Guided session story: envision (start → ≥1 scope ask) → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
     "Persisted User mode is only align|spec|vibe. Guided states compose modeBodies with roles entry|primary|secondary. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
     "Project permission is read|write only: read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact.",
-    "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then SCOPE_READY→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
+    "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
     "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
     "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
     "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next.",

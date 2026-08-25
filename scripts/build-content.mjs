@@ -16,7 +16,7 @@
  * Then produces a minimal package tarball under dist/.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execSync } from "node:child_process";
@@ -182,15 +182,24 @@ writeFileSync(
 
 // Embed live JSON into the local HTML visualizer (file:// friendly)
 const htmlPath = join(ROOT, "extensions/agent-workflow/workflow-fsm.html");
-const html = readFileSync(htmlPath, "utf-8");
+const layoutPath = join(ROOT, "extensions/agent-workflow/workflow-layout.json");
+let html = readFileSync(htmlPath, "utf-8");
 if (!html.includes('id="workflow-fsm-data"')) {
   throw new Error("Could not embed workflow FSM JSON into workflow-fsm.html (marker missing)");
 }
-const embedded = html.replace(
+html = html.replace(
   /<script type="application\/json" id="workflow-fsm-data">[\s\S]*?<\/script>/,
   `<script type="application/json" id="workflow-fsm-data">\n${JSON.stringify(WORKFLOW_FSM, null, 2)}\n    </script>`,
 );
-writeFileSync(htmlPath, embedded);
+if (existsSync(layoutPath) && html.includes('id="workflow-layout-data"')) {
+  const layoutJson = JSON.parse(readFileSync(layoutPath, "utf-8"));
+  html = html.replace(
+    /<script type="application\/json" id="workflow-layout-data">[\s\S]*?<\/script>/,
+    `<script type="application/json" id="workflow-layout-data">\n${JSON.stringify(layoutJson, null, 2)}\n    </script>`,
+  );
+  writeFileSync(join(DIST, "workflow-layout.json"), JSON.stringify(layoutJson, null, 2) + "\n");
+}
+writeFileSync(htmlPath, html);
 try {
   execSync(`npx prettier --write "${htmlPath}"`, { cwd: ROOT, stdio: "pipe" });
 } catch {}
@@ -213,6 +222,7 @@ const contentPkg = {
     "./workflow-fsm.json": "./workflow-fsm.json",
     "./workflow-fsm.mmd": "./workflow-fsm.mmd",
     "./workflow-fsm.html": "./workflow-fsm.html",
+    "./workflow-layout.json": "./workflow-layout.json",
     "./workflow.md": "./workflow.md",
     "./workflow-steps.txt": "./workflow-steps.txt",
   },
