@@ -7,29 +7,29 @@
     <style>
       :root {
         color-scheme: dark;
-        --tuto-bg: #0c0e12;
-        --tuto-grid: color-mix(in srgb, #94a3b8 9%, transparent);
-        --tuto-text: #e8eaed;
-        --tuto-text-muted: #94a3b8;
-        --tuto-muted: #64748b;
-        --tuto-panel-bg: #161b22;
-        --tuto-panel-head: #1c2128;
-        --tuto-card-bg: #12161c;
-        --tuto-card-selected-bg: #161b22;
-        --tuto-head-bg: #1a2030;
-        --tuto-head-selected-bg: #1e293b;
-        --tuto-border: #30363d;
-        --tuto-border-subtle: #21262d;
-        --tuto-edge: #4b5563;
-        --tuto-edge-dim: #1a202c;
+        --tuto-bg: #0e1015;
+        --tuto-grid: color-mix(in srgb, #ffffff 3%, transparent);
+        --tuto-text: #ffffff;
+        --tuto-text-muted: #9ba3b5;
+        --tuto-muted: #647087;
+        --tuto-panel-bg: #14171f;
+        --tuto-panel-head: #1c202b;
+        --tuto-card-bg: #1c202a;
+        --tuto-card-selected-bg: #222735;
+        --tuto-head-bg: #1c202a;
+        --tuto-head-selected-bg: #252c3c;
+        --tuto-border: #2c3242;
+        --tuto-border-subtle: #1e2330;
+        --tuto-edge: #5b6477;
+        --tuto-edge-dim: #1e2433;
         --tuto-hot: #3b82f6;
-        --tuto-tool-bg: #141a24;
-        --tuto-badge-bg: #1e293b;
-        --tuto-highlight: rgba(59, 130, 246, 0.15);
-        --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+        --tuto-pill-bg: #3a4253;
+        --tuto-tool-bg: #14171f;
+        --tuto-badge-bg: #252b3a;
+        --tuto-highlight: rgba(59, 130, 246, 0.2);
+        --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
         --tuto-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        --tuto-font-mono:
-          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --tuto-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
         /* Fallback aliases for flow */
         --flow-bg: var(--tuto-bg);
@@ -60,7 +60,7 @@
       :root[data-theme="light"] {
         color-scheme: light;
         --tuto-bg: #f8fafc;
-        --tuto-grid: color-mix(in srgb, #64748b 12%, transparent);
+        --tuto-grid: color-mix(in srgb, #64748b 10%, transparent);
         --tuto-text: #0f172a;
         --tuto-text-muted: #475569;
         --tuto-muted: #64748b;
@@ -72,12 +72,12 @@
         --tuto-head-selected-bg: #e2e8f0;
         --tuto-border: #cbd5e1;
         --tuto-border-subtle: #e2e8f0;
-        --tuto-edge: #94a3b8;
+        --tuto-edge: #64748b;
         --tuto-edge-dim: #e2e8f0;
         --tuto-hot: #2563eb;
         --tuto-tool-bg: #ffffff;
         --tuto-badge-bg: #f1f5f9;
-        --tuto-highlight: rgba(37, 99, 235, 0.1);
+        --tuto-highlight: rgba(37, 99, 235, 0.12);
         --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
       }
 
@@ -409,38 +409,38 @@
 
     <!-- Self-Contained tuto-ui Library (zero external requests, file:// safe) -->
     <script>
-      var TutoUI = (function (g) {
+      var TutoUI = (function (h) {
         "use strict";
-        var pt = Object.defineProperty;
-        var gt = (g, y, I) =>
-          y in g ? pt(g, y, { enumerable: !0, configurable: !0, writable: !0, value: I }) : (g[y] = I);
-        var p = (g, y, I) => gt(g, typeof y != "symbol" ? y + "" : y, I);
-        const y = {
+        var ht = Object.defineProperty;
+        var pt = (h, _, I) =>
+          _ in h ? ht(h, _, { enumerable: !0, configurable: !0, writable: !0, value: I }) : (h[_] = I);
+        var c = (h, _, I) => pt(h, typeof _ != "symbol" ? _ + "" : _, I);
+        const _ = {
             dark: {
-              bg: "#0c0e12",
-              grid: "rgba(148, 163, 184, 0.09)",
-              text: "#e8eaed",
+              bg: "#090a0f",
+              grid: "rgba(255, 255, 255, 0.04)",
+              text: "#f1f5f9",
               textMuted: "#94a3b8",
               muted: "#64748b",
-              panelBg: "#161b22",
-              panelHead: "#1c2128",
-              cardBg: "#12161c",
-              cardSelectedBg: "#161b22",
-              headBg: "#1a2030",
-              headSelectedBg: "#1e293b",
-              border: "#30363d",
-              borderSubtle: "#21262d",
-              edge: "#4b5563",
-              edgeDim: "#1a202c",
+              panelBg: "#10131d",
+              panelHead: "#161b28",
+              cardBg: "#12151f",
+              cardSelectedBg: "#181d2c",
+              headBg: "#161b28",
+              headSelectedBg: "#1e263c",
+              border: "#283044",
+              borderSubtle: "#1c2232",
+              edge: "#7a869e",
+              edgeDim: "#1e2536",
               hot: "#3b82f6",
               toolBg: "#141a24",
-              badgeBg: "#1e293b",
-              highlight: "rgba(59, 130, 246, 0.15)",
-              shadow: "0 12px 36px rgba(0, 0, 0, 0.45)",
+              badgeBg: "#181e2e",
+              highlight: "rgba(59, 130, 246, 0.18)",
+              shadow: "0 12px 36px rgba(0, 0, 0, 0.55)",
             },
             light: {
               bg: "#f8fafc",
-              grid: "rgba(100, 116, 139, 0.12)",
+              grid: "rgba(100, 116, 139, 0.10)",
               text: "#0f172a",
               textMuted: "#475569",
               muted: "#64748b",
@@ -452,12 +452,12 @@
               headSelectedBg: "#e2e8f0",
               border: "#cbd5e1",
               borderSubtle: "#e2e8f0",
-              edge: "#94a3b8",
+              edge: "#64748b",
               edgeDim: "#e2e8f0",
               hot: "#2563eb",
               toolBg: "#ffffff",
               badgeBg: "#f1f5f9",
-              highlight: "rgba(37, 99, 235, 0.1)",
+              highlight: "rgba(37, 99, 235, 0.12)",
               shadow: "0 12px 36px rgba(0, 0, 0, 0.12)",
             },
             accents: {
@@ -493,7 +493,7 @@
             weights: { normal: "400", medium: "500", semibold: "600", bold: "700", extrabold: "800" },
             lineHeights: { tight: "1.15", normal: "1.4", relaxed: "1.6" },
           },
-          it = {
+          ot = {
             space: {
               1: "0.25rem",
               2: "0.5rem",
@@ -517,11 +517,11 @@
             transitions: { fast: "150ms ease", default: "200ms ease", smooth: "300ms cubic-bezier(0.4, 0, 0.2, 1)" },
             zIndex: { canvas: 0, edge: 1, node: 5, overlay: 10, drawer: 20, tooltip: 30 },
           };
-        function H() {
+        function O() {
           if (typeof document > "u" || document.getElementById("tuto-theme-tokens")) return;
-          const s = document.createElement("style");
-          ((s.id = "tuto-theme-tokens"),
-            (s.textContent = `
+          const o = document.createElement("style");
+          ((o.id = "tuto-theme-tokens"),
+            (o.textContent = `
     :root {
       --tuto-bg: #0c0e12;
       --tuto-grid: color-mix(in srgb, #94a3b8 9%, transparent);
@@ -569,15 +569,15 @@
       --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
     }
   `),
-            document.head.appendChild(s));
+            document.head.appendChild(o));
         }
-        const C = class C extends HTMLElement {
+        const R = class R extends HTMLElement {
           constructor(t = {}) {
             super();
-            p(this, "_isRenderPending", !1);
-            p(this, "_hasRendered", !1);
-            p(this, "_useShadow");
-            p(this, "shadowRootNode", null);
+            c(this, "_isRenderPending", !1);
+            c(this, "_hasRendered", !1);
+            c(this, "_useShadow");
+            c(this, "shadowRootNode", null);
             ((this._useShadow = t.useShadow !== !1),
               this._useShadow && (this.shadowRootNode = this.attachShadow({ mode: t.shadowMode || "open" })));
           }
@@ -587,19 +587,19 @@
           disconnectedCallback() {}
           adoptStyles() {
             const t = this.constructor,
-              e = t.styles;
-            if (!(!e || !this.shadowRootNode)) {
+              i = t.styles;
+            if (!(!i || !this.shadowRootNode)) {
               if ("adoptedStyleSheets" in Document.prototype && "adoptedStyleSheets" in ShadowRoot.prototype)
                 try {
-                  let o = C._styleSheetMap.get(t);
-                  (o || ((o = new CSSStyleSheet()), o.replaceSync(e), C._styleSheetMap.set(t, o)),
-                    this.shadowRootNode.adoptedStyleSheets.includes(o) ||
-                      (this.shadowRootNode.adoptedStyleSheets = [...this.shadowRootNode.adoptedStyleSheets, o]));
+                  let a = R._styleSheetMap.get(t);
+                  (a || ((a = new CSSStyleSheet()), a.replaceSync(i), R._styleSheetMap.set(t, a)),
+                    this.shadowRootNode.adoptedStyleSheets.includes(a) ||
+                      (this.shadowRootNode.adoptedStyleSheets = [...this.shadowRootNode.adoptedStyleSheets, a]));
                   return;
                 } catch {}
               if (!this.shadowRootNode.querySelector("style[data-tuto-style]")) {
-                const o = document.createElement("style");
-                (o.setAttribute("data-tuto-style", "true"), (o.textContent = e), this.shadowRootNode.prepend(o));
+                const a = document.createElement("style");
+                (a.setAttribute("data-tuto-style", "true"), (a.textContent = i), this.shadowRootNode.prepend(a));
               }
             }
           }
@@ -613,9 +613,9 @@
                   this.updated());
               }));
           }
-          emit(t, e, o = {}) {
-            const r = new CustomEvent(t, { bubbles: !0, composed: !0, cancelable: !0, detail: e, ...o });
-            return this.dispatchEvent(r);
+          emit(t, i, a = {}) {
+            const d = new CustomEvent(t, { bubbles: !0, composed: !0, cancelable: !0, detail: i, ...a });
+            return this.dispatchEvent(d);
           }
           get renderRoot() {
             return this.shadowRootNode || this;
@@ -623,56 +623,56 @@
           firstUpdated() {}
           updated() {}
         };
-        (p(C, "styles", ""), p(C, "_styleSheetMap", new WeakMap()));
-        let E = C;
+        (c(R, "styles", ""), c(R, "_styleSheetMap", new WeakMap()));
+        let $ = R;
         const j = "http://www.w3.org/2000/svg";
-        function _(s, a = {}, t) {
-          const e = document.createElementNS(j, s);
-          for (const [o, r] of Object.entries(a)) r != null && r !== !1 && e.setAttribute(o, String(r));
-          return (t && t.appendChild(e), e);
+        function w(o, r = {}, t) {
+          const i = document.createElementNS(j, o);
+          for (const [a, d] of Object.entries(r)) d != null && d !== !1 && i.setAttribute(a, String(d));
+          return (t && t.appendChild(i), i);
         }
-        function rt(s, a = {}, t) {
-          const e = document.createElement(s);
-          for (const [o, r] of Object.entries(a))
-            r != null &&
-              r !== !1 &&
-              (o === "className" || o === "class" ? (e.className = String(r)) : e.setAttribute(o, String(r)));
-          return (t && t.appendChild(e), e);
+        function st(o, r = {}, t) {
+          const i = document.createElement(o);
+          for (const [a, d] of Object.entries(r))
+            d != null &&
+              d !== !1 &&
+              (a === "className" || a === "class" ? (i.className = String(d)) : i.setAttribute(a, String(d)));
+          return (t && t.appendChild(i), i);
         }
-        function v(s) {
-          return s == null
+        function v(o) {
+          return o == null
             ? ""
-            : String(s)
+            : String(o)
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-        function L(s, a, t) {
-          return Math.max(a, Math.min(t, s));
+        function z(o, r, t) {
+          return Math.max(r, Math.min(t, o));
         }
-        class N extends E {
+        class A extends $ {
           static get observedAttributes() {
             return ["variant", "size", "disabled"];
           }
           get variant() {
             return this.getAttribute("variant") || "secondary";
           }
-          set variant(a) {
-            this.setAttribute("variant", a);
+          set variant(r) {
+            this.setAttribute("variant", r);
           }
           get size() {
             return this.getAttribute("size") || "md";
           }
-          set size(a) {
-            this.setAttribute("size", a);
+          set size(r) {
+            this.setAttribute("size", r);
           }
           get disabled() {
             return this.hasAttribute("disabled");
           }
-          set disabled(a) {
-            a ? this.setAttribute("disabled", "") : this.removeAttribute("disabled");
+          set disabled(r) {
+            r ? this.setAttribute("disabled", "") : this.removeAttribute("disabled");
           }
           attributeChangedCallback() {
             this.requestUpdate();
@@ -686,8 +686,8 @@
     `);
           }
         }
-        (p(
-          N,
+        (c(
+          A,
           "styles",
           `
     :host {
@@ -785,16 +785,16 @@
     }
   `,
         ),
-          customElements.get("tuto-button") || customElements.define("tuto-button", N));
-        class A extends E {
+          customElements.get("tuto-button") || customElements.define("tuto-button", A));
+        class L extends $ {
           static get observedAttributes() {
             return ["variant"];
           }
           get variant() {
             return this.getAttribute("variant") || "default";
           }
-          set variant(a) {
-            this.setAttribute("variant", a);
+          set variant(r) {
+            this.setAttribute("variant", r);
           }
           attributeChangedCallback() {
             this.requestUpdate();
@@ -808,8 +808,8 @@
     `);
           }
         }
-        (p(
-          A,
+        (c(
+          L,
           "styles",
           `
     :host {
@@ -863,352 +863,380 @@
     }
   `,
         ),
-          customElements.get("tuto-badge") || customElements.define("tuto-badge", A));
-        const R = 0.2,
-          z = 3.5,
-          F = 44;
-        function W(s, a, t = F, e = 1.25) {
-          const o = s.width || 900,
-            r = s.height || 700,
-            h = a.w || 2e3,
-            i = a.h || 1e3,
-            u = L(Math.min((o - t * 2) / h, (r - t * 2) / i), R, e),
-            c = (o - h * u) / 2 - a.x * u,
-            n = (r - i * u) / 2 - a.y * u;
-          return { panX: c, panY: n, scale: u };
+          customElements.get("tuto-badge") || customElements.define("tuto-badge", L));
+        const M = 0.2,
+          N = 3.5,
+          H = 44;
+        function F(o, r, t = H, i = 1.25) {
+          const a = o.width || 900,
+            d = o.height || 700,
+            s = r.w || 2e3,
+            e = r.h || 1e3,
+            l = z(Math.min((a - t * 2) / s, (d - t * 2) / e), M, i),
+            b = (a - s * l) / 2 - r.x * l,
+            f = (d - e * l) / 2 - r.y * l;
+          return { panX: b, panY: f, scale: l };
         }
-        function B(s, a, t, e, o = R, r = z) {
-          const h = L(s.scale * e, o, r);
-          if (h === s.scale) return s;
-          const i = a - ((a - s.panX) * h) / s.scale,
-            u = t - ((t - s.panY) * h) / s.scale;
-          return { panX: i, panY: u, scale: h };
+        function B(o, r, t, i, a = M, d = N) {
+          const s = z(o.scale * i, a, d);
+          if (s === o.scale) return o;
+          const e = r - ((r - o.panX) * s) / o.scale,
+            l = t - ((t - o.panY) * s) / o.scale;
+          return { panX: e, panY: l, scale: s };
         }
-        function G(s, a, t = 1.05) {
-          const e = s.width || 900,
-            o = s.height || 700,
-            r = L(t, R, z),
-            h = a.x + a.w / 2,
-            i = a.y + a.h / 2,
-            u = e / 2 - h * r,
-            c = o / 2 - i * r;
-          return { panX: u, panY: c, scale: r };
+        function G(o, r, t = 1.05) {
+          const i = o.width || 900,
+            a = o.height || 700,
+            d = z(t, M, N),
+            s = r.x + r.w / 2,
+            e = r.y + r.h / 2,
+            l = i / 2 - s * d,
+            b = a / 2 - e * d;
+          return { panX: l, panY: b, scale: d };
         }
-        function nt(s, a) {
-          return { x: (s.x - a.panX) / a.scale, y: (s.y - a.panY) / a.scale };
+        function it(o, r) {
+          return { x: (o.x - r.panX) / r.scale, y: (o.y - r.panY) / r.scale };
         }
-        function at(s, a) {
-          return { x: s.x * a.scale + a.panX, y: s.y * a.scale + a.panY };
+        function nt(o, r) {
+          return { x: o.x * r.scale + r.panX, y: o.y * r.scale + r.panY };
         }
-        const T = new Set([
+        const W = new Set([
           "GOAL_SET",
           "ASK_ROUTED_SPEC",
+          "ASK_ROUTED_VIBE",
           "RESEARCH_DONE",
           "NEXT_VIBE",
+          "NEXT_SPEC",
+          "NEXT_ALIGN",
           "RUN_CHECKS",
           "CLOSE_OUT",
           "NEXT_HANDOFF",
         ]);
-        function V(s) {
-          const a = new Map();
-          for (const e of s) {
-            const o = `${e.from}->${e.to}`;
-            a.has(o) || a.set(o, { from: e.from, to: e.to, members: [], userMediated: !1 });
-            const r = a.get(o);
-            (r.members.push(e), e.userMediated && (r.userMediated = !0));
-          }
-          const t = [];
-          for (const [e, o] of a.entries()) {
-            const r = o.members.length,
-              h = o.members.find((c) => c.event && T.has(c.event)) || o.members[0],
-              i = o.members.map((c) => c.event || c.label || "").filter(Boolean),
-              u = o.members.map((c) => c.description || "").filter(Boolean);
-            t.push({
-              id: e,
-              from: o.from,
-              to: o.to,
-              self: o.from === o.to,
-              label: r > 1 ? `${r} paths` : (h == null ? void 0 : h.label) || "",
-              event:
-                r > 1
-                  ? `${(h == null ? void 0 : h.event) || (h == null ? void 0 : h.label) || ""} · ×${r}`
-                  : (h == null ? void 0 : h.event) || (h == null ? void 0 : h.label) || "",
-              events: i,
-              description: r === 1 ? (h == null ? void 0 : h.description) || "" : i.join(", "),
-              descriptions: u,
-              userMediated: o.userMediated,
-            });
-          }
-          return t;
+        function V(o) {
+          return o.map((r, t) => ({
+            id: r.id || `${r.from}->${r.to}-${t}`,
+            from: r.from,
+            to: r.to,
+            self: r.from === r.to,
+            label: r.label || r.event || "",
+            event: r.event || r.label || "",
+            events: r.event ? [r.event] : [],
+            description: r.description || "",
+            descriptions: r.description ? [r.description] : [],
+            userMediated: !1,
+          }));
         }
-        function w(s, a, t = 0.5) {
-          const e = Math.min(0.9, Math.max(0.1, t));
-          return a === "left"
-            ? { x: s.x, y: s.y + s.h * e }
-            : a === "right"
-              ? { x: s.x + s.w, y: s.y + s.h * e }
-              : a === "top"
-                ? { x: s.x + s.w * e, y: s.y }
-                : { x: s.x + s.w * e, y: s.y + s.h };
+        function m(o, r, t = 0.5) {
+          const i = Math.min(0.9, Math.max(0.1, t));
+          return r === "left"
+            ? { x: o.x, y: o.y + o.h * i }
+            : r === "right"
+              ? { x: o.x + o.w, y: o.y + o.h * i }
+              : r === "top"
+                ? { x: o.x + o.w * i, y: o.y }
+                : { x: o.x + o.w * i, y: o.y + o.h };
         }
-        function Z(s, a) {
-          const t = new Map();
-          for (const e of s) {
-            const o = e.self ? `self:${e.from}` : `${e.from}->${e.to}`;
-            (t.has(o) || t.set(o, []), t.get(o).push(e));
-          }
-          for (const e of t.values())
-            e.forEach((o, r) => {
-              ((o.lane = r), (o.totalLanes = e.length));
-            });
-          return s;
+        function K(o, r) {
+          return o;
         }
-        function K(s, a) {
-          const t = a[s.from],
-            e = a[s.to];
-          if (!t || !e) return null;
-          const o = s.lane || 0,
-            h = (Math.max(1, s.totalLanes || 1) - 1) / 2;
-          if (s.self) {
-            const c = t.x + 36 + o * 24,
-              n = t.y,
-              d = 40 + o * 16;
+        function Z(o, r) {
+          const t = r[o.from],
+            i = r[o.to];
+          if (!t || !i) return null;
+          if (o.self) {
+            const s = t.x + 36,
+              e = t.y,
+              l = 36;
             return {
               points: [
-                [c - 14, n],
-                [c - 14, n - d],
-                [c + 14, n - d],
-                [c + 14, n],
+                [s - 12, e],
+                [s - 12, e - l],
+                [s + 12, e - l],
+                [s + 12, e],
               ],
-              seatX: c,
-              seatY: n - d - 12,
+              seatX: s,
+              seatY: e - l - 10,
               seatSide: "h",
             };
           }
-          if (Math.abs(t.x - e.x) < 20 && e.y > t.y) {
-            const c = w(t, "bottom", 0.5),
-              n = w(e, "top", 0.5);
+          if (o.from === "envision" && o.to === "establish") {
+            const s = m(t, "right", 0.5),
+              e = m(i, "left", 0.5);
             return {
               points: [
-                [c.x, c.y],
-                [n.x, n.y],
+                [s.x, s.y],
+                [e.x, e.y],
               ],
-              seatX: (c.x + n.x) / 2,
-              seatY: (c.y + n.y) / 2,
+              seatX: (s.x + e.x) / 2,
+              seatY: s.y,
               seatSide: "h",
             };
           }
-          if (t.y >= 300 && e.y >= 300) {
-            if (e.x > t.x) {
-              const c = w(t, "right", 0.5),
-                n = w(e, "left", 0.5),
-                d = 555;
-              return {
-                points: [
-                  [c.x, c.y],
-                  [d, c.y],
-                  [d, n.y],
-                  [n.x, n.y],
-                ],
-                seatX: d,
-                seatY: (c.y + n.y) / 2,
-                seatSide: "h",
-              };
-            } else if (t.x > e.x) {
-              const c = w(t, "left", 0.5),
-                n = w(e, "right", 0.5),
-                d = 555;
-              return {
-                points: [
-                  [c.x, c.y],
-                  [d, c.y],
-                  [d, n.y],
-                  [n.x, n.y],
-                ],
-                seatX: d,
-                seatY: (c.y + n.y) / 2,
-                seatSide: "h",
-              };
-            }
-          }
-          if (t.y < 250 && e.y >= 300) {
-            const n = e.x < t.x ? 0.35 : 0.65,
-              d = w(t, "bottom", n),
-              b = w(e, "top", 0.5),
-              x = 245 + (o - h) * 16;
+          if (o.from === "establish" && o.to === "explore") {
+            const s = m(t, "right", 0.5),
+              e = m(i, "left", 0.5);
             return {
               points: [
-                [d.x, d.y],
-                [d.x, x],
-                [b.x, x],
-                [b.x, b.y],
+                [s.x, s.y],
+                [e.x, e.y],
               ],
-              seatX: (d.x + b.x) / 2,
-              seatY: x,
+              seatX: (s.x + e.x) / 2,
+              seatY: s.y,
               seatSide: "h",
             };
           }
-          if (t.y >= 300 && e.y < 250) {
-            const c = t.x < e.x,
-              n = c ? 545 + o * 14 : 565 + o * 14,
-              d = w(t, c ? "right" : "left", 0.5),
-              b = w(e, "bottom", c ? 0.35 : 0.65),
-              x = 265 + (o - h) * 16;
+          if (o.from === "explore" && o.to === "elaborate") {
+            const s = m(t, "right", 0.5),
+              e = m(i, "left", 0.5);
             return {
               points: [
-                [d.x, d.y],
-                [n, d.y],
-                [n, x],
-                [b.x, x],
-                [b.x, b.y],
+                [s.x, s.y],
+                [e.x, e.y],
               ],
-              seatX: (n + b.x) / 2,
-              seatY: x,
+              seatX: (s.x + e.x) / 2,
+              seatY: s.y,
               seatSide: "h",
             };
           }
-          if (e.x > t.x && Math.abs(t.y - e.y) < 30) {
-            const c = w(t, "right", 0.5),
-              n = w(e, "left", 0.5),
-              d = c.y + (o - h) * 16;
+          if (o.from === "elaborate" && o.to === "execute") {
+            const s = m(t, "bottom", 0.5),
+              e = m(i, "top", 0.5);
             return {
               points: [
-                [c.x, c.y],
-                [c.x + 8, d],
-                [n.x - 8, d],
-                [n.x, n.y],
+                [s.x, s.y],
+                [e.x, e.y],
               ],
-              seatX: (c.x + n.x) / 2,
-              seatY: d,
+              seatX: s.x,
+              seatY: (s.y + e.y) / 2,
               seatSide: "h",
             };
           }
-          if (t.x > e.x && Math.abs(t.y - e.y) < 30)
-            if (
-              Object.values(a).some(
-                (n) => n.id !== t.id && n.id !== e.id && n.x < t.x && n.x > e.x && Math.abs(n.y - t.y) < 30,
-              )
-            ) {
-              const n = w(t, "top", 0.5),
-                d = w(e, "top", 0.5),
-                b = 46 - o * 16;
-              return {
-                points: [
-                  [n.x, n.y],
-                  [n.x, b],
-                  [d.x, b],
-                  [d.x, d.y],
-                ],
-                seatX: (n.x + d.x) / 2,
-                seatY: b,
-                seatSide: "h",
-              };
-            } else {
-              const n = w(t, "left", 0.5),
-                d = w(e, "right", 0.5),
-                b = n.y + (o - h) * 16;
-              return {
-                points: [
-                  [n.x, n.y],
-                  [n.x - 8, b],
-                  [d.x + 8, b],
-                  [d.x, d.y],
-                ],
-                seatX: (n.x + d.x) / 2,
-                seatY: b,
-                seatSide: "h",
-              };
-            }
-          const i = w(t, "bottom", 0.5),
-            u = w(e, "top", 0.5);
+          if (o.from === "execute" && o.to === "examine") {
+            const s = m(t, "left", 0.5),
+              e = m(i, "right", 0.5);
+            return {
+              points: [
+                [s.x, s.y],
+                [e.x, e.y],
+              ],
+              seatX: (s.x + e.x) / 2,
+              seatY: s.y,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "examine" && o.to === "evaluate") {
+            const s = m(t, "left", 0.5),
+              e = m(i, "right", 0.5);
+            return {
+              points: [
+                [s.x, s.y],
+                [e.x, e.y],
+              ],
+              seatX: (s.x + e.x) / 2,
+              seatY: s.y,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "evaluate" && o.to === "establish") {
+            const s = m(t, "top", 0.25),
+              e = m(i, "bottom", 0.25);
+            return {
+              points: [
+                [s.x, s.y],
+                [e.x, e.y],
+              ],
+              seatX: s.x,
+              seatY: (s.y + e.y) / 2,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "examine" && o.to === "explore") {
+            const s = m(t, "top", 0.75),
+              e = m(i, "bottom", 0.75);
+            return {
+              points: [
+                [s.x, s.y],
+                [e.x, e.y],
+              ],
+              seatX: s.x,
+              seatY: (s.y + e.y) / 2,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "evaluate" && o.to === "envision") {
+            const s = m(t, "left", 0.5),
+              e = m(i, "bottom", 0.5),
+              l = e.x;
+            return {
+              points: [
+                [s.x, s.y],
+                [l, s.y],
+                [e.x, e.y],
+              ],
+              seatX: (s.x + l) / 2,
+              seatY: s.y,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "establish" && o.to === "execute") {
+            const s = m(t, "top", 0.6),
+              e = m(i, "right", 0.5),
+              l = 55,
+              b = i.x + i.w + 60;
+            return {
+              points: [
+                [s.x, s.y],
+                [s.x, l],
+                [b, l],
+                [b, e.y],
+                [e.x, e.y],
+              ],
+              seatX: (s.x + b) / 2,
+              seatY: l,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "evaluate" && o.to === "execute") {
+            const s = m(t, "bottom", 0.6),
+              e = m(i, "bottom", 0.5),
+              l = 575;
+            return {
+              points: [
+                [s.x, s.y],
+                [s.x, l],
+                [e.x, l],
+                [e.x, e.y],
+              ],
+              seatX: (s.x + e.x) / 2,
+              seatY: l,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "elaborate" && o.to === "evaluate") {
+            const s = m(t, "bottom", 0.25),
+              e = m(i, "top", 0.75),
+              l = 250;
+            return {
+              points: [
+                [s.x, s.y],
+                [s.x, l],
+                [e.x, l],
+                [e.x, e.y],
+              ],
+              seatX: 880,
+              seatY: l,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "evaluate" && o.to === "explore") {
+            const s = m(t, "top", 0.85),
+              e = m(i, "bottom", 0.25),
+              l = 360;
+            return {
+              points: [
+                [s.x, s.y],
+                [s.x, l],
+                [e.x, l],
+                [e.x, e.y],
+              ],
+              seatX: 880,
+              seatY: l,
+              seatSide: "h",
+            };
+          }
+          const a = m(t, "bottom", 0.5),
+            d = m(i, "top", 0.5);
           return {
             points: [
-              [i.x, i.y],
-              [u.x, u.y],
+              [a.x, a.y],
+              [d.x, d.y],
             ],
-            seatX: (i.x + u.x) / 2,
-            seatY: (i.y + u.y) / 2,
+            seatX: (a.x + d.x) / 2,
+            seatY: (a.y + d.y) / 2,
             seatSide: "h",
           };
         }
-        function Q(s) {
-          const a = [],
-            o = s
-              .filter((r) => r.route)
-              .sort((r, h) => {
-                const i = r.route.seatY,
-                  u = h.route.seatY;
-                return i !== u ? i - u : r.route.seatX - h.route.seatX;
-              });
-          for (const r of o) {
-            let { seatX: h, seatY: i } = r.route;
-            for (let u = 0; u < 24; u++) {
-              const c = a.find((n) => Math.abs(n.seatX - h) < 44 && Math.abs(n.seatY - i) < 24);
-              if (!c) break;
-              i = c.seatY + 24;
+        function rt(o) {}
+        function Q(o, r = !1, t = 10) {
+          if (!o || o.length === 0) return "";
+          if (o.length === 1) return `M ${o[0][0]} ${o[0][1]}`;
+          if (r && o.length === 4)
+            return `M ${o[0][0]} ${o[0][1]} C ${o[1][0]} ${o[1][1]}, ${o[2][0]} ${o[2][1]}, ${o[3][0]} ${o[3][1]}`;
+          if (o.length === 2) return `M ${o[0][0]} ${o[0][1]} L ${o[1][0]} ${o[1][1]}`;
+          let i = `M ${o[0][0]} ${o[0][1]}`;
+          for (let d = 1; d < o.length - 1; d++) {
+            const s = o[d - 1],
+              e = o[d],
+              l = o[d + 1],
+              b = e[0] - s[0],
+              f = e[1] - s[1],
+              p = Math.hypot(b, f),
+              y = l[0] - e[0],
+              n = l[1] - e[1],
+              u = Math.hypot(y, n);
+            if (p < 1 || u < 1) {
+              i += ` L ${e[0]} ${e[1]}`;
+              continue;
             }
-            ((r.route.seatX = h), (r.route.seatY = i), a.push({ seatX: h, seatY: i }));
+            const g = Math.min(t, p / 2, u / 2),
+              x = e[0] - (b / p) * g,
+              k = e[1] - (f / p) * g,
+              E = e[0] + (y / u) * g,
+              S = e[1] + (n / u) * g;
+            ((i += ` L ${x} ${k}`), (i += ` Q ${e[0]} ${e[1]} ${E} ${S}`));
           }
+          const a = o[o.length - 1];
+          return ((i += ` L ${a[0]} ${a[1]}`), i);
         }
-        function J(s, a = !1) {
-          return !s || s.length === 0
-            ? ""
-            : a && s.length === 4
-              ? `M ${s[0][0]} ${s[0][1]} C ${s[1][0]} ${s[1][1]}, ${s[2][0]} ${s[2][1]}, ${s[3][0]} ${s[3][1]}`
-              : s.map(([t, e], o) => `${o === 0 ? "M" : "L"} ${t} ${e}`).join(" ");
+        function J(o, r, t, i) {
+          return t === o.id || i === o.id ? !0 : r ? o.from === r || o.to === r : !1;
         }
-        function tt(s, a, t, e) {
-          return t === s.id || e === s.id ? !0 : a ? s.from === a || s.to === a : !1;
+        function tt(o, r, t, i, a = W) {
+          return !0;
         }
-        function et(s, a, t, e, o = T) {
-          var i;
-          if (t === s.id || e === s.id || (a && (s.from === a || s.to === a))) return !0;
-          const r = ((i = s.events) == null ? void 0 : i[0]) || s.event;
-          return (s.events || []).some((u) => o.has(u)) || (r ? o.has(r) : !1);
+        function et(o, r = 64, t = 56, i = 46, a) {
+          let d = 1 / 0,
+            s = 1 / 0,
+            e = -1 / 0,
+            l = -1 / 0;
+          const b = Object.values(o);
+          if (b.length === 0 && (!a || a.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
+          for (const p of b)
+            ((d = Math.min(d, p.x)),
+              (s = Math.min(s, p.y)),
+              (e = Math.max(e, p.x + p.w)),
+              (l = Math.max(l, p.y + p.h)));
+          if (a)
+            for (const p of a)
+              ((d = Math.min(d, p.x)),
+                (s = Math.min(s, p.y)),
+                (e = Math.max(e, p.x + p.w)),
+                (l = Math.max(l, p.y + p.h)));
+          const f = i > 0;
+          return { x: d - r, y: s - t - (f ? i : 0), w: e - d + r * 2, h: l - s + t * 2 + (f ? i + 80 : 0) };
         }
-        function ot(s, a = 64, t = 56, e = 46, o) {
-          let r = 1 / 0,
-            h = 1 / 0,
-            i = -1 / 0,
-            u = -1 / 0;
-          const c = Object.values(s);
-          if (c.length === 0 && (!o || o.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
-          for (const d of c)
-            ((r = Math.min(r, d.x)),
-              (h = Math.min(h, d.y)),
-              (i = Math.max(i, d.x + d.w)),
-              (u = Math.max(u, d.y + d.h)));
-          if (o)
-            for (const d of o)
-              ((r = Math.min(r, d.x)),
-                (h = Math.min(h, d.y)),
-                (i = Math.max(i, d.x + d.w)),
-                (u = Math.max(u, d.y + d.h)));
-          const n = e > 0;
-          return { x: r - a, y: h - t - (n ? e : 0), w: i - r + a * 2, h: u - h + t * 2 + (n ? e + 80 : 0) };
-        }
-        function dt(s, a = {}) {
-          const t = a.colWidth || 420,
-            e = a.colGap || 180,
-            o = a.rowGap || 40,
-            r = a.startX || 120,
-            h = a.startY || 120,
-            i = {};
-          let u = r,
-            c = h;
+        function at(o, r = {}) {
+          const t = r.colWidth || 420,
+            i = r.colGap || 180,
+            a = r.rowGap || 40,
+            d = r.startX || 120,
+            s = r.startY || 120,
+            e = {};
+          let l = d,
+            b = s;
           return (
-            s.forEach((n, d) => {
-              ((i[n.id] = { ...n, x: n.x ?? u, y: n.y ?? c, w: n.w || t, h: n.h || 280 }),
-                (d + 1) % 3 === 0 ? ((u += t + e), (c = h)) : (c += (n.h || 280) + o));
+            o.forEach((f, p) => {
+              ((e[f.id] = { ...f, x: f.x ?? l, y: f.y ?? b, w: f.w || t, h: f.h || 280 }),
+                (p + 1) % 3 === 0 ? ((l += t + i), (b = s)) : (b += (f.h || 280) + a));
             }),
-            i
+            e
           );
         }
-        class U extends E {
+        class U extends $ {
           constructor() {
             super(...arguments);
-            p(this, "_node", null);
-            p(this, "_selected", !1);
+            c(this, "_node", null);
+            c(this, "_selected", !1);
           }
           get node() {
             return this._node;
@@ -1223,225 +1251,156 @@
             ((this._selected = !!t), this.requestUpdate());
           }
           render() {
-            var n;
             if (!this.shadowRootNode || !this._node) return;
             const t = this._node,
-              e = y.accents[t.id] || (t.permission ? y.accents[t.permission] : null) || y.accents.spec;
-            this.style.setProperty("--node-accent", e.accent);
-            const o = t.compact !== !1,
-              r = (t.substates || [])
-                .slice(0, 3)
-                .map((d) => `<span class="substate-pill">${v(d)}</span>`)
-                .join(""),
-              h =
-                !r && (t.procedure || []).length
-                  ? `<div class="procedure-counter">${(n = t.procedure) == null ? void 0 : n.length} instruction steps</div>`
-                  : "",
-              u =
-                e.perm === "WRITE"
-                  ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
-                  : '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';
+              i = _.accents[t.id] || (t.permission ? _.accents[t.permission] : null) || _.accents.spec;
+            this.style.setProperty("--node-accent", i.accent);
+            const d =
+              i.perm === "WRITE"
+                ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
+                : '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';
             this.shadowRootNode.innerHTML = `
-      <div class="node-card ${o ? "compact" : ""} ${this._selected ? "selected" : ""}" role="button" tabindex="0">
+      <div class="node-card compact ${this._selected ? "selected" : ""}" role="button" tabindex="0">
         <div class="node-head">
-          <span class="accent-pill"></span>
-          <span class="head-title">${v(t.label || t.id)}</span>
+          <div class="node-head-left">
+            <span class="state-dot"></span>
+            <span class="head-title">${v(t.label || t.id)}</span>
+          </div>
           <div class="head-badges">
-            <span class="badge badge-perm ${e.permClass}">${u}${v(e.perm)}</span>
+            <span class="badge badge-perm ${i.permClass}">${d}${v(i.perm)}</span>
           </div>
         </div>
-        ${
-          o
-            ? ""
-            : `
-        <div class="node-body">
-          ${t.summary ? `<p class="node-summary">${v(t.summary)}</p>` : ""}
-          ${r ? `<div class="substates-list">${r}</div>` : ""}
-          ${h}
-        </div>
-        `
-        }
       </div>
     `;
-            const c = this.shadowRootNode.querySelector(".node-card");
-            c &&
-              c.addEventListener("click", (d) => {
-                (d.stopPropagation(), this.emit("flow:select-node", { node: this._node }));
+            const s = this.shadowRootNode.querySelector(".node-card");
+            s &&
+              s.addEventListener("click", (e) => {
+                (e.stopPropagation(), this.emit("flow:select-node", { node: this._node }));
               });
           }
         }
-        (p(
+        (c(
           U,
           "styles",
           `
     :host {
       display: block;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
       user-select: none;
       font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
-      color: var(--tuto-text, #e8eaed);
+      color: var(--tuto-text, #ffffff);
     }
     .node-card {
-      background: var(--tuto-card-bg, #12161c);
-      border: 1px solid var(--tuto-border, #30363d);
-      border-radius: 10px;
+      background: var(--tuto-card-bg, #1c202a);
+      border: 2px solid var(--tuto-border, #2c3242);
+      border-radius: 8px;
       padding: 0;
       cursor: pointer;
-      transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+      transition: border-color 140ms ease, box-shadow 140ms ease;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       height: 100%;
+      width: 100%;
       box-sizing: border-box;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
     .node-card:hover {
-      border-color: var(--node-accent, #3b82f6);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      border-color: #3b82f6;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(59, 130, 246, 0.5);
     }
     .node-card.selected {
-      border-color: var(--node-accent, #3b82f6);
-      border-width: 2px;
-      background: var(--tuto-card-selected-bg, #161b22);
+      border-color: #3b82f6;
+      background: var(--tuto-card-selected-bg, #222735);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35), 0 8px 24px rgba(0, 0, 0, 0.6);
     }
 
-    /* Header row: accent pill · title · badges */
+    /* Header row: status dot · title · badges */
     .node-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 34px;
-      padding: 0 0.6rem;
-      background: var(--tuto-head-bg, #1a2030);
-      border-bottom: 1px solid var(--tuto-border, #30363d);
-      gap: 0.4rem;
+      height: 100%;
+      padding: 0 0.85rem 0 0.9rem;
+      background: var(--tuto-head-bg, #1c202a);
+      gap: 0.5rem;
       position: relative;
     }
     .node-card.selected .node-head {
-      background: var(--tuto-head-selected-bg, #1e293b);
-    }
-    .node-card.compact {
-      border-radius: 8px;
-    }
-    .node-card.compact .node-head {
-      height: 100%;
-      border-bottom: none;
-      border-radius: 6px;
+      background: var(--tuto-head-selected-bg, #252c3c);
     }
 
-    /* Left accent pill */
-    .accent-pill {
-      position: absolute;
-      left: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 4px;
-      height: 18px;
-      border-radius: 2px;
+    .node-head-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* State indicator circle dot */
+    .state-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       background: var(--node-accent, #3b82f6);
+      box-shadow: 0 0 8px var(--node-accent, #3b82f6);
+      flex-shrink: 0;
     }
 
     .head-title {
       font-weight: 700;
       font-size: 0.82rem;
-      color: var(--tuto-text, #e8eaed);
+      letter-spacing: 0.04em;
+      color: #ffffff;
       white-space: nowrap;
-      padding-left: 0.75rem;
-      flex-shrink: 0;
+      font-family: var(--tuto-font-sans, sans-serif);
     }
 
     .head-badges {
       display: flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.35rem;
       flex-shrink: 0;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
-      padding: 0.08rem 0.35rem;
-      border-radius: 0.3rem;
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
+      padding: 0.12rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       font-family: var(--tuto-font-mono, monospace);
     }
-    .badge-kind {
-      background: var(--tuto-badge-bg, #1e293b);
-      color: var(--tuto-muted, #64748b);
-      border: 1px solid var(--tuto-border, #30363d);
-    }    /* Permission badges with custom icons and colored tint bg */
-    .badge-perm {
-      font-size: 0.62rem;
-      padding: 0.1rem 0.42rem;
-      border: 1px solid transparent;
-      display: inline-flex;
-      align-items: center;
-    }
     .perm-read {
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(56, 189, 248, 0.12);
       color: #38bdf8;
-      border-color: rgba(56, 189, 248, 0.3);
+      border: 1px solid rgba(56, 189, 248, 0.28);
     }
     .perm-write {
-      background: rgba(16, 185, 129, 0.12);
+      background: rgba(16, 185, 129, 0.14);
       color: #10b981;
-      border-color: rgba(16, 185, 129, 0.3);
+      border: 1px solid rgba(16, 185, 129, 0.3);
     }
     .perm-standby {
-      background: rgba(100, 116, 139, 0.12);
+      background: rgba(148, 163, 184, 0.12);
       color: #94a3b8;
-      border-color: rgba(100, 116, 139, 0.3);
-    }
-
-    .node-body {
-      padding: 0.5rem 0.6rem 0.6rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      flex: 1;
-    }
-    .node-summary {
-      font-size: 0.72rem;
-      line-height: 1.35;
-      color: var(--tuto-text-muted, #94a3b8);
-      margin: 0;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .substates-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.25rem;
-      margin-top: auto;
-      padding-top: 0.3rem;
-    }
-    .substate-pill {
-      font-size: 0.62rem;
-      padding: 0.08rem 0.3rem;
-      border-radius: 999px;
-      background: var(--tuto-badge-bg, #1e293b);
-      color: var(--tuto-text-muted, #94a3b8);
-      border: 1px solid var(--tuto-border, #30363d);
-    }
-    .procedure-counter {
-      font-size: 0.64rem;
-      color: var(--tuto-muted, #64748b);
-      margin-top: auto;
-      padding-top: 0.3rem;
-      font-family: var(--tuto-font-mono, monospace);
+      border: 1px solid rgba(148, 163, 184, 0.25);
     }
   `,
         ),
           customElements.get("tuto-flow-node") || customElements.define("tuto-flow-node", U));
-        class Y extends E {
+        class T extends $ {
           constructor() {
             super(...arguments);
-            p(this, "_zoom", 100);
-            p(this, "_isMinimapActive", !1);
-            p(this, "_isInspectorActive", !1);
+            c(this, "_zoom", 100);
+            c(this, "_isMinimapActive", !1);
+            c(this, "_isInspectorActive", !1);
           }
           get zoom() {
             return this._zoom;
@@ -1462,7 +1421,7 @@
             ((this._isInspectorActive = !!t), this.requestUpdate());
           }
           render() {
-            var t, e, o, r, h, i;
+            var t, i, a, d, s, e;
             this.shadowRootNode &&
               ((this.shadowRootNode.innerHTML = `
       <div class="toolbar-container">
@@ -1516,30 +1475,30 @@
                 t.addEventListener("click", () => {
                   this.emit("flow:zoom-in");
                 }),
-              (e = this.shadowRootNode.getElementById("btn-zoom-out")) == null ||
-                e.addEventListener("click", () => {
+              (i = this.shadowRootNode.getElementById("btn-zoom-out")) == null ||
+                i.addEventListener("click", () => {
                   this.emit("flow:zoom-out");
                 }),
-              (o = this.shadowRootNode.getElementById("btn-fit")) == null ||
-                o.addEventListener("click", () => {
+              (a = this.shadowRootNode.getElementById("btn-fit")) == null ||
+                a.addEventListener("click", () => {
                   this.emit("flow:fit");
                 }),
-              (r = this.shadowRootNode.getElementById("btn-reset")) == null ||
-                r.addEventListener("click", () => {
+              (d = this.shadowRootNode.getElementById("btn-reset")) == null ||
+                d.addEventListener("click", () => {
                   this.emit("flow:reset");
                 }),
-              (h = this.shadowRootNode.getElementById("btn-minimap")) == null ||
-                h.addEventListener("click", () => {
+              (s = this.shadowRootNode.getElementById("btn-minimap")) == null ||
+                s.addEventListener("click", () => {
                   this.emit("flow:toggle-minimap");
                 }),
-              (i = this.shadowRootNode.getElementById("btn-inspector")) == null ||
-                i.addEventListener("click", () => {
+              (e = this.shadowRootNode.getElementById("btn-inspector")) == null ||
+                e.addEventListener("click", () => {
                   this.emit("flow:toggle-inspector");
                 }));
           }
         }
-        (p(
-          Y,
+        (c(
+          T,
           "styles",
           `
     :host {
@@ -1601,23 +1560,23 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", Y));
-        class D extends E {
+          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", T));
+        class X extends $ {
           constructor() {
             super(...arguments);
-            p(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
-            p(this, "_camera", { panX: 0, panY: 0, scale: 1 });
-            p(this, "_viewportSize", { width: 900, height: 700 });
-            p(this, "_nodes", {});
-            p(this, "_selectedNodeId", null);
-            p(this, "_isDragging", !1);
-            p(this, "handlePointerDown", (t) => {
+            c(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
+            c(this, "_camera", { panX: 0, panY: 0, scale: 1 });
+            c(this, "_viewportSize", { width: 900, height: 700 });
+            c(this, "_nodes", {});
+            c(this, "_selectedNodeId", null);
+            c(this, "_isDragging", !1);
+            c(this, "handlePointerDown", (t) => {
               t.button === 0 && (t.preventDefault(), (this._isDragging = !0), this.panToEvent(t));
             });
-            p(this, "handlePointerMove", (t) => {
+            c(this, "handlePointerMove", (t) => {
               this._isDragging && this.panToEvent(t);
             });
-            p(this, "handlePointerUp", () => {
+            c(this, "handlePointerUp", () => {
               this._isDragging = !1;
             });
           }
@@ -1664,30 +1623,30 @@
               window.removeEventListener("pointerup", this.handlePointerUp));
           }
           panToEvent(t) {
-            const e = this.getBoundingClientRect(),
-              o = t.clientX - e.left,
-              r = t.clientY - e.top,
-              h = e.width || 170,
-              i = e.height || 120,
-              u = this._bounds.w || 2e3,
-              c = this._bounds.h || 1e3,
-              n = Math.min(h / u, i / c),
-              d = o / n + this._bounds.x,
-              b = r / n + this._bounds.y;
-            this.emit("flow:pan-to", { worldX: d, worldY: b });
+            const i = this.getBoundingClientRect(),
+              a = t.clientX - i.left,
+              d = t.clientY - i.top,
+              s = i.width || 170,
+              e = i.height || 120,
+              l = this._bounds.w || 2e3,
+              b = this._bounds.h || 1e3,
+              f = Math.min(s / l, e / b),
+              p = a / f + this._bounds.x,
+              y = d / f + this._bounds.y;
+            this.emit("flow:pan-to", { worldX: p, worldY: y });
           }
           render() {
-            var f, k;
+            var x, k;
             if (!this.shadowRootNode) return;
             this.shadowRootNode.innerHTML = "";
-            const t = _("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
-              e = 170,
-              o = 120,
-              r = this._bounds.w || 2e3,
-              h = this._bounds.h || 1e3,
-              i = Math.min(e / r, o / h),
-              u = _("g", { transform: `scale(${i}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
-            _(
+            const t = w("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
+              i = 170,
+              a = 120,
+              d = this._bounds.w || 2e3,
+              s = this._bounds.h || 1e3,
+              e = Math.min(i / d, a / s),
+              l = w("g", { transform: `scale(${e}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
+            w(
               "rect",
               {
                 x: this._bounds.x,
@@ -1699,14 +1658,14 @@
                 stroke: "var(--tuto-border, #30363d)",
                 "stroke-width": 2,
               },
-              u,
+              l,
             );
-            for (const [$, S] of Object.entries(this._nodes)) {
-              const M =
-                ((f = y.accents[$]) == null ? void 0 : f.accent) ||
-                ((k = y.accents[S.kind]) == null ? void 0 : k.accent) ||
+            for (const [E, S] of Object.entries(this._nodes)) {
+              const C =
+                ((x = _.accents[E]) == null ? void 0 : x.accent) ||
+                ((k = _.accents[S.kind]) == null ? void 0 : k.accent) ||
                 "#3b82f6";
-              _(
+              w(
                 "rect",
                 {
                   x: S.x,
@@ -1714,27 +1673,27 @@
                   width: S.w,
                   height: S.h,
                   rx: 10,
-                  fill: $ === this._selectedNodeId ? M : "var(--tuto-head-bg, #1a2030)",
-                  stroke: M,
+                  fill: E === this._selectedNodeId ? C : "var(--tuto-head-bg, #1a2030)",
+                  stroke: C,
                   "stroke-width": 2,
                 },
-                u,
+                l,
               );
             }
-            const c = this._viewportSize.width || 900,
-              n = this._viewportSize.height || 700,
-              d = this._camera.scale || 1,
-              b = (-this._camera.panX / d - this._bounds.x) * i,
-              x = (-this._camera.panY / d - this._bounds.y) * i,
-              l = (c / d) * i,
-              m = (n / d) * i;
-            _(
+            const b = this._viewportSize.width || 900,
+              f = this._viewportSize.height || 700,
+              p = this._camera.scale || 1,
+              y = (-this._camera.panX / p - this._bounds.x) * e,
+              n = (-this._camera.panY / p - this._bounds.y) * e,
+              u = (b / p) * e,
+              g = (f / p) * e;
+            w(
               "rect",
               {
-                x: Math.max(0, Math.min(e, b)),
-                y: Math.max(0, Math.min(o, x)),
-                width: Math.max(4, Math.min(e, l)),
-                height: Math.max(4, Math.min(o, m)),
+                x: Math.max(0, Math.min(i, y)),
+                y: Math.max(0, Math.min(a, n)),
+                width: Math.max(4, Math.min(i, u)),
+                height: Math.max(4, Math.min(a, g)),
                 fill: "rgba(59, 130, 246, 0.15)",
                 stroke: "var(--tuto-hot, #3b82f6)",
                 "stroke-width": 1.5,
@@ -1744,8 +1703,8 @@
             );
           }
         }
-        (p(
-          D,
+        (c(
+          X,
           "styles",
           `
     :host {
@@ -1769,14 +1728,14 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", D));
-        class X extends E {
+          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", X));
+        class Y extends $ {
           constructor() {
             super(...arguments);
-            p(this, "_isOpen", !1);
-            p(this, "_node", null);
-            p(this, "_edge", null);
-            p(this, "_tools", []);
+            c(this, "_isOpen", !1);
+            c(this, "_node", null);
+            c(this, "_edge", null);
+            c(this, "_tools", []);
           }
           get isOpen() {
             return this._isOpen;
@@ -1803,51 +1762,51 @@
             ((this._tools = t), this.requestUpdate());
           }
           render() {
-            var o, r, h;
+            var a, d, s;
             if (!this.shadowRootNode) return;
             let t = "",
-              e = "";
+              i = "";
             if (this._node) {
-              const i = this._node,
-                u = y.accents[i.id] ||
-                  y.accents[i.kind] || {
+              const e = this._node,
+                l = _.accents[e.id] ||
+                  _.accents[e.kind] || {
                     accent: "#3b82f6",
-                    badge: (i.kind || "MODE").toUpperCase(),
-                    perm: (i.permission || "READ-ONLY").toUpperCase(),
-                    permClass: `perm-${i.permission || "readonly"}`,
+                    badge: (e.kind || "MODE").toUpperCase(),
+                    perm: (e.permission || "READ-ONLY").toUpperCase(),
+                    permClass: `perm-${e.permission || "readonly"}`,
                   },
-                n =
-                  u.perm === "WRITE"
+                f =
+                  l.perm === "WRITE"
                     ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
                     : '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';
-              (this.style.setProperty("--drawer-accent", u.accent),
+              (this.style.setProperty("--drawer-accent", l.accent),
                 (t = `
         <div class="header-titles">
-          <h2>${v(i.label || i.id)}</h2>
+          <h2>${v(e.label || e.id)}</h2>
           <div class="header-badges">
-            <span class="badge badge-accent">${v(u.badge)}</span>
-            <span class="badge badge-perm ${u.permClass}">${n}${v(u.perm)}</span>
+            <span class="badge badge-accent">${v(l.badge)}</span>
+            <span class="badge badge-perm ${l.permClass}">${f}${v(l.perm)}</span>
           </div>
         </div>
       `));
-              const d = (i.substates || []).length
+              const p = (e.substates || []).length
                   ? `<div>
             <h4 class="section-title">Substates</h4>
             <div class="chip-group">
-              ${i.substates.map((m) => `<span class="chip">${v(m)}</span>`).join("")}
+              ${e.substates.map((g) => `<span class="chip">${v(g)}</span>`).join("")}
             </div>
           </div>`
                   : "",
-                b = (i.procedure || []).length
+                y = (e.procedure || []).length
                   ? `<div>
-            <h4 class="section-title">Ordered Instructions (${i.procedure.length})</h4>
+            <h4 class="section-title">Ordered Instructions (${e.procedure.length})</h4>
             <ol class="instruction-list">
-              ${i.procedure
+              ${e.procedure
                 .map(
-                  (m, f) => `
+                  (g, x) => `
                 <li class="instruction-item">
-                  <span class="instruction-idx">${f + 1}.</span>
-                  <span>${v(m)}</span>
+                  <span class="instruction-idx">${x + 1}.</span>
+                  <span>${v(g)}</span>
                 </li>
               `,
                 )
@@ -1855,22 +1814,22 @@
             </ol>
           </div>`
                   : "",
-                x = this._tools.filter((m) => (m.modes || []).includes(i.id) || (m.modes || []).includes("any")),
-                l = x.length
+                n = this._tools.filter((g) => (g.modes || []).includes(e.id) || (g.modes || []).includes("any")),
+                u = n.length
                   ? `<div>
-            <h4 class="section-title">Permitted Tools & Gates (${x.length})</h4>
+            <h4 class="section-title">Permitted Tools & Gates (${n.length})</h4>
             <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-              ${x
-                .map((m) => {
-                  var f;
+              ${n
+                .map((g) => {
+                  var x;
                   return `
                 <div class="tool-card">
                   <div class="tool-title">
-                    <span>${v(m.name)}</span>
+                    <span>${v(g.name)}</span>
                     <span class="chip">TOOL</span>
                   </div>
-                  <p class="section-text" style="font-size: 0.78rem;">${v(m.summary)}</p>
-                  ${(f = m.gate) != null && f.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${v(m.gate.join(" · "))}</div>` : ""}
+                  <p class="section-text" style="font-size: 0.78rem;">${v(g.summary)}</p>
+                  ${(x = g.gate) != null && x.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${v(g.gate.join(" · "))}</div>` : ""}
                 </div>
               `;
                 })
@@ -1878,56 +1837,56 @@
             </div>
           </div>`
                   : "";
-              e = `
-        ${i.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${v(i.summary)}</p></div>` : ""}
-        ${d}
-        ${b}
-        ${l}
+              i = `
+        ${e.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${v(e.summary)}</p></div>` : ""}
+        ${p}
+        ${y}
+        ${u}
       `;
             } else if (this._edge) {
-              const i = this._edge;
+              const e = this._edge;
               this.style.setProperty("--drawer-accent", "#3b82f6");
-              const u = i.event || i.label || "Transition";
+              const l = e.event || e.label || "Transition";
               ((t = `
         <div class="header-titles">
-          <h2>${v(u)}</h2>
+          <h2>${v(l)}</h2>
           <div class="header-badges">
             <span class="badge badge-accent">TRANSITION</span>
-            ${i.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
+            ${e.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
           </div>
         </div>
       `),
-                (e = `
+                (i = `
         <div>
           <h4 class="section-title">Route Connection</h4>
           <p class="section-text" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(i.from.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(e.from.toUpperCase())}</span>
             <span style="color: var(--tuto-muted);">──►</span>
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(i.to.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(e.to.toUpperCase())}</span>
           </p>
         </div>
-        ${i.label && i.label !== u ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${v(i.label)}</p></div>` : ""}
-        ${i.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${v(i.description)}</p></div>` : ""}
+        ${e.label && e.label !== l ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${v(e.label)}</p></div>` : ""}
+        ${e.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${v(e.description)}</p></div>` : ""}
         ${
-          (o = i.events) != null && o.length
+          (a = e.events) != null && a.length
             ? `<div>
-                <h4 class="section-title">Trigger Events (${i.events.length})</h4>
+                <h4 class="section-title">Trigger Events (${e.events.length})</h4>
                 <div class="chip-group">
-                  ${i.events.map((c) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${v(c)}</span>`).join("")}
+                  ${e.events.map((b) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${v(b)}</span>`).join("")}
                 </div>
               </div>`
             : ""
         }
         ${
-          (r = i.descriptions) != null && r.length && i.descriptions.length > 1
+          (d = e.descriptions) != null && d.length && e.descriptions.length > 1
             ? `<div>
                 <h4 class="section-title">Bundled Paths</h4>
                 <ul class="instruction-list">
-                  ${i.descriptions
+                  ${e.descriptions
                     .map(
-                      (c) => `
+                      (b) => `
                     <li class="instruction-item">
-                      <span>${v(c)}</span>
+                      <span>${v(b)}</span>
                     </li>
                   `,
                     )
@@ -1943,7 +1902,7 @@
           <h2>Inspector</h2>
         </div>
       `),
-                (e = `
+                (i = `
         <div class="empty-state">
           Select any state card or transition edge to inspect its instructions and properties.
         </div>
@@ -1955,18 +1914,18 @@
           <button class="btn-close" id="btn-close" title="Close Drawer">×</button>
         </div>
         <div class="drawer-body">
-          ${e}
+          ${i}
         </div>
       </aside>
     `),
-              (h = this.shadowRootNode.getElementById("btn-close")) == null ||
-                h.addEventListener("click", () => {
+              (s = this.shadowRootNode.getElementById("btn-close")) == null ||
+                s.addEventListener("click", () => {
                   this.emit("flow:close-inspector");
                 }));
           }
         }
-        (p(
-          X,
+        (c(
+          Y,
           "styles",
           `
     :host {
@@ -2150,22 +2109,24 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", X));
-        class P extends E {
+          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", Y));
+        class D extends $ {
           constructor() {
             super(...arguments);
-            p(this, "_graph", null);
-            p(this, "_camera", { panX: 0, panY: 0, scale: 1 });
-            p(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
-            p(this, "_selectedNodeId", null);
-            p(this, "_selectedEdgeId", null);
-            p(this, "_hoveredEdgeId", null);
-            p(this, "_showMinimap", !0);
-            p(this, "_showInspector", !1);
-            p(this, "_theme", "dark");
-            p(this, "_isDragging", !1);
-            p(this, "_dragStart", { x: 0, y: 0, panX: 0, panY: 0 });
-            p(this, "handleKeyDown", (t) => {
+            c(this, "_graph", null);
+            c(this, "_camera", { panX: 0, panY: 0, scale: 1 });
+            c(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
+            c(this, "_activeStateId", null);
+            c(this, "_selectedNodeId", null);
+            c(this, "_selectedEdgeId", null);
+            c(this, "_hoveredEdgeId", null);
+            c(this, "_showMinimap", !0);
+            c(this, "_showInspector", !1);
+            c(this, "_theme", "dark");
+            c(this, "_isDragging", !1);
+            c(this, "_dragStart", { x: 0, y: 0, panX: 0, panY: 0 });
+            c(this, "handleKeyDown", (t) => {
+              var i;
               t.target instanceof HTMLInputElement ||
                 t.target instanceof HTMLTextAreaElement ||
                 (t.key === "+" || t.key === "="
@@ -2174,29 +2135,33 @@
                     ? this.zoomBy(0.8333333333333334)
                     : t.key === "0" || t.key === "f"
                       ? this.fitToViewport()
-                      : t.key === "i"
-                        ? ((this._showInspector = !this._showInspector), this.requestUpdate())
-                        : t.key === "m"
-                          ? ((this._showMinimap = !this._showMinimap), this.requestUpdate())
-                          : t.key === "Escape" &&
-                            ((this._showInspector = !1),
-                            (this._selectedNodeId = null),
-                            (this._selectedEdgeId = null),
-                            this.requestUpdate()));
+                      : t.key === "r"
+                        ? (i = this._graph) != null &&
+                          i.initial &&
+                          ((this._activeStateId = this._graph.initial),
+                          (this._selectedNodeId = this._graph.initial),
+                          (this._selectedEdgeId = null),
+                          this.requestUpdate())
+                        : t.key === "i"
+                          ? ((this._showInspector = !this._showInspector), this.requestUpdate())
+                          : t.key === "m"
+                            ? ((this._showMinimap = !this._showMinimap), this.requestUpdate())
+                            : t.key === "Escape" &&
+                              ((this._showInspector = !1), (this._selectedEdgeId = null), this.requestUpdate()));
             });
-            p(this, "handleResize", () => {
+            c(this, "handleResize", () => {
               this.requestUpdate();
             });
-            p(this, "handleWheel", (t) => {
+            c(this, "handleWheel", (t) => {
               t.preventDefault();
-              const e = this.getBoundingClientRect(),
-                o = t.clientX - e.left,
-                r = t.clientY - e.top,
-                h = t.deltaY < 0 ? 1.12 : 0.89;
-              ((this._camera = B(this._camera, o, r, h, R, z)), this.requestUpdate());
+              const i = this.getBoundingClientRect(),
+                a = t.clientX - i.left,
+                d = t.clientY - i.top,
+                s = t.deltaY < 0 ? 1.12 : 0.89;
+              ((this._camera = B(this._camera, a, d, s, M, N)), this.requestUpdate());
             });
-            p(this, "handlePointerDown", (t) => {
-              var r;
+            c(this, "handlePointerDown", (t) => {
+              var d;
               if (
                 t.button !== 0 ||
                 t.target.closest(
@@ -2206,12 +2171,12 @@
                 return;
               ((this._isDragging = !0),
                 (this._dragStart = { x: t.clientX, y: t.clientY, panX: this._camera.panX, panY: this._camera.panY }));
-              const o = (r = this.shadowRootNode) == null ? void 0 : r.querySelector("svg.flow-svg");
-              (o == null || o.classList.add("grabbing"),
+              const a = (d = this.shadowRootNode) == null ? void 0 : d.querySelector("svg.flow-svg");
+              (a == null || a.classList.add("grabbing"),
                 window.addEventListener("pointermove", this.handlePointerMove),
                 window.addEventListener("pointerup", this.handlePointerUp));
             });
-            p(this, "handlePointerMove", (t) => {
+            c(this, "handlePointerMove", (t) => {
               this._isDragging &&
                 ((this._camera = {
                   ...this._camera,
@@ -2220,10 +2185,10 @@
                 }),
                 this.requestUpdate());
             });
-            p(this, "handlePointerUp", () => {
-              var e;
+            c(this, "handlePointerUp", () => {
+              var i;
               this._isDragging = !1;
-              const t = (e = this.shadowRootNode) == null ? void 0 : e.querySelector("svg.flow-svg");
+              const t = (i = this.shadowRootNode) == null ? void 0 : i.querySelector("svg.flow-svg");
               (t == null || t.classList.remove("grabbing"),
                 window.removeEventListener("pointermove", this.handlePointerMove),
                 window.removeEventListener("pointerup", this.handlePointerUp));
@@ -2234,17 +2199,25 @@
           }
           set graph(t) {
             if (((this._graph = t), t)) {
-              const e = t.framing !== !1;
-              ((this._bounds = ot(t.states, e ? 64 : 40, e ? 56 : 30, e ? 46 : 0, t.groups)),
+              this._activeStateId || (this._activeStateId = t.initial || Object.keys(t.states || {})[0] || null);
+              const i = t.framing !== !1;
+              ((this._bounds = et(t.states, i ? 64 : 40, i ? 56 : 30, i ? 46 : 0, t.groups)),
                 requestAnimationFrame(() => this.fitToViewport()));
             }
             this.requestUpdate();
+          }
+          get activeStateId() {
+            var t;
+            return this._activeStateId || ((t = this._graph) == null ? void 0 : t.initial) || null;
+          }
+          set activeStateId(t) {
+            ((this._activeStateId = t), (this._selectedNodeId = t), this.requestUpdate());
           }
           get selectedNodeId() {
             return this._selectedNodeId;
           }
           set selectedNodeId(t) {
-            ((this._selectedNodeId = t), this.requestUpdate());
+            ((this._selectedNodeId = t), t && (this._activeStateId = t), this.requestUpdate());
           }
           get selectedEdgeId() {
             return this._selectedEdgeId;
@@ -2282,27 +2255,27 @@
           }
           fitToViewport() {
             const t = this.getBoundingClientRect();
-            ((this._camera = W({ width: t.width || 900, height: t.height || 700 }, this._bounds)),
+            ((this._camera = F({ width: t.width || 900, height: t.height || 700 }, this._bounds)),
               this.requestUpdate());
           }
           centerOnState(t) {
-            var r;
-            if (!((r = this._graph) != null && r.states[t])) return;
-            const e = this._graph.states[t],
-              o = this.getBoundingClientRect();
-            ((this._camera = G({ width: o.width || 900, height: o.height || 700 }, e)),
+            var d;
+            if (!((d = this._graph) != null && d.states[t])) return;
+            const i = this._graph.states[t],
+              a = this.getBoundingClientRect();
+            ((this._camera = G({ width: a.width || 900, height: a.height || 700 }, i)),
+              (this._activeStateId = t),
               (this._selectedNodeId = t),
               (this._selectedEdgeId = null),
               this.requestUpdate());
           }
           zoomBy(t) {
-            const e = this.getBoundingClientRect(),
-              o = e.width / 2,
-              r = e.height / 2;
-            ((this._camera = B(this._camera, o, r, t, R, z)), this.requestUpdate());
+            const i = this.getBoundingClientRect(),
+              a = i.width / 2,
+              d = i.height / 2;
+            ((this._camera = B(this._camera, a, d, t, M, N)), this.requestUpdate());
           }
           render() {
-            var x;
             if (!this.shadowRootNode) return;
             if (!this._graph) {
               this.shadowRootNode.innerHTML = `
@@ -2313,34 +2286,28 @@
               return;
             }
             const t = this._graph.states,
-              e = this._graph.transitions || [],
-              o = Z(V(e).filter((l) => !l.self));
-            for (const l of o) {
-              const m = K(l, t);
-              m && (l.route = m);
+              i = this._graph.transitions || [],
+              a = K(V(i).filter((n) => !n.self));
+            for (const n of a) {
+              const u = Z(n, t);
+              u && (n.route = u);
             }
-            (Q(o),
-              (this.shadowRootNode.innerHTML = `
+            const d = this._activeStateId || this._graph.initial || Object.keys(t)[0] || null;
+            this.shadowRootNode.innerHTML = `
       <div class="canvas-root">
         <svg class="flow-svg" id="flow-svg">
           <defs>
             <pattern id="flow-grid-pattern" width="24" height="24" patternUnits="userSpaceOnUse">
-              <path d="M 24 0 L 0 0 0 24" fill="none" stroke="var(--tuto-grid, rgba(148, 163, 184, 0.09))" stroke-width="1" />
+              <circle cx="12" cy="12" r="1" fill="var(--tuto-grid, rgba(255, 255, 255, 0.04))" />
             </pattern>
-            <marker id="flow-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--tuto-edge, #4b5563)" />
+            <marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--tuto-edge, #5b6477)" />
             </marker>
-            <marker id="flow-arrow-hot" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <marker id="flow-arrow-hot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
               <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--tuto-hot, #3b82f6)" />
             </marker>
-            <marker id="flow-arrow-align" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b" />
-            </marker>
-            <marker id="flow-arrow-spec" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
-            </marker>
-            <marker id="flow-arrow-vibe" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
+            <marker id="flow-arrow-init" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#ffffff" />
             </marker>
           </defs>
 
@@ -2353,12 +2320,12 @@
               this._graph.framing !== !1 && this._graph.title
                 ? `<!-- Machine Outer Framing Card -->
             <g class="machine-frame">
-              <rect x="${this._bounds.x}" y="${this._bounds.y}" width="${this._bounds.w}" height="${this._bounds.h}" rx="16" fill="var(--tuto-panel-bg, #161b22)" fill-opacity="0.35" stroke="var(--tuto-border, #30363d)" stroke-width="1.5" />
-              <path d="M ${this._bounds.x} ${this._bounds.y + 16} Q ${this._bounds.x} ${this._bounds.y} ${this._bounds.x + 16} ${this._bounds.y} L ${this._bounds.x + this._bounds.w - 16} ${this._bounds.y} Q ${this._bounds.x + this._bounds.w} ${this._bounds.y} ${this._bounds.x + this._bounds.w} ${this._bounds.y + 16} L ${this._bounds.x + this._bounds.w} ${this._bounds.y + 46} L ${this._bounds.x} ${this._bounds.y + 46} Z" fill="var(--tuto-panel-head, #1c2128)" />
-              <line x1="${this._bounds.x}" y1="${this._bounds.y + 46}" x2="${this._bounds.x + this._bounds.w}" y2="${this._bounds.y + 46}" stroke="var(--tuto-border, #30363d)" stroke-width="1" />
-              <text x="${this._bounds.x + 20}" y="${this._bounds.y + 28}" fill="var(--tuto-text, #e8eaed)" font-size="13" font-weight="700" font-family="var(--tuto-font-sans, sans-serif)">${v(this._graph.title)}</text>
-              ${this._graph.subtitle ? `<text x="${this._bounds.x + 20 + this._graph.title.length * 7.5 + 16}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-sans, sans-serif)">${v(this._graph.subtitle)}</text>` : ""}
-              <text x="${this._bounds.x + this._bounds.w - 20}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-mono, monospace)" text-anchor="end">${v(this._graph.version || "v1.0")}</text>
+              <rect x="${this._bounds.x}" y="${this._bounds.y}" width="${this._bounds.w}" height="${this._bounds.h}" rx="14" fill="var(--tuto-panel-bg, #14171f)" fill-opacity="0.5" stroke="var(--tuto-border, #2c3242)" stroke-width="1.5" />
+              <path d="M ${this._bounds.x} ${this._bounds.y + 14} Q ${this._bounds.x} ${this._bounds.y} ${this._bounds.x + 14} ${this._bounds.y} L ${this._bounds.x + this._bounds.w - 14} ${this._bounds.y} Q ${this._bounds.x + this._bounds.w} ${this._bounds.y} ${this._bounds.x + this._bounds.w} ${this._bounds.y + 14} L ${this._bounds.x + this._bounds.w} ${this._bounds.y + 44} L ${this._bounds.x} ${this._bounds.y + 44} Z" fill="var(--tuto-panel-head, #1c202b)" />
+              <line x1="${this._bounds.x}" y1="${this._bounds.y + 44}" x2="${this._bounds.x + this._bounds.w}" y2="${this._bounds.y + 44}" stroke="var(--tuto-border, #2c3242)" stroke-width="1" />
+              <text x="${this._bounds.x + 18}" y="${this._bounds.y + 27}" fill="var(--tuto-text, #ffffff)" font-size="13" font-weight="700" font-family="var(--tuto-font-sans, sans-serif)">${v(this._graph.title)}</text>
+              ${this._graph.subtitle ? `<text x="${this._bounds.x + 18 + this._graph.title.length * 7.5 + 16}" y="${this._bounds.y + 27}" fill="var(--tuto-muted, #647087)" font-size="11" font-family="var(--tuto-font-sans, sans-serif)">${v(this._graph.subtitle)}</text>` : ""}
+              <text x="${this._bounds.x + this._bounds.w - 18}" y="${this._bounds.y + 27}" fill="var(--tuto-muted, #647087)" font-size="11" font-family="var(--tuto-font-mono, monospace)" text-anchor="end">${v(this._graph.version || "v1.0")}</text>
             </g>`
                 : ""
             }
@@ -2383,219 +2350,239 @@
         <!-- Slide-over Inspector Drawer -->
         <tuto-flow-inspector id="inspector-el"></tuto-flow-inspector>
       </div>
-    `));
-            const r = this.shadowRootNode.querySelector("#flow-svg");
-            r &&
-              (r.addEventListener("wheel", this.handleWheel, { passive: !1 }),
-              r.addEventListener("pointerdown", this.handlePointerDown));
-            const h = this.shadowRootNode.getElementById("groups-group"),
-              i = this.shadowRootNode.getElementById("edges-group"),
-              u = this.shadowRootNode.getElementById("nodes-group");
-            if (this._graph.groups)
-              for (const l of this._graph.groups) {
-                const m = _("g", { class: "flow-group-container" }, h),
-                  f = l.accent || "#3b82f6";
-                (_(
+    `;
+            const s = this.shadowRootNode.querySelector("#flow-svg");
+            s &&
+              (s.addEventListener("wheel", this.handleWheel, { passive: !1 }),
+              s.addEventListener("pointerdown", this.handlePointerDown));
+            const e = this.shadowRootNode.getElementById("groups-group"),
+              l = this.shadowRootNode.getElementById("edges-group"),
+              b = this.shadowRootNode.getElementById("nodes-group");
+            if (this._graph.groups && this._graph.groups.length > 0)
+              for (const n of this._graph.groups) {
+                const u = w("g", { class: "flow-group-container" }, e),
+                  g = n.accent || "#3b82f6";
+                (w(
                   "rect",
                   {
-                    x: l.x,
-                    y: l.y,
-                    width: l.w,
-                    height: l.h,
-                    rx: 14,
-                    fill: "var(--tuto-card-bg, #12161c)",
-                    "fill-opacity": "0.38",
-                    stroke: f,
-                    "stroke-width": 1.2,
-                    "stroke-opacity": "0.35",
+                    x: n.x,
+                    y: n.y,
+                    width: n.w,
+                    height: n.h,
+                    rx: 10,
+                    fill: "var(--tuto-card-bg, #1c202a)",
+                    "fill-opacity": "0.78",
+                    stroke: g,
+                    "stroke-width": 1.5,
+                    "stroke-opacity": "0.55",
                   },
-                  m,
+                  u,
                 ),
-                  _(
+                  w(
                     "path",
                     {
-                      d: `M ${l.x} ${l.y + 14} Q ${l.x} ${l.y} ${l.x + 14} ${l.y} L ${l.x + l.w - 14} ${l.y} Q ${l.x + l.w} ${l.y} ${l.x + l.w} ${l.y + 14} L ${l.x + l.w} ${l.y + 28} L ${l.x} ${l.y + 28} Z`,
-                      fill: f,
-                      "fill-opacity": "0.12",
+                      d: `M ${n.x} ${n.y + 10} Q ${n.x} ${n.y} ${n.x + 10} ${n.y} L ${n.x + n.w - 10} ${n.y} Q ${n.x + n.w} ${n.y} ${n.x + n.w} ${n.y + 10} L ${n.x + n.w} ${n.y + 30} L ${n.x} ${n.y + 30} Z`,
+                      fill: g,
+                      "fill-opacity": "0.14",
                     },
-                    m,
+                    u,
+                  ),
+                  w(
+                    "line",
+                    {
+                      x1: n.x,
+                      y1: n.y + 30,
+                      x2: n.x + n.w,
+                      y2: n.y + 30,
+                      stroke: g,
+                      "stroke-width": 1,
+                      "stroke-opacity": "0.22",
+                    },
+                    u,
                   ));
-                const k = _(
+                const x = w(
                   "text",
                   {
-                    x: l.x + 14,
-                    y: l.y + 18,
-                    fill: f,
-                    "font-size": 10.5,
+                    x: n.x + 14,
+                    y: n.y + 20,
+                    fill: g,
+                    "font-size": 11,
                     "font-weight": 800,
-                    "letter-spacing": "0.08em",
-                    "font-family": "var(--tuto-font-mono, monospace)",
+                    "letter-spacing": "0.06em",
+                    "font-family": "var(--tuto-font-sans, sans-serif)",
                   },
-                  m,
+                  u,
                 );
-                k.textContent = l.label.toUpperCase();
+                x.textContent = n.label.toUpperCase();
               }
             if (this._graph.initial && t[this._graph.initial]) {
-              const l = t[this._graph.initial],
-                m = l.x - 36,
-                f = l.y + l.h / 2,
-                k = ((x = y.accents[this._graph.initial]) == null ? void 0 : x.accent) || "#f59e0b";
-              (_("circle", { cx: m, cy: f, r: 5, fill: k }, i),
-                _(
+              const n = t[this._graph.initial],
+                u = n.x - 14,
+                g = n.y + n.h / 2,
+                x = n.x,
+                k = n.y + n.h / 2,
+                E = w("g", { class: "flow-initial-indicator" }, l);
+              (w("circle", { cx: u - 4, cy: g, r: 4, fill: "#ffffff" }, E),
+                w(
                   "path",
                   {
-                    d: `M ${m + 5} ${f} L ${l.x} ${f}`,
-                    stroke: k,
+                    d: `M ${u} ${g} L ${x} ${k}`,
+                    stroke: "#ffffff",
                     "stroke-width": 2,
                     fill: "none",
-                    "marker-end": "url(#flow-arrow-align)",
+                    "marker-end": "url(#flow-arrow-init)",
                   },
-                  i,
+                  E,
                 ));
             }
-            const c = !!(this._selectedNodeId || this._selectedEdgeId);
-            for (const l of o) {
-              if (!l.route) continue;
-              const m = tt(l, this._selectedNodeId, this._selectedEdgeId, this._hoveredEdgeId),
-                f = c && !m,
-                k = J(l.route.points, l.self),
-                $ = m ? "url(#flow-arrow-hot)" : "url(#flow-arrow)";
-              if (
-                (_(
+            for (const n of a) {
+              if (!n.route) continue;
+              const u = d ? n.from === d : !0;
+              u || J(n, this._selectedNodeId, this._selectedEdgeId, this._hoveredEdgeId);
+              const g = Q(n.route.points, n.self, 10),
+                k = w(
                   "path",
                   {
-                    d: k,
-                    class: `flow-edge-path ${l.userMediated ? "user-mediated" : ""} ${m ? "hot" : ""} ${f ? "dimmed" : ""}`,
-                    "marker-end": $,
+                    d: g,
+                    class: `flow-edge-path ${u ? "available" : "dimmed"}`,
+                    "marker-end": u ? "url(#flow-arrow-hot)" : "url(#flow-arrow)",
                   },
-                  i,
-                ).addEventListener("click", (M) => {
-                  (M.stopPropagation(),
-                    (this._selectedEdgeId = l.id),
-                    (this._selectedNodeId = null),
-                    this.emit("flow:select-edge", { edge: l }),
-                    this.requestUpdate());
-                }),
-                et(l, this._selectedNodeId, this._selectedEdgeId, null))
-              ) {
-                const M = l.event || l.label || "",
-                  q = Math.max(48, Math.min(160, M.length * 6.5 + 16)),
-                  st = 19,
-                  lt = l.route.seatX - q / 2,
-                  ct = l.route.seatY - st / 2,
-                  O = _("g", { class: `flow-edge-pill ${m ? "hot" : ""}`, transform: `translate(${lt}, ${ct})` }, i);
-                _(
+                  l,
+                ),
+                E = (S) => {
+                  (S.stopPropagation(),
+                    u && n.to
+                      ? ((this._activeStateId = n.to),
+                        (this._selectedNodeId = n.to),
+                        (this._selectedEdgeId = n.id),
+                        this.emit("flow:transition", { from: n.from, to: n.to, event: n.event }),
+                        t[n.to] && this.emit("flow:select-node", { node: t[n.to] }),
+                        this.requestUpdate())
+                      : ((this._selectedEdgeId = n.id),
+                        this.emit("flow:select-edge", { edge: n }),
+                        this.requestUpdate()));
+                };
+              if ((k.addEventListener("click", E), tt(n, this._selectedNodeId, this._selectedEdgeId))) {
+                const S = n.event || n.label || "",
+                  C = Math.max(76, Math.min(240, S.length * 8 + 28)),
+                  P = 28,
+                  dt = n.route.seatX - C / 2,
+                  lt = n.route.seatY - P / 2,
+                  q = w(
+                    "g",
+                    { class: `flow-edge-pill ${u ? "available" : "dimmed"}`, transform: `translate(${dt}, ${lt})` },
+                    l,
+                  );
+                w(
                   "rect",
                   {
-                    width: q,
-                    height: st,
-                    rx: 5,
-                    fill: m ? "var(--tuto-panel-head, #1c2128)" : "var(--tuto-panel-bg, #161b22)",
-                    stroke: m ? "var(--tuto-hot, #3b82f6)" : "var(--tuto-border, #30363d)",
-                    "stroke-width": m ? 1.5 : 1,
-                    filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.35))",
+                    width: C,
+                    height: P,
+                    rx: 14,
+                    fill: u ? "#3b82f6" : "#3e4657",
+                    stroke: u ? "#93c5fd" : "rgba(255, 255, 255, 0.14)",
+                    "stroke-width": u ? 2 : 1,
+                    filter: u
+                      ? "drop-shadow(0 4px 14px rgba(59, 130, 246, 0.55))"
+                      : "drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4))",
                   },
-                  O,
+                  q,
                 );
-                const ht = _(
+                const ct = w(
                   "text",
                   {
-                    x: q / 2,
-                    y: 13,
+                    x: C / 2,
+                    y: P / 2,
                     "text-anchor": "middle",
-                    fill: m ? "var(--tuto-text, #e8eaed)" : "var(--tuto-text-muted, #94a3b8)",
-                    "font-size": 9,
-                    "font-weight": 700,
-                    "font-family": "var(--tuto-font-mono, monospace)",
+                    "dominant-baseline": "central",
+                    fill: "#ffffff",
+                    "font-size": 11,
+                    "font-weight": 800,
+                    "letter-spacing": "0.04em",
+                    "font-family": "var(--tuto-font-sans, sans-serif)",
                   },
-                  O,
+                  q,
                 );
-                ((ht.textContent = M.length > 24 ? `${M.slice(0, 23)}…` : M),
-                  O.addEventListener("click", (ut) => {
-                    (ut.stopPropagation(),
-                      (this._selectedEdgeId = l.id),
-                      (this._selectedNodeId = null),
-                      this.emit("flow:select-edge", { edge: l }),
-                      this.requestUpdate());
-                  }));
+                ((ct.textContent = S), q.addEventListener("click", E));
               }
             }
-            for (const l of Object.values(t)) {
-              const m = _("foreignObject", { x: l.x, y: l.y, width: l.w, height: l.h }, u),
-                f = document.createElement("tuto-flow-node");
-              ((f.node = l),
-                (f.selected = this._selectedNodeId === l.id),
-                f.addEventListener("flow:select-node", (k) => {
-                  const $ = k;
-                  ((this._selectedNodeId = $.detail.node.id),
+            for (const n of Object.values(t)) {
+              const u = w("foreignObject", { x: n.x, y: n.y, width: n.w, height: n.h }, b),
+                g = document.createElement("tuto-flow-node");
+              ((g.node = n),
+                (g.selected = d === n.id),
+                g.addEventListener("flow:select-node", (x) => {
+                  const k = x;
+                  ((this._activeStateId = k.detail.node.id),
+                    (this._selectedNodeId = k.detail.node.id),
                     (this._selectedEdgeId = null),
-                    this.emit("flow:select-node", { node: $.detail.node }),
+                    this.emit("flow:select-node", { node: k.detail.node }),
                     this.requestUpdate());
                 }),
-                m.appendChild(f));
+                u.appendChild(g));
             }
-            const n = this.shadowRootNode.getElementById("minimap-el");
-            if (n) {
-              ((n.bounds = this._bounds),
-                (n.camera = this._camera),
-                (n.nodes = t),
-                (n.selectedNodeId = this._selectedNodeId));
-              const l = this.getBoundingClientRect();
-              ((n.viewportSize = { width: l.width || 900, height: l.height || 700 }),
-                n.addEventListener("flow:pan-to", (m) => {
-                  const f = m.detail,
-                    k = this.getBoundingClientRect(),
-                    $ = k.width || 900,
-                    S = k.height || 700;
+            const f = this.shadowRootNode.getElementById("minimap-el");
+            if (f) {
+              ((f.bounds = this._bounds),
+                (f.camera = this._camera),
+                (f.nodes = t),
+                (f.selectedNodeId = this._selectedNodeId));
+              const n = this.getBoundingClientRect();
+              ((f.viewportSize = { width: n.width || 900, height: n.height || 700 }),
+                f.addEventListener("flow:pan-to", (u) => {
+                  const g = u.detail,
+                    x = this.getBoundingClientRect(),
+                    k = x.width || 900,
+                    E = x.height || 700;
                   ((this._camera = {
                     ...this._camera,
-                    panX: $ / 2 - f.worldX * this._camera.scale,
-                    panY: S / 2 - f.worldY * this._camera.scale,
+                    panX: k / 2 - g.worldX * this._camera.scale,
+                    panY: E / 2 - g.worldY * this._camera.scale,
                   }),
                     this.requestUpdate());
                 }));
             }
-            const d = this.shadowRootNode.getElementById("toolbar-el");
-            d &&
-              ((d.zoom = Math.round(this._camera.scale * 100)),
-              (d.isMinimapActive = this._showMinimap),
-              (d.isInspectorActive = this._showInspector),
-              d.addEventListener("flow:zoom-in", () => this.zoomBy(1.2)),
-              d.addEventListener("flow:zoom-out", () => this.zoomBy(0.8333333333333334)),
-              d.addEventListener("flow:fit", () => this.fitToViewport()),
-              d.addEventListener("flow:reset", () => {
+            const p = this.shadowRootNode.getElementById("toolbar-el");
+            p &&
+              ((p.zoom = Math.round(this._camera.scale * 100)),
+              (p.isMinimapActive = this._showMinimap),
+              (p.isInspectorActive = this._showInspector),
+              p.addEventListener("flow:zoom-in", () => this.zoomBy(1.2)),
+              p.addEventListener("flow:zoom-out", () => this.zoomBy(0.8333333333333334)),
+              p.addEventListener("flow:fit", () => this.fitToViewport()),
+              p.addEventListener("flow:reset", () => {
                 ((this._selectedNodeId = null),
                   (this._selectedEdgeId = null),
                   (this._showInspector = !1),
                   this.fitToViewport());
               }),
-              d.addEventListener("flow:toggle-minimap", () => {
+              p.addEventListener("flow:toggle-minimap", () => {
                 ((this._showMinimap = !this._showMinimap), this.requestUpdate());
               }),
-              d.addEventListener("flow:toggle-inspector", () => {
+              p.addEventListener("flow:toggle-inspector", () => {
                 ((this._showInspector = !this._showInspector), this.requestUpdate());
               }));
-            const b = this.shadowRootNode.getElementById("inspector-el");
-            if (b) {
+            const y = this.shadowRootNode.getElementById("inspector-el");
+            if (y) {
               if (
-                ((b.isOpen = this._showInspector),
-                (b.tools = this._graph.tools || []),
+                ((y.isOpen = this._showInspector),
+                (y.tools = this._graph.tools || []),
                 this._selectedNodeId && t[this._selectedNodeId])
               )
-                b.node = t[this._selectedNodeId];
+                y.node = t[this._selectedNodeId];
               else if (this._selectedEdgeId) {
-                const l = e.find((m) => m.id === this._selectedEdgeId) || o.find((m) => m.id === this._selectedEdgeId);
-                b.edge = l || null;
-              } else ((b.node = null), (b.edge = null));
-              b.addEventListener("flow:close-inspector", () => {
+                const n = i.find((u) => u.id === this._selectedEdgeId) || a.find((u) => u.id === this._selectedEdgeId);
+                y.edge = n || null;
+              } else ((y.node = null), (y.edge = null));
+              y.addEventListener("flow:close-inspector", () => {
                 ((this._showInspector = !1), this.requestUpdate());
               });
             }
           }
         }
         return (
-          p(
-            P,
+          c(
+            D,
             "styles",
             `
     :host {
@@ -2604,8 +2591,8 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: var(--tuto-bg, #0c0e12);
-      color: var(--tuto-text, #e8eaed);
+      background: var(--tuto-bg, #090a0f);
+      color: var(--tuto-text, #f1f5f9);
       font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
       user-select: none;
     }
@@ -2626,47 +2613,53 @@
     }
     .flow-edge-path {
       fill: none;
-      stroke: var(--tuto-edge, #4b5563);
+      stroke: var(--tuto-edge, #5b6477);
       stroke-width: 1.8;
-      stroke-opacity: 0.85;
-      transition: stroke 160ms ease, stroke-width 160ms ease, stroke-opacity 160ms ease;
-      cursor: pointer;
+      opacity: 0.3;
+      stroke-dasharray: none !important;
+      transition: stroke 160ms ease, stroke-width 160ms ease, opacity 160ms ease, filter 160ms ease;
+      cursor: not-allowed;
     }
-    .flow-edge-path:hover {
+    .flow-edge-path.available {
       stroke: var(--tuto-hot, #3b82f6);
       stroke-width: 2.6;
-      stroke-opacity: 1;
-    }
-    .flow-edge-path.user-mediated {
-      stroke-dasharray: 5 3.5;
-    }
-    .flow-edge-path.dimmed {
-      stroke: var(--tuto-edge, #4b5563);
-      stroke-opacity: 0.6;
-      stroke-width: 1.6;
-    }
-    .flow-edge-path.hot {
-      stroke: var(--tuto-hot, #3b82f6);
-      stroke-width: 2.8;
-      stroke-opacity: 1;
-    }
-    .flow-edge-pill {
+      opacity: 1;
+      filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.5));
       cursor: pointer;
     }
-    .flow-edge-pill rect {
-      transition: stroke 140ms ease, filter 140ms ease, fill 140ms ease;
+    .flow-edge-path.available:hover {
+      stroke-width: 3.2;
+      filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8));
     }
-    .flow-edge-pill:hover rect {
-      stroke: var(--tuto-hot, #3b82f6);
-      stroke-width: 1.5;
-      fill: var(--tuto-panel-head, #1c2128);
-      filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.45));
+    .flow-edge-pill {
+      cursor: not-allowed;
+      opacity: 0.32;
+      transition: transform 160ms ease, opacity 160ms ease;
+    }
+    .flow-edge-pill.available {
+      cursor: pointer;
+      opacity: 1;
+    }
+    .flow-edge-pill rect {
+      transition: stroke 140ms ease, filter 140ms ease, fill 140ms ease, transform 140ms ease;
+    }
+    .flow-edge-pill.available rect {
+      fill: var(--tuto-hot, #3b82f6);
+      stroke: #93c5fd;
+      filter: drop-shadow(0 4px 14px rgba(59, 130, 246, 0.55));
+    }
+    .flow-edge-pill.available:hover rect {
+      fill: #2563eb;
+      stroke: #ffffff;
+      filter: drop-shadow(0 6px 20px rgba(59, 130, 246, 0.85));
     }
     .flow-edge-pill text {
       transition: fill 140ms ease;
+      pointer-events: none;
     }
-    .flow-edge-pill:hover text {
+    .flow-edge-pill.available text {
       fill: #ffffff;
+      font-weight: 800;
     }
     .floating-toolbar {
       position: absolute;
@@ -2688,46 +2681,46 @@
     }
   `,
           ),
-          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", P),
-          H(),
-          (g.BaseElement = E),
-          (g.DEFAULT_CAMERA_PADDING = F),
-          (g.MAX_CAMERA_SCALE = z),
-          (g.MIN_CAMERA_SCALE = R),
-          (g.PRIMARY_FORWARD_EVENTS = T),
-          (g.SVG_NS = j),
-          (g.TutoBadge = A),
-          (g.TutoButton = N),
-          (g.TutoFlowCanvas = P),
-          (g.TutoFlowInspector = X),
-          (g.TutoFlowMinimap = D),
-          (g.TutoFlowNode = U),
-          (g.TutoFlowToolbar = Y),
-          (g.assignLanes = Z),
-          (g.autoLayoutColumns = dt),
-          (g.bundleEdges = V),
-          (g.centerOnNode = G),
-          (g.clamp = L),
-          (g.colors = y),
-          (g.computeFitBounds = W),
-          (g.computeGraphBounds = ot),
-          (g.escapeHtml = v),
-          (g.getPort = w),
-          (g.htmlEl = rt),
-          (g.injectThemeTokens = H),
-          (g.isEdgeHighlighted = tt),
-          (g.pointsToSvgPath = J),
-          (g.resolvePillSeats = Q),
-          (g.routeEdgeItem = K),
-          (g.screenToWorld = nt),
-          (g.shouldShowPill = et),
-          (g.spacing = it),
-          (g.svgEl = _),
-          (g.typography = I),
-          (g.worldToScreen = at),
-          (g.zoomAtPoint = B),
-          Object.defineProperty(g, Symbol.toStringTag, { value: "Module" }),
-          g
+          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", D),
+          O(),
+          (h.BaseElement = $),
+          (h.DEFAULT_CAMERA_PADDING = H),
+          (h.MAX_CAMERA_SCALE = N),
+          (h.MIN_CAMERA_SCALE = M),
+          (h.PRIMARY_FORWARD_EVENTS = W),
+          (h.SVG_NS = j),
+          (h.TutoBadge = L),
+          (h.TutoButton = A),
+          (h.TutoFlowCanvas = D),
+          (h.TutoFlowInspector = Y),
+          (h.TutoFlowMinimap = X),
+          (h.TutoFlowNode = U),
+          (h.TutoFlowToolbar = T),
+          (h.assignLanes = K),
+          (h.autoLayoutColumns = at),
+          (h.bundleEdges = V),
+          (h.centerOnNode = G),
+          (h.clamp = z),
+          (h.colors = _),
+          (h.computeFitBounds = F),
+          (h.computeGraphBounds = et),
+          (h.escapeHtml = v),
+          (h.getPort = m),
+          (h.htmlEl = st),
+          (h.injectThemeTokens = O),
+          (h.isEdgeHighlighted = J),
+          (h.pointsToSvgPath = Q),
+          (h.resolvePillSeats = rt),
+          (h.routeEdgeItem = Z),
+          (h.screenToWorld = it),
+          (h.shouldShowPill = tt),
+          (h.spacing = ot),
+          (h.svgEl = w),
+          (h.typography = I),
+          (h.worldToScreen = nt),
+          (h.zoomAtPoint = B),
+          Object.defineProperty(h, Symbol.toStringTag, { value: "Module" }),
+          h
         );
       })({});
     </script>
@@ -3328,46 +3321,15 @@
       const fsmData = JSON.parse(document.getElementById("workflow-fsm-data").textContent);
       const canvas = document.getElementById("flow-canvas");
 
-      // 3 Macro Mode Group Containers
-      const GROUPS = [
-        {
-          id: "align-group",
-          label: "ALIGN (Scope, Goal & Review)",
-          accent: "#f59e0b",
-          x: 60,
-          y: 80,
-          w: 990,
-          h: 130,
-        },
-        {
-          id: "spec-group",
-          label: "SPEC (Research & Plan)",
-          accent: "#38bdf8",
-          x: 60,
-          y: 310,
-          w: 465,
-          h: 195,
-        },
-        {
-          id: "vibe-group",
-          label: "VIBE (Implement & Verify)",
-          accent: "#10b981",
-          x: 585,
-          y: 310,
-          w: 465,
-          h: 195,
-        },
-      ];
-
-      // 7-"E" Lifecycle Step Node Layout (perfectly centered & aligned)
+      // 7-"E" Lifecycle Step Node Layout (Spacious 240px-Gap 2-Row Circuit)
       const NODE_LAYOUT = {
-        envision: { x: 120, y: 138, w: 250, h: 42 },
-        establish: { x: 430, y: 138, w: 250, h: 42 },
-        evaluate: { x: 740, y: 138, w: 250, h: 42 },
-        explore: { x: 90, y: 365, w: 405, h: 42 },
-        elaborate: { x: 90, y: 435, w: 405, h: 42 },
-        execute: { x: 615, y: 365, w: 405, h: 42 },
-        examine: { x: 615, y: 435, w: 405, h: 42 },
+        envision: { x: 80, y: 150, w: 220, h: 44 },
+        establish: { x: 540, y: 150, w: 220, h: 44 },
+        explore: { x: 1000, y: 150, w: 220, h: 44 },
+        elaborate: { x: 1460, y: 150, w: 220, h: 44 },
+        evaluate: { x: 540, y: 460, w: 220, h: 44 },
+        examine: { x: 1000, y: 460, w: 220, h: 44 },
+        execute: { x: 1460, y: 460, w: 220, h: 44 },
       };
 
       const states = {};
@@ -3384,9 +3346,8 @@
         ...fsmData,
         framing: false,
         title: "Pi Director Agent Workflow",
-        subtitle:
-          "7-E Compound Lifecycle: ALIGN (Envision, Establish, Evaluate) · SPEC (Explore, Elaborate) · VIBE (Execute, Examine)",
-        groups: GROUPS,
+        subtitle: "7-E Statechart Lifecycle",
+        groups: [],
         states,
       };
 
