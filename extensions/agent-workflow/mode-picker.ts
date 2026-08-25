@@ -32,6 +32,8 @@ interface NextStepAction {
 interface NextStepEvent {
   mode: WorkflowMode;
   actions: NextStepAction[];
+  /** When true, agent_settled opens the next-driven picker even if actions were filtered empty. */
+  queued?: boolean;
 }
 
 const NextStepActionParams = Type.Object({
@@ -76,11 +78,21 @@ function normalizeAction(value: unknown): NextStepAction | undefined {
   };
 }
 
+/** Drop same-mode recommendations; handoff always kept. */
+function crossModeActions(current: WorkflowMode, actions: NextStepAction[]): NextStepAction[] {
+  return actions.filter((action) => action.mode === "handoff" || action.mode !== current);
+}
+
 function deriveNextStepSignal(entries: SessionEntry[], current: WorkflowMode): NextStepAction[] | undefined {
   return currentTurnSignal(entries, NEXT_STEP_EVENT, (entry) => {
     const data = entry.data as Partial<NextStepEvent> | undefined;
     if (data?.mode !== current || !Array.isArray(data.actions)) return undefined;
-    const actions = data.actions.map(normalizeAction).filter((action): action is NextStepAction => Boolean(action));
+    const actions = crossModeActions(
+      current,
+      data.actions.map(normalizeAction).filter((action): action is NextStepAction => Boolean(action)),
+    );
+    // queued:true (non-empty next call) may yield [] after same-mode filter — still open picker fill-ins.
+    if (data.queued === true) return actions;
     return actions.length ? actions : undefined;
   });
 }
@@ -135,17 +147,23 @@ function transitionLabel(current: WorkflowMode, next: WorkflowMode): string {
   return `${MODE_LABEL[next]} — Continue in ${MODE_LABEL[next]}`;
 }
 
-function pickerState(current: WorkflowMode, explicit: NextStepAction[] = []): PickerState {
-  const options: string[] = [];
+function pickerState(
+  current: WorkflowMode,
+  explicit: NextStepAction[] = [],
+  options?: { includeCurrentMode?: boolean },
+): PickerState {
+  const includeCurrentMode = options?.includeCurrentMode ?? true;
+  const labels: string[] = [];
   const actions = new Map<string, PickerAction>();
   const recommended = new Set<NextStepActionMode>();
   const add = (label: string, action: PickerAction, reason?: string) => {
     const rendered = reason ? `${label} — ${reason}` : label;
-    options.push(rendered);
+    labels.push(rendered);
     actions.set(rendered, action);
   };
 
-  for (const action of explicit) {
+  const explicitActions = includeCurrentMode ? explicit : crossModeActions(current, explicit);
+  for (const action of explicitActions) {
     if (recommended.has(action.mode)) continue;
     recommended.add(action.mode);
     if (action.mode === "handoff") {
@@ -159,12 +177,15 @@ function pickerState(current: WorkflowMode, explicit: NextStepAction[] = []): Pi
 
   for (const mode of WORKFLOW_MODES) {
     if (recommended.has(mode)) continue;
-    if (mode === current) add(`${MODE_LABEL[mode]} — Continue current mode`, { kind: "continue", mode });
-    else add(`${MODE_LABEL[mode]} — Switch mode`, { kind: "switch", mode });
+    if (mode === current) {
+      if (includeCurrentMode) add(`${MODE_LABEL[mode]} — Continue current mode`, { kind: "continue", mode });
+      continue;
+    }
+    add(`${MODE_LABEL[mode]} — Switch mode`, { kind: "switch", mode });
   }
   if (!recommended.has("handoff")) add(HANDOFF_OPTION, { kind: "handoff" });
   add(RETURN_OPTION, { kind: "return" });
-  return { options, actions };
+  return { options: labels, actions };
 }
 
 export async function applyMode(
@@ -182,9 +203,11 @@ export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext, force
   const branch = ctx.sessionManager.getBranch();
   const current = resolveWorkflowMode(branch);
   const explicit = deriveNextStepSignal(branch, current);
-  if (!force && !explicit) return;
+  // next-driven: explicit is [] | non-empty array; /mode force: explicit may be undefined.
+  if (!force && explicit === undefined) return;
 
-  const state = pickerState(current, explicit);
+  // next-driven pickers omit current mode; /mode force keeps full escape-hatch list (D4).
+  const state = pickerState(current, explicit ?? [], { includeCurrentMode: force });
   const checkpoint = openCheckpoint(pi, "mode");
   let choice: string | undefined;
   try {
@@ -255,19 +278,26 @@ export function registerModePicker(pi: ExtensionAPI): void {
         };
       }
       if (params.actions.length === 0) {
-        pi.appendEntry(NEXT_STEP_EVENT, { mode, actions: [] } satisfies NextStepEvent);
+        pi.appendEntry(NEXT_STEP_EVENT, { mode, actions: [], queued: false } satisfies NextStepEvent);
         return {
           content: [{ type: "text" as const, text: "No next actions were supplied; no picker will open." }],
-          details: { mode, actions: [] },
+          details: { mode, actions: [], queued: false },
         };
       }
-      const event: NextStepEvent = { mode, actions: normalized };
+      const filtered = crossModeActions(mode, normalized);
+      const dropped = normalized.length - filtered.length;
+      const event: NextStepEvent = { mode, actions: filtered, queued: true };
       pi.appendEntry(NEXT_STEP_EVENT, event);
+      const ranked =
+        event.actions.length > 0
+          ? event.actions.map((action) => action.mode).join(", ")
+          : "other modes (same-mode recommendations were omitted)";
+      const note = dropped > 0 ? ` Omitted ${dropped} same-mode action(s).` : "";
       return {
         content: [
           {
             type: "text" as const,
-            text: `The post-turn picker will rank ${event.actions.map((action) => action.mode).join(", ")}.`,
+            text: `The post-turn picker will rank ${ranked}.${note}`,
           },
         ],
         details: event,

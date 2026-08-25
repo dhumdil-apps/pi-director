@@ -102,8 +102,11 @@ export function readAskSettlement(entries: SessionEntry[]): AskSettlementSignal 
 export function readNextQueued(entries: SessionEntry[], current: WorkflowMode): boolean {
   return Boolean(
     currentTurnSignal(entries, NEXT_STEP_EVENT, (entry) => {
-      const data = entry.data as { mode?: unknown; actions?: unknown } | undefined;
-      if (data?.mode !== current || !Array.isArray(data.actions) || data.actions.length === 0) return undefined;
+      const data = entry.data as { mode?: unknown; actions?: unknown; queued?: unknown } | undefined;
+      if (data?.mode !== current || !Array.isArray(data.actions)) return undefined;
+      // Non-empty next call opens the picker even when same-mode filter left actions empty.
+      if (data.queued === true) return true;
+      if (data.actions.length === 0) return undefined;
       return true;
     }),
   );

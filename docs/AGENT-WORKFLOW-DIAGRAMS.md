@@ -2,7 +2,7 @@
 
 This guide is a derived visual map of the Agent Workflow contract. The sole operational source is [`extensions/agent-workflow/workflow-fsm.ts`](../extensions/agent-workflow/workflow-fsm.ts); when a diagram and that FSM disagree, the FSM wins. Runtime gates live in [`workflow-machine.ts`](../extensions/agent-workflow/workflow-machine.ts). For an interactive diagram of the same transition table, open [`workflow-fsm.html`](../extensions/agent-workflow/workflow-fsm.html) after `npm run build:content`. The page is a diagram-only flat XState-style view: full FSM states and transitions in a machine frame, event/DO edge pills with optional CMD/ESC bundles, orthogonal routing, and double-click sidebar panels with full instruction bodies.
 
-**Two layers:** persisted User modes are only Align / Spec / Vibe. The guided graph has seven steps (`envision`, `establish`, `explore`, `elaborate`, `execute`, `examine`, `evaluate`) composed by `modeBodies` in the FSM. Project permission is **read** (`.pi` plan only) or **write** (project files). Phase-end steps (`establish`, `elaborate`, `examine`, `evaluate`) expose `next` exits to Align / Spec / Vibe.
+**Two layers:** persisted User modes are only Align / Spec / Vibe. The guided graph has seven steps composed by `modeBodies` with **roles**: `envision` (entry), primaries (`evaluate` / `explore` / `execute`), and secondaries (`establish` / `elaborate` / `examine`). Project permission is **read** (`.pi` plan only) or **write** (project files). Only **secondary gates** CALL `next` (never the current mode); `next` lands on the target mode’s primary. Same-mode stay is ESC / Return to editor; `/mode` still lists all modes.
 
 Read the layers in order to build a mental model: **Map → Modes → Machinery → Full picture**. Each view summarizes rules instead of duplicating the complete contract. Use the [coverage index](#source-symbol-coverage) to jump from an FSM symbol to its visual home.
 
@@ -95,64 +95,76 @@ stateDiagram-v2
 
 ### mode-align — ALIGN procedure
 
-Bounded known orientation only. Do not search source. Ask immediately after those reads. Missing implementation facts go to SPEC via next. Cancel discards the exchange and does not open `next`.
+**envision** runs once on session/handoff entry (orientation + `start`/reuse). **evaluate** is the primary home (artifact check; no `ask`, no `next`). **establish** is the secondary gate (`ask` capture and/or `next` to other modes/handoff, or return to evaluate). Cancel discards the exchange and does not open `next`.
 
 ```mermaid
 flowchart TD
-    Enter([ALIGN message]) --> Orient[Bounded AGENTS.md, .pi state,<br/>README, named plans, docs]
-    Orient --> Named{Named artifact exists?}
-    Named -- no --> Start[Call start once]
-    Named -- yes --> Unresolved
-    Start --> Unresolved{Unresolved goal, scope,<br/>constraint, outcome, or D review?}
-    Unresolved -- yes --> Ask[Call ask<br/>1-4 independent Qs]
+    Enter([ALIGN message]) --> Entry{Session entry / no envision yet?}
+    Entry -- yes --> Orient[envision: bounded orientation<br/>start or reuse artifact]
+    Orient --> Eval
+    Entry -- no --> Eval[evaluate primary:<br/>check D/C/scope residuals]
+    Eval --> Need{Need User answers<br/>or mode routing?}
+    Need -- no more Align work --> Stop([RETURN])
+    Need -- yes --> Est[establish secondary]
+    Est --> Ask[Call ask when capturing]
     Ask --> Result{Ask result}
-    Result -- cancelled --> Stop([RETURN<br/>no next])
-    Result -- routed Spec/Vibe --> Settle([RETURN<br/>fresh target turn])
-    Result -- answered --> Synthesize[Append exchange<br/>update Goal/Align/Decisions/Checklist]
-    Synthesize --> Unresolved
-    Unresolved -- no --> Useful{Useful work remains?}
-    Useful -- yes --> Next["Call next; rank SPEC first<br/>when exploration remains"]
-    Useful -- no --> Stop
+    Result -- cancelled --> Stop
+    Result -- routed Spec/Vibe --> Settle([RETURN<br/>fresh target primary])
+    Result -- answered --> Synth[Synthesize artifact]
+    Synth --> Back{More Align primary<br/>or leave mode?}
+    Est --> Back
+    Back -- primary work --> Eval
+    Back -- leave Align --> Next["Call next: other modes<br/>+ handoff only never align"]
     Next --> Done([RETURN])
 ```
 
 ### mode-spec — SPEC procedure
+
+**explore** is primary (research). **elaborate** is secondary (proposal, CLOSE_OUT, `next` or return to explore). `next` never includes Spec.
 
 ```mermaid
 flowchart TD
     Enter([SPEC message]) --> Prep{ALIGN bypassed and<br/>no named artifact?}
     Prep -- yes --> Start[Call start before research]
     Prep -- no --> Research
-    Start --> Research[Bounded symbol or path search<br/>build Evidence and Proposal]
-    Research --> Decision[Call decide / RECORD_DECISION<br/>for material autonomous choice]
-    Decision --> Boundary{Consequential or<br/>unsafe boundary?}
-    Boundary -- yes --> Decide[Call decide]
-    Decide --> Actionable
-    Boundary -- no --> Actionable{Proposal actionable?}
-    Actionable -- no --> Blocked[BLOCKED]
-    Actionable -- yes --> Close[CLOSE_OUT]
-    Blocked --> Stop([RETURN unresolved])
+    Start --> Research[explore primary:<br/>bounded search → Evidence]
+    Research --> Decision[Call decide / RECORD_DECISION<br/>when needed]
+    Decision --> Gate{Ready to propose<br/>or route?}
+    Gate -- more research --> Research
+    Gate -- yes --> Elab[elaborate secondary]
+    Elab --> Draft[Proposal + Checklist]
+    Draft --> Close[CLOSE_OUT]
+    Close --> Route{More research<br/>or leave Spec?}
+    Route -- research --> Research
+    Route -- leave --> Next["Call next: Align/Vibe/handoff<br/>never spec"]
     Close --> Done([RETURN proposal summary])
+    Draft --> Blocked[BLOCKED if not actionable]
+    Blocked --> Stop([RETURN unresolved])
 ```
 
 ### mode-vibe — VIBE procedure
+
+**execute** is primary (implement). **examine** is secondary (checks, CLOSE_OUT, `next` or return to execute). `next` never includes Vibe.
 
 ```mermaid
 flowchart TD
     Enter([VIBE message]) --> Prep{ALIGN bypassed and<br/>no named artifact?}
     Prep -- yes --> Start[Call start before work]
     Prep -- no --> Implement
-    Start --> Implement[Implement accepted scope<br/>resolve routine research]
+    Start --> Implement[execute primary:<br/>implement accepted scope]
     Implement --> Decision[Call decide / RECORD_DECISION when needed]
-    Decision --> Boundary{Consequential or<br/>unsafe boundary?}
-    Boundary -- yes --> Decide[Call decide before crossing]
-    Decide --> Checks
-    Boundary -- no --> Checks[Smallest checks,<br/>then broader by risk]
+    Decision --> Gate{Ready to verify<br/>or route?}
+    Gate -- more impl --> Implement
+    Gate -- yes --> Exam[examine secondary]
+    Exam --> Checks[Smallest checks,<br/>then broader by risk]
     Checks --> Failure{Failure caused<br/>by this work?}
     Failure -- fixable in scope --> Implement
     Failure -- not fixable --> Blocked[BLOCKED]
     Failure -- no or pre-existing --> Close[CLOSE_OUT]
     Blocked --> Stop([RETURN unresolved])
+    Close --> Route{More impl<br/>or leave Vibe?}
+    Route -- impl --> Implement
+    Route -- leave --> Next["Call next: Align/Spec/handoff<br/>never vibe"]
     Close --> Done([RETURN result])
 ```
 

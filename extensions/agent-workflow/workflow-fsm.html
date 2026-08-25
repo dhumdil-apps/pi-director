@@ -952,12 +952,13 @@
               seatSide: "h",
             };
           }
-          if (o.from === "envision" && o.to === "establish") {
+          if (o.from === "envision" && o.to === "evaluate") {
             const s = m(t, "right", 0.5),
               e = m(i, "left", 0.5);
             return {
               points: [
                 [s.x, s.y],
+                [e.x, s.y],
                 [e.x, e.y],
               ],
               seatX: (s.x + e.x) / 2,
@@ -965,33 +966,7 @@
               seatSide: "h",
             };
           }
-          if (o.from === "establish" && o.to === "explore") {
-            const s = m(t, "right", 0.5),
-              e = m(i, "left", 0.5);
-            return {
-              points: [
-                [s.x, s.y],
-                [e.x, e.y],
-              ],
-              seatX: (s.x + e.x) / 2,
-              seatY: s.y,
-              seatSide: "h",
-            };
-          }
-          if (o.from === "explore" && o.to === "elaborate") {
-            const s = m(t, "right", 0.5),
-              e = m(i, "left", 0.5);
-            return {
-              points: [
-                [s.x, s.y],
-                [e.x, e.y],
-              ],
-              seatX: (s.x + e.x) / 2,
-              seatY: s.y,
-              seatSide: "h",
-            };
-          }
-          if (o.from === "elaborate" && o.to === "execute") {
+          if (o.from === "evaluate" && o.to === "establish") {
             const s = m(t, "bottom", 0.5),
               e = m(i, "top", 0.5);
             return {
@@ -1004,136 +979,174 @@
               seatSide: "h",
             };
           }
-          if (o.from === "execute" && o.to === "examine") {
-            const s = m(t, "left", 0.5),
-              e = m(i, "right", 0.5);
+          if (o.from === "establish" && o.to === "evaluate") {
+            const s = m(t, "top", 0.35),
+              e = m(i, "bottom", 0.35);
             return {
               points: [
                 [s.x, s.y],
                 [e.x, e.y],
               ],
-              seatX: (s.x + e.x) / 2,
-              seatY: s.y,
-              seatSide: "h",
-            };
-          }
-          if (o.from === "examine" && o.to === "evaluate") {
-            const s = m(t, "left", 0.5),
-              e = m(i, "right", 0.5);
-            return {
-              points: [
-                [s.x, s.y],
-                [e.x, e.y],
-              ],
-              seatX: (s.x + e.x) / 2,
-              seatY: s.y,
-              seatSide: "h",
-            };
-          }
-          if (o.from === "evaluate" && o.to === "establish") {
-            const s = m(t, "top", 0.25),
-              e = m(i, "bottom", 0.25);
-            return {
-              points: [
-                [s.x, s.y],
-                [e.x, e.y],
-              ],
-              seatX: s.x,
+              seatX: s.x - 28,
               seatY: (s.y + e.y) / 2,
               seatSide: "h",
             };
           }
-          if (o.from === "examine" && o.to === "explore") {
-            const s = m(t, "top", 0.75),
-              e = m(i, "bottom", 0.75);
+          if (o.from === "establish" && o.to === "explore") {
+            const s = m(t, "right", 0.35),
+              e = m(i, "left", 0.65);
             return {
               points: [
                 [s.x, s.y],
+                [e.x, s.y],
                 [e.x, e.y],
               ],
-              seatX: s.x,
-              seatY: (s.y + e.y) / 2,
-              seatSide: "h",
-            };
-          }
-          if (o.from === "evaluate" && o.to === "envision") {
-            const s = m(t, "left", 0.5),
-              e = m(i, "bottom", 0.5),
-              l = e.x;
-            return {
-              points: [
-                [s.x, s.y],
-                [l, s.y],
-                [e.x, e.y],
-              ],
-              seatX: (s.x + l) / 2,
+              seatX: (s.x + e.x) / 2,
               seatY: s.y,
               seatSide: "h",
             };
           }
           if (o.from === "establish" && o.to === "execute") {
-            const s = m(t, "top", 0.6),
-              e = m(i, "right", 0.5),
-              l = 55,
-              b = i.x + i.w + 60;
+            const s = m(t, "right", 0.7),
+              e = m(i, "left", 0.7),
+              midY = 560;
             return {
               points: [
                 [s.x, s.y],
-                [s.x, l],
-                [b, l],
-                [b, e.y],
-                [e.x, e.y],
-              ],
-              seatX: (s.x + b) / 2,
-              seatY: l,
-              seatSide: "h",
-            };
-          }
-          if (o.from === "evaluate" && o.to === "execute") {
-            const s = m(t, "bottom", 0.6),
-              e = m(i, "bottom", 0.5),
-              l = 575;
-            return {
-              points: [
-                [s.x, s.y],
-                [s.x, l],
-                [e.x, l],
+                [s.x + 40, s.y],
+                [s.x + 40, midY],
+                [e.x - 40, midY],
+                [e.x - 40, e.y],
                 [e.x, e.y],
               ],
               seatX: (s.x + e.x) / 2,
-              seatY: l,
+              seatY: midY,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "establish" && o.to === "envision") {
+            const s = m(t, "left", 0.5),
+              e = m(i, "bottom", 0.5);
+            return {
+              points: [
+                [s.x, s.y],
+                [e.x, s.y],
+                [e.x, e.y],
+              ],
+              seatX: (s.x + e.x) / 2,
+              seatY: s.y,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "explore" && o.to === "elaborate") {
+            const s = m(t, "bottom", 0.5),
+              e = m(i, "top", 0.5);
+            return {
+              points: [
+                [s.x, s.y],
+                [e.x, e.y],
+              ],
+              seatX: s.x,
+              seatY: (s.y + e.y) / 2,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "elaborate" && o.to === "explore") {
+            const s = m(t, "top", 0.35),
+              e = m(i, "bottom", 0.35);
+            return {
+              points: [
+                [s.x, s.y],
+                [e.x, e.y],
+              ],
+              seatX: s.x - 28,
+              seatY: (s.y + e.y) / 2,
               seatSide: "h",
             };
           }
           if (o.from === "elaborate" && o.to === "evaluate") {
-            const s = m(t, "bottom", 0.25),
-              e = m(i, "top", 0.75),
-              l = 250;
+            const s = m(t, "left", 0.35),
+              e = m(i, "right", 0.65);
             return {
               points: [
                 [s.x, s.y],
-                [s.x, l],
-                [e.x, l],
+                [(s.x + e.x) / 2, s.y],
+                [(s.x + e.x) / 2, e.y],
                 [e.x, e.y],
               ],
-              seatX: 880,
-              seatY: l,
+              seatX: (s.x + e.x) / 2,
+              seatY: (s.y + e.y) / 2,
               seatSide: "h",
             };
           }
-          if (o.from === "evaluate" && o.to === "explore") {
-            const s = m(t, "top", 0.85),
-              e = m(i, "bottom", 0.25),
-              l = 360;
+          if (o.from === "elaborate" && o.to === "execute") {
+            const s = m(t, "right", 0.5),
+              e = m(i, "left", 0.65);
             return {
               points: [
                 [s.x, s.y],
-                [s.x, l],
-                [e.x, l],
+                [e.x, s.y],
                 [e.x, e.y],
               ],
-              seatX: 880,
-              seatY: l,
+              seatX: (s.x + e.x) / 2,
+              seatY: s.y,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "execute" && o.to === "examine") {
+            const s = m(t, "bottom", 0.5),
+              e = m(i, "top", 0.5);
+            return {
+              points: [
+                [s.x, s.y],
+                [e.x, e.y],
+              ],
+              seatX: s.x,
+              seatY: (s.y + e.y) / 2,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "examine" && o.to === "execute") {
+            const s = m(t, "top", 0.35),
+              e = m(i, "bottom", 0.35);
+            return {
+              points: [
+                [s.x, s.y],
+                [e.x, e.y],
+              ],
+              seatX: s.x + 28,
+              seatY: (s.y + e.y) / 2,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "examine" && o.to === "evaluate") {
+            const s = m(t, "left", 0.35),
+              e = m(i, "right", 0.35),
+              midY = 40;
+            return {
+              points: [
+                [s.x, s.y],
+                [s.x, midY],
+                [e.x, midY],
+                [e.x, e.y],
+              ],
+              seatX: (s.x + e.x) / 2,
+              seatY: midY,
+              seatSide: "h",
+            };
+          }
+          if (o.from === "examine" && o.to === "explore") {
+            const s = m(t, "left", 0.65),
+              e = m(i, "right", 0.65);
+            return {
+              points: [
+                [s.x, s.y],
+                [(s.x + e.x) / 2, s.y],
+                [(s.x + e.x) / 2, e.y],
+                [e.x, e.y],
+              ],
+              seatX: (s.x + e.x) / 2,
+              seatY: (s.y + e.y) / 2,
               seatSide: "h",
             };
           }
@@ -2850,9 +2863,9 @@
     <script type="application/json" id="workflow-fsm-data">
       {
         "id": "piDirectorWorkflow",
-        "version": "2.3.0",
+        "version": "2.4.0",
         "title": "Pi Director Agent Workflow",
-        "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
+        "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Each mode has a primary home and a secondary gate: primaries do the work; secondaries capture/verify and CALL next. Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
         "session": {
           "mode": "latest persisted User choice (align | spec | vibe); new and handed-off interactive sessions start in ALIGN",
           "artifact": "one versioned .pi/plan/<name>.md continued across modes and handoffs",
@@ -2880,7 +2893,9 @@
           "KEEP **Current work:** as one short in-flight phrase of the active C or D, or empty while waiting on User.",
           "NEVER copy Checklist, HTML comments, or format markers into Current work and NEVER add a todo tool.",
           "KEEP the artifact resumable without relying on chat history after every turn.",
-          "Runtime does not parse artifact prose (only time-spent envelope and Current work line)."
+          "Runtime does not parse artifact prose (only time-spent envelope and Current work line).",
+          "ONLY secondary gates (establish, elaborate, examine) may CALL next; primaries never CALL next.",
+          "NEVER recommend the current persisted mode in next actions; same-mode stay is ESC, Return to editor, or /mode."
         ],
         "always": [
           "SIZE process and output to the work.",
@@ -2898,30 +2913,40 @@
           {
             "mode": "align",
             "label": "ALIGN",
-            "states": ["envision", "establish", "evaluate"],
+            "states": ["envision", "evaluate", "establish"],
+            "primary": "evaluate",
+            "secondary": "establish",
             "steps": [
-              "IF no named artifact yet: RUN envision (orientation + start), then establish.",
-              "IF post-phase review (unresolved D, milestone just closed, or next landed on evaluate): RUN evaluate first — review D with ask when needed, reconcile C, then CALL next or continue establish for new scope.",
-              "OTHERWISE RUN establish (ask loop for goal/scope/constraints/outcomes).",
-              "Phase-end: CALL next with ranked Align/Spec/Vibe (and handoff when useful); do not rely only on ask Proceed-with-best."
+              "IF session entry (new interactive session, handoff continue, or envision not yet run): RUN envision once (orientation + start/reuse artifact), then evaluate.",
+              "RUN evaluate (primary home): check artifact for unresolved D review, Checklist gaps, scope gaps, and residuals; NEVER CALL next or ask from evaluate.",
+              "IF User answers or routing are needed: RUN establish (secondary gate).",
+              "establish: CALL ask to capture answers when needed; synthesize Goal/Align/Decisions/Checklist/User transcript; then either RETURN to evaluate (more primary work) or CALL next with other modes + handoff only (never align).",
+              "IF Ask routes directly to SPEC or VIBE THEN settle into that mode's primary (explore or execute).",
+              "Same-mode stay: do not CALL next with align; User uses ESC/Return or /mode."
             ]
           },
           {
             "mode": "spec",
             "label": "SPEC",
             "states": ["explore", "elaborate"],
+            "primary": "explore",
+            "secondary": "elaborate",
             "steps": [
-              "RUN explore (bounded research into Evidence) then elaborate (Proposal, Checklist, RECORD_DECISION).",
-              "RUN CLOSE_OUT at elaborate; CALL next so the User picks Align, Spec, or Vibe."
+              "Land on and RUN explore (primary): bounded research into Evidence; decide for material autonomous choices when needed.",
+              "WHEN ready to propose or route: RUN elaborate (secondary).",
+              "elaborate: draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT, then either RETURN to explore (more research) or CALL next with other modes only (never spec); prefer Align when D review is open."
             ]
           },
           {
             "mode": "vibe",
             "label": "VIBE",
             "states": ["execute", "examine"],
+            "primary": "execute",
+            "secondary": "examine",
             "steps": [
-              "RUN execute (implement accepted scope) then examine (checks + evidence).",
-              "RUN CLOSE_OUT at examine; preferred next is Align/evaluate for review, or Spec/Vibe when more work is clear."
+              "Land on and RUN execute (primary): implement accepted scope; decide for material autonomous choices when needed.",
+              "WHEN ready to verify or route: RUN examine (secondary).",
+              "examine: run checks, RECORD evidence, RUN CLOSE_OUT, then either RETURN to execute (more implementation) or CALL next with other modes only (never vibe); prefer Align when D review or acceptance is needed."
             ]
           }
         ],
@@ -2936,7 +2961,7 @@
           "RECONCILE_SCOPE": [
             "COMPARE message with Goal, accepted follow-ups, and every unresolved C outcome.",
             "IF unambiguous and additive THEN APPEND a stable C outcome without deleting or renaming earlier outcomes; RETURN resolved.",
-            "IF mode = ALIGN THEN CALL ask with concrete keep/defer/replace/resolve options; on cancel RETURN unresolved; else APPEND full exchange to User transcript; RECORD synthesis in Goal, Align, Decisions, Checklist; ANNOTATE superseded/deferred/skipped/failed C with reasons; NEVER erase; RETURN resolved.",
+            "IF mode = ALIGN THEN ensure establish (secondary) will capture: CALL ask with concrete keep/defer/replace/resolve options; on cancel RETURN unresolved; else APPEND full exchange to User transcript; RECORD synthesis in Goal, Align, Decisions, Checklist; ANNOTATE superseded/deferred/skipped/failed C with reasons; NEVER erase; RETURN resolved.",
             "IF mode = SPEC or VIBE THEN CALL decide with the same option shape; ACCEPT highest-confidence pick as working choice; ANNOTATE C and leave D review unresolved; RETURN resolved."
           ],
           "WRITE_ARTIFACT": [
@@ -2969,8 +2994,9 @@
             "NEVER mark a D User-approved without an explicit review answer.",
             "PROMOTE only durable orientation or costly quirks to project memory; NEVER advance the hidden memory-review marker.",
             "IF routing disabled THEN ENSURE artifact is resumable and RETURN.",
-            "IF actionable work remains THEN CALL next with ranked modes/handoff; each non-handoff action needs plain-English reason (Q/C/D ids only as trailing [] or ()) and a custom instruction grounded in current C/D, intended result, and verification target; runtime prepends Switch/Continue only.",
-            "ELSE IF decision review remains THEN SUMMARIZE and CALL next with ALIGN plus instruction grounded in unresolved D.",
+            "IF actionable work remains THEN CALL next from the current secondary gate with ranked other modes and handoff only — NEVER include the current persisted mode; each non-handoff action needs plain-English reason (Q/C/D ids only as trailing [] or ()) and a custom instruction grounded in current C/D, intended result, and verification target; runtime prepends Switch context only.",
+            "ELSE IF decision review remains AND current mode is not ALIGN THEN SUMMARIZE and CALL next with ALIGN plus instruction grounded in unresolved D.",
+            "ELSE IF more work remains in the current mode THEN RETURN to the mode primary (do not CALL next with the current mode).",
             "ELSE DO NOT CALL next.",
             "ENSURE artifact is resumable and final output is truthful and concise."
           ],
@@ -2978,7 +3004,7 @@
             "IF no named artifact exists THEN DO NOT invent a temporary plan; RETURN without handing off.",
             "IF artifact is current format THEN USE the already-written artifact; DO NOT start a checkpoint turn; KEEP leftover current-format files as-is.",
             "ELSE DO NOT mutate the legacy artifact.",
-            "CONTINUE in fresh ALIGN with the ordinary continue line.",
+            "CONTINUE in fresh ALIGN with the ordinary continue line (envision entry then evaluate).",
             "READ the whole current artifact or immutable legacy reference.",
             "CHOOSE the most important unresolved item before asking the next question."
           ],
@@ -2998,14 +3024,33 @@
             "label": "ENVISION",
             "kind": "guided",
             "userMode": "align",
-            "summary": "Cold start and preflight: capture initial user goal, bounded orientation, and initialize named artifact via start.",
+            "role": "entry",
+            "summary": "Session entry only: capture initial user goal, bounded orientation, and initialize or reuse the named artifact via start.",
             "permission": "read",
             "substates": ["goalCapture", "orientation", "ensureArtifact"],
             "procedure": [
-              "Session story starts here: capture user goal and intent.",
+              "Run once per new interactive session or handoff continue — not a repeating Align loop peer.",
+              "Capture user goal and intent when present.",
               "READ only bounded AGENTS.md, .pi state including MEMORY.md, README, named plans, or documentation for orientation.",
-              "AFTER orientation reads, IF no named artifact exists THEN CALL start exactly once.",
-              "PROCEED to ESTABLISH for scope alignment questions."
+              "AFTER orientation reads, IF no named artifact exists THEN CALL start exactly once; ELSE reuse the existing named artifact.",
+              "PROCEED to EVALUATE (Align primary home)."
+            ]
+          },
+          "evaluate": {
+            "id": "evaluate",
+            "label": "EVALUATE",
+            "kind": "guided",
+            "userMode": "align",
+            "role": "primary",
+            "summary": "Align primary home: check the artifact (D review, Checklist, scope gaps, residuals) and decide capture vs further primary work — never CALL next or ask here.",
+            "permission": "read",
+            "substates": ["artifactCheck", "routeCapture", "primaryWork"],
+            "procedure": [
+              "Land here after envision, after next→Align, and after establish returns.",
+              "READ Goal, Decisions (unresolved D), Checklist, Work log residuals, and Current work.",
+              "NEVER CALL ask from evaluate — when User answers are needed, PROCEED to ESTABLISH.",
+              "NEVER CALL next from evaluate — when ready to leave Align, PROCEED to ESTABLISH so the secondary gate may CALL next.",
+              "IF more Align primary synthesis remains without User input THEN continue evaluate work, then ESTABLISH when capture or routing is required."
             ]
           },
           "establish": {
@@ -3013,15 +3058,19 @@
             "label": "ESTABLISH",
             "kind": "guided",
             "userMode": "align",
-            "summary": "Clarify scope, constraints, and requirements via native ask Q&A loop; anchor baseline plan.",
+            "role": "secondary",
+            "summary": "Align secondary gate: capture answers via ask and/or CALL next to other modes or handoff; may return to evaluate.",
             "permission": "read",
-            "substates": ["askLoop", "anchorScope", "routeTarget"],
+            "substates": ["askLoop", "synthesize", "routeNext"],
             "procedure": [
-              "WHILE a goal, scope, constraint, or outcome question remains: CALL ask as the first User-facing action with 1-4 independent questions.",
+              "WHILE User answers are needed: CALL ask as the first User-facing action with 1-4 independent questions.",
               "ASK dependent follow-ups in a later CALL after incorporating earlier answers.",
+              "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
+              "SYNTHESIZE into Goal, Align, Decisions, and Checklist after answers.",
               "IF Ask routes directly to SPEC or VIBE THEN proceed to EXPLORE or EXECUTE.",
-              "WHEN scope is ready: CALL next with ranked Align/Spec/Vibe (preferred path); do not rely only on Proceed-with-best.",
-              "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript."
+              "IF more Align primary work remains THEN RETURN to EVALUATE.",
+              "WHEN ready to leave Align: CALL next with ranked other modes and handoff only — NEVER include align.",
+              "On ask cancel: RETURN without calling next."
             ]
           },
           "explore": {
@@ -3029,14 +3078,18 @@
             "label": "EXPLORE",
             "kind": "guided",
             "userMode": "spec",
-            "summary": "Codebase research and fact-finding; update the plan only — no project file mutations.",
+            "role": "primary",
+            "summary": "Spec primary home: codebase research and fact-finding; update the plan only — no project file mutations.",
             "permission": "read",
             "substates": ["symbolSearch", "evidenceGathering"],
             "procedure": [
+              "Land here after next→Spec and after elaborate returns for more research.",
               "BEGIN with one bounded exact symbol or path search.",
               "BROADEN only for a named unresolved reason and STOP when evidence answers it.",
               "EXCLUDE node_modules, generated, vendor, cache trees, and source maps unless explicitly targeted.",
-              "RECORD findings in Evidence section; DO NOT mutate files outside .pi."
+              "RECORD findings in Evidence section; DO NOT mutate files outside .pi.",
+              "FOR material autonomous choices RUN RECORD_DECISION (decide) while researching when needed.",
+              "NEVER CALL next from explore — WHEN ready to propose or route, PROCEED to ELABORATE."
             ]
           },
           "elaborate": {
@@ -3044,13 +3097,16 @@
             "label": "ELABORATE",
             "kind": "guided",
             "userMode": "spec",
-            "summary": "Synthesize findings, detail checklist outcomes (C), and draft technical proposal.",
+            "role": "secondary",
+            "summary": "Spec secondary gate: synthesize proposal, CLOSE_OUT, return to explore or CALL next (not Spec).",
             "permission": "read",
             "substates": ["draftProposal", "checklistSynthesis", "closeOut"],
             "procedure": [
               "EDIT Proposal and Checklist with the recommended approach.",
               "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
               "RUN CLOSE_OUT.",
+              "IF more research is required THEN RETURN to EXPLORE (do not CALL next with spec).",
+              "ELSE CALL next with other modes only (never spec); prefer Align when D review is open; include handoff when useful.",
               "RETURN a concise proposal summary with artifact path."
             ]
           },
@@ -3059,13 +3115,16 @@
             "label": "EXECUTE",
             "kind": "guided",
             "userMode": "vibe",
-            "summary": "Implement approved scope; make scoped autonomous decisions (D); project file mutations.",
+            "role": "primary",
+            "summary": "Vibe primary home: implement approved scope; scoped autonomous decisions (D); project file mutations.",
             "permission": "write",
             "substates": ["codeMutation", "recordDecision"],
             "procedure": [
+              "Land here after next→Vibe and after examine returns for more implementation.",
               "IMPLEMENT accepted scope in project files outside .pi.",
               "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
-              "UPDATE cumulative Checklist and append-only Work log throughout implementation."
+              "UPDATE cumulative Checklist and append-only Work log throughout implementation.",
+              "NEVER CALL next from execute — WHEN ready to verify or route, PROCEED to EXAMINE."
             ]
           },
           "examine": {
@@ -3073,40 +3132,36 @@
             "label": "EXAMINE",
             "kind": "guided",
             "userMode": "vibe",
-            "summary": "Run checks, test suite, record evidence in Work log, and run CLOSE_OUT.",
+            "role": "secondary",
+            "summary": "Vibe secondary gate: checks, CLOSE_OUT, return to execute or CALL next (not Vibe).",
             "permission": "write",
             "substates": ["runChecks", "recordEvidence", "closeOut"],
             "procedure": [
               "RUN the smallest appropriate repository checks, then broader retained checks when risk warrants.",
-              "IF a check fails within scope THEN FIX and RERUN; ELSE RUN BLOCKED(failure) and route to EVALUATE.",
+              "IF a check fails within scope THEN RETURN to EXECUTE to fix and continue; ELSE RUN BLOCKED(failure) and prefer next→Align.",
               "RECORD check evidence in Work log.",
-              "RUN CLOSE_OUT; then CALL next (preferred Align/evaluate for review)."
-            ]
-          },
-          "evaluate": {
-            "id": "evaluate",
-            "label": "EVALUATE",
-            "kind": "guided",
-            "userMode": "align",
-            "summary": "Post-phase ALIGN review: unconfirmed decisions (D), checklist reconciliation, ask when needed, then next.",
-            "permission": "read",
-            "substates": ["reviewDecisions", "reconcileScope", "routeNext"],
-            "procedure": [
-              "REVIEW unconfirmed D items first; CALL ask when the User must accept, change, or defer a decision.",
-              "RECONCILE checklist outcomes against completed work.",
-              "IF new scope questions remain AFTER review THEN continue in ESTABLISH-style ask.",
-              "CALL next with ranked Align, Spec, or Vibe (and handoff when useful)."
+              "RUN CLOSE_OUT.",
+              "IF more implementation remains THEN RETURN to EXECUTE (do not CALL next with vibe).",
+              "ELSE CALL next with other modes only (never vibe); prefer Align when D review or acceptance is needed; include handoff when useful."
             ]
           }
         },
         "transitions": [
           {
-            "id": "envision-to-establish",
+            "id": "envision-to-evaluate",
             "from": "envision",
-            "event": "GOAL_SET",
+            "event": "ENTRY_DONE",
+            "to": "evaluate",
+            "label": "Entry complete → EVALUATE",
+            "description": "Session entry finished (orientation + start/reuse); enter Align primary home."
+          },
+          {
+            "id": "evaluate-to-establish",
+            "from": "evaluate",
+            "event": "NEED_SECONDARY",
             "to": "establish",
-            "label": "Goal Captured → ESTABLISH",
-            "description": "Initial user goal captured and named artifact created; proceed to scope clarification."
+            "label": "Need capture or route → ESTABLISH",
+            "description": "Artifact check needs User answers and/or mode routing via the Align secondary gate."
           },
           {
             "id": "establish-ask-loop",
@@ -3114,7 +3169,15 @@
             "event": "ASK_LOOP",
             "to": "establish",
             "label": "Ask follow-up",
-            "description": "Dependent follow-up questions stay in ESTABLISH until ready for next mode."
+            "description": "Dependent follow-up questions stay in ESTABLISH until capture is complete or routing is ready."
+          },
+          {
+            "id": "establish-to-evaluate",
+            "from": "establish",
+            "event": "RETURN_PRIMARY",
+            "to": "evaluate",
+            "label": "Return → EVALUATE",
+            "description": "After capture or when more Align primary work remains; re-enter evaluate."
           },
           {
             "id": "establish-ask-route-spec",
@@ -3122,7 +3185,7 @@
             "event": "ASK_ROUTED_SPEC",
             "to": "explore",
             "label": "Proceed-with-best → EXPLORE",
-            "description": "User accepts scope and routes to SPEC research.",
+            "description": "User accepts scope/review answers and routes to SPEC primary.",
             "userMediated": true
           },
           {
@@ -3131,16 +3194,7 @@
             "event": "ASK_ROUTED_VIBE",
             "to": "execute",
             "label": "Proceed-with-best → EXECUTE",
-            "description": "User accepts scope and routes directly to VIBE implementation.",
-            "userMediated": true
-          },
-          {
-            "id": "establish-next-align",
-            "from": "establish",
-            "event": "NEXT_ALIGN",
-            "to": "evaluate",
-            "label": "next → EVALUATE",
-            "description": "User stays in ALIGN for decision review or further clarification after establish.",
+            "description": "User accepts scope/review answers and routes to VIBE primary.",
             "userMediated": true
           },
           {
@@ -3149,7 +3203,7 @@
             "event": "NEXT_SPEC",
             "to": "explore",
             "label": "next → EXPLORE",
-            "description": "User chooses SPEC research after scope is ready (preferred ALIGN exit via next).",
+            "description": "User chooses SPEC; lands on explore (primary). next never includes current mode (align).",
             "userMediated": true
           },
           {
@@ -3158,16 +3212,33 @@
             "event": "NEXT_VIBE",
             "to": "execute",
             "label": "next → EXECUTE",
-            "description": "User chooses VIBE implementation after scope is ready.",
+            "description": "User chooses VIBE; lands on execute (primary).",
+            "userMediated": true
+          },
+          {
+            "id": "establish-handoff",
+            "from": "establish",
+            "event": "NEXT_HANDOFF",
+            "to": "envision",
+            "label": "next → handoff (new session ENVISION)",
+            "description": "Picker prepares /handoff; after the User runs it, a fresh session restarts at ENVISION on the same artifact.",
             "userMediated": true
           },
           {
             "id": "explore-to-elaborate",
             "from": "explore",
-            "event": "RESEARCH_DONE",
+            "event": "TO_SECONDARY",
             "to": "elaborate",
-            "label": "Research complete → ELABORATE",
-            "description": "Evidence gathered; synthesize technical approach and checklist outcomes."
+            "label": "Research ready → ELABORATE",
+            "description": "Evidence gathered enough to propose, close out, or route."
+          },
+          {
+            "id": "elaborate-to-explore",
+            "from": "elaborate",
+            "event": "RETURN_PRIMARY",
+            "to": "explore",
+            "label": "Return → EXPLORE",
+            "description": "More research needed; return to Spec primary without using next."
           },
           {
             "id": "elaborate-next-align",
@@ -3175,16 +3246,7 @@
             "event": "NEXT_ALIGN",
             "to": "evaluate",
             "label": "CLOSE_OUT → next → EVALUATE",
-            "description": "Proposal ready for user review and decision confirmation.",
-            "userMediated": true
-          },
-          {
-            "id": "elaborate-next-spec",
-            "from": "elaborate",
-            "event": "NEXT_SPEC",
-            "to": "explore",
-            "label": "CLOSE_OUT → next → EXPLORE",
-            "description": "More research needed before a proposal is actionable.",
+            "description": "User chooses ALIGN after proposal; lands on evaluate (primary).",
             "userMediated": true
           },
           {
@@ -3193,32 +3255,32 @@
             "event": "NEXT_VIBE",
             "to": "execute",
             "label": "CLOSE_OUT → next → EXECUTE",
-            "description": "Proposal ready; user confirms and proceeds to implementation.",
+            "description": "User chooses VIBE after proposal; lands on execute (primary). next never includes spec.",
             "userMediated": true
           },
           {
             "id": "execute-to-examine",
             "from": "execute",
-            "event": "RUN_CHECKS",
+            "event": "TO_SECONDARY",
             "to": "examine",
-            "label": "Changes Made → EXAMINE",
-            "description": "Code implemented; run repository checks and test suites."
+            "label": "Implement ready → EXAMINE",
+            "description": "Implementation ready for checks, close-out, or routing."
           },
           {
-            "id": "examine-close-out",
+            "id": "examine-to-execute",
             "from": "examine",
-            "event": "CLOSE_OUT",
-            "to": "evaluate",
-            "label": "CLOSE_OUT → EVALUATE",
-            "description": "Agent finishes verification and close-out; preferred path continues at evaluate for review."
+            "event": "RETURN_PRIMARY",
+            "to": "execute",
+            "label": "Return → EXECUTE",
+            "description": "More implementation or in-scope fixes; return to Vibe primary without using next."
           },
           {
             "id": "examine-next-align",
             "from": "examine",
             "event": "NEXT_ALIGN",
             "to": "evaluate",
-            "label": "next → EVALUATE",
-            "description": "User chooses ALIGN review after verification.",
+            "label": "CLOSE_OUT → next → EVALUATE",
+            "description": "User chooses ALIGN after verification; lands on evaluate (primary).",
             "userMediated": true
           },
           {
@@ -3226,91 +3288,20 @@
             "from": "examine",
             "event": "NEXT_SPEC",
             "to": "explore",
-            "label": "next → EXPLORE",
-            "description": "Verification revealed need for deeper research.",
-            "userMediated": true
-          },
-          {
-            "id": "examine-next-vibe",
-            "from": "examine",
-            "event": "NEXT_VIBE",
-            "to": "execute",
-            "label": "next → EXECUTE",
-            "description": "User chooses more implementation after checks.",
-            "userMediated": true
-          },
-          {
-            "id": "evaluate-ask-loop",
-            "from": "evaluate",
-            "event": "ASK_LOOP",
-            "to": "evaluate",
-            "label": "Ask follow-up (review)",
-            "description": "Decision-review or post-phase questions stay in EVALUATE until ready to route."
-          },
-          {
-            "id": "evaluate-ask-route-spec",
-            "from": "evaluate",
-            "event": "ASK_ROUTED_SPEC",
-            "to": "explore",
-            "label": "Proceed-with-best → EXPLORE",
-            "description": "User accepts remaining review answers and routes to SPEC.",
-            "userMediated": true
-          },
-          {
-            "id": "evaluate-ask-route-vibe",
-            "from": "evaluate",
-            "event": "ASK_ROUTED_VIBE",
-            "to": "execute",
-            "label": "Proceed-with-best → EXECUTE",
-            "description": "User accepts remaining review answers and routes to VIBE.",
-            "userMediated": true
-          },
-          {
-            "id": "evaluate-next-align",
-            "from": "evaluate",
-            "event": "NEXT_ALIGN",
-            "to": "establish",
-            "label": "next → ESTABLISH",
-            "description": "Scope expansion or new requirements require further Q&A after review.",
-            "userMediated": true
-          },
-          {
-            "id": "evaluate-next-spec",
-            "from": "evaluate",
-            "event": "NEXT_SPEC",
-            "to": "explore",
-            "label": "next → EXPLORE",
-            "description": "User chooses SPEC research for next milestone.",
-            "userMediated": true
-          },
-          {
-            "id": "evaluate-next-vibe",
-            "from": "evaluate",
-            "event": "NEXT_VIBE",
-            "to": "execute",
-            "label": "next → EXECUTE",
-            "description": "User chooses VIBE execution for next milestone.",
-            "userMediated": true
-          },
-          {
-            "id": "evaluate-handoff",
-            "from": "evaluate",
-            "event": "NEXT_HANDOFF",
-            "to": "envision",
-            "label": "next → handoff (new session ENVISION)",
-            "description": "Picker prepares /handoff; after the User runs it, a fresh session restarts at ENVISION on the same artifact.",
+            "label": "CLOSE_OUT → next → EXPLORE",
+            "description": "User chooses SPEC after verification; lands on explore (primary). next never includes vibe.",
             "userMediated": true
           }
         ],
         "exceptions": {
           "title": "Manual Bypass & Escape Hatches",
-          "summary": "The /mode command is the universal manual bypass. Running /mode opens the option picker at any time so the User can choose what to do next (jump to ALIGN, SPEC, VIBE, or hand off) without being gated by agent completion.",
+          "summary": "The /mode command is the universal manual bypass. Running /mode opens the option picker at any time so the User can choose what to do next (jump to ALIGN, SPEC, VIBE, or hand off) without being gated by agent completion. next-driven pickers omit the current mode; /mode still lists all modes.",
           "commands": [
             {
               "command": "/mode",
               "label": "Open Option Picker (Universal Bypass)",
-              "summary": "Opens the mode option picker to choose any target mode or action.",
-              "description": "User-triggered escape hatch. Opens the interactive option picker in editor standby so the User can choose what to do next (switch mode, hand off, or return)."
+              "summary": "Opens the mode option picker to choose any target mode or action, including the current mode.",
+              "description": "User-triggered escape hatch. Opens the interactive option picker in editor standby with the full mode list (not cross-mode-filtered) so the User can switch mode, hand off, or return."
             },
             {
               "command": "/align",
@@ -3334,15 +3325,16 @@
               "command": "/handoff [name]",
               "label": "Direct Handoff Shortcut",
               "summary": "Swaps active session onto a named plan in fresh ALIGN.",
-              "description": "Direct shortcut for session continuation on a named plan artifact, seeding a fresh ALIGN session."
+              "description": "Direct shortcut for session continuation on a named plan artifact, seeding a fresh ALIGN session at envision."
             }
           ],
           "rules": [
             "The /mode command is the canonical User-owned bypass to open the option picker and choose what to do next.",
             "Manual bypass transitions are never gated on workflow completeness, pending recommendations, or unresolved D items.",
+            "next-driven pickers never offer the current mode; ESC and Return to editor stay in the current mode without starting the agent.",
             "Selecting an unrecommended mode in the picker switches the session mode in editor standby.",
             "Manual /align /spec /vibe only record mode and return to the editor; they do not start the agent.",
-            "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN."
+            "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN (envision → evaluate)."
           ]
         },
         "tools": [
@@ -3360,7 +3352,7 @@
           },
           {
             "name": "ask",
-            "summary": "Native ALIGN question loop; clarifies scope while staying in ALIGN until ready for next mode.",
+            "summary": "Native ALIGN question loop; used from establish (secondary) to capture answers.",
             "modes": ["align"],
             "gate": [
               "ALIGN-only; SPEC/VIBE ask is a harmless no-op (no picker).",
@@ -3369,15 +3361,15 @@
               "Interactive UI required only when questions will be shown."
             ],
             "mechanics": [
-              "ALIGN triggers ask to clarify scope, constraints, and decisions before moving to SPEC/VIBE.",
-              "Answers stay in ALIGN (ask loop) to process follow-up questions.",
+              "CALL ask from establish to capture scope, constraints, outcomes, and D acceptance answers.",
+              "Answers stay in ALIGN; after capture return to evaluate or CALL next from establish.",
               "CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly.",
               "KEEP question identifiers, option values, and option labels distinct.",
               "NEVER imitate native action labels.",
               "USE customAnswerLabel for User-supplied detail; NEVER offer a selectable option that merely says specify.",
               "BATCH only independent questions; dependent follow-ups in a later CALL.",
               "An optionless ask question offers custom input but no Proceed-with-best route.",
-              "Proceed-with-best accepts prior answers plus remaining highest-confidence answers and starts fresh SPEC/VIBE.",
+              "Proceed-with-best accepts prior answers plus remaining highest-confidence answers and starts fresh SPEC/VIBE at that mode's primary.",
               "Agent persists User-transcript meaning; runtime does not write the User transcript."
             ]
           },
@@ -3400,7 +3392,7 @@
           },
           {
             "name": "next",
-            "summary": "Queue ranked post-turn actions; user chooses the next mode (SPEC, VIBE, ALIGN, or handoff).",
+            "summary": "Queue ranked post-turn actions from a secondary gate; user chooses another mode or handoff (never the current mode).",
             "modes": ["any"],
             "gate": [
               "Empty next records no recommendation and opens no picker.",
@@ -3408,13 +3400,15 @@
               "Every ALIGN/SPEC/VIBE action needs contextual prompt; handoff must omit prompt."
             ],
             "mechanics": [
-              "After alignment or phase completion, CALL next so the user chooses the next mode.",
+              "CALL next only from secondary gates (establish, elaborate, examine) after capture/verify/CLOSE_OUT as appropriate.",
+              "NEVER include an action whose mode equals the current persisted mode; runtime filters those out on next-driven pickers.",
               "Agent-authored actions SHOULD include a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and REQUIRE contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
-              "Runtime PREPENDS only Switch or Continue context and NEVER authors substantive direction.",
+              "Runtime PREPENDS only Switch context and NEVER authors substantive direction.",
               "Recommended row with a reason shows {mode} — {reason}.",
-              "Prefer CALL next from CLOSE_OUT; runtime still opens the picker if next is called from ALIGN/SPEC/VIBE directly.",
+              "next→Align lands evaluate; next→Spec lands explore; next→Vibe lands execute.",
+              "ESC dismiss and Return to editor stay in the current mode without starting the agent.",
+              "/mode force picker still lists all modes including the current mode (bypass).",
               "Manual ALIGN/SPEC/VIBE commands and unrecommended picker choices return to the editor.",
-              "Manual mode commands accept no unanswered recommendation or unresolved D review (escape hatches).",
               "Only a recommended next prompt starts the agent.",
               "Duplicate next modes collapse; picker-selected handoff prepares /handoff for explicit User execution.",
               "Ask-routed SPEC/VIBE and /handoff still auto-start."
@@ -3447,12 +3441,13 @@
         },
         "initial": "envision",
         "notes": [
-          "Guided session story: Align (start tool + ask) begins; Spec/Vibe do work; Close-out finishes a phase; Handoff = fresh context, same artifact, restart at Align. Idle product UI when nothing is running is not a graph node.",
-          "Persisted User mode is only align|spec|vibe. Guided states (envision…evaluate) compose modeBodies. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
+          "Guided session story: envision entry → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
+          "Persisted User mode is only align|spec|vibe. Guided states compose modeBodies with roles entry|primary|secondary. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
           "Project permission is read|write only: read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact.",
-          "Phase-end states establish, elaborate, examine, and evaluate expose next exits to Align/Spec/Vibe. Handoff is evaluate + /handoff (picker prepares the command).",
+          "Only secondary gates establish/elaborate/examine CALL next. next never recommends the current mode. Handoff is establish + /handoff prep (or /handoff direct).",
           "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-          "Transition table is the guided graph only. Stay-in-mode continue, picker dismiss, ask cancel, end-without-next, and idle UI are runtime — not graph edges. Manual /align /spec /vibe /mode bypasses live under Exceptions. Preferred agent path still ends SPEC/VIBE via CLOSE_OUT before CALL next.",
+          "Transition table is the guided graph only. Stay-in-mode via RETURN_PRIMARY, ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
+          "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next.",
           "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
           "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
           "tools validate required shapes and protocol enums, not workflow quality."
@@ -3466,14 +3461,15 @@
       const canvas = document.getElementById("flow-canvas");
 
       // 7-"E" Lifecycle Step Node Layout (Spacious 240px-Gap 2-Row Circuit)
+      // Primary (top) / secondary (bottom) columns: entry | align | spec | vibe
       const NODE_LAYOUT = {
-        envision: { x: 80, y: 150, w: 220, h: 44 },
-        establish: { x: 540, y: 150, w: 220, h: 44 },
-        explore: { x: 1000, y: 150, w: 220, h: 44 },
-        elaborate: { x: 1460, y: 150, w: 220, h: 44 },
-        evaluate: { x: 540, y: 460, w: 220, h: 44 },
-        examine: { x: 1000, y: 460, w: 220, h: 44 },
-        execute: { x: 1460, y: 460, w: 220, h: 44 },
+        envision: { x: 80, y: 280, w: 220, h: 44 },
+        evaluate: { x: 420, y: 120, w: 220, h: 44 },
+        establish: { x: 420, y: 440, w: 220, h: 44 },
+        explore: { x: 860, y: 120, w: 220, h: 44 },
+        elaborate: { x: 860, y: 440, w: 220, h: 44 },
+        execute: { x: 1300, y: 120, w: 220, h: 44 },
+        examine: { x: 1300, y: 440, w: 220, h: 44 },
       };
 
       const states = {};
@@ -3490,7 +3486,7 @@
         ...fsmData,
         framing: false,
         title: "Pi Director Agent Workflow",
-        subtitle: "7-E Statechart Lifecycle",
+        subtitle: "Primary homes + secondary gates (v2.4)",
         groups: [],
         states,
       };
