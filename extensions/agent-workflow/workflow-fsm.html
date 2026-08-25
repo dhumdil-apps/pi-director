@@ -411,11 +411,11 @@
     <script>
       var TutoUI = (function (p) {
         "use strict";
-        var bt = Object.defineProperty;
-        var wt = (p, E, C) =>
-          E in p ? bt(p, E, { enumerable: !0, configurable: !0, writable: !0, value: C }) : (p[E] = C);
-        var h = (p, E, C) => wt(p, typeof E != "symbol" ? E + "" : E, C);
-        const E = {
+        var It = Object.defineProperty;
+        var Nt = (p, M, X) =>
+          M in p ? It(p, M, { enumerable: !0, configurable: !0, writable: !0, value: X }) : (p[M] = X);
+        var h = (p, M, X) => Nt(p, typeof M != "symbol" ? M + "" : M, X);
+        const M = {
             dark: {
               bg: "#090a0f",
               grid: "rgba(255, 255, 255, 0.04)",
@@ -476,7 +476,7 @@
               handoff: { accent: "#64748b", badge: "PROCEDURE", perm: "STANDBY", permClass: "perm-standby" },
             },
           },
-          C = {
+          X = {
             fonts: {
               sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
               mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
@@ -493,7 +493,7 @@
             weights: { normal: "400", medium: "500", semibold: "600", bold: "700", extrabold: "800" },
             lineHeights: { tight: "1.15", normal: "1.4", relaxed: "1.6" },
           },
-          lt = {
+          xt = {
             space: {
               1: "0.25rem",
               2: "0.5rem",
@@ -517,7 +517,7 @@
             transitions: { fast: "150ms ease", default: "200ms ease", smooth: "300ms cubic-bezier(0.4, 0, 0.2, 1)" },
             zIndex: { canvas: 0, edge: 1, node: 5, overlay: 10, drawer: 20, tooltip: 30 },
           };
-        function K() {
+        function at() {
           if (typeof document > "u" || document.getElementById("tuto-theme-tokens")) return;
           const e = document.createElement("style");
           ((e.id = "tuto-theme-tokens"),
@@ -571,7 +571,7 @@
   `),
             document.head.appendChild(e));
         }
-        const U = class U extends HTMLElement {
+        const P = class P extends HTMLElement {
           constructor(t = {}) {
             super();
             h(this, "_isRenderPending", !1);
@@ -591,8 +591,8 @@
             if (!(!i || !this.shadowRootNode)) {
               if ("adoptedStyleSheets" in Document.prototype && "adoptedStyleSheets" in ShadowRoot.prototype)
                 try {
-                  let a = U._styleSheetMap.get(t);
-                  (a || ((a = new CSSStyleSheet()), a.replaceSync(i), U._styleSheetMap.set(t, a)),
+                  let a = P._styleSheetMap.get(t);
+                  (a || ((a = new CSSStyleSheet()), a.replaceSync(i), P._styleSheetMap.set(t, a)),
                     this.shadowRootNode.adoptedStyleSheets.includes(a) ||
                       (this.shadowRootNode.adoptedStyleSheets = [...this.shadowRootNode.adoptedStyleSheets, a]));
                   return;
@@ -623,15 +623,15 @@
           firstUpdated() {}
           updated() {}
         };
-        (h(U, "styles", ""), h(U, "_styleSheetMap", new WeakMap()));
-        let N = U;
-        const J = "http://www.w3.org/2000/svg";
-        function x(e, d = {}, t) {
-          const i = document.createElementNS(J, e);
+        (h(P, "styles", ""), h(P, "_styleSheetMap", new WeakMap()));
+        let U = P;
+        const rt = "http://www.w3.org/2000/svg";
+        function y(e, d = {}, t) {
+          const i = document.createElementNS(rt, e);
           for (const [a, r] of Object.entries(d)) r != null && r !== !1 && i.setAttribute(a, String(r));
           return (t && t.appendChild(i), i);
         }
-        function ht(e, d = {}, t) {
+        function _t(e, d = {}, t) {
           const i = document.createElement(e);
           for (const [a, r] of Object.entries(d))
             r != null &&
@@ -639,7 +639,7 @@
               (a === "className" || a === "class" ? (i.className = String(r)) : i.setAttribute(a, String(r)));
           return (t && t.appendChild(i), i);
         }
-        function v(e) {
+        function w(e) {
           return e == null
             ? ""
             : String(e)
@@ -649,10 +649,10 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-        function B(e, d, t) {
+        function H(e, d, t) {
           return Math.max(d, Math.min(t, e));
         }
-        class X extends N {
+        class J extends U {
           static get observedAttributes() {
             return ["variant", "size", "disabled"];
           }
@@ -687,7 +687,7 @@
           }
         }
         (h(
-          X,
+          J,
           "styles",
           `
     :host {
@@ -785,8 +785,8 @@
     }
   `,
         ),
-          customElements.get("tuto-button") || customElements.define("tuto-button", X));
-        class Y extends N {
+          customElements.get("tuto-button") || customElements.define("tuto-button", J));
+        class Z extends U {
           static get observedAttributes() {
             return ["variant"];
           }
@@ -809,7 +809,7 @@
           }
         }
         (h(
-          Y,
+          Z,
           "styles",
           `
     :host {
@@ -863,44 +863,44 @@
     }
   `,
         ),
-          customElements.get("tuto-badge") || customElements.define("tuto-badge", Y));
-        const A = 0.2,
-          z = 3.5,
-          Z = 44;
-        function Q(e, d, t = Z, i = 1.25) {
+          customElements.get("tuto-badge") || customElements.define("tuto-badge", Z));
+        const D = 0.2,
+          Y = 3.5,
+          dt = 44;
+        function lt(e, d, t = dt, i = 1.25) {
           const a = e.width || 900,
             r = e.height || 700,
             s = d.w || 2e3,
             o = d.h || 1e3,
-            l = B(Math.min((a - t * 2) / s, (r - t * 2) / o), A, i),
-            u = (a - s * l) / 2 - d.x * l,
-            m = (r - o * l) / 2 - d.y * l;
-          return { panX: u, panY: m, scale: l };
+            l = H(Math.min((a - t * 2) / s, (r - t * 2) / o), D, i),
+            g = (a - s * l) / 2 - d.x * l,
+            u = (r - o * l) / 2 - d.y * l;
+          return { panX: g, panY: u, scale: l };
         }
-        function D(e, d, t, i, a = A, r = z) {
-          const s = B(e.scale * i, a, r);
+        function Q(e, d, t, i, a = D, r = Y) {
+          const s = H(e.scale * i, a, r);
           if (s === e.scale) return e;
           const o = d - ((d - e.panX) * s) / e.scale,
             l = t - ((t - e.panY) * s) / e.scale;
           return { panX: o, panY: l, scale: s };
         }
-        function tt(e, d, t = 1.05) {
+        function ht(e, d, t = 1.05) {
           const i = e.width || 900,
             a = e.height || 700,
-            r = B(t, A, z),
+            r = H(t, D, Y),
             s = d.x + d.w / 2,
             o = d.y + d.h / 2,
             l = i / 2 - s * r,
-            u = a / 2 - o * r;
-          return { panX: l, panY: u, scale: r };
+            g = a / 2 - o * r;
+          return { panX: l, panY: g, scale: r };
         }
-        function ct(e, d) {
+        function Et(e, d) {
           return { x: (e.x - d.panX) / d.scale, y: (e.y - d.panY) / d.scale };
         }
-        function pt(e, d) {
+        function kt(e, d) {
           return { x: e.x * d.scale + d.panX, y: e.y * d.scale + d.panY };
         }
-        const et = new Set([
+        const ct = new Set([
           "GOAL_SET",
           "ASK_ROUTED_SPEC",
           "ASK_ROUTED_VIBE",
@@ -912,7 +912,7 @@
           "CLOSE_OUT",
           "NEXT_HANDOFF",
         ]);
-        function ot(e) {
+        function pt(e) {
           return e.map((d, t) => ({
             id: d.id || `${d.from}->${d.to}-${t}`,
             from: d.from,
@@ -937,7 +937,7 @@
                 ? { x: e.x + e.w * i, y: e.y }
                 : { x: e.x + e.w * i, y: e.y + e.h };
         }
-        function W(e, d) {
+        function tt(e, d) {
           const t = [
             { point: [e.x, e.y + e.h / 2], side: "left" },
             { point: [e.x + e.w, e.y + e.h / 2], side: "right" },
@@ -952,27 +952,46 @@
           }
           return i;
         }
-        function st(e, d) {
+        function gt(e, d = !0) {
+          if (!e || e.length === 0) return [0, 0];
+          if (e.length === 1) return e[0];
+          if (e.length === 2) return [(e[0][0] + e[1][0]) / 2, (e[0][1] + e[1][1]) / 2];
+          if (d && e.length === 3) return e[1];
+          let t = 0;
+          const i = [];
+          for (let s = 0; s < e.length - 1; s++) {
+            const o = Math.hypot(e[s + 1][0] - e[s][0], e[s + 1][1] - e[s][1]);
+            (i.push(o), (t += o));
+          }
+          if (t === 0) return e[0];
+          const a = t / 2;
+          let r = 0;
+          for (let s = 0; s < i.length; s++) {
+            const o = i[s];
+            if (r + o >= a) {
+              const l = a - r,
+                g = o > 0 ? l / o : 0.5,
+                u = e[s],
+                c = e[s + 1];
+              return [u[0] + (c[0] - u[0]) * g, u[1] + (c[1] - u[1]) * g];
+            }
+            r += o;
+          }
+          return e[Math.floor(e.length / 2)];
+        }
+        function ut(e, d) {
           return e;
         }
-        function it(e, d) {
+        function ft(e, d) {
           const t = d[e.from],
             i = d[e.to];
           if (!t || !i) return null;
           if (e.waypoints && e.waypoints.length > 0) {
-            const s = W(t, e.waypoints[0]).point,
-              o = W(i, e.waypoints[e.waypoints.length - 1]).point,
-              l = [s, ...e.waypoints, o];
-            let u = -1,
-              m = (s[0] + o[0]) / 2,
-              c = (s[1] + o[1]) / 2;
-            for (let w = 0; w < l.length - 1; w++) {
-              const n = l[w],
-                g = l[w + 1],
-                f = Math.hypot(g[0] - n[0], g[1] - n[1]);
-              f > u && ((u = f), (m = (n[0] + g[0]) / 2), (c = (n[1] + g[1]) / 2));
-            }
-            return { points: l, seatX: m, seatY: c, seatSide: "h" };
+            const s = tt(t, e.waypoints[0]).point,
+              o = tt(i, e.waypoints[e.waypoints.length - 1]).point,
+              l = [s, ...e.waypoints, o],
+              [g, u] = gt(l, !0);
+            return { points: l, seatX: g, seatY: u, seatSide: "h" };
           }
           if (e.self) {
             const s = t.x + 36,
@@ -1113,16 +1132,16 @@
             const s = b(t, "top", 0.6),
               o = b(i, "right", 0.5),
               l = 55,
-              u = i.x + i.w + 60;
+              g = i.x + i.w + 60;
             return {
               points: [
                 [s.x, s.y],
                 [s.x, l],
-                [u, l],
-                [u, o.y],
+                [g, l],
+                [g, o.y],
                 [o.x, o.y],
               ],
-              seatX: (s.x + u) / 2,
+              seatX: (s.x + g) / 2,
               seatY: l,
               seatSide: "h",
             };
@@ -1187,8 +1206,8 @@
             seatSide: "h",
           };
         }
-        function gt(e) {}
-        function nt(e, d = !1, t = 10) {
+        function Mt(e) {}
+        function mt(e, d = !1, t = 10) {
           if (!e || e.length === 0) return "";
           if (e.length === 1) return `M ${e[0][0]} ${e[0][1]}`;
           if (d && e.length === 4)
@@ -1200,40 +1219,40 @@
             const s = e[r - 1],
               o = e[r],
               l = e[r + 1],
-              u = o[0] - s[0],
-              m = o[1] - s[1],
-              c = Math.hypot(u, m),
-              w = l[0] - o[0],
-              n = l[1] - o[1],
-              g = Math.hypot(w, n);
-            if (c < 1 || g < 1) {
+              g = o[0] - s[0],
+              u = o[1] - s[1],
+              c = Math.hypot(g, u),
+              _ = l[0] - o[0],
+              I = l[1] - o[1],
+              n = Math.hypot(_, I);
+            if (c < 1 || n < 1) {
               i += ` L ${o[0]} ${o[1]}`;
               continue;
             }
-            const f = Math.min(t, c / 2, g / 2),
-              y = o[0] - (u / c) * f,
-              M = o[1] - (m / c) * f,
-              I = o[0] + (w / g) * f,
-              k = o[1] + (n / g) * f;
-            ((i += ` L ${y} ${M}`), (i += ` Q ${o[0]} ${o[1]} ${I} ${k}`));
+            const f = Math.min(t, c / 2, n / 2),
+              m = o[0] - (g / c) * f,
+              x = o[1] - (u / c) * f,
+              L = o[0] + (_ / n) * f,
+              E = o[1] + (I / n) * f;
+            ((i += ` L ${m} ${x}`), (i += ` Q ${o[0]} ${o[1]} ${L} ${E}`));
           }
           const a = e[e.length - 1];
           return ((i += ` L ${a[0]} ${a[1]}`), i);
         }
-        function at(e, d, t, i) {
+        function bt(e, d, t, i) {
           return t === e.id || i === e.id ? !0 : d ? e.from === d || e.to === d : !1;
         }
-        function rt(e, d, t, i, a = et) {
+        function wt(e, d, t, i, a = ct) {
           return !0;
         }
-        function T(e, d = 64, t = 56, i = 46, a) {
+        function F(e, d = 64, t = 56, i = 46, a) {
           let r = 1 / 0,
             s = 1 / 0,
             o = -1 / 0,
             l = -1 / 0;
-          const u = Object.values(e);
-          if (u.length === 0 && (!a || a.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
-          for (const c of u)
+          const g = Object.values(e);
+          if (g.length === 0 && (!a || a.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
+          for (const c of g)
             ((r = Math.min(r, c.x)),
               (s = Math.min(s, c.y)),
               (o = Math.max(o, c.x + c.w)),
@@ -1244,10 +1263,10 @@
                 (s = Math.min(s, c.y)),
                 (o = Math.max(o, c.x + c.w)),
                 (l = Math.max(l, c.y + c.h)));
-          const m = i > 0;
-          return { x: r - d, y: s - t - (m ? i : 0), w: o - r + d * 2, h: l - s + t * 2 + (m ? i + 80 : 0) };
+          const u = i > 0;
+          return { x: r - d, y: s - t - (u ? i : 0), w: o - r + d * 2, h: l - s + t * 2 + (u ? i + 80 : 0) };
         }
-        function ut(e, d = {}) {
+        function St(e, d = {}) {
           const t = d.colWidth || 420,
             i = d.colGap || 180,
             a = d.rowGap || 40,
@@ -1255,16 +1274,16 @@
             s = d.startY || 120,
             o = {};
           let l = r,
-            u = s;
+            g = s;
           return (
-            e.forEach((m, c) => {
-              ((o[m.id] = { ...m, x: m.x ?? l, y: m.y ?? u, w: m.w || t, h: m.h || 280 }),
-                (c + 1) % 3 === 0 ? ((l += t + i), (u = s)) : (u += (m.h || 280) + a));
+            e.forEach((u, c) => {
+              ((o[u.id] = { ...u, x: u.x ?? l, y: u.y ?? g, w: u.w || t, h: u.h || 280 }),
+                (c + 1) % 3 === 0 ? ((l += t + i), (g = s)) : (g += (u.h || 280) + a));
             }),
             o
           );
         }
-        class q extends N {
+        class et extends U {
           constructor() {
             super(...arguments);
             h(this, "_node", null);
@@ -1299,7 +1318,7 @@
           render() {
             if (!this.shadowRootNode || !this._node) return;
             const t = this._node,
-              i = E.accents[t.id] || (t.permission ? E.accents[t.permission] : null) || E.accents.spec;
+              i = M.accents[t.id] || (t.permission ? M.accents[t.permission] : null) || M.accents.spec;
             this.style.setProperty("--node-accent", i.accent);
             const r =
                 i.perm === "WRITE"
@@ -1319,10 +1338,10 @@
         <div class="node-head">
           <div class="node-head-left">
             <span class="state-dot"></span>
-            <span class="head-title">${v(t.label || t.id)}</span>
+            <span class="head-title">${w(t.label || t.id)}</span>
           </div>
           <div class="head-badges">
-            <span class="badge badge-perm ${i.permClass}">${r}${v(i.perm)}</span>
+            <span class="badge badge-perm ${i.permClass}">${r}${w(i.perm)}</span>
           </div>
         </div>
       </div>
@@ -1335,7 +1354,7 @@
           }
         }
         (h(
-          q,
+          et,
           "styles",
           `
     :host {
@@ -1462,8 +1481,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-node") || customElements.define("tuto-flow-node", q));
-        class O extends N {
+          customElements.get("tuto-flow-node") || customElements.define("tuto-flow-node", et));
+        class ot extends U {
           constructor() {
             super(...arguments);
             h(this, "_zoom", 100);
@@ -1496,7 +1515,7 @@
             ((this._isEditModeActive = !!t), this.requestUpdate());
           }
           render() {
-            var t, i, a, r, s, o, l, u, m;
+            var t, i, a, r, s, o, l, g, u;
             this.shadowRootNode &&
               ((this.shadowRootNode.innerHTML = `
       <div class="toolbar-container">
@@ -1606,18 +1625,18 @@
                 l.addEventListener("click", () => {
                   this.emit("flow:reset-layout");
                 }),
-              (u = this.shadowRootNode.getElementById("btn-minimap")) == null ||
-                u.addEventListener("click", () => {
+              (g = this.shadowRootNode.getElementById("btn-minimap")) == null ||
+                g.addEventListener("click", () => {
                   this.emit("flow:toggle-minimap");
                 }),
-              (m = this.shadowRootNode.getElementById("btn-inspector")) == null ||
-                m.addEventListener("click", () => {
+              (u = this.shadowRootNode.getElementById("btn-inspector")) == null ||
+                u.addEventListener("click", () => {
                   this.emit("flow:toggle-inspector");
                 }));
           }
         }
         (h(
-          O,
+          ot,
           "styles",
           `
     :host {
@@ -1679,8 +1698,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", O));
-        class j extends N {
+          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", ot));
+        class st extends U {
           constructor() {
             super(...arguments);
             h(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
@@ -1748,24 +1767,24 @@
               s = i.width || 170,
               o = i.height || 120,
               l = this._bounds.w || 2e3,
-              u = this._bounds.h || 1e3,
-              m = Math.min(s / l, o / u),
-              c = a / m + this._bounds.x,
-              w = r / m + this._bounds.y;
-            this.emit("flow:pan-to", { worldX: c, worldY: w });
+              g = this._bounds.h || 1e3,
+              u = Math.min(s / l, o / g),
+              c = a / u + this._bounds.x,
+              _ = r / u + this._bounds.y;
+            this.emit("flow:pan-to", { worldX: c, worldY: _ });
           }
           render() {
-            var y, M;
+            var m, x;
             if (!this.shadowRootNode) return;
             this.shadowRootNode.innerHTML = "";
-            const t = x("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
+            const t = y("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
               i = 170,
               a = 120,
               r = this._bounds.w || 2e3,
               s = this._bounds.h || 1e3,
               o = Math.min(i / r, a / s),
-              l = x("g", { transform: `scale(${o}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
-            x(
+              l = y("g", { transform: `scale(${o}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
+            y(
               "rect",
               {
                 x: this._bounds.x,
@@ -1779,39 +1798,39 @@
               },
               l,
             );
-            for (const [I, k] of Object.entries(this._nodes)) {
-              const _ =
-                ((y = E.accents[I]) == null ? void 0 : y.accent) ||
-                ((M = E.accents[k.kind]) == null ? void 0 : M.accent) ||
+            for (const [L, E] of Object.entries(this._nodes)) {
+              const W =
+                ((m = M.accents[L]) == null ? void 0 : m.accent) ||
+                ((x = M.accents[E.kind]) == null ? void 0 : x.accent) ||
                 "#3b82f6";
-              x(
+              y(
                 "rect",
                 {
-                  x: k.x,
-                  y: k.y,
-                  width: k.w,
-                  height: k.h,
+                  x: E.x,
+                  y: E.y,
+                  width: E.w,
+                  height: E.h,
                   rx: 10,
-                  fill: I === this._selectedNodeId ? _ : "var(--tuto-head-bg, #1a2030)",
-                  stroke: _,
+                  fill: L === this._selectedNodeId ? W : "var(--tuto-head-bg, #1a2030)",
+                  stroke: W,
                   "stroke-width": 2,
                 },
                 l,
               );
             }
-            const u = this._viewportSize.width || 900,
-              m = this._viewportSize.height || 700,
+            const g = this._viewportSize.width || 900,
+              u = this._viewportSize.height || 700,
               c = this._camera.scale || 1,
-              w = (-this._camera.panX / c - this._bounds.x) * o,
-              n = (-this._camera.panY / c - this._bounds.y) * o,
-              g = (u / c) * o,
-              f = (m / c) * o;
-            x(
+              _ = (-this._camera.panX / c - this._bounds.x) * o,
+              I = (-this._camera.panY / c - this._bounds.y) * o,
+              n = (g / c) * o,
+              f = (u / c) * o;
+            y(
               "rect",
               {
-                x: Math.max(0, Math.min(i, w)),
-                y: Math.max(0, Math.min(a, n)),
-                width: Math.max(4, Math.min(i, g)),
+                x: Math.max(0, Math.min(i, _)),
+                y: Math.max(0, Math.min(a, I)),
+                width: Math.max(4, Math.min(i, n)),
                 height: Math.max(4, Math.min(a, f)),
                 fill: "rgba(59, 130, 246, 0.15)",
                 stroke: "var(--tuto-hot, #3b82f6)",
@@ -1823,7 +1842,7 @@
           }
         }
         (h(
-          j,
+          st,
           "styles",
           `
     :host {
@@ -1847,8 +1866,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", j));
-        class H extends N {
+          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", st));
+        class it extends U {
           constructor() {
             super(...arguments);
             h(this, "_isOpen", !1);
@@ -1887,24 +1906,24 @@
               i = "";
             if (this._node) {
               const o = this._node,
-                l = E.accents[o.id] ||
-                  E.accents[o.kind] || {
+                l = M.accents[o.id] ||
+                  M.accents[o.kind] || {
                     accent: "#3b82f6",
                     badge: (o.kind || "MODE").toUpperCase(),
                     perm: (o.permission || "READ-ONLY").toUpperCase(),
                     permClass: `perm-${o.permission || "readonly"}`,
                   },
-                m =
+                u =
                   l.perm === "WRITE"
                     ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
                     : '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';
               (this.style.setProperty("--drawer-accent", l.accent),
                 (t = `
         <div class="header-titles">
-          <h2>${v(o.label || o.id)}</h2>
+          <h2>${w(o.label || o.id)}</h2>
           <div class="header-badges">
-            <span class="badge badge-accent">${v(l.badge)}</span>
-            <span class="badge badge-perm ${l.permClass}">${m}${v(l.perm)}</span>
+            <span class="badge badge-accent">${w(l.badge)}</span>
+            <span class="badge badge-perm ${l.permClass}">${u}${w(l.perm)}</span>
           </div>
         </div>
       `));
@@ -1912,20 +1931,20 @@
                   ? `<div>
             <h4 class="section-title">Substates</h4>
             <div class="chip-group">
-              ${o.substates.map((f) => `<span class="chip">${v(f)}</span>`).join("")}
+              ${o.substates.map((f) => `<span class="chip">${w(f)}</span>`).join("")}
             </div>
           </div>`
                   : "",
-                w = (o.procedure || []).length
+                _ = (o.procedure || []).length
                   ? `<div>
             <h4 class="section-title">Ordered Instructions (${o.procedure.length})</h4>
             <ol class="instruction-list">
               ${o.procedure
                 .map(
-                  (f, y) => `
+                  (f, m) => `
                 <li class="instruction-item">
-                  <span class="instruction-idx">${y + 1}.</span>
-                  <span>${v(f)}</span>
+                  <span class="instruction-idx">${m + 1}.</span>
+                  <span>${w(f)}</span>
                 </li>
               `,
                 )
@@ -1933,34 +1952,32 @@
             </ol>
           </div>`
                   : "",
-                n = this._tools.filter((f) => (f.modes || []).includes(o.id) || (f.modes || []).includes("any")),
-                g = n.length
+                I = this._tools.filter((f) => (f.modes || []).includes(o.id) || (f.modes || []).includes("any")),
+                n = I.length
                   ? `<div>
-            <h4 class="section-title">Permitted Tools & Gates (${n.length})</h4>
+            <h4 class="section-title">Permitted Tools & Gates (${I.length})</h4>
             <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-              ${n
-                .map((f) => {
-                  var y;
-                  return `
+              ${I.map((f) => {
+                var m;
+                return `
                 <div class="tool-card">
                   <div class="tool-title">
-                    <span>${v(f.name)}</span>
+                    <span>${w(f.name)}</span>
                     <span class="chip">TOOL</span>
                   </div>
-                  <p class="section-text" style="font-size: 0.78rem;">${v(f.summary)}</p>
-                  ${(y = f.gate) != null && y.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${v(f.gate.join(" · "))}</div>` : ""}
+                  <p class="section-text" style="font-size: 0.78rem;">${w(f.summary)}</p>
+                  ${(m = f.gate) != null && m.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${w(f.gate.join(" · "))}</div>` : ""}
                 </div>
               `;
-                })
-                .join("")}
+              }).join("")}
             </div>
           </div>`
                   : "";
               i = `
-        ${o.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${v(o.summary)}</p></div>` : ""}
+        ${o.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${w(o.summary)}</p></div>` : ""}
         ${c}
-        ${w}
-        ${g}
+        ${_}
+        ${n}
       `;
             } else if (this._edge) {
               const o = this._edge;
@@ -1968,7 +1985,7 @@
               const l = o.event || o.label || "Transition";
               ((t = `
         <div class="header-titles">
-          <h2>${v(l)}</h2>
+          <h2>${w(l)}</h2>
           <div class="header-badges">
             <span class="badge badge-accent">TRANSITION</span>
             ${o.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
@@ -1979,19 +1996,19 @@
         <div>
           <h4 class="section-title">Route Connection</h4>
           <p class="section-text" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(o.from.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${w(o.from.toUpperCase())}</span>
             <span style="color: var(--tuto-muted);">──►</span>
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(o.to.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${w(o.to.toUpperCase())}</span>
           </p>
         </div>
-        ${o.label && o.label !== l ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${v(o.label)}</p></div>` : ""}
-        ${o.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${v(o.description)}</p></div>` : ""}
+        ${o.label && o.label !== l ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${w(o.label)}</p></div>` : ""}
+        ${o.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${w(o.description)}</p></div>` : ""}
         ${
           (a = o.events) != null && a.length
             ? `<div>
                 <h4 class="section-title">Trigger Events (${o.events.length})</h4>
                 <div class="chip-group">
-                  ${o.events.map((u) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${v(u)}</span>`).join("")}
+                  ${o.events.map((g) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${w(g)}</span>`).join("")}
                 </div>
               </div>`
             : ""
@@ -2003,9 +2020,9 @@
                 <ul class="instruction-list">
                   ${o.descriptions
                     .map(
-                      (u) => `
+                      (g) => `
                     <li class="instruction-item">
-                      <span>${v(u)}</span>
+                      <span>${w(g)}</span>
                     </li>
                   `,
                     )
@@ -2044,7 +2061,7 @@
           }
         }
         (h(
-          H,
+          it,
           "styles",
           `
     :host {
@@ -2228,8 +2245,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", H));
-        class F extends N {
+          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", it));
+        class nt extends U {
           constructor() {
             super(...arguments);
             h(this, "_graph", null);
@@ -2247,6 +2264,7 @@
             h(this, "_dragStart", { x: 0, y: 0, panX: 0, panY: 0 });
             h(this, "_draggedNodeId", null);
             h(this, "_dragNodeStart", null);
+            h(this, "_nodeDragMoved", !1);
             h(this, "_edgeWaypoints", new Map());
             h(this, "_draggedWaypoint", null);
             h(this, "_defaultLayout", null);
@@ -2278,11 +2296,14 @@
                               : (t.key === "s" || t.key === "S") && this._isEditMode
                                 ? this.copyLayoutSnapshot()
                                 : t.key === "Escape" &&
-                                  (this._isEditMode
-                                    ? (this.isEditMode = !1)
-                                    : ((this._showInspector = !1),
+                                  (this._selectedNodeId || this._selectedEdgeId
+                                    ? ((this._selectedNodeId = null),
+                                      (this._activeStateId = null),
                                       (this._selectedEdgeId = null),
-                                      this.requestUpdate())));
+                                      this.requestUpdate())
+                                    : this._isEditMode
+                                      ? (this.isEditMode = !1)
+                                      : ((this._showInspector = !1), this.requestUpdate())));
             });
             h(this, "handleResize", () => {
               this.requestUpdate();
@@ -2293,7 +2314,7 @@
                 a = t.clientX - i.left,
                 r = t.clientY - i.top,
                 s = t.deltaY < 0 ? 1.12 : 0.89;
-              ((this._camera = D(this._camera, a, r, s, A, z)), this.requestUpdate());
+              ((this._camera = Q(this._camera, a, r, s, D, Y)), this.requestUpdate());
             });
             h(this, "handlePointerDown", (t) => {
               var r;
@@ -2322,11 +2343,15 @@
             });
             h(this, "handlePointerUp", () => {
               var i;
-              this._isDragging = !1;
+              (this._isDragging &&
+                Math.hypot(this._camera.panX - this._dragStart.panX, this._camera.panY - this._dragStart.panY) < 4 &&
+                ((this._selectedNodeId = null), (this._activeStateId = null), (this._selectedEdgeId = null)),
+                (this._isDragging = !1));
               const t = (i = this.shadowRootNode) == null ? void 0 : i.querySelector("svg.flow-svg");
               (t == null || t.classList.remove("grabbing"),
                 window.removeEventListener("pointermove", this.handlePointerMove),
-                window.removeEventListener("pointerup", this.handlePointerUp));
+                window.removeEventListener("pointerup", this.handlePointerUp),
+                this.requestUpdate());
             });
             h(this, "handleNodePointerMove", (t) => {
               if (!this._draggedNodeId || !this._dragNodeStart || !this._graph) return;
@@ -2334,35 +2359,47 @@
               if (!i) return;
               const a = this._camera.scale || 1,
                 r = (t.clientX - this._dragNodeStart.startX) / a,
-                s = (t.clientY - this._dragNodeStart.startY) / a,
-                o = this._dragNodeStart.nodeOrigX + r,
+                s = (t.clientY - this._dragNodeStart.startY) / a;
+              Math.hypot(r, s) > 4 && (this._nodeDragMoved = !0);
+              const o = this._dragNodeStart.nodeOrigX + r,
                 l = this._dragNodeStart.nodeOrigY + s;
               ((i.x = Math.round(o / 10) * 10), (i.y = Math.round(l / 10) * 10));
-              const u = this._graph.framing !== !1;
-              ((this._bounds = T(this._graph.states, u ? 64 : 40, u ? 56 : 30, u ? 46 : 0, this._graph.groups)),
+              const g = this._graph.framing !== !1;
+              ((this._bounds = F(this._graph.states, g ? 64 : 40, g ? 56 : 30, g ? 46 : 0, this._graph.groups)),
                 this.requestUpdate());
             });
             h(this, "handleNodePointerUp", () => {
+              var i;
               if (!this._draggedNodeId) return;
               const t = this._draggedNodeId;
               ((this._draggedNodeId = null),
                 (this._dragNodeStart = null),
                 window.removeEventListener("pointermove", this.handleNodePointerMove),
                 window.removeEventListener("pointerup", this.handleNodePointerUp),
-                this.emit("flow:layout-change", { nodeId: t, layout: this.exportLayoutSnapshot() }),
+                this._nodeDragMoved
+                  ? this.emit("flow:layout-change", { nodeId: t, layout: this.exportLayoutSnapshot() })
+                  : this._selectedNodeId === t
+                    ? ((this._selectedNodeId = null),
+                      (this._activeStateId = null),
+                      this.emit("flow:select-node", { node: null }))
+                    : ((this._selectedNodeId = t),
+                      (this._activeStateId = t),
+                      (i = this._graph) != null &&
+                        i.states[t] &&
+                        this.emit("flow:select-node", { node: this._graph.states[t] })),
                 this.requestUpdate());
             });
             h(this, "handleWaypointPointerMove", (t) => {
               if (!this._draggedWaypoint) return;
               const { edgeId: i, waypointIndex: a, startX: r, startY: s, origX: o, origY: l } = this._draggedWaypoint,
-                u = this._edgeWaypoints.get(i);
-              if (!u || !u[a]) return;
-              const m = this._camera.scale || 1,
-                c = (t.clientX - r) / m,
-                w = (t.clientY - s) / m,
-                n = Math.round((o + c) / 10) * 10,
-                g = Math.round((l + w) / 10) * 10;
-              ((u[a] = [n, g]), this.requestUpdate());
+                g = this._edgeWaypoints.get(i);
+              if (!g || !g[a]) return;
+              const u = this._camera.scale || 1,
+                c = (t.clientX - r) / u,
+                _ = (t.clientY - s) / u,
+                I = Math.round((o + c) / 10) * 10,
+                n = Math.round((l + _) / 10) * 10;
+              ((g[a] = [I, n]), this.requestUpdate());
             });
             h(this, "handleWaypointPointerUp", () => {
               this._draggedWaypoint &&
@@ -2401,7 +2438,7 @@
               } catch {}
               this._activeStateId || (this._activeStateId = t.initial || Object.keys(t.states || {})[0] || null);
               const i = t.framing !== !1;
-              ((this._bounds = T(t.states, i ? 64 : 40, i ? 56 : 30, i ? 46 : 0, t.groups)),
+              ((this._bounds = F(t.states, i ? 64 : 40, i ? 56 : 30, i ? 46 : 0, t.groups)),
                 requestAnimationFrame(() => this.fitToViewport()));
             }
             this.requestUpdate();
@@ -2411,21 +2448,22 @@
           }
           set isEditMode(t) {
             ((this._isEditMode = !!t),
-              this._isEditMode && this.showToast("Edit mode active — drag nodes to reposition (E to exit)"),
+              this.emit("flow:toggle-edit-mode", { isEditMode: this._isEditMode }),
+              this._isEditMode &&
+                this.showToast("Edit Mode Active (Drag nodes, labels & lines · S to snapshot · Alt+click to reset)"),
               this.requestUpdate());
           }
           get activeStateId() {
-            var t;
-            return this._activeStateId || ((t = this._graph) == null ? void 0 : t.initial) || null;
+            return this._activeStateId;
           }
           set activeStateId(t) {
-            ((this._activeStateId = t), (this._selectedNodeId = t), this.requestUpdate());
+            ((this._activeStateId = t), this.requestUpdate());
           }
           get selectedNodeId() {
             return this._selectedNodeId;
           }
           set selectedNodeId(t) {
-            ((this._selectedNodeId = t), t && (this._activeStateId = t), this.requestUpdate());
+            ((this._selectedNodeId = t), this.requestUpdate());
           }
           get selectedEdgeId() {
             return this._selectedEdgeId;
@@ -2469,7 +2507,7 @@
           }
           fitToViewport() {
             const t = this.getBoundingClientRect();
-            ((this._camera = Q({ width: t.width || 900, height: t.height || 700 }, this._bounds)),
+            ((this._camera = lt({ width: t.width || 900, height: t.height || 700 }, this._bounds)),
               this.requestUpdate());
           }
           centerOnState(t) {
@@ -2477,7 +2515,7 @@
             if (!((r = this._graph) != null && r.states[t])) return;
             const i = this._graph.states[t],
               a = this.getBoundingClientRect();
-            ((this._camera = tt({ width: a.width || 900, height: a.height || 700 }, i)),
+            ((this._camera = ht({ width: a.width || 900, height: a.height || 700 }, i)),
               (this._activeStateId = t),
               (this._selectedNodeId = t),
               (this._selectedEdgeId = null),
@@ -2505,36 +2543,26 @@
           async copyLayoutSnapshot() {
             const t = this.exportLayoutSnapshot(),
               i = t.nodes || {},
-              a = t.edges || {};
-            let r =
-              "const NODE_LAYOUT = " +
-              JSON.stringify(i, null, 2) +
-              `;
-`;
-            Object.keys(a).length > 0 &&
-              (r +=
-                `
-const EDGE_WAYPOINTS = ` +
-                JSON.stringify(a, null, 2) +
-                `;
-`);
+              a = t.edges || {},
+              r = { nodes: i, edges: a },
+              s = JSON.stringify(r, null, 2);
             try {
               typeof navigator < "u" &&
                 navigator.clipboard &&
                 navigator.clipboard.writeText &&
-                (await navigator.clipboard.writeText(r));
+                (await navigator.clipboard.writeText(s));
             } catch {}
             try {
               (localStorage.setItem("pi_workflow_layout_override", JSON.stringify(i)), this._saveEdgeWaypoints());
             } catch {}
             return (
               console.log(
-                `Exported layout snapshot:
-` + r,
+                `Exported layout JSON:
+` + s,
               ),
-              this.showToast("✓ Layout & edge angles copied to clipboard!"),
-              this.emit("flow:snapshot-layout", { snapshot: t, code: r }),
-              r
+              this.showToast("✓ Layout JSON copied to clipboard!"),
+              this.emit("flow:snapshot-layout", { snapshot: t, code: s, json: r }),
+              s
             );
           }
           resetLayout() {
@@ -2552,7 +2580,7 @@ const EDGE_WAYPOINTS = ` +
                 localStorage.removeItem("pi_workflow_edge_override"));
             } catch {}
             const t = this._graph.framing !== !1;
-            ((this._bounds = T(this._graph.states, t ? 64 : 40, t ? 56 : 30, t ? 46 : 0, this._graph.groups)),
+            ((this._bounds = F(this._graph.states, t ? 64 : 40, t ? 56 : 30, t ? 46 : 0, this._graph.groups)),
               this.showToast("✓ Reset layout to default"),
               this.emit("flow:reset-layout"),
               this.requestUpdate());
@@ -2561,17 +2589,15 @@ const EDGE_WAYPOINTS = ` +
             const i = this.getBoundingClientRect(),
               a = i.width / 2,
               r = i.height / 2;
-            ((this._camera = D(this._camera, a, r, t, A, z)), this.requestUpdate());
+            ((this._camera = Q(this._camera, a, r, t, D, Y)), this.requestUpdate());
           }
           _startNodeDrag(t, i) {
             var r;
             const a = (r = this._graph) == null ? void 0 : r.states[t];
             a &&
               ((this._draggedNodeId = t),
+              (this._nodeDragMoved = !1),
               (this._dragNodeStart = { startX: i.clientX, startY: i.clientY, nodeOrigX: a.x, nodeOrigY: a.y }),
-              (this._activeStateId = t),
-              (this._selectedNodeId = t),
-              (this._selectedEdgeId = null),
               window.addEventListener("pointermove", this.handleNodePointerMove),
               window.addEventListener("pointerup", this.handleNodePointerUp),
               this.requestUpdate());
@@ -2600,6 +2626,7 @@ const EDGE_WAYPOINTS = ` +
             } catch {}
           }
           render() {
+            var I;
             if (!this.shadowRootNode) return;
             if (!this._graph) {
               this.shadowRootNode.innerHTML = `
@@ -2611,16 +2638,16 @@ const EDGE_WAYPOINTS = ` +
             }
             const t = this._graph.states,
               i = this._graph.transitions || [],
-              a = st(ot(i).filter((n) => !n.self));
+              a = ut(pt(i).filter((n) => !n.self));
             for (const n of a) {
               this._edgeWaypoints.has(n.id) && (n.waypoints = this._edgeWaypoints.get(n.id));
-              const g = it(n, t);
-              g && (n.route = g);
+              const f = ft(n, t);
+              f && (n.route = f);
             }
-            const r = this._activeStateId || this._graph.initial || Object.keys(t)[0] || null;
+            const r = this._selectedNodeId || this._activeStateId || null;
             this.shadowRootNode.innerHTML = `
       <div class="canvas-root ${this._isEditMode ? "edit-mode" : ""}">
-        ${this._toastMessage ? `<div class="flow-toast">${v(this._toastMessage)}</div>` : ""}
+        ${this._toastMessage ? `<div class="flow-toast">${w(this._toastMessage)}</div>` : ""}
 
         <svg class="flow-svg" id="flow-svg">
           <defs>
@@ -2650,9 +2677,9 @@ const EDGE_WAYPOINTS = ` +
               <rect x="${this._bounds.x}" y="${this._bounds.y}" width="${this._bounds.w}" height="${this._bounds.h}" rx="14" fill="var(--tuto-panel-bg, #14171f)" fill-opacity="0.5" stroke="var(--tuto-border, #2c3242)" stroke-width="1.5" />
               <path d="M ${this._bounds.x} ${this._bounds.y + 14} Q ${this._bounds.x} ${this._bounds.y} ${this._bounds.x + 14} ${this._bounds.y} L ${this._bounds.x + this._bounds.w - 14} ${this._bounds.y} Q ${this._bounds.x + this._bounds.w} ${this._bounds.y} ${this._bounds.x + this._bounds.w} ${this._bounds.y + 14} L ${this._bounds.x + this._bounds.w} ${this._bounds.y + 44} L ${this._bounds.x} ${this._bounds.y + 44} Z" fill="var(--tuto-panel-head, #1c202b)" />
               <line x1="${this._bounds.x}" y1="${this._bounds.y + 44}" x2="${this._bounds.x + this._bounds.w}" y2="${this._bounds.y + 44}" stroke="var(--tuto-border, #2c3242)" stroke-width="1" />
-              <text x="${this._bounds.x + 18}" y="${this._bounds.y + 27}" fill="var(--tuto-text, #ffffff)" font-size="13" font-weight="700" font-family="var(--tuto-font-sans, sans-serif)">${v(this._graph.title)}</text>
-              ${this._graph.subtitle ? `<text x="${this._bounds.x + 18 + this._graph.title.length * 7.5 + 16}" y="${this._bounds.y + 27}" fill="var(--tuto-muted, #647087)" font-size="11" font-family="var(--tuto-font-sans, sans-serif)">${v(this._graph.subtitle)}</text>` : ""}
-              <text x="${this._bounds.x + this._bounds.w - 18}" y="${this._bounds.y + 27}" fill="var(--tuto-muted, #647087)" font-size="11" font-family="var(--tuto-font-mono, monospace)" text-anchor="end">${v(this._graph.version || "v1.0")}</text>
+              <text x="${this._bounds.x + 18}" y="${this._bounds.y + 27}" fill="var(--tuto-text, #ffffff)" font-size="13" font-weight="700" font-family="var(--tuto-font-sans, sans-serif)">${w(this._graph.title)}</text>
+              ${this._graph.subtitle ? `<text x="${this._bounds.x + 18 + this._graph.title.length * 7.5 + 16}" y="${this._bounds.y + 27}" fill="var(--tuto-muted, #647087)" font-size="11" font-family="var(--tuto-font-sans, sans-serif)">${w(this._graph.subtitle)}</text>` : ""}
+              <text x="${this._bounds.x + this._bounds.w - 18}" y="${this._bounds.y + 27}" fill="var(--tuto-muted, #647087)" font-size="11" font-family="var(--tuto-font-mono, monospace)" text-anchor="end">${w(this._graph.version || "v1.0")}</text>
             </g>`
                 : ""
             }
@@ -2684,12 +2711,12 @@ const EDGE_WAYPOINTS = ` +
               s.addEventListener("pointerdown", this.handlePointerDown));
             const o = this.shadowRootNode.getElementById("groups-group"),
               l = this.shadowRootNode.getElementById("edges-group"),
-              u = this.shadowRootNode.getElementById("nodes-group");
+              g = this.shadowRootNode.getElementById("nodes-group");
             if (this._graph.groups && this._graph.groups.length > 0)
               for (const n of this._graph.groups) {
-                const g = x("g", { class: "flow-group-container" }, o),
-                  f = n.accent || "#3b82f6";
-                (x(
+                const f = y("g", { class: "flow-group-container" }, o),
+                  m = n.accent || "#3b82f6";
+                (y(
                   "rect",
                   {
                     x: n.x,
@@ -2699,128 +2726,159 @@ const EDGE_WAYPOINTS = ` +
                     rx: 10,
                     fill: "var(--tuto-card-bg, #1c202a)",
                     "fill-opacity": "0.78",
-                    stroke: f,
+                    stroke: m,
                     "stroke-width": 1.5,
                     "stroke-opacity": "0.55",
                   },
-                  g,
+                  f,
                 ),
-                  x(
+                  y(
                     "path",
                     {
                       d: `M ${n.x} ${n.y + 10} Q ${n.x} ${n.y} ${n.x + 10} ${n.y} L ${n.x + n.w - 10} ${n.y} Q ${n.x + n.w} ${n.y} ${n.x + n.w} ${n.y + 10} L ${n.x + n.w} ${n.y + 30} L ${n.x} ${n.y + 30} Z`,
-                      fill: f,
+                      fill: m,
                       "fill-opacity": "0.14",
                     },
-                    g,
+                    f,
                   ),
-                  x(
+                  y(
                     "line",
                     {
                       x1: n.x,
                       y1: n.y + 30,
                       x2: n.x + n.w,
                       y2: n.y + 30,
-                      stroke: f,
+                      stroke: m,
                       "stroke-width": 1,
                       "stroke-opacity": "0.22",
                     },
-                    g,
+                    f,
                   ));
-                const y = x(
+                const x = y(
                   "text",
                   {
                     x: n.x + 14,
                     y: n.y + 20,
-                    fill: f,
+                    fill: m,
                     "font-size": 11,
                     "font-weight": 800,
                     "letter-spacing": "0.06em",
                     "font-family": "var(--tuto-font-sans, sans-serif)",
                   },
-                  g,
+                  f,
                 );
-                y.textContent = n.label.toUpperCase();
+                x.textContent = n.label.toUpperCase();
               }
             if (this._graph.initial && t[this._graph.initial]) {
               const n = t[this._graph.initial],
-                g = n.x - 14,
-                f = n.y + n.h / 2,
-                y = n.x,
-                M = n.y + n.h / 2,
-                I = x("g", { class: "flow-initial-indicator" }, l);
-              (x("circle", { cx: g - 4, cy: f, r: 4, fill: "#ffffff" }, I),
-                x(
+                f = n.x - 14,
+                m = n.y + n.h / 2,
+                x = n.x,
+                L = n.y + n.h / 2,
+                E = y("g", { class: "flow-initial-indicator" }, l);
+              (y("circle", { cx: f - 4, cy: m, r: 4, fill: "#ffffff" }, E),
+                y(
                   "path",
                   {
-                    d: `M ${g} ${f} L ${y} ${M}`,
+                    d: `M ${f} ${m} L ${x} ${L}`,
                     stroke: "#ffffff",
                     "stroke-width": 2,
                     fill: "none",
                     "marker-end": "url(#flow-arrow-init)",
                   },
-                  I,
+                  E,
                 ));
             }
             for (const n of a) {
               if (!n.route) continue;
-              const g = r ? n.from === r : !0;
-              g || at(n, this._selectedNodeId, this._selectedEdgeId, this._hoveredEdgeId);
-              const f = nt(n.route.points, n.self, 10),
-                M = x(
+              const f = this._selectedNodeId ? n.from === this._selectedNodeId || n.to === this._selectedNodeId : !0;
+              if (this._isEditMode && this._selectedNodeId && !f) continue;
+              const m = r ? n.from === r : !0;
+              m || bt(n, this._selectedNodeId, this._selectedEdgeId, this._hoveredEdgeId);
+              const x = mt(n.route.points, n.self, 10),
+                E = y(
                   "path",
                   {
-                    d: f,
-                    class: `flow-edge-path ${g ? "available" : "dimmed"}`,
-                    "marker-end": g ? "url(#flow-arrow-hot)" : "url(#flow-arrow)",
+                    d: x,
+                    class: `flow-edge-path ${m ? "available" : "dimmed"}`,
+                    "marker-end": m ? "url(#flow-arrow-hot)" : "url(#flow-arrow)",
+                    style: !f && this._selectedNodeId ? "opacity: 0.05; pointer-events: none;" : "",
                   },
                   l,
-                ),
-                I = (k) => {
-                  (k.stopPropagation(),
-                    !this._isEditMode &&
-                      (g && n.to
-                        ? ((this._activeStateId = n.to),
-                          (this._selectedNodeId = n.to),
-                          (this._selectedEdgeId = n.id),
-                          this.emit("flow:transition", { from: n.from, to: n.to, event: n.event }),
-                          t[n.to] && this.emit("flow:select-node", { node: t[n.to] }),
-                          this.requestUpdate())
-                        : ((this._selectedEdgeId = n.id),
-                          this.emit("flow:select-edge", { edge: n }),
-                          this.requestUpdate())));
-                };
-              if ((M.addEventListener("click", I), rt(n, this._selectedNodeId, this._selectedEdgeId))) {
-                const k = n.event || n.label || "",
-                  _ = Math.max(76, Math.min(240, k.length * 8 + 28)),
-                  $ = 28,
-                  L = n.route.seatX - _ / 2,
-                  R = n.route.seatY - $ / 2,
-                  S = x(
+                );
+              if (!f && this._selectedNodeId) continue;
+              this._isEditMode &&
+                y("path", { d: x, class: "flow-edge-hitarea" }, l).addEventListener("pointerdown", (v) => {
+                  if (v.button !== 0) return;
+                  if ((v.stopPropagation(), v.altKey)) {
+                    this._edgeWaypoints.has(n.id) &&
+                      (this._edgeWaypoints.delete(n.id),
+                      this._saveEdgeWaypoints(),
+                      this.showToast("✓ Reset line & label to middle"),
+                      this.requestUpdate());
+                    return;
+                  }
+                  const S = this.getBoundingClientRect(),
+                    N = this._camera.scale || 1,
+                    z = (v.clientX - S.left - this._camera.panX) / N,
+                    k = (v.clientY - S.top - this._camera.panY) / N;
+                  let R = this._edgeWaypoints.get(n.id) ? [...this._edgeWaypoints.get(n.id)] : [];
+                  const G = Math.round(z / 10) * 10,
+                    C = Math.round(k / 10) * 10;
+                  (R.push([G, C]),
+                    this._edgeWaypoints.set(n.id, R),
+                    this._saveEdgeWaypoints(),
+                    this._startWaypointDrag(n.id, R.length - 1, v));
+                });
+              const W = (A) => {
+                (A.stopPropagation(),
+                  !this._isEditMode &&
+                    (m && n.to
+                      ? ((this._activeStateId = n.to),
+                        (this._selectedNodeId = n.to),
+                        (this._selectedEdgeId = n.id),
+                        this.emit("flow:transition", { from: n.from, to: n.to, event: n.event }),
+                        t[n.to] && this.emit("flow:select-node", { node: t[n.to] }),
+                        this.requestUpdate())
+                      : ((this._selectedEdgeId = n.id),
+                        this.emit("flow:select-edge", { edge: n }),
+                        this.requestUpdate())));
+              };
+              if ((E.addEventListener("click", W), wt(n, this._selectedNodeId, this._selectedEdgeId))) {
+                const A = n.event || n.label || "",
+                  v = Math.max(76, Math.min(240, A.length * 8 + 28)),
+                  S = 28,
+                  N = n.route.seatX - v / 2,
+                  z = n.route.seatY - S / 2,
+                  k = ((I = this._draggedWaypoint) == null ? void 0 : I.edgeId) === n.id,
+                  R = y(
                     "g",
-                    { class: `flow-edge-pill ${g ? "available" : "dimmed"}`, transform: `translate(${L}, ${R})` },
+                    {
+                      class: `flow-edge-pill ${m ? "available" : "dimmed"} ${k ? "dragging" : ""}`,
+                      transform: `translate(${N}, ${z})`,
+                    },
                     l,
                   );
-                x(
+                y(
                   "rect",
                   {
-                    width: _,
-                    height: $,
+                    width: v,
+                    height: S,
                     rx: 14,
-                    fill: g ? "#3b82f6" : "#3e4657",
-                    stroke: g ? "#93c5fd" : "rgba(255, 255, 255, 0.14)",
-                    "stroke-width": g ? 2 : 1,
-                    filter: g
+                    fill: m ? "#3b82f6" : "#3e4657",
+                    stroke: m ? "#93c5fd" : "rgba(255, 255, 255, 0.14)",
+                    "stroke-width": m ? 2 : 1,
+                    filter: m
                       ? "drop-shadow(0 4px 14px rgba(59, 130, 246, 0.55))"
                       : "drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4))",
                   },
-                  S,
+                  R,
                 );
-                const P = x(
+                const G = y(
                   "text",
                   {
-                    x: _ / 2,
-                    y: $ / 2,
+                    x: v / 2,
+                    y: S / 2,
                     "text-anchor": "middle",
                     "dominant-baseline": "central",
                     fill: "#ffffff",
@@ -2829,23 +2887,67 @@ const EDGE_WAYPOINTS = ` +
                     "letter-spacing": "0.04em",
                     "font-family": "var(--tuto-font-sans, sans-serif)",
                   },
-                  S,
+                  R,
                 );
-                ((P.textContent = k), S.addEventListener("click", I));
+                ((G.textContent = A),
+                  this._isEditMode
+                    ? (R.addEventListener("pointerdown", (C) => {
+                        var vt, yt;
+                        if (C.button !== 0) return;
+                        if ((C.stopPropagation(), C.altKey)) {
+                          this._edgeWaypoints.has(n.id) &&
+                            (this._edgeWaypoints.delete(n.id),
+                            this._saveEdgeWaypoints(),
+                            this.showToast("✓ Reset line & label to middle"),
+                            this.requestUpdate());
+                          return;
+                        }
+                        let $ = this._edgeWaypoints.get(n.id) ? [...this._edgeWaypoints.get(n.id)] : [],
+                          T = 0;
+                        const q = ((vt = n.route) == null ? void 0 : vt.seatX) || N + v / 2,
+                          O = ((yt = n.route) == null ? void 0 : yt.seatY) || z + S / 2;
+                        if ($.length === 0) {
+                          const V = Math.round(q / 10) * 10,
+                            j = Math.round(O / 10) * 10;
+                          (($ = [[V, j]]), this._edgeWaypoints.set(n.id, $), (T = 0));
+                        } else {
+                          let V = 0,
+                            j = 1 / 0;
+                          for (let B = 0; B < $.length; B++) {
+                            const K = Math.hypot($[B][0] - q, $[B][1] - O);
+                            K < j && ((j = K), (V = B));
+                          }
+                          if (j > 50) {
+                            const B = Math.round(q / 10) * 10,
+                              K = Math.round(O / 10) * 10;
+                            ($.push([B, K]), this._edgeWaypoints.set(n.id, $), (T = $.length - 1));
+                          } else T = V;
+                        }
+                        (this._saveEdgeWaypoints(), this._startWaypointDrag(n.id, T, C));
+                      }),
+                      R.addEventListener("dblclick", (C) => {
+                        (C.stopPropagation(),
+                          this._edgeWaypoints.has(n.id) &&
+                            (this._edgeWaypoints.delete(n.id),
+                            this._saveEdgeWaypoints(),
+                            this.showToast("✓ Reset line & label to middle"),
+                            this.requestUpdate()));
+                      }))
+                    : R.addEventListener("click", W));
               }
               if (this._isEditMode && n.route && n.route.points.length >= 2) {
-                const k = n.route.points;
-                for (let _ = 0; _ < k.length - 1; _++) {
-                  const $ = k[_],
-                    L = k[_ + 1];
-                  if (Math.hypot(L[0] - $[0], L[1] - $[1]) < 16) continue;
-                  const S = ($[0] + L[0]) / 2,
-                    P = ($[1] + L[1]) / 2;
-                  x(
+                const A = n.route.points;
+                for (let v = 0; v < A.length - 1; v++) {
+                  const S = A[v],
+                    N = A[v + 1];
+                  if (Math.hypot(N[0] - S[0], N[1] - S[1]) < 16) continue;
+                  const k = (S[0] + N[0]) / 2,
+                    R = (S[1] + N[1]) / 2;
+                  y(
                     "circle",
                     {
-                      cx: S,
-                      cy: P,
+                      cx: k,
+                      cy: R,
                       r: 4.5,
                       class: "flow-waypoint-split",
                       fill: "#38bdf8",
@@ -2854,27 +2956,27 @@ const EDGE_WAYPOINTS = ` +
                       "stroke-width": 1.5,
                     },
                     l,
-                  ).addEventListener("pointerdown", (G) => {
-                    if (G.button !== 0) return;
-                    G.stopPropagation();
-                    const V = this._edgeWaypoints.get(n.id) ? [...this._edgeWaypoints.get(n.id)] : [],
-                      dt = Math.min(_, V.length),
-                      ft = Math.round(S / 10) * 10,
-                      mt = Math.round(P / 10) * 10;
-                    (V.splice(dt, 0, [ft, mt]),
-                      this._edgeWaypoints.set(n.id, V),
+                  ).addEventListener("pointerdown", (C) => {
+                    if (C.button !== 0) return;
+                    C.stopPropagation();
+                    const $ = this._edgeWaypoints.get(n.id) ? [...this._edgeWaypoints.get(n.id)] : [],
+                      T = Math.min(v, $.length),
+                      q = Math.round(k / 10) * 10,
+                      O = Math.round(R / 10) * 10;
+                    ($.splice(T, 0, [q, O]),
+                      this._edgeWaypoints.set(n.id, $),
                       this._saveEdgeWaypoints(),
-                      this._startWaypointDrag(n.id, dt, G));
+                      this._startWaypointDrag(n.id, T, C));
                   });
                 }
                 if (n.waypoints && n.waypoints.length > 0)
-                  for (let _ = 0; _ < n.waypoints.length; _++) {
-                    const $ = n.waypoints[_],
-                      L = x(
+                  for (let v = 0; v < n.waypoints.length; v++) {
+                    const S = n.waypoints[v],
+                      N = y(
                         "circle",
                         {
-                          cx: $[0],
-                          cy: $[1],
+                          cx: S[0],
+                          cy: S[1],
                           r: 6,
                           class: "flow-waypoint-handle",
                           fill: "#ffffff",
@@ -2882,73 +2984,79 @@ const EDGE_WAYPOINTS = ` +
                           "stroke-width": 2.2,
                         },
                         l,
-                      );
-                    (L.addEventListener("pointerdown", (R) => {
-                      if (R.button === 0) {
-                        if ((R.stopPropagation(), R.altKey)) {
-                          const S = [...(this._edgeWaypoints.get(n.id) || [])];
-                          (S.splice(_, 1),
-                            S.length === 0 ? this._edgeWaypoints.delete(n.id) : this._edgeWaypoints.set(n.id, S),
-                            this._saveEdgeWaypoints(),
-                            this.requestUpdate());
-                          return;
-                        }
-                        this._startWaypointDrag(n.id, _, R);
-                      }
-                    }),
-                      L.addEventListener("dblclick", (R) => {
-                        R.stopPropagation();
-                        const S = [...(this._edgeWaypoints.get(n.id) || [])];
-                        (S.splice(_, 1),
-                          S.length === 0 ? this._edgeWaypoints.delete(n.id) : this._edgeWaypoints.set(n.id, S),
+                      ),
+                      z = () => {
+                        const k = [...(this._edgeWaypoints.get(n.id) || [])];
+                        (k.splice(v, 1),
+                          k.length === 0
+                            ? (this._edgeWaypoints.delete(n.id), this.showToast("✓ Reset line & label to middle"))
+                            : (this._edgeWaypoints.set(n.id, k), this.showToast("✓ Removed breakpoint")),
                           this._saveEdgeWaypoints(),
                           this.requestUpdate());
+                      };
+                    (N.addEventListener("pointerdown", (k) => {
+                      if (k.button === 0) {
+                        if ((k.stopPropagation(), k.altKey)) {
+                          z();
+                          return;
+                        }
+                        this._startWaypointDrag(n.id, v, k);
+                      }
+                    }),
+                      N.addEventListener("dblclick", (k) => {
+                        (k.stopPropagation(), z());
                       }));
                   }
               }
             }
             for (const n of Object.values(t)) {
-              const g = x(
+              const f = y(
                   "foreignObject",
                   { x: n.x, y: n.y, width: n.w, height: n.h, style: this._isEditMode ? "cursor: grab;" : "" },
-                  u,
+                  g,
                 ),
-                f = document.createElement("tuto-flow-node");
-              ((f.node = n),
-                (f.selected = r === n.id),
-                (f.draggableNode = this._isEditMode),
-                (f.isDragging = this._draggedNodeId === n.id),
+                m = document.createElement("tuto-flow-node");
+              ((m.node = n),
+                (m.selected = r === n.id),
+                (m.draggableNode = this._isEditMode),
+                (m.isDragging = this._draggedNodeId === n.id),
                 this._isEditMode
-                  ? f.addEventListener("pointerdown", (y) => {
-                      y.button === 0 && (y.stopPropagation(), this._startNodeDrag(n.id, y));
+                  ? m.addEventListener("pointerdown", (x) => {
+                      x.button === 0 && (x.stopPropagation(), this._startNodeDrag(n.id, x));
                     })
-                  : f.addEventListener("flow:select-node", (y) => {
-                      const M = y;
-                      ((this._activeStateId = M.detail.node.id),
-                        (this._selectedNodeId = M.detail.node.id),
-                        (this._selectedEdgeId = null),
-                        this.emit("flow:select-node", { node: M.detail.node }),
+                  : m.addEventListener("flow:select-node", (x) => {
+                      const L = x,
+                        E = L.detail.node.id;
+                      (this._selectedNodeId === E
+                        ? ((this._activeStateId = null),
+                          (this._selectedNodeId = null),
+                          (this._selectedEdgeId = null),
+                          this.emit("flow:select-node", { node: null }))
+                        : ((this._activeStateId = E),
+                          (this._selectedNodeId = E),
+                          (this._selectedEdgeId = null),
+                          this.emit("flow:select-node", { node: L.detail.node })),
                         this.requestUpdate());
                     }),
-                g.appendChild(f));
+                f.appendChild(m));
             }
-            const m = this.shadowRootNode.getElementById("minimap-el");
-            if (m) {
-              ((m.bounds = this._bounds),
-                (m.camera = this._camera),
-                (m.nodes = t),
-                (m.selectedNodeId = this._selectedNodeId));
+            const u = this.shadowRootNode.getElementById("minimap-el");
+            if (u) {
+              ((u.bounds = this._bounds),
+                (u.camera = this._camera),
+                (u.nodes = t),
+                (u.selectedNodeId = this._selectedNodeId));
               const n = this.getBoundingClientRect();
-              ((m.viewportSize = { width: n.width || 900, height: n.height || 700 }),
-                m.addEventListener("flow:pan-to", (g) => {
-                  const f = g.detail,
-                    y = this.getBoundingClientRect(),
-                    M = y.width || 900,
-                    I = y.height || 700;
+              ((u.viewportSize = { width: n.width || 900, height: n.height || 700 }),
+                u.addEventListener("flow:pan-to", (f) => {
+                  const m = f.detail,
+                    x = this.getBoundingClientRect(),
+                    L = x.width || 900,
+                    E = x.height || 700;
                   ((this._camera = {
                     ...this._camera,
-                    panX: M / 2 - f.worldX * this._camera.scale,
-                    panY: I / 2 - f.worldY * this._camera.scale,
+                    panX: L / 2 - m.worldX * this._camera.scale,
+                    panY: E / 2 - m.worldY * this._camera.scale,
                   }),
                     this.requestUpdate());
                 }));
@@ -2983,19 +3091,19 @@ const EDGE_WAYPOINTS = ` +
               c.addEventListener("flow:toggle-inspector", () => {
                 ((this._showInspector = !this._showInspector), this.requestUpdate());
               }));
-            const w = this.shadowRootNode.getElementById("inspector-el");
-            if (w) {
+            const _ = this.shadowRootNode.getElementById("inspector-el");
+            if (_) {
               if (
-                ((w.isOpen = this._showInspector),
-                (w.tools = this._graph.tools || []),
+                ((_.isOpen = this._showInspector),
+                (_.tools = this._graph.tools || []),
                 this._selectedNodeId && t[this._selectedNodeId])
               )
-                w.node = t[this._selectedNodeId];
+                _.node = t[this._selectedNodeId];
               else if (this._selectedEdgeId) {
-                const n = i.find((g) => g.id === this._selectedEdgeId) || a.find((g) => g.id === this._selectedEdgeId);
-                w.edge = n || null;
-              } else ((w.node = null), (w.edge = null));
-              w.addEventListener("flow:close-inspector", () => {
+                const n = i.find((f) => f.id === this._selectedEdgeId) || a.find((f) => f.id === this._selectedEdgeId);
+                _.edge = n || null;
+              } else ((_.node = null), (_.edge = null));
+              _.addEventListener("flow:close-inspector", () => {
                 ((this._showInspector = !1), this.requestUpdate());
               });
             }
@@ -3003,7 +3111,7 @@ const EDGE_WAYPOINTS = ` +
         }
         return (
           h(
-            F,
+            nt,
             "styles",
             `
     :host {
@@ -3082,6 +3190,29 @@ const EDGE_WAYPOINTS = ` +
       fill: #ffffff;
       font-weight: 800;
     }
+    .canvas-root.edit-mode .flow-edge-pill {
+      cursor: grab !important;
+      opacity: 0.95 !important;
+    }
+    .canvas-root.edit-mode .flow-edge-pill:hover rect {
+      stroke: #38bdf8 !important;
+      stroke-width: 2.2px !important;
+      filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.75)) !important;
+    }
+    .canvas-root.edit-mode .flow-edge-pill.dragging rect {
+      cursor: grabbing !important;
+      stroke: #67e8f9 !important;
+      fill: #0284c7 !important;
+    }
+    .flow-edge-hitarea {
+      fill: none;
+      stroke: transparent;
+      stroke-width: 20;
+      cursor: default;
+    }
+    .canvas-root.edit-mode .flow-edge-hitarea {
+      cursor: grab;
+    }
     .flow-waypoint-handle {
       cursor: move;
       transition: r 120ms ease, stroke-width 120ms ease;
@@ -3149,45 +3280,46 @@ const EDGE_WAYPOINTS = ` +
     }
   `,
           ),
-          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", F),
-          K(),
-          (p.BaseElement = N),
-          (p.DEFAULT_CAMERA_PADDING = Z),
-          (p.MAX_CAMERA_SCALE = z),
-          (p.MIN_CAMERA_SCALE = A),
-          (p.PRIMARY_FORWARD_EVENTS = et),
-          (p.SVG_NS = J),
-          (p.TutoBadge = Y),
-          (p.TutoButton = X),
-          (p.TutoFlowCanvas = F),
-          (p.TutoFlowInspector = H),
-          (p.TutoFlowMinimap = j),
-          (p.TutoFlowNode = q),
-          (p.TutoFlowToolbar = O),
-          (p.assignLanes = st),
-          (p.autoLayoutColumns = ut),
-          (p.bundleEdges = ot),
-          (p.centerOnNode = tt),
-          (p.clamp = B),
-          (p.colors = E),
-          (p.computeFitBounds = Q),
-          (p.computeGraphBounds = T),
-          (p.escapeHtml = v),
-          (p.getClosestPort = W),
+          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", nt),
+          at(),
+          (p.BaseElement = U),
+          (p.DEFAULT_CAMERA_PADDING = dt),
+          (p.MAX_CAMERA_SCALE = Y),
+          (p.MIN_CAMERA_SCALE = D),
+          (p.PRIMARY_FORWARD_EVENTS = ct),
+          (p.SVG_NS = rt),
+          (p.TutoBadge = Z),
+          (p.TutoButton = J),
+          (p.TutoFlowCanvas = nt),
+          (p.TutoFlowInspector = it),
+          (p.TutoFlowMinimap = st),
+          (p.TutoFlowNode = et),
+          (p.TutoFlowToolbar = ot),
+          (p.assignLanes = ut),
+          (p.autoLayoutColumns = St),
+          (p.bundleEdges = pt),
+          (p.centerOnNode = ht),
+          (p.clamp = H),
+          (p.colors = M),
+          (p.computeFitBounds = lt),
+          (p.computeGraphBounds = F),
+          (p.computePolylineMidpoint = gt),
+          (p.escapeHtml = w),
+          (p.getClosestPort = tt),
           (p.getPort = b),
-          (p.htmlEl = ht),
-          (p.injectThemeTokens = K),
-          (p.isEdgeHighlighted = at),
-          (p.pointsToSvgPath = nt),
-          (p.resolvePillSeats = gt),
-          (p.routeEdgeItem = it),
-          (p.screenToWorld = ct),
-          (p.shouldShowPill = rt),
-          (p.spacing = lt),
-          (p.svgEl = x),
-          (p.typography = C),
-          (p.worldToScreen = pt),
-          (p.zoomAtPoint = D),
+          (p.htmlEl = _t),
+          (p.injectThemeTokens = at),
+          (p.isEdgeHighlighted = bt),
+          (p.pointsToSvgPath = mt),
+          (p.resolvePillSeats = Mt),
+          (p.routeEdgeItem = ft),
+          (p.screenToWorld = Et),
+          (p.shouldShowPill = wt),
+          (p.spacing = xt),
+          (p.svgEl = y),
+          (p.typography = X),
+          (p.worldToScreen = kt),
+          (p.zoomAtPoint = Q),
           Object.defineProperty(p, Symbol.toStringTag, { value: "Module" }),
           p
         );
@@ -3992,13 +4124,136 @@ const EDGE_WAYPOINTS = ` +
       }
     </script>
 
+    <!-- Canonical Layout Configuration (workflow-layout.json) -->
+    <script type="application/json" id="workflow-layout-data">
+      {
+        "nodes": {
+          "envision": {
+            "x": 450,
+            "y": -150,
+            "w": 200,
+            "h": 48
+          },
+          "evaluate": {
+            "x": 440,
+            "y": -10,
+            "w": 210,
+            "h": 48
+          },
+          "establish": {
+            "x": 430,
+            "y": 140,
+            "w": 210,
+            "h": 48
+          },
+          "explore": {
+            "x": 430,
+            "y": 270,
+            "w": 210,
+            "h": 48
+          },
+          "elaborate": {
+            "x": 420,
+            "y": 420,
+            "w": 210,
+            "h": 48
+          },
+          "execute": {
+            "x": 420,
+            "y": 570,
+            "w": 210,
+            "h": 48
+          },
+          "examine": {
+            "x": 420,
+            "y": 730,
+            "w": 210,
+            "h": 48
+          }
+        },
+        "edges": {
+          "envision-ask-route-spec": [
+            [790, -40],
+            [790, 260]
+          ],
+          "envision-ask-route-vibe": [
+            [830, -40],
+            [840, 560]
+          ],
+          "envision-to-evaluate": [[550, -60]],
+          "evaluate-ask-route-spec": [
+            [700, 100],
+            [710, 260]
+          ],
+          "evaluate-ask-route-vibe": [
+            [740, 70],
+            [740, 550]
+          ],
+          "evaluate-to-establish": [[530, 90]],
+          "establish-to-evaluate": [
+            [370, 120],
+            [360, 50]
+          ],
+          "establish-next-spec": [[550, 230]],
+          "establish-next-vibe": [
+            [680, 220],
+            [680, 530]
+          ],
+          "establish-handoff": [
+            [340, 120],
+            [340, -70]
+          ],
+          "explore-to-elaborate": [[530, 360]],
+          "elaborate-to-explore": [
+            [340, 390],
+            [330, 330]
+          ],
+          "elaborate-next-align": [
+            [290, 370],
+            [300, 190]
+          ],
+          "elaborate-next-align-review": [
+            [260, 390],
+            [260, 70]
+          ],
+          "elaborate-next-vibe": [[530, 530]],
+          "elaborate-handoff": [
+            [220, 400],
+            [230, -20]
+          ],
+          "execute-to-examine": [[520, 670]],
+          "examine-to-execute": [
+            [350, 670],
+            [340, 600]
+          ],
+          "examine-next-align": [
+            [150, 600],
+            [150, 190]
+          ],
+          "examine-next-align-review": [
+            [100, 600],
+            [90, 60]
+          ],
+          "examine-next-spec": [
+            [190, 590],
+            [190, 340]
+          ],
+          "examine-handoff": [
+            [70, 620],
+            [60, -90]
+          ]
+        }
+      }
+    </script>
+
     <!-- Flow Diagram Initialization (file:// safe, standard script) -->
     <script>
       const fsmData = JSON.parse(document.getElementById("workflow-fsm-data").textContent);
+      const layoutConfig = JSON.parse(document.getElementById("workflow-layout-data").textContent || "{}");
       const canvas = document.getElementById("flow-canvas");
 
-      // 7-"E" Lifecycle Step Node Layout (Spacious 240px-Gap 2-Row Circuit)
-      const NODE_LAYOUT = {
+      // 7-"E" Lifecycle Step Node Layout from workflow-layout.json
+      const defaultNodes = layoutConfig.nodes || {
         envision: { x: 40, y: 310, w: 200, h: 48 },
         evaluate: { x: 420, y: 70, w: 210, h: 48 },
         establish: { x: 420, y: 540, w: 210, h: 48 },
@@ -4008,22 +4263,22 @@ const EDGE_WAYPOINTS = ` +
         examine: { x: 1420, y: 540, w: 210, h: 48 },
       };
 
-      // Edge Custom Waypoints (Figma-Style Angle Breaks)
-      const EDGE_WAYPOINTS = {};
+      // Edge Custom Waypoints from workflow-layout.json
+      const defaultEdges = layoutConfig.edges || {};
 
-      let activeLayout = NODE_LAYOUT;
+      let activeLayout = defaultNodes;
       try {
         const saved = localStorage.getItem("pi_workflow_layout_override");
         if (saved) {
-          activeLayout = { ...NODE_LAYOUT, ...JSON.parse(saved) };
+          activeLayout = { ...defaultNodes, ...JSON.parse(saved) };
         }
       } catch {}
 
-      let activeEdges = EDGE_WAYPOINTS;
+      let activeEdges = defaultEdges;
       try {
         const savedEdges = localStorage.getItem("pi_workflow_edge_override");
         if (savedEdges) {
-          activeEdges = { ...EDGE_WAYPOINTS, ...JSON.parse(savedEdges) };
+          activeEdges = { ...defaultEdges, ...JSON.parse(savedEdges) };
         }
       } catch {}
 
@@ -4049,7 +4304,7 @@ const EDGE_WAYPOINTS = ` +
         ...fsmData,
         framing: false,
         title: "Pi Director Agent Workflow",
-        subtitle: "SCOPE_READY · PWB · TO_GATE / TO_HOME · NEXT",
+        subtitle: "ARTIFACT · PWB · TO_GATE / TO_HOME · NEXT",
         groups: [],
         states,
         transitions,
