@@ -409,13 +409,13 @@
 
     <!-- Self-Contained tuto-ui Library (zero external requests, file:// safe) -->
     <script>
-      var TutoUI = (function (h) {
+      var TutoUI = (function (p) {
         "use strict";
-        var ht = Object.defineProperty;
-        var pt = (h, _, I) =>
-          _ in h ? ht(h, _, { enumerable: !0, configurable: !0, writable: !0, value: I }) : (h[_] = I);
-        var c = (h, _, I) => pt(h, typeof _ != "symbol" ? _ + "" : _, I);
-        const _ = {
+        var bt = Object.defineProperty;
+        var wt = (p, E, C) =>
+          E in p ? bt(p, E, { enumerable: !0, configurable: !0, writable: !0, value: C }) : (p[E] = C);
+        var h = (p, E, C) => wt(p, typeof E != "symbol" ? E + "" : E, C);
+        const E = {
             dark: {
               bg: "#090a0f",
               grid: "rgba(255, 255, 255, 0.04)",
@@ -464,12 +464,19 @@
               align: { accent: "#f59e0b", badge: "ALIGN", perm: "READ", permClass: "perm-read" },
               spec: { accent: "#38bdf8", badge: "SPEC", perm: "READ", permClass: "perm-read" },
               vibe: { accent: "#10b981", badge: "VIBE", perm: "WRITE", permClass: "perm-write" },
-              read: { accent: "#38bdf8", badge: "READ", perm: "READ", permClass: "perm-read" },
-              write: { accent: "#10b981", badge: "WRITE", perm: "WRITE", permClass: "perm-write" },
-              guided: { accent: "#3b82f6", badge: "GUIDED", perm: "READ", permClass: "perm-read" },
+              envision: { accent: "#f59e0b", badge: "ALIGN", perm: "READ", permClass: "perm-read" },
+              establish: { accent: "#f59e0b", badge: "ALIGN", perm: "READ", permClass: "perm-read" },
+              evaluate: { accent: "#f59e0b", badge: "ALIGN", perm: "READ", permClass: "perm-read" },
+              explore: { accent: "#38bdf8", badge: "SPEC", perm: "READ", permClass: "perm-read" },
+              elaborate: { accent: "#38bdf8", badge: "SPEC", perm: "READ", permClass: "perm-read" },
+              execute: { accent: "#10b981", badge: "VIBE", perm: "WRITE", permClass: "perm-write" },
+              examine: { accent: "#10b981", badge: "VIBE", perm: "WRITE", permClass: "perm-write" },
+              closeOut: { accent: "#8b5cf6", badge: "PROCEDURE", perm: "READ", permClass: "perm-read" },
+              blocked: { accent: "#ef4444", badge: "PROCEDURE", perm: "READ", permClass: "perm-read" },
+              handoff: { accent: "#64748b", badge: "PROCEDURE", perm: "STANDBY", permClass: "perm-standby" },
             },
           },
-          I = {
+          C = {
             fonts: {
               sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
               mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
@@ -486,7 +493,7 @@
             weights: { normal: "400", medium: "500", semibold: "600", bold: "700", extrabold: "800" },
             lineHeights: { tight: "1.15", normal: "1.4", relaxed: "1.6" },
           },
-          ot = {
+          lt = {
             space: {
               1: "0.25rem",
               2: "0.5rem",
@@ -510,11 +517,11 @@
             transitions: { fast: "150ms ease", default: "200ms ease", smooth: "300ms cubic-bezier(0.4, 0, 0.2, 1)" },
             zIndex: { canvas: 0, edge: 1, node: 5, overlay: 10, drawer: 20, tooltip: 30 },
           };
-        function O() {
+        function K() {
           if (typeof document > "u" || document.getElementById("tuto-theme-tokens")) return;
-          const o = document.createElement("style");
-          ((o.id = "tuto-theme-tokens"),
-            (o.textContent = `
+          const e = document.createElement("style");
+          ((e.id = "tuto-theme-tokens"),
+            (e.textContent = `
     :root {
       --tuto-bg: #0c0e12;
       --tuto-grid: color-mix(in srgb, #94a3b8 9%, transparent);
@@ -562,15 +569,15 @@
       --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
     }
   `),
-            document.head.appendChild(o));
+            document.head.appendChild(e));
         }
-        const R = class R extends HTMLElement {
+        const U = class U extends HTMLElement {
           constructor(t = {}) {
             super();
-            c(this, "_isRenderPending", !1);
-            c(this, "_hasRendered", !1);
-            c(this, "_useShadow");
-            c(this, "shadowRootNode", null);
+            h(this, "_isRenderPending", !1);
+            h(this, "_hasRendered", !1);
+            h(this, "_useShadow");
+            h(this, "shadowRootNode", null);
             ((this._useShadow = t.useShadow !== !1),
               this._useShadow && (this.shadowRootNode = this.attachShadow({ mode: t.shadowMode || "open" })));
           }
@@ -584,8 +591,8 @@
             if (!(!i || !this.shadowRootNode)) {
               if ("adoptedStyleSheets" in Document.prototype && "adoptedStyleSheets" in ShadowRoot.prototype)
                 try {
-                  let a = R._styleSheetMap.get(t);
-                  (a || ((a = new CSSStyleSheet()), a.replaceSync(i), R._styleSheetMap.set(t, a)),
+                  let a = U._styleSheetMap.get(t);
+                  (a || ((a = new CSSStyleSheet()), a.replaceSync(i), U._styleSheetMap.set(t, a)),
                     this.shadowRootNode.adoptedStyleSheets.includes(a) ||
                       (this.shadowRootNode.adoptedStyleSheets = [...this.shadowRootNode.adoptedStyleSheets, a]));
                   return;
@@ -607,8 +614,8 @@
               }));
           }
           emit(t, i, a = {}) {
-            const d = new CustomEvent(t, { bubbles: !0, composed: !0, cancelable: !0, detail: i, ...a });
-            return this.dispatchEvent(d);
+            const r = new CustomEvent(t, { bubbles: !0, composed: !0, cancelable: !0, detail: i, ...a });
+            return this.dispatchEvent(r);
           }
           get renderRoot() {
             return this.shadowRootNode || this;
@@ -616,56 +623,56 @@
           firstUpdated() {}
           updated() {}
         };
-        (c(R, "styles", ""), c(R, "_styleSheetMap", new WeakMap()));
-        let $ = R;
-        const j = "http://www.w3.org/2000/svg";
-        function w(o, r = {}, t) {
-          const i = document.createElementNS(j, o);
-          for (const [a, d] of Object.entries(r)) d != null && d !== !1 && i.setAttribute(a, String(d));
+        (h(U, "styles", ""), h(U, "_styleSheetMap", new WeakMap()));
+        let N = U;
+        const J = "http://www.w3.org/2000/svg";
+        function x(e, d = {}, t) {
+          const i = document.createElementNS(J, e);
+          for (const [a, r] of Object.entries(d)) r != null && r !== !1 && i.setAttribute(a, String(r));
           return (t && t.appendChild(i), i);
         }
-        function st(o, r = {}, t) {
-          const i = document.createElement(o);
-          for (const [a, d] of Object.entries(r))
-            d != null &&
-              d !== !1 &&
-              (a === "className" || a === "class" ? (i.className = String(d)) : i.setAttribute(a, String(d)));
+        function ht(e, d = {}, t) {
+          const i = document.createElement(e);
+          for (const [a, r] of Object.entries(d))
+            r != null &&
+              r !== !1 &&
+              (a === "className" || a === "class" ? (i.className = String(r)) : i.setAttribute(a, String(r)));
           return (t && t.appendChild(i), i);
         }
-        function v(o) {
-          return o == null
+        function v(e) {
+          return e == null
             ? ""
-            : String(o)
+            : String(e)
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-        function z(o, r, t) {
-          return Math.max(r, Math.min(t, o));
+        function B(e, d, t) {
+          return Math.max(d, Math.min(t, e));
         }
-        class A extends $ {
+        class X extends N {
           static get observedAttributes() {
             return ["variant", "size", "disabled"];
           }
           get variant() {
             return this.getAttribute("variant") || "secondary";
           }
-          set variant(r) {
-            this.setAttribute("variant", r);
+          set variant(d) {
+            this.setAttribute("variant", d);
           }
           get size() {
             return this.getAttribute("size") || "md";
           }
-          set size(r) {
-            this.setAttribute("size", r);
+          set size(d) {
+            this.setAttribute("size", d);
           }
           get disabled() {
             return this.hasAttribute("disabled");
           }
-          set disabled(r) {
-            r ? this.setAttribute("disabled", "") : this.removeAttribute("disabled");
+          set disabled(d) {
+            d ? this.setAttribute("disabled", "") : this.removeAttribute("disabled");
           }
           attributeChangedCallback() {
             this.requestUpdate();
@@ -679,8 +686,8 @@
     `);
           }
         }
-        (c(
-          A,
+        (h(
+          X,
           "styles",
           `
     :host {
@@ -778,16 +785,16 @@
     }
   `,
         ),
-          customElements.get("tuto-button") || customElements.define("tuto-button", A));
-        class L extends $ {
+          customElements.get("tuto-button") || customElements.define("tuto-button", X));
+        class Y extends N {
           static get observedAttributes() {
             return ["variant"];
           }
           get variant() {
             return this.getAttribute("variant") || "default";
           }
-          set variant(r) {
-            this.setAttribute("variant", r);
+          set variant(d) {
+            this.setAttribute("variant", d);
           }
           attributeChangedCallback() {
             this.requestUpdate();
@@ -801,8 +808,8 @@
     `);
           }
         }
-        (c(
-          L,
+        (h(
+          Y,
           "styles",
           `
     :host {
@@ -856,44 +863,44 @@
     }
   `,
         ),
-          customElements.get("tuto-badge") || customElements.define("tuto-badge", L));
-        const M = 0.2,
-          N = 3.5,
-          H = 44;
-        function F(o, r, t = H, i = 1.25) {
-          const a = o.width || 900,
-            d = o.height || 700,
-            s = r.w || 2e3,
-            e = r.h || 1e3,
-            l = z(Math.min((a - t * 2) / s, (d - t * 2) / e), M, i),
-            b = (a - s * l) / 2 - r.x * l,
-            f = (d - e * l) / 2 - r.y * l;
-          return { panX: b, panY: f, scale: l };
+          customElements.get("tuto-badge") || customElements.define("tuto-badge", Y));
+        const A = 0.2,
+          z = 3.5,
+          Z = 44;
+        function Q(e, d, t = Z, i = 1.25) {
+          const a = e.width || 900,
+            r = e.height || 700,
+            s = d.w || 2e3,
+            o = d.h || 1e3,
+            l = B(Math.min((a - t * 2) / s, (r - t * 2) / o), A, i),
+            u = (a - s * l) / 2 - d.x * l,
+            m = (r - o * l) / 2 - d.y * l;
+          return { panX: u, panY: m, scale: l };
         }
-        function B(o, r, t, i, a = M, d = N) {
-          const s = z(o.scale * i, a, d);
-          if (s === o.scale) return o;
-          const e = r - ((r - o.panX) * s) / o.scale,
-            l = t - ((t - o.panY) * s) / o.scale;
-          return { panX: e, panY: l, scale: s };
+        function D(e, d, t, i, a = A, r = z) {
+          const s = B(e.scale * i, a, r);
+          if (s === e.scale) return e;
+          const o = d - ((d - e.panX) * s) / e.scale,
+            l = t - ((t - e.panY) * s) / e.scale;
+          return { panX: o, panY: l, scale: s };
         }
-        function G(o, r, t = 1.05) {
-          const i = o.width || 900,
-            a = o.height || 700,
-            d = z(t, M, N),
-            s = r.x + r.w / 2,
-            e = r.y + r.h / 2,
-            l = i / 2 - s * d,
-            b = a / 2 - e * d;
-          return { panX: l, panY: b, scale: d };
+        function tt(e, d, t = 1.05) {
+          const i = e.width || 900,
+            a = e.height || 700,
+            r = B(t, A, z),
+            s = d.x + d.w / 2,
+            o = d.y + d.h / 2,
+            l = i / 2 - s * r,
+            u = a / 2 - o * r;
+          return { panX: l, panY: u, scale: r };
         }
-        function it(o, r) {
-          return { x: (o.x - r.panX) / r.scale, y: (o.y - r.panY) / r.scale };
+        function ct(e, d) {
+          return { x: (e.x - d.panX) / d.scale, y: (e.y - d.panY) / d.scale };
         }
-        function nt(o, r) {
-          return { x: o.x * r.scale + r.panX, y: o.y * r.scale + r.panY };
+        function pt(e, d) {
+          return { x: e.x * d.scale + d.panX, y: e.y * d.scale + d.panY };
         }
-        const W = new Set([
+        const et = new Set([
           "GOAL_SET",
           "ASK_ROUTED_SPEC",
           "ASK_ROUTED_VIBE",
@@ -905,344 +912,365 @@
           "CLOSE_OUT",
           "NEXT_HANDOFF",
         ]);
-        function V(o) {
-          return o.map((r, t) => ({
-            id: r.id || `${r.from}->${r.to}-${t}`,
-            from: r.from,
-            to: r.to,
-            self: r.from === r.to,
-            label: r.label || r.event || "",
-            event: r.event || r.label || "",
-            events: r.event ? [r.event] : [],
-            description: r.description || "",
-            descriptions: r.description ? [r.description] : [],
+        function ot(e) {
+          return e.map((d, t) => ({
+            id: d.id || `${d.from}->${d.to}-${t}`,
+            from: d.from,
+            to: d.to,
+            self: d.from === d.to,
+            label: d.label || d.event || "",
+            event: d.event || d.label || "",
+            events: d.event ? [d.event] : [],
+            description: d.description || "",
+            descriptions: d.description ? [d.description] : [],
             userMediated: !1,
+            waypoints: d.waypoints ? [...d.waypoints] : void 0,
           }));
         }
-        function m(o, r, t = 0.5) {
+        function b(e, d, t = 0.5) {
           const i = Math.min(0.9, Math.max(0.1, t));
-          return r === "left"
-            ? { x: o.x, y: o.y + o.h * i }
-            : r === "right"
-              ? { x: o.x + o.w, y: o.y + o.h * i }
-              : r === "top"
-                ? { x: o.x + o.w * i, y: o.y }
-                : { x: o.x + o.w * i, y: o.y + o.h };
+          return d === "left"
+            ? { x: e.x, y: e.y + e.h * i }
+            : d === "right"
+              ? { x: e.x + e.w, y: e.y + e.h * i }
+              : d === "top"
+                ? { x: e.x + e.w * i, y: e.y }
+                : { x: e.x + e.w * i, y: e.y + e.h };
         }
-        function K(o, r) {
-          return o;
+        function W(e, d) {
+          const t = [
+            { point: [e.x, e.y + e.h / 2], side: "left" },
+            { point: [e.x + e.w, e.y + e.h / 2], side: "right" },
+            { point: [e.x + e.w / 2, e.y], side: "top" },
+            { point: [e.x + e.w / 2, e.y + e.h], side: "bottom" },
+          ];
+          let i = t[0],
+            a = 1 / 0;
+          for (const r of t) {
+            const s = Math.hypot(r.point[0] - d[0], r.point[1] - d[1]);
+            s < a && ((a = s), (i = r));
+          }
+          return i;
         }
-        function Z(o, r) {
-          const t = r[o.from],
-            i = r[o.to];
+        function st(e, d) {
+          return e;
+        }
+        function it(e, d) {
+          const t = d[e.from],
+            i = d[e.to];
           if (!t || !i) return null;
-          if (o.self) {
+          if (e.waypoints && e.waypoints.length > 0) {
+            const s = W(t, e.waypoints[0]).point,
+              o = W(i, e.waypoints[e.waypoints.length - 1]).point,
+              l = [s, ...e.waypoints, o];
+            let u = -1,
+              m = (s[0] + o[0]) / 2,
+              c = (s[1] + o[1]) / 2;
+            for (let w = 0; w < l.length - 1; w++) {
+              const n = l[w],
+                g = l[w + 1],
+                f = Math.hypot(g[0] - n[0], g[1] - n[1]);
+              f > u && ((u = f), (m = (n[0] + g[0]) / 2), (c = (n[1] + g[1]) / 2));
+            }
+            return { points: l, seatX: m, seatY: c, seatSide: "h" };
+          }
+          if (e.self) {
             const s = t.x + 36,
-              e = t.y,
+              o = t.y,
               l = 36;
             return {
               points: [
-                [s - 12, e],
-                [s - 12, e - l],
-                [s + 12, e - l],
-                [s + 12, e],
+                [s - 12, o],
+                [s - 12, o - l],
+                [s + 12, o - l],
+                [s + 12, o],
               ],
               seatX: s,
-              seatY: e - l - 10,
+              seatY: o - l - 10,
               seatSide: "h",
             };
           }
-          if (o.from === "envision" && o.to === "evaluate") {
-            const s = m(t, "right", 0.5),
-              e = m(i, "left", 0.5);
+          if (e.from === "envision" && e.to === "establish") {
+            const s = b(t, "right", 0.5),
+              o = b(i, "left", 0.5);
             return {
               points: [
                 [s.x, s.y],
-                [e.x, s.y],
-                [e.x, e.y],
+                [o.x, o.y],
               ],
-              seatX: (s.x + e.x) / 2,
+              seatX: (s.x + o.x) / 2,
               seatY: s.y,
               seatSide: "h",
             };
           }
-          if (o.from === "evaluate" && o.to === "establish") {
-            const s = m(t, "bottom", 0.5),
-              e = m(i, "top", 0.5);
+          if (e.from === "establish" && e.to === "explore") {
+            const s = b(t, "right", 0.5),
+              o = b(i, "left", 0.5);
             return {
               points: [
                 [s.x, s.y],
-                [e.x, e.y],
+                [o.x, o.y],
+              ],
+              seatX: (s.x + o.x) / 2,
+              seatY: s.y,
+              seatSide: "h",
+            };
+          }
+          if (e.from === "explore" && e.to === "elaborate") {
+            const s = b(t, "right", 0.5),
+              o = b(i, "left", 0.5);
+            return {
+              points: [
+                [s.x, s.y],
+                [o.x, o.y],
+              ],
+              seatX: (s.x + o.x) / 2,
+              seatY: s.y,
+              seatSide: "h",
+            };
+          }
+          if (e.from === "elaborate" && e.to === "execute") {
+            const s = b(t, "bottom", 0.5),
+              o = b(i, "top", 0.5);
+            return {
+              points: [
+                [s.x, s.y],
+                [o.x, o.y],
               ],
               seatX: s.x,
-              seatY: (s.y + e.y) / 2,
+              seatY: (s.y + o.y) / 2,
               seatSide: "h",
             };
           }
-          if (o.from === "establish" && o.to === "evaluate") {
-            const s = m(t, "top", 0.35),
-              e = m(i, "bottom", 0.35);
+          if (e.from === "execute" && e.to === "examine") {
+            const s = b(t, "left", 0.5),
+              o = b(i, "right", 0.5);
             return {
               points: [
                 [s.x, s.y],
-                [e.x, e.y],
+                [o.x, o.y],
               ],
-              seatX: s.x - 28,
-              seatY: (s.y + e.y) / 2,
-              seatSide: "h",
-            };
-          }
-          if (o.from === "establish" && o.to === "explore") {
-            const s = m(t, "right", 0.35),
-              e = m(i, "left", 0.65);
-            return {
-              points: [
-                [s.x, s.y],
-                [e.x, s.y],
-                [e.x, e.y],
-              ],
-              seatX: (s.x + e.x) / 2,
+              seatX: (s.x + o.x) / 2,
               seatY: s.y,
               seatSide: "h",
             };
           }
-          if (o.from === "establish" && o.to === "execute") {
-            const s = m(t, "right", 0.7),
-              e = m(i, "left", 0.7),
-              midY = 560;
+          if (e.from === "examine" && e.to === "evaluate") {
+            const s = b(t, "left", 0.5),
+              o = b(i, "right", 0.5);
             return {
               points: [
                 [s.x, s.y],
-                [s.x + 40, s.y],
-                [s.x + 40, midY],
-                [e.x - 40, midY],
-                [e.x - 40, e.y],
-                [e.x, e.y],
+                [o.x, o.y],
               ],
-              seatX: (s.x + e.x) / 2,
-              seatY: midY,
-              seatSide: "h",
-            };
-          }
-          if (o.from === "establish" && o.to === "envision") {
-            const s = m(t, "left", 0.5),
-              e = m(i, "bottom", 0.5);
-            return {
-              points: [
-                [s.x, s.y],
-                [e.x, s.y],
-                [e.x, e.y],
-              ],
-              seatX: (s.x + e.x) / 2,
+              seatX: (s.x + o.x) / 2,
               seatY: s.y,
               seatSide: "h",
             };
           }
-          if (o.from === "explore" && o.to === "elaborate") {
-            const s = m(t, "bottom", 0.5),
-              e = m(i, "top", 0.5);
+          if (e.from === "evaluate" && e.to === "establish") {
+            const s = b(t, "top", 0.25),
+              o = b(i, "bottom", 0.25);
             return {
               points: [
                 [s.x, s.y],
-                [e.x, e.y],
+                [o.x, o.y],
               ],
               seatX: s.x,
-              seatY: (s.y + e.y) / 2,
+              seatY: (s.y + o.y) / 2,
               seatSide: "h",
             };
           }
-          if (o.from === "elaborate" && o.to === "explore") {
-            const s = m(t, "top", 0.35),
-              e = m(i, "bottom", 0.35);
+          if (e.from === "examine" && e.to === "explore") {
+            const s = b(t, "top", 0.75),
+              o = b(i, "bottom", 0.75);
             return {
               points: [
                 [s.x, s.y],
-                [e.x, e.y],
+                [o.x, o.y],
               ],
-              seatX: s.x - 28,
-              seatY: (s.y + e.y) / 2,
+              seatX: s.x,
+              seatY: (s.y + o.y) / 2,
               seatSide: "h",
             };
           }
-          if (o.from === "elaborate" && o.to === "evaluate") {
-            const s = m(t, "left", 0.35),
-              e = m(i, "right", 0.65);
+          if (e.from === "evaluate" && e.to === "envision") {
+            const s = b(t, "left", 0.5),
+              o = b(i, "bottom", 0.5),
+              l = o.x;
             return {
               points: [
                 [s.x, s.y],
-                [(s.x + e.x) / 2, s.y],
-                [(s.x + e.x) / 2, e.y],
-                [e.x, e.y],
+                [l, s.y],
+                [o.x, o.y],
               ],
-              seatX: (s.x + e.x) / 2,
-              seatY: (s.y + e.y) / 2,
-              seatSide: "h",
-            };
-          }
-          if (o.from === "elaborate" && o.to === "execute") {
-            const s = m(t, "right", 0.5),
-              e = m(i, "left", 0.65);
-            return {
-              points: [
-                [s.x, s.y],
-                [e.x, s.y],
-                [e.x, e.y],
-              ],
-              seatX: (s.x + e.x) / 2,
+              seatX: (s.x + l) / 2,
               seatY: s.y,
               seatSide: "h",
             };
           }
-          if (o.from === "execute" && o.to === "examine") {
-            const s = m(t, "bottom", 0.5),
-              e = m(i, "top", 0.5);
+          if (e.from === "establish" && e.to === "execute") {
+            const s = b(t, "top", 0.6),
+              o = b(i, "right", 0.5),
+              l = 55,
+              u = i.x + i.w + 60;
             return {
               points: [
                 [s.x, s.y],
-                [e.x, e.y],
+                [s.x, l],
+                [u, l],
+                [u, o.y],
+                [o.x, o.y],
               ],
-              seatX: s.x,
-              seatY: (s.y + e.y) / 2,
+              seatX: (s.x + u) / 2,
+              seatY: l,
               seatSide: "h",
             };
           }
-          if (o.from === "examine" && o.to === "execute") {
-            const s = m(t, "top", 0.35),
-              e = m(i, "bottom", 0.35);
+          if (e.from === "evaluate" && e.to === "execute") {
+            const s = b(t, "bottom", 0.6),
+              o = b(i, "bottom", 0.5),
+              l = 575;
             return {
               points: [
                 [s.x, s.y],
-                [e.x, e.y],
+                [s.x, l],
+                [o.x, l],
+                [o.x, o.y],
               ],
-              seatX: s.x + 28,
-              seatY: (s.y + e.y) / 2,
+              seatX: (s.x + o.x) / 2,
+              seatY: l,
               seatSide: "h",
             };
           }
-          if (o.from === "examine" && o.to === "evaluate") {
-            const s = m(t, "left", 0.35),
-              e = m(i, "right", 0.35),
-              midY = 40;
+          if (e.from === "elaborate" && e.to === "evaluate") {
+            const s = b(t, "bottom", 0.25),
+              o = b(i, "top", 0.75),
+              l = 250;
             return {
               points: [
                 [s.x, s.y],
-                [s.x, midY],
-                [e.x, midY],
-                [e.x, e.y],
+                [s.x, l],
+                [o.x, l],
+                [o.x, o.y],
               ],
-              seatX: (s.x + e.x) / 2,
-              seatY: midY,
+              seatX: 880,
+              seatY: l,
               seatSide: "h",
             };
           }
-          if (o.from === "examine" && o.to === "explore") {
-            const s = m(t, "left", 0.65),
-              e = m(i, "right", 0.65);
+          if (e.from === "evaluate" && e.to === "explore") {
+            const s = b(t, "top", 0.85),
+              o = b(i, "bottom", 0.25),
+              l = 360;
             return {
               points: [
                 [s.x, s.y],
-                [(s.x + e.x) / 2, s.y],
-                [(s.x + e.x) / 2, e.y],
-                [e.x, e.y],
+                [s.x, l],
+                [o.x, l],
+                [o.x, o.y],
               ],
-              seatX: (s.x + e.x) / 2,
-              seatY: (s.y + e.y) / 2,
+              seatX: 880,
+              seatY: l,
               seatSide: "h",
             };
           }
-          const a = m(t, "bottom", 0.5),
-            d = m(i, "top", 0.5);
+          const a = b(t, "bottom", 0.5),
+            r = b(i, "top", 0.5);
           return {
             points: [
               [a.x, a.y],
-              [d.x, d.y],
+              [r.x, r.y],
             ],
-            seatX: (a.x + d.x) / 2,
-            seatY: (a.y + d.y) / 2,
+            seatX: (a.x + r.x) / 2,
+            seatY: (a.y + r.y) / 2,
             seatSide: "h",
           };
         }
-        function rt(o) {}
-        function Q(o, r = !1, t = 10) {
-          if (!o || o.length === 0) return "";
-          if (o.length === 1) return `M ${o[0][0]} ${o[0][1]}`;
-          if (r && o.length === 4)
-            return `M ${o[0][0]} ${o[0][1]} C ${o[1][0]} ${o[1][1]}, ${o[2][0]} ${o[2][1]}, ${o[3][0]} ${o[3][1]}`;
-          if (o.length === 2) return `M ${o[0][0]} ${o[0][1]} L ${o[1][0]} ${o[1][1]}`;
-          let i = `M ${o[0][0]} ${o[0][1]}`;
-          for (let d = 1; d < o.length - 1; d++) {
-            const s = o[d - 1],
-              e = o[d],
-              l = o[d + 1],
-              b = e[0] - s[0],
-              f = e[1] - s[1],
-              p = Math.hypot(b, f),
-              y = l[0] - e[0],
-              n = l[1] - e[1],
-              u = Math.hypot(y, n);
-            if (p < 1 || u < 1) {
-              i += ` L ${e[0]} ${e[1]}`;
+        function gt(e) {}
+        function nt(e, d = !1, t = 10) {
+          if (!e || e.length === 0) return "";
+          if (e.length === 1) return `M ${e[0][0]} ${e[0][1]}`;
+          if (d && e.length === 4)
+            return `M ${e[0][0]} ${e[0][1]} C ${e[1][0]} ${e[1][1]}, ${e[2][0]} ${e[2][1]}, ${e[3][0]} ${e[3][1]}`;
+          if (e.length === 2) return `M ${e[0][0]} ${e[0][1]} L ${e[1][0]} ${e[1][1]}`;
+          if (t <= 0) return e.map((r, s) => `${s === 0 ? "M" : "L"} ${r[0]} ${r[1]}`).join(" ");
+          let i = `M ${e[0][0]} ${e[0][1]}`;
+          for (let r = 1; r < e.length - 1; r++) {
+            const s = e[r - 1],
+              o = e[r],
+              l = e[r + 1],
+              u = o[0] - s[0],
+              m = o[1] - s[1],
+              c = Math.hypot(u, m),
+              w = l[0] - o[0],
+              n = l[1] - o[1],
+              g = Math.hypot(w, n);
+            if (c < 1 || g < 1) {
+              i += ` L ${o[0]} ${o[1]}`;
               continue;
             }
-            const g = Math.min(t, p / 2, u / 2),
-              x = e[0] - (b / p) * g,
-              k = e[1] - (f / p) * g,
-              E = e[0] + (y / u) * g,
-              S = e[1] + (n / u) * g;
-            ((i += ` L ${x} ${k}`), (i += ` Q ${e[0]} ${e[1]} ${E} ${S}`));
+            const f = Math.min(t, c / 2, g / 2),
+              y = o[0] - (u / c) * f,
+              M = o[1] - (m / c) * f,
+              I = o[0] + (w / g) * f,
+              k = o[1] + (n / g) * f;
+            ((i += ` L ${y} ${M}`), (i += ` Q ${o[0]} ${o[1]} ${I} ${k}`));
           }
-          const a = o[o.length - 1];
+          const a = e[e.length - 1];
           return ((i += ` L ${a[0]} ${a[1]}`), i);
         }
-        function J(o, r, t, i) {
-          return t === o.id || i === o.id ? !0 : r ? o.from === r || o.to === r : !1;
+        function at(e, d, t, i) {
+          return t === e.id || i === e.id ? !0 : d ? e.from === d || e.to === d : !1;
         }
-        function tt(o, r, t, i, a = W) {
+        function rt(e, d, t, i, a = et) {
           return !0;
         }
-        function et(o, r = 64, t = 56, i = 46, a) {
-          let d = 1 / 0,
+        function T(e, d = 64, t = 56, i = 46, a) {
+          let r = 1 / 0,
             s = 1 / 0,
-            e = -1 / 0,
+            o = -1 / 0,
             l = -1 / 0;
-          const b = Object.values(o);
-          if (b.length === 0 && (!a || a.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
-          for (const p of b)
-            ((d = Math.min(d, p.x)),
-              (s = Math.min(s, p.y)),
-              (e = Math.max(e, p.x + p.w)),
-              (l = Math.max(l, p.y + p.h)));
+          const u = Object.values(e);
+          if (u.length === 0 && (!a || a.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
+          for (const c of u)
+            ((r = Math.min(r, c.x)),
+              (s = Math.min(s, c.y)),
+              (o = Math.max(o, c.x + c.w)),
+              (l = Math.max(l, c.y + c.h)));
           if (a)
-            for (const p of a)
-              ((d = Math.min(d, p.x)),
-                (s = Math.min(s, p.y)),
-                (e = Math.max(e, p.x + p.w)),
-                (l = Math.max(l, p.y + p.h)));
-          const f = i > 0;
-          return { x: d - r, y: s - t - (f ? i : 0), w: e - d + r * 2, h: l - s + t * 2 + (f ? i + 80 : 0) };
+            for (const c of a)
+              ((r = Math.min(r, c.x)),
+                (s = Math.min(s, c.y)),
+                (o = Math.max(o, c.x + c.w)),
+                (l = Math.max(l, c.y + c.h)));
+          const m = i > 0;
+          return { x: r - d, y: s - t - (m ? i : 0), w: o - r + d * 2, h: l - s + t * 2 + (m ? i + 80 : 0) };
         }
-        function at(o, r = {}) {
-          const t = r.colWidth || 420,
-            i = r.colGap || 180,
-            a = r.rowGap || 40,
-            d = r.startX || 120,
-            s = r.startY || 120,
-            e = {};
-          let l = d,
-            b = s;
+        function ut(e, d = {}) {
+          const t = d.colWidth || 420,
+            i = d.colGap || 180,
+            a = d.rowGap || 40,
+            r = d.startX || 120,
+            s = d.startY || 120,
+            o = {};
+          let l = r,
+            u = s;
           return (
-            o.forEach((f, p) => {
-              ((e[f.id] = { ...f, x: f.x ?? l, y: f.y ?? b, w: f.w || t, h: f.h || 280 }),
-                (p + 1) % 3 === 0 ? ((l += t + i), (b = s)) : (b += (f.h || 280) + a));
+            e.forEach((m, c) => {
+              ((o[m.id] = { ...m, x: m.x ?? l, y: m.y ?? u, w: m.w || t, h: m.h || 280 }),
+                (c + 1) % 3 === 0 ? ((l += t + i), (u = s)) : (u += (m.h || 280) + a));
             }),
-            e
+            o
           );
         }
-        class U extends $ {
+        class q extends N {
           constructor() {
             super(...arguments);
-            c(this, "_node", null);
-            c(this, "_selected", !1);
+            h(this, "_node", null);
+            h(this, "_selected", !1);
+            h(this, "_draggableNode", !1);
+            h(this, "_isDragging", !1);
           }
           get node() {
             return this._node;
@@ -1256,41 +1284,58 @@
           set selected(t) {
             ((this._selected = !!t), this.requestUpdate());
           }
+          get draggableNode() {
+            return this._draggableNode;
+          }
+          set draggableNode(t) {
+            ((this._draggableNode = !!t), this.requestUpdate());
+          }
+          get isDragging() {
+            return this._isDragging;
+          }
+          set isDragging(t) {
+            ((this._isDragging = !!t), this.requestUpdate());
+          }
           render() {
             if (!this.shadowRootNode || !this._node) return;
             const t = this._node,
-              i =
-                _.accents[t.userMode] ||
-                _.accents[t.id] ||
-                (t.permission ? _.accents[t.permission] : null) ||
-                _.accents.align;
+              i = E.accents[t.id] || (t.permission ? E.accents[t.permission] : null) || E.accents.spec;
             this.style.setProperty("--node-accent", i.accent);
-            const d =
-              i.perm === "WRITE"
-                ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
-                : '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';
+            const r =
+                i.perm === "WRITE"
+                  ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
+                  : '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>',
+              s = [
+                "node-card",
+                "compact",
+                this._selected ? "selected" : "",
+                this._draggableNode ? "draggable" : "",
+                this._isDragging ? "dragging" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
             this.shadowRootNode.innerHTML = `
-      <div class="node-card compact ${this._selected ? "selected" : ""}" role="button" tabindex="0">
+      <div class="${s}" role="button" tabindex="0">
         <div class="node-head">
           <div class="node-head-left">
             <span class="state-dot"></span>
             <span class="head-title">${v(t.label || t.id)}</span>
           </div>
           <div class="head-badges">
-            <span class="badge badge-perm ${i.permClass}">${d}${v(i.perm)}</span>
+            <span class="badge badge-perm ${i.permClass}">${r}${v(i.perm)}</span>
           </div>
         </div>
       </div>
     `;
-            const s = this.shadowRootNode.querySelector(".node-card");
-            s &&
-              s.addEventListener("click", (e) => {
-                (e.stopPropagation(), this.emit("flow:select-node", { node: this._node }));
+            const o = this.shadowRootNode.querySelector(".node-card");
+            o &&
+              o.addEventListener("click", (l) => {
+                (l.stopPropagation(), this.emit("flow:select-node", { node: this._node }));
               });
           }
         }
-        (c(
-          U,
+        (h(
+          q,
           "styles",
           `
     :host {
@@ -1376,6 +1421,19 @@
       flex-shrink: 0;
     }
 
+    .node-card.draggable {
+      cursor: grab;
+    }
+    .node-card.draggable:hover {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4), 0 6px 20px rgba(0, 0, 0, 0.5);
+    }
+    .node-card.dragging {
+      cursor: grabbing !important;
+      opacity: 0.92;
+      box-shadow: 0 0 0 3px #3b82f6, 0 12px 30px rgba(0, 0, 0, 0.7);
+    }
+
     .badge {
       display: inline-flex;
       align-items: center;
@@ -1404,13 +1462,14 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-node") || customElements.define("tuto-flow-node", U));
-        class T extends $ {
+          customElements.get("tuto-flow-node") || customElements.define("tuto-flow-node", q));
+        class O extends N {
           constructor() {
             super(...arguments);
-            c(this, "_zoom", 100);
-            c(this, "_isMinimapActive", !1);
-            c(this, "_isInspectorActive", !1);
+            h(this, "_zoom", 100);
+            h(this, "_isMinimapActive", !1);
+            h(this, "_isInspectorActive", !1);
+            h(this, "_isEditModeActive", !1);
           }
           get zoom() {
             return this._zoom;
@@ -1430,8 +1489,14 @@
           set isInspectorActive(t) {
             ((this._isInspectorActive = !!t), this.requestUpdate());
           }
+          get isEditModeActive() {
+            return this._isEditModeActive;
+          }
+          set isEditModeActive(t) {
+            ((this._isEditModeActive = !!t), this.requestUpdate());
+          }
           render() {
-            var t, i, a, d, s, e;
+            var t, i, a, r, s, o, l, u, m;
             this.shadowRootNode &&
               ((this.shadowRootNode.innerHTML = `
       <div class="toolbar-container">
@@ -1451,17 +1516,49 @@
 
         <div class="divider"></div>
 
-        <button class="tool-btn" id="btn-fit" title="Fit to Screen" aria-label="Fit to Screen">
+        <button class="tool-btn" id="btn-fit" title="Fit to Screen (F / 0)" aria-label="Fit to Screen">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
           </svg>
         </button>
-        <button class="tool-btn" id="btn-reset" title="Reset View" aria-label="Reset View">
+        <button class="tool-btn" id="btn-reset" title="Reset Camera View" aria-label="Reset View">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <path d="M3 3v5h5"></path>
           </svg>
         </button>
+
+        <div class="divider"></div>
+
+        <!-- Layout Drag & Snapshot Controls -->
+        <button class="tool-btn ${this._isEditModeActive ? "active" : ""}" id="btn-edit-mode" title="Toggle Drag / Edit Layout (E)" aria-label="Edit Layout">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="5 9 2 12 5 15"></polyline>
+            <polyline points="9 5 12 2 15 5"></polyline>
+            <polyline points="15 19 12 22 9 19"></polyline>
+            <polyline points="19 9 22 12 19 15"></polyline>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <line x1="12" y1="2" x2="12" y2="22"></line>
+          </svg>
+        </button>
+        ${
+          this._isEditModeActive
+            ? `
+        <button class="tool-btn" id="btn-snapshot" title="Snapshot Layout JSON to Clipboard (S)" aria-label="Snapshot Layout">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+        </button>
+        <button class="tool-btn" id="btn-reset-layout" title="Reset Node Positions to Default" aria-label="Reset Layout">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 4v6h6"></path>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+        </button>
+        `
+            : ""
+        }
 
         <div class="divider"></div>
 
@@ -1493,22 +1590,34 @@
                 a.addEventListener("click", () => {
                   this.emit("flow:fit");
                 }),
-              (d = this.shadowRootNode.getElementById("btn-reset")) == null ||
-                d.addEventListener("click", () => {
+              (r = this.shadowRootNode.getElementById("btn-reset")) == null ||
+                r.addEventListener("click", () => {
                   this.emit("flow:reset");
                 }),
-              (s = this.shadowRootNode.getElementById("btn-minimap")) == null ||
+              (s = this.shadowRootNode.getElementById("btn-edit-mode")) == null ||
                 s.addEventListener("click", () => {
+                  this.emit("flow:toggle-edit-mode");
+                }),
+              (o = this.shadowRootNode.getElementById("btn-snapshot")) == null ||
+                o.addEventListener("click", () => {
+                  this.emit("flow:snapshot-layout");
+                }),
+              (l = this.shadowRootNode.getElementById("btn-reset-layout")) == null ||
+                l.addEventListener("click", () => {
+                  this.emit("flow:reset-layout");
+                }),
+              (u = this.shadowRootNode.getElementById("btn-minimap")) == null ||
+                u.addEventListener("click", () => {
                   this.emit("flow:toggle-minimap");
                 }),
-              (e = this.shadowRootNode.getElementById("btn-inspector")) == null ||
-                e.addEventListener("click", () => {
+              (m = this.shadowRootNode.getElementById("btn-inspector")) == null ||
+                m.addEventListener("click", () => {
                   this.emit("flow:toggle-inspector");
                 }));
           }
         }
-        (c(
-          T,
+        (h(
+          O,
           "styles",
           `
     :host {
@@ -1570,23 +1679,23 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", T));
-        class X extends $ {
+          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", O));
+        class j extends N {
           constructor() {
             super(...arguments);
-            c(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
-            c(this, "_camera", { panX: 0, panY: 0, scale: 1 });
-            c(this, "_viewportSize", { width: 900, height: 700 });
-            c(this, "_nodes", {});
-            c(this, "_selectedNodeId", null);
-            c(this, "_isDragging", !1);
-            c(this, "handlePointerDown", (t) => {
+            h(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
+            h(this, "_camera", { panX: 0, panY: 0, scale: 1 });
+            h(this, "_viewportSize", { width: 900, height: 700 });
+            h(this, "_nodes", {});
+            h(this, "_selectedNodeId", null);
+            h(this, "_isDragging", !1);
+            h(this, "handlePointerDown", (t) => {
               t.button === 0 && (t.preventDefault(), (this._isDragging = !0), this.panToEvent(t));
             });
-            c(this, "handlePointerMove", (t) => {
+            h(this, "handlePointerMove", (t) => {
               this._isDragging && this.panToEvent(t);
             });
-            c(this, "handlePointerUp", () => {
+            h(this, "handlePointerUp", () => {
               this._isDragging = !1;
             });
           }
@@ -1635,28 +1744,28 @@
           panToEvent(t) {
             const i = this.getBoundingClientRect(),
               a = t.clientX - i.left,
-              d = t.clientY - i.top,
+              r = t.clientY - i.top,
               s = i.width || 170,
-              e = i.height || 120,
+              o = i.height || 120,
               l = this._bounds.w || 2e3,
-              b = this._bounds.h || 1e3,
-              f = Math.min(s / l, e / b),
-              p = a / f + this._bounds.x,
-              y = d / f + this._bounds.y;
-            this.emit("flow:pan-to", { worldX: p, worldY: y });
+              u = this._bounds.h || 1e3,
+              m = Math.min(s / l, o / u),
+              c = a / m + this._bounds.x,
+              w = r / m + this._bounds.y;
+            this.emit("flow:pan-to", { worldX: c, worldY: w });
           }
           render() {
-            var x, k;
+            var y, M;
             if (!this.shadowRootNode) return;
             this.shadowRootNode.innerHTML = "";
-            const t = w("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
+            const t = x("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
               i = 170,
               a = 120,
-              d = this._bounds.w || 2e3,
+              r = this._bounds.w || 2e3,
               s = this._bounds.h || 1e3,
-              e = Math.min(i / d, a / s),
-              l = w("g", { transform: `scale(${e}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
-            w(
+              o = Math.min(i / r, a / s),
+              l = x("g", { transform: `scale(${o}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
+            x(
               "rect",
               {
                 x: this._bounds.x,
@@ -1670,40 +1779,40 @@
               },
               l,
             );
-            for (const [E, S] of Object.entries(this._nodes)) {
-              const C =
-                ((x = _.accents[E]) == null ? void 0 : x.accent) ||
-                ((k = _.accents[S.kind]) == null ? void 0 : k.accent) ||
+            for (const [I, k] of Object.entries(this._nodes)) {
+              const _ =
+                ((y = E.accents[I]) == null ? void 0 : y.accent) ||
+                ((M = E.accents[k.kind]) == null ? void 0 : M.accent) ||
                 "#3b82f6";
-              w(
+              x(
                 "rect",
                 {
-                  x: S.x,
-                  y: S.y,
-                  width: S.w,
-                  height: S.h,
+                  x: k.x,
+                  y: k.y,
+                  width: k.w,
+                  height: k.h,
                   rx: 10,
-                  fill: E === this._selectedNodeId ? C : "var(--tuto-head-bg, #1a2030)",
-                  stroke: C,
+                  fill: I === this._selectedNodeId ? _ : "var(--tuto-head-bg, #1a2030)",
+                  stroke: _,
                   "stroke-width": 2,
                 },
                 l,
               );
             }
-            const b = this._viewportSize.width || 900,
-              f = this._viewportSize.height || 700,
-              p = this._camera.scale || 1,
-              y = (-this._camera.panX / p - this._bounds.x) * e,
-              n = (-this._camera.panY / p - this._bounds.y) * e,
-              u = (b / p) * e,
-              g = (f / p) * e;
-            w(
+            const u = this._viewportSize.width || 900,
+              m = this._viewportSize.height || 700,
+              c = this._camera.scale || 1,
+              w = (-this._camera.panX / c - this._bounds.x) * o,
+              n = (-this._camera.panY / c - this._bounds.y) * o,
+              g = (u / c) * o,
+              f = (m / c) * o;
+            x(
               "rect",
               {
-                x: Math.max(0, Math.min(i, y)),
+                x: Math.max(0, Math.min(i, w)),
                 y: Math.max(0, Math.min(a, n)),
-                width: Math.max(4, Math.min(i, u)),
-                height: Math.max(4, Math.min(a, g)),
+                width: Math.max(4, Math.min(i, g)),
+                height: Math.max(4, Math.min(a, f)),
                 fill: "rgba(59, 130, 246, 0.15)",
                 stroke: "var(--tuto-hot, #3b82f6)",
                 "stroke-width": 1.5,
@@ -1713,8 +1822,8 @@
             );
           }
         }
-        (c(
-          X,
+        (h(
+          j,
           "styles",
           `
     :host {
@@ -1738,14 +1847,14 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", X));
-        class Y extends $ {
+          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", j));
+        class H extends N {
           constructor() {
             super(...arguments);
-            c(this, "_isOpen", !1);
-            c(this, "_node", null);
-            c(this, "_edge", null);
-            c(this, "_tools", []);
+            h(this, "_isOpen", !1);
+            h(this, "_node", null);
+            h(this, "_edge", null);
+            h(this, "_tools", []);
           }
           get isOpen() {
             return this._isOpen;
@@ -1772,55 +1881,51 @@
             ((this._tools = t), this.requestUpdate());
           }
           render() {
-            var a, d, s;
+            var a, r, s;
             if (!this.shadowRootNode) return;
             let t = "",
               i = "";
             if (this._node) {
-              const e = this._node,
-                l = (() => {
-                  const modeKey = e.userMode || e.id || e.kind;
-                  const base = _.accents[modeKey] || _.accents[e.kind] || _.accents.align;
-                  const perm = (e.permission || base.perm || "read").toLowerCase() === "write" ? "WRITE" : "READ";
-                  return {
-                    accent: base.accent,
-                    badge: (e.userMode || e.kind || "guided").toUpperCase(),
-                    perm,
-                    permClass: perm === "WRITE" ? "perm-write" : "perm-read",
-                  };
-                })(),
-                f =
+              const o = this._node,
+                l = E.accents[o.id] ||
+                  E.accents[o.kind] || {
+                    accent: "#3b82f6",
+                    badge: (o.kind || "MODE").toUpperCase(),
+                    perm: (o.permission || "READ-ONLY").toUpperCase(),
+                    permClass: `perm-${o.permission || "readonly"}`,
+                  },
+                m =
                   l.perm === "WRITE"
                     ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
                     : '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';
               (this.style.setProperty("--drawer-accent", l.accent),
                 (t = `
         <div class="header-titles">
-          <h2>${v(e.label || e.id)}</h2>
+          <h2>${v(o.label || o.id)}</h2>
           <div class="header-badges">
             <span class="badge badge-accent">${v(l.badge)}</span>
-            <span class="badge badge-perm ${l.permClass}">${f}${v(l.perm)}</span>
+            <span class="badge badge-perm ${l.permClass}">${m}${v(l.perm)}</span>
           </div>
         </div>
       `));
-              const p = (e.substates || []).length
+              const c = (o.substates || []).length
                   ? `<div>
             <h4 class="section-title">Substates</h4>
             <div class="chip-group">
-              ${e.substates.map((g) => `<span class="chip">${v(g)}</span>`).join("")}
+              ${o.substates.map((f) => `<span class="chip">${v(f)}</span>`).join("")}
             </div>
           </div>`
                   : "",
-                y = (e.procedure || []).length
+                w = (o.procedure || []).length
                   ? `<div>
-            <h4 class="section-title">Ordered Instructions (${e.procedure.length})</h4>
+            <h4 class="section-title">Ordered Instructions (${o.procedure.length})</h4>
             <ol class="instruction-list">
-              ${e.procedure
+              ${o.procedure
                 .map(
-                  (g, x) => `
+                  (f, y) => `
                 <li class="instruction-item">
-                  <span class="instruction-idx">${x + 1}.</span>
-                  <span>${v(g)}</span>
+                  <span class="instruction-idx">${y + 1}.</span>
+                  <span>${v(f)}</span>
                 </li>
               `,
                 )
@@ -1828,22 +1933,22 @@
             </ol>
           </div>`
                   : "",
-                n = this._tools.filter((g) => (g.modes || []).includes(e.id) || (g.modes || []).includes("any")),
-                u = n.length
+                n = this._tools.filter((f) => (f.modes || []).includes(o.id) || (f.modes || []).includes("any")),
+                g = n.length
                   ? `<div>
             <h4 class="section-title">Permitted Tools & Gates (${n.length})</h4>
             <div style="display: flex; flex-direction: column; gap: 0.6rem;">
               ${n
-                .map((g) => {
-                  var x;
+                .map((f) => {
+                  var y;
                   return `
                 <div class="tool-card">
                   <div class="tool-title">
-                    <span>${v(g.name)}</span>
+                    <span>${v(f.name)}</span>
                     <span class="chip">TOOL</span>
                   </div>
-                  <p class="section-text" style="font-size: 0.78rem;">${v(g.summary)}</p>
-                  ${(x = g.gate) != null && x.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${v(g.gate.join(" · "))}</div>` : ""}
+                  <p class="section-text" style="font-size: 0.78rem;">${v(f.summary)}</p>
+                  ${(y = f.gate) != null && y.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${v(f.gate.join(" · "))}</div>` : ""}
                 </div>
               `;
                 })
@@ -1852,21 +1957,21 @@
           </div>`
                   : "";
               i = `
-        ${e.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${v(e.summary)}</p></div>` : ""}
-        ${p}
-        ${y}
-        ${u}
+        ${o.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${v(o.summary)}</p></div>` : ""}
+        ${c}
+        ${w}
+        ${g}
       `;
             } else if (this._edge) {
-              const e = this._edge;
+              const o = this._edge;
               this.style.setProperty("--drawer-accent", "#3b82f6");
-              const l = e.event || e.label || "Transition";
+              const l = o.event || o.label || "Transition";
               ((t = `
         <div class="header-titles">
           <h2>${v(l)}</h2>
           <div class="header-badges">
             <span class="badge badge-accent">TRANSITION</span>
-            ${e.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
+            ${o.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
           </div>
         </div>
       `),
@@ -1874,33 +1979,33 @@
         <div>
           <h4 class="section-title">Route Connection</h4>
           <p class="section-text" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(e.from.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(o.from.toUpperCase())}</span>
             <span style="color: var(--tuto-muted);">──►</span>
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(e.to.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(o.to.toUpperCase())}</span>
           </p>
         </div>
-        ${e.label && e.label !== l ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${v(e.label)}</p></div>` : ""}
-        ${e.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${v(e.description)}</p></div>` : ""}
+        ${o.label && o.label !== l ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${v(o.label)}</p></div>` : ""}
+        ${o.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${v(o.description)}</p></div>` : ""}
         ${
-          (a = e.events) != null && a.length
+          (a = o.events) != null && a.length
             ? `<div>
-                <h4 class="section-title">Trigger Events (${e.events.length})</h4>
+                <h4 class="section-title">Trigger Events (${o.events.length})</h4>
                 <div class="chip-group">
-                  ${e.events.map((b) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${v(b)}</span>`).join("")}
+                  ${o.events.map((u) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${v(u)}</span>`).join("")}
                 </div>
               </div>`
             : ""
         }
         ${
-          (d = e.descriptions) != null && d.length && e.descriptions.length > 1
+          (r = o.descriptions) != null && r.length && o.descriptions.length > 1
             ? `<div>
                 <h4 class="section-title">Bundled Paths</h4>
                 <ul class="instruction-list">
-                  ${e.descriptions
+                  ${o.descriptions
                     .map(
-                      (b) => `
+                      (u) => `
                     <li class="instruction-item">
-                      <span>${v(b)}</span>
+                      <span>${v(u)}</span>
                     </li>
                   `,
                     )
@@ -1938,8 +2043,8 @@
                 }));
           }
         }
-        (c(
-          Y,
+        (h(
+          H,
           "styles",
           `
     :host {
@@ -2123,23 +2228,31 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", Y));
-        class D extends $ {
+          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", H));
+        class F extends N {
           constructor() {
             super(...arguments);
-            c(this, "_graph", null);
-            c(this, "_camera", { panX: 0, panY: 0, scale: 1 });
-            c(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
-            c(this, "_activeStateId", null);
-            c(this, "_selectedNodeId", null);
-            c(this, "_selectedEdgeId", null);
-            c(this, "_hoveredEdgeId", null);
-            c(this, "_showMinimap", !0);
-            c(this, "_showInspector", !1);
-            c(this, "_theme", "dark");
-            c(this, "_isDragging", !1);
-            c(this, "_dragStart", { x: 0, y: 0, panX: 0, panY: 0 });
-            c(this, "handleKeyDown", (t) => {
+            h(this, "_graph", null);
+            h(this, "_camera", { panX: 0, panY: 0, scale: 1 });
+            h(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
+            h(this, "_activeStateId", null);
+            h(this, "_selectedNodeId", null);
+            h(this, "_selectedEdgeId", null);
+            h(this, "_hoveredEdgeId", null);
+            h(this, "_showMinimap", !0);
+            h(this, "_showInspector", !1);
+            h(this, "_theme", "dark");
+            h(this, "_isEditMode", !1);
+            h(this, "_isDragging", !1);
+            h(this, "_dragStart", { x: 0, y: 0, panX: 0, panY: 0 });
+            h(this, "_draggedNodeId", null);
+            h(this, "_dragNodeStart", null);
+            h(this, "_edgeWaypoints", new Map());
+            h(this, "_draggedWaypoint", null);
+            h(this, "_defaultLayout", null);
+            h(this, "_toastMessage", null);
+            h(this, "_toastTimeout", null);
+            h(this, "handleKeyDown", (t) => {
               var i;
               t.target instanceof HTMLInputElement ||
                 t.target instanceof HTMLTextAreaElement ||
@@ -2147,50 +2260,58 @@
                   ? this.zoomBy(1.2)
                   : t.key === "-"
                     ? this.zoomBy(0.8333333333333334)
-                    : t.key === "0" || t.key === "f"
+                    : t.key === "0" || t.key === "f" || t.key === "F"
                       ? this.fitToViewport()
-                      : t.key === "r"
+                      : t.key === "r" || t.key === "R"
                         ? (i = this._graph) != null &&
                           i.initial &&
                           ((this._activeStateId = this._graph.initial),
                           (this._selectedNodeId = this._graph.initial),
                           (this._selectedEdgeId = null),
                           this.requestUpdate())
-                        : t.key === "i"
+                        : t.key === "i" || t.key === "I"
                           ? ((this._showInspector = !this._showInspector), this.requestUpdate())
-                          : t.key === "m"
+                          : t.key === "m" || t.key === "M"
                             ? ((this._showMinimap = !this._showMinimap), this.requestUpdate())
-                            : t.key === "Escape" &&
-                              ((this._showInspector = !1), (this._selectedEdgeId = null), this.requestUpdate()));
+                            : t.key === "e" || t.key === "E"
+                              ? (this.isEditMode = !this.isEditMode)
+                              : (t.key === "s" || t.key === "S") && this._isEditMode
+                                ? this.copyLayoutSnapshot()
+                                : t.key === "Escape" &&
+                                  (this._isEditMode
+                                    ? (this.isEditMode = !1)
+                                    : ((this._showInspector = !1),
+                                      (this._selectedEdgeId = null),
+                                      this.requestUpdate())));
             });
-            c(this, "handleResize", () => {
+            h(this, "handleResize", () => {
               this.requestUpdate();
             });
-            c(this, "handleWheel", (t) => {
+            h(this, "handleWheel", (t) => {
               t.preventDefault();
               const i = this.getBoundingClientRect(),
                 a = t.clientX - i.left,
-                d = t.clientY - i.top,
+                r = t.clientY - i.top,
                 s = t.deltaY < 0 ? 1.12 : 0.89;
-              ((this._camera = B(this._camera, a, d, s, M, N)), this.requestUpdate());
+              ((this._camera = D(this._camera, a, r, s, A, z)), this.requestUpdate());
             });
-            c(this, "handlePointerDown", (t) => {
-              var d;
+            h(this, "handlePointerDown", (t) => {
+              var r;
               if (
                 t.button !== 0 ||
                 t.target.closest(
-                  ".flow-edge-pill, tuto-flow-node, .floating-toolbar, .floating-minimap, tuto-flow-inspector",
+                  ".flow-edge-pill, tuto-flow-node, .floating-toolbar, .floating-minimap, tuto-flow-inspector, .flow-waypoint-handle, .flow-waypoint-split",
                 )
               )
                 return;
               ((this._isDragging = !0),
                 (this._dragStart = { x: t.clientX, y: t.clientY, panX: this._camera.panX, panY: this._camera.panY }));
-              const a = (d = this.shadowRootNode) == null ? void 0 : d.querySelector("svg.flow-svg");
+              const a = (r = this.shadowRootNode) == null ? void 0 : r.querySelector("svg.flow-svg");
               (a == null || a.classList.add("grabbing"),
                 window.addEventListener("pointermove", this.handlePointerMove),
                 window.addEventListener("pointerup", this.handlePointerUp));
             });
-            c(this, "handlePointerMove", (t) => {
+            h(this, "handlePointerMove", (t) => {
               this._isDragging &&
                 ((this._camera = {
                   ...this._camera,
@@ -2199,7 +2320,7 @@
                 }),
                 this.requestUpdate());
             });
-            c(this, "handlePointerUp", () => {
+            h(this, "handlePointerUp", () => {
               var i;
               this._isDragging = !1;
               const t = (i = this.shadowRootNode) == null ? void 0 : i.querySelector("svg.flow-svg");
@@ -2207,18 +2328,91 @@
                 window.removeEventListener("pointermove", this.handlePointerMove),
                 window.removeEventListener("pointerup", this.handlePointerUp));
             });
+            h(this, "handleNodePointerMove", (t) => {
+              if (!this._draggedNodeId || !this._dragNodeStart || !this._graph) return;
+              const i = this._graph.states[this._draggedNodeId];
+              if (!i) return;
+              const a = this._camera.scale || 1,
+                r = (t.clientX - this._dragNodeStart.startX) / a,
+                s = (t.clientY - this._dragNodeStart.startY) / a,
+                o = this._dragNodeStart.nodeOrigX + r,
+                l = this._dragNodeStart.nodeOrigY + s;
+              ((i.x = Math.round(o / 10) * 10), (i.y = Math.round(l / 10) * 10));
+              const u = this._graph.framing !== !1;
+              ((this._bounds = T(this._graph.states, u ? 64 : 40, u ? 56 : 30, u ? 46 : 0, this._graph.groups)),
+                this.requestUpdate());
+            });
+            h(this, "handleNodePointerUp", () => {
+              if (!this._draggedNodeId) return;
+              const t = this._draggedNodeId;
+              ((this._draggedNodeId = null),
+                (this._dragNodeStart = null),
+                window.removeEventListener("pointermove", this.handleNodePointerMove),
+                window.removeEventListener("pointerup", this.handleNodePointerUp),
+                this.emit("flow:layout-change", { nodeId: t, layout: this.exportLayoutSnapshot() }),
+                this.requestUpdate());
+            });
+            h(this, "handleWaypointPointerMove", (t) => {
+              if (!this._draggedWaypoint) return;
+              const { edgeId: i, waypointIndex: a, startX: r, startY: s, origX: o, origY: l } = this._draggedWaypoint,
+                u = this._edgeWaypoints.get(i);
+              if (!u || !u[a]) return;
+              const m = this._camera.scale || 1,
+                c = (t.clientX - r) / m,
+                w = (t.clientY - s) / m,
+                n = Math.round((o + c) / 10) * 10,
+                g = Math.round((l + w) / 10) * 10;
+              ((u[a] = [n, g]), this.requestUpdate());
+            });
+            h(this, "handleWaypointPointerUp", () => {
+              this._draggedWaypoint &&
+                ((this._draggedWaypoint = null),
+                window.removeEventListener("pointermove", this.handleWaypointPointerMove),
+                window.removeEventListener("pointerup", this.handleWaypointPointerUp),
+                this._saveEdgeWaypoints(),
+                this.emit("flow:layout-change", { layout: this.exportLayoutSnapshot() }),
+                this.requestUpdate());
+            });
           }
           get graph() {
             return this._graph;
           }
           set graph(t) {
             if (((this._graph = t), t)) {
+              if (!this._defaultLayout && t.states) {
+                this._defaultLayout = {};
+                for (const [a, r] of Object.entries(t.states))
+                  this._defaultLayout[a] = { x: r.x, y: r.y, w: r.w, h: r.h };
+              }
+              if (t.transitions)
+                for (const a of t.transitions)
+                  a.waypoints &&
+                    a.waypoints.length > 0 &&
+                    this._edgeWaypoints.set(
+                      a.id,
+                      a.waypoints.map((r) => [...r]),
+                    );
+              try {
+                const a = localStorage.getItem("pi_workflow_edge_override");
+                if (a) {
+                  const r = JSON.parse(a);
+                  for (const [s, o] of Object.entries(r)) Array.isArray(o) && this._edgeWaypoints.set(s, o);
+                }
+              } catch {}
               this._activeStateId || (this._activeStateId = t.initial || Object.keys(t.states || {})[0] || null);
               const i = t.framing !== !1;
-              ((this._bounds = et(t.states, i ? 64 : 40, i ? 56 : 30, i ? 46 : 0, t.groups)),
+              ((this._bounds = T(t.states, i ? 64 : 40, i ? 56 : 30, i ? 46 : 0, t.groups)),
                 requestAnimationFrame(() => this.fitToViewport()));
             }
             this.requestUpdate();
+          }
+          get isEditMode() {
+            return this._isEditMode;
+          }
+          set isEditMode(t) {
+            ((this._isEditMode = !!t),
+              this._isEditMode && this.showToast("Edit mode active — drag nodes to reposition (E to exit)"),
+              this.requestUpdate());
           }
           get activeStateId() {
             var t;
@@ -2265,29 +2459,145 @@
           disconnectedCallback() {
             (super.disconnectedCallback(),
               window.removeEventListener("keydown", this.handleKeyDown),
-              window.removeEventListener("resize", this.handleResize));
+              window.removeEventListener("resize", this.handleResize),
+              window.removeEventListener("pointermove", this.handlePointerMove),
+              window.removeEventListener("pointerup", this.handlePointerUp),
+              window.removeEventListener("pointermove", this.handleNodePointerMove),
+              window.removeEventListener("pointerup", this.handleNodePointerUp),
+              window.removeEventListener("pointermove", this.handleWaypointPointerMove),
+              window.removeEventListener("pointerup", this.handleWaypointPointerUp));
           }
           fitToViewport() {
             const t = this.getBoundingClientRect();
-            ((this._camera = F({ width: t.width || 900, height: t.height || 700 }, this._bounds)),
+            ((this._camera = Q({ width: t.width || 900, height: t.height || 700 }, this._bounds)),
               this.requestUpdate());
           }
           centerOnState(t) {
-            var d;
-            if (!((d = this._graph) != null && d.states[t])) return;
+            var r;
+            if (!((r = this._graph) != null && r.states[t])) return;
             const i = this._graph.states[t],
               a = this.getBoundingClientRect();
-            ((this._camera = G({ width: a.width || 900, height: a.height || 700 }, i)),
+            ((this._camera = tt({ width: a.width || 900, height: a.height || 700 }, i)),
               (this._activeStateId = t),
               (this._selectedNodeId = t),
               (this._selectedEdgeId = null),
               this.requestUpdate());
           }
+          showToast(t) {
+            ((this._toastMessage = t),
+              this._toastTimeout && clearTimeout(this._toastTimeout),
+              this.requestUpdate(),
+              (this._toastTimeout = setTimeout(() => {
+                ((this._toastMessage = null), this.requestUpdate());
+              }, 2500)));
+          }
+          exportLayoutSnapshot() {
+            var a;
+            const t = {};
+            if ((a = this._graph) != null && a.states)
+              for (const [r, s] of Object.entries(this._graph.states))
+                t[r] = { x: Math.round(s.x), y: Math.round(s.y), w: Math.round(s.w), h: Math.round(s.h) };
+            const i = {};
+            for (const [r, s] of this._edgeWaypoints.entries())
+              s && s.length > 0 && (i[r] = s.map(([o, l]) => [Math.round(o), Math.round(l)]));
+            return { ...t, nodes: t, edges: i };
+          }
+          async copyLayoutSnapshot() {
+            const t = this.exportLayoutSnapshot(),
+              i = t.nodes || {},
+              a = t.edges || {};
+            let r =
+              "const NODE_LAYOUT = " +
+              JSON.stringify(i, null, 2) +
+              `;
+`;
+            Object.keys(a).length > 0 &&
+              (r +=
+                `
+const EDGE_WAYPOINTS = ` +
+                JSON.stringify(a, null, 2) +
+                `;
+`);
+            try {
+              typeof navigator < "u" &&
+                navigator.clipboard &&
+                navigator.clipboard.writeText &&
+                (await navigator.clipboard.writeText(r));
+            } catch {}
+            try {
+              (localStorage.setItem("pi_workflow_layout_override", JSON.stringify(i)), this._saveEdgeWaypoints());
+            } catch {}
+            return (
+              console.log(
+                `Exported layout snapshot:
+` + r,
+              ),
+              this.showToast("✓ Layout & edge angles copied to clipboard!"),
+              this.emit("flow:snapshot-layout", { snapshot: t, code: r }),
+              r
+            );
+          }
+          resetLayout() {
+            var i;
+            if (!this._defaultLayout || !((i = this._graph) != null && i.states)) return;
+            for (const [a, r] of Object.entries(this._defaultLayout))
+              this._graph.states[a] &&
+                ((this._graph.states[a].x = r.x),
+                (this._graph.states[a].y = r.y),
+                (this._graph.states[a].w = r.w),
+                (this._graph.states[a].h = r.h));
+            this._edgeWaypoints.clear();
+            try {
+              (localStorage.removeItem("pi_workflow_layout_override"),
+                localStorage.removeItem("pi_workflow_edge_override"));
+            } catch {}
+            const t = this._graph.framing !== !1;
+            ((this._bounds = T(this._graph.states, t ? 64 : 40, t ? 56 : 30, t ? 46 : 0, this._graph.groups)),
+              this.showToast("✓ Reset layout to default"),
+              this.emit("flow:reset-layout"),
+              this.requestUpdate());
+          }
           zoomBy(t) {
             const i = this.getBoundingClientRect(),
               a = i.width / 2,
-              d = i.height / 2;
-            ((this._camera = B(this._camera, a, d, t, M, N)), this.requestUpdate());
+              r = i.height / 2;
+            ((this._camera = D(this._camera, a, r, t, A, z)), this.requestUpdate());
+          }
+          _startNodeDrag(t, i) {
+            var r;
+            const a = (r = this._graph) == null ? void 0 : r.states[t];
+            a &&
+              ((this._draggedNodeId = t),
+              (this._dragNodeStart = { startX: i.clientX, startY: i.clientY, nodeOrigX: a.x, nodeOrigY: a.y }),
+              (this._activeStateId = t),
+              (this._selectedNodeId = t),
+              (this._selectedEdgeId = null),
+              window.addEventListener("pointermove", this.handleNodePointerMove),
+              window.addEventListener("pointerup", this.handleNodePointerUp),
+              this.requestUpdate());
+          }
+          _startWaypointDrag(t, i, a) {
+            const r = this._edgeWaypoints.get(t);
+            if (!r || !r[i]) return;
+            const s = r[i];
+            ((this._draggedWaypoint = {
+              edgeId: t,
+              waypointIndex: i,
+              startX: a.clientX,
+              startY: a.clientY,
+              origX: s[0],
+              origY: s[1],
+            }),
+              window.addEventListener("pointermove", this.handleWaypointPointerMove),
+              window.addEventListener("pointerup", this.handleWaypointPointerUp),
+              this.requestUpdate());
+          }
+          _saveEdgeWaypoints() {
+            try {
+              const t = {};
+              for (const [i, a] of this._edgeWaypoints.entries()) a && a.length > 0 && (t[i] = a);
+              localStorage.setItem("pi_workflow_edge_override", JSON.stringify(t));
+            } catch {}
           }
           render() {
             if (!this.shadowRootNode) return;
@@ -2301,14 +2611,17 @@
             }
             const t = this._graph.states,
               i = this._graph.transitions || [],
-              a = K(V(i).filter((n) => !n.self));
+              a = st(ot(i).filter((n) => !n.self));
             for (const n of a) {
-              const u = Z(n, t);
-              u && (n.route = u);
+              this._edgeWaypoints.has(n.id) && (n.waypoints = this._edgeWaypoints.get(n.id));
+              const g = it(n, t);
+              g && (n.route = g);
             }
-            const d = this._activeStateId || this._graph.initial || Object.keys(t)[0] || null;
+            const r = this._activeStateId || this._graph.initial || Object.keys(t)[0] || null;
             this.shadowRootNode.innerHTML = `
-      <div class="canvas-root">
+      <div class="canvas-root ${this._isEditMode ? "edit-mode" : ""}">
+        ${this._toastMessage ? `<div class="flow-toast">${v(this._toastMessage)}</div>` : ""}
+
         <svg class="flow-svg" id="flow-svg">
           <defs>
             <pattern id="flow-grid-pattern" width="24" height="24" patternUnits="userSpaceOnUse">
@@ -2369,14 +2682,14 @@
             s &&
               (s.addEventListener("wheel", this.handleWheel, { passive: !1 }),
               s.addEventListener("pointerdown", this.handlePointerDown));
-            const e = this.shadowRootNode.getElementById("groups-group"),
+            const o = this.shadowRootNode.getElementById("groups-group"),
               l = this.shadowRootNode.getElementById("edges-group"),
-              b = this.shadowRootNode.getElementById("nodes-group");
+              u = this.shadowRootNode.getElementById("nodes-group");
             if (this._graph.groups && this._graph.groups.length > 0)
               for (const n of this._graph.groups) {
-                const u = w("g", { class: "flow-group-container" }, e),
-                  g = n.accent || "#3b82f6";
-                (w(
+                const g = x("g", { class: "flow-group-container" }, o),
+                  f = n.accent || "#3b82f6";
+                (x(
                   "rect",
                   {
                     x: n.x,
@@ -2386,127 +2699,128 @@
                     rx: 10,
                     fill: "var(--tuto-card-bg, #1c202a)",
                     "fill-opacity": "0.78",
-                    stroke: g,
+                    stroke: f,
                     "stroke-width": 1.5,
                     "stroke-opacity": "0.55",
                   },
-                  u,
+                  g,
                 ),
-                  w(
+                  x(
                     "path",
                     {
                       d: `M ${n.x} ${n.y + 10} Q ${n.x} ${n.y} ${n.x + 10} ${n.y} L ${n.x + n.w - 10} ${n.y} Q ${n.x + n.w} ${n.y} ${n.x + n.w} ${n.y + 10} L ${n.x + n.w} ${n.y + 30} L ${n.x} ${n.y + 30} Z`,
-                      fill: g,
+                      fill: f,
                       "fill-opacity": "0.14",
                     },
-                    u,
+                    g,
                   ),
-                  w(
+                  x(
                     "line",
                     {
                       x1: n.x,
                       y1: n.y + 30,
                       x2: n.x + n.w,
                       y2: n.y + 30,
-                      stroke: g,
+                      stroke: f,
                       "stroke-width": 1,
                       "stroke-opacity": "0.22",
                     },
-                    u,
+                    g,
                   ));
-                const x = w(
+                const y = x(
                   "text",
                   {
                     x: n.x + 14,
                     y: n.y + 20,
-                    fill: g,
+                    fill: f,
                     "font-size": 11,
                     "font-weight": 800,
                     "letter-spacing": "0.06em",
                     "font-family": "var(--tuto-font-sans, sans-serif)",
                   },
-                  u,
+                  g,
                 );
-                x.textContent = n.label.toUpperCase();
+                y.textContent = n.label.toUpperCase();
               }
             if (this._graph.initial && t[this._graph.initial]) {
               const n = t[this._graph.initial],
-                u = n.x - 14,
-                g = n.y + n.h / 2,
-                x = n.x,
-                k = n.y + n.h / 2,
-                E = w("g", { class: "flow-initial-indicator" }, l);
-              (w("circle", { cx: u - 4, cy: g, r: 4, fill: "#ffffff" }, E),
-                w(
+                g = n.x - 14,
+                f = n.y + n.h / 2,
+                y = n.x,
+                M = n.y + n.h / 2,
+                I = x("g", { class: "flow-initial-indicator" }, l);
+              (x("circle", { cx: g - 4, cy: f, r: 4, fill: "#ffffff" }, I),
+                x(
                   "path",
                   {
-                    d: `M ${u} ${g} L ${x} ${k}`,
+                    d: `M ${g} ${f} L ${y} ${M}`,
                     stroke: "#ffffff",
                     "stroke-width": 2,
                     fill: "none",
                     "marker-end": "url(#flow-arrow-init)",
                   },
-                  E,
+                  I,
                 ));
             }
             for (const n of a) {
               if (!n.route) continue;
-              const u = d ? n.from === d : !0;
-              u || J(n, this._selectedNodeId, this._selectedEdgeId, this._hoveredEdgeId);
-              const g = Q(n.route.points, n.self, 10),
-                k = w(
+              const g = r ? n.from === r : !0;
+              g || at(n, this._selectedNodeId, this._selectedEdgeId, this._hoveredEdgeId);
+              const f = nt(n.route.points, n.self, 10),
+                M = x(
                   "path",
                   {
-                    d: g,
-                    class: `flow-edge-path ${u ? "available" : "dimmed"}`,
-                    "marker-end": u ? "url(#flow-arrow-hot)" : "url(#flow-arrow)",
+                    d: f,
+                    class: `flow-edge-path ${g ? "available" : "dimmed"}`,
+                    "marker-end": g ? "url(#flow-arrow-hot)" : "url(#flow-arrow)",
                   },
                   l,
                 ),
-                E = (S) => {
-                  (S.stopPropagation(),
-                    u && n.to
-                      ? ((this._activeStateId = n.to),
-                        (this._selectedNodeId = n.to),
-                        (this._selectedEdgeId = n.id),
-                        this.emit("flow:transition", { from: n.from, to: n.to, event: n.event }),
-                        t[n.to] && this.emit("flow:select-node", { node: t[n.to] }),
-                        this.requestUpdate())
-                      : ((this._selectedEdgeId = n.id),
-                        this.emit("flow:select-edge", { edge: n }),
-                        this.requestUpdate()));
+                I = (k) => {
+                  (k.stopPropagation(),
+                    !this._isEditMode &&
+                      (g && n.to
+                        ? ((this._activeStateId = n.to),
+                          (this._selectedNodeId = n.to),
+                          (this._selectedEdgeId = n.id),
+                          this.emit("flow:transition", { from: n.from, to: n.to, event: n.event }),
+                          t[n.to] && this.emit("flow:select-node", { node: t[n.to] }),
+                          this.requestUpdate())
+                        : ((this._selectedEdgeId = n.id),
+                          this.emit("flow:select-edge", { edge: n }),
+                          this.requestUpdate())));
                 };
-              if ((k.addEventListener("click", E), tt(n, this._selectedNodeId, this._selectedEdgeId))) {
-                const S = n.event || n.label || "",
-                  C = Math.max(76, Math.min(240, S.length * 8 + 28)),
-                  P = 28,
-                  dt = n.route.seatX - C / 2,
-                  lt = n.route.seatY - P / 2,
-                  q = w(
+              if ((M.addEventListener("click", I), rt(n, this._selectedNodeId, this._selectedEdgeId))) {
+                const k = n.event || n.label || "",
+                  _ = Math.max(76, Math.min(240, k.length * 8 + 28)),
+                  $ = 28,
+                  L = n.route.seatX - _ / 2,
+                  R = n.route.seatY - $ / 2,
+                  S = x(
                     "g",
-                    { class: `flow-edge-pill ${u ? "available" : "dimmed"}`, transform: `translate(${dt}, ${lt})` },
+                    { class: `flow-edge-pill ${g ? "available" : "dimmed"}`, transform: `translate(${L}, ${R})` },
                     l,
                   );
-                w(
+                x(
                   "rect",
                   {
-                    width: C,
-                    height: P,
+                    width: _,
+                    height: $,
                     rx: 14,
-                    fill: u ? "#3b82f6" : "#3e4657",
-                    stroke: u ? "#93c5fd" : "rgba(255, 255, 255, 0.14)",
-                    "stroke-width": u ? 2 : 1,
-                    filter: u
+                    fill: g ? "#3b82f6" : "#3e4657",
+                    stroke: g ? "#93c5fd" : "rgba(255, 255, 255, 0.14)",
+                    "stroke-width": g ? 2 : 1,
+                    filter: g
                       ? "drop-shadow(0 4px 14px rgba(59, 130, 246, 0.55))"
                       : "drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4))",
                   },
-                  q,
+                  S,
                 );
-                const ct = w(
+                const P = x(
                   "text",
                   {
-                    x: C / 2,
-                    y: P / 2,
+                    x: _ / 2,
+                    y: $ / 2,
                     "text-anchor": "middle",
                     "dominant-baseline": "central",
                     fill: "#ffffff",
@@ -2515,88 +2829,181 @@
                     "letter-spacing": "0.04em",
                     "font-family": "var(--tuto-font-sans, sans-serif)",
                   },
-                  q,
+                  S,
                 );
-                ((ct.textContent = S), q.addEventListener("click", E));
+                ((P.textContent = k), S.addEventListener("click", I));
+              }
+              if (this._isEditMode && n.route && n.route.points.length >= 2) {
+                const k = n.route.points;
+                for (let _ = 0; _ < k.length - 1; _++) {
+                  const $ = k[_],
+                    L = k[_ + 1];
+                  if (Math.hypot(L[0] - $[0], L[1] - $[1]) < 16) continue;
+                  const S = ($[0] + L[0]) / 2,
+                    P = ($[1] + L[1]) / 2;
+                  x(
+                    "circle",
+                    {
+                      cx: S,
+                      cy: P,
+                      r: 4.5,
+                      class: "flow-waypoint-split",
+                      fill: "#38bdf8",
+                      "fill-opacity": "0.55",
+                      stroke: "#0284c7",
+                      "stroke-width": 1.5,
+                    },
+                    l,
+                  ).addEventListener("pointerdown", (G) => {
+                    if (G.button !== 0) return;
+                    G.stopPropagation();
+                    const V = this._edgeWaypoints.get(n.id) ? [...this._edgeWaypoints.get(n.id)] : [],
+                      dt = Math.min(_, V.length),
+                      ft = Math.round(S / 10) * 10,
+                      mt = Math.round(P / 10) * 10;
+                    (V.splice(dt, 0, [ft, mt]),
+                      this._edgeWaypoints.set(n.id, V),
+                      this._saveEdgeWaypoints(),
+                      this._startWaypointDrag(n.id, dt, G));
+                  });
+                }
+                if (n.waypoints && n.waypoints.length > 0)
+                  for (let _ = 0; _ < n.waypoints.length; _++) {
+                    const $ = n.waypoints[_],
+                      L = x(
+                        "circle",
+                        {
+                          cx: $[0],
+                          cy: $[1],
+                          r: 6,
+                          class: "flow-waypoint-handle",
+                          fill: "#ffffff",
+                          stroke: "#0284c7",
+                          "stroke-width": 2.2,
+                        },
+                        l,
+                      );
+                    (L.addEventListener("pointerdown", (R) => {
+                      if (R.button === 0) {
+                        if ((R.stopPropagation(), R.altKey)) {
+                          const S = [...(this._edgeWaypoints.get(n.id) || [])];
+                          (S.splice(_, 1),
+                            S.length === 0 ? this._edgeWaypoints.delete(n.id) : this._edgeWaypoints.set(n.id, S),
+                            this._saveEdgeWaypoints(),
+                            this.requestUpdate());
+                          return;
+                        }
+                        this._startWaypointDrag(n.id, _, R);
+                      }
+                    }),
+                      L.addEventListener("dblclick", (R) => {
+                        R.stopPropagation();
+                        const S = [...(this._edgeWaypoints.get(n.id) || [])];
+                        (S.splice(_, 1),
+                          S.length === 0 ? this._edgeWaypoints.delete(n.id) : this._edgeWaypoints.set(n.id, S),
+                          this._saveEdgeWaypoints(),
+                          this.requestUpdate());
+                      }));
+                  }
               }
             }
             for (const n of Object.values(t)) {
-              const u = w("foreignObject", { x: n.x, y: n.y, width: n.w, height: n.h }, b),
-                g = document.createElement("tuto-flow-node");
-              ((g.node = n),
-                (g.selected = d === n.id),
-                g.addEventListener("flow:select-node", (x) => {
-                  const k = x;
-                  ((this._activeStateId = k.detail.node.id),
-                    (this._selectedNodeId = k.detail.node.id),
-                    (this._selectedEdgeId = null),
-                    this.emit("flow:select-node", { node: k.detail.node }),
-                    this.requestUpdate());
-                }),
-                u.appendChild(g));
+              const g = x(
+                  "foreignObject",
+                  { x: n.x, y: n.y, width: n.w, height: n.h, style: this._isEditMode ? "cursor: grab;" : "" },
+                  u,
+                ),
+                f = document.createElement("tuto-flow-node");
+              ((f.node = n),
+                (f.selected = r === n.id),
+                (f.draggableNode = this._isEditMode),
+                (f.isDragging = this._draggedNodeId === n.id),
+                this._isEditMode
+                  ? f.addEventListener("pointerdown", (y) => {
+                      y.button === 0 && (y.stopPropagation(), this._startNodeDrag(n.id, y));
+                    })
+                  : f.addEventListener("flow:select-node", (y) => {
+                      const M = y;
+                      ((this._activeStateId = M.detail.node.id),
+                        (this._selectedNodeId = M.detail.node.id),
+                        (this._selectedEdgeId = null),
+                        this.emit("flow:select-node", { node: M.detail.node }),
+                        this.requestUpdate());
+                    }),
+                g.appendChild(f));
             }
-            const f = this.shadowRootNode.getElementById("minimap-el");
-            if (f) {
-              ((f.bounds = this._bounds),
-                (f.camera = this._camera),
-                (f.nodes = t),
-                (f.selectedNodeId = this._selectedNodeId));
+            const m = this.shadowRootNode.getElementById("minimap-el");
+            if (m) {
+              ((m.bounds = this._bounds),
+                (m.camera = this._camera),
+                (m.nodes = t),
+                (m.selectedNodeId = this._selectedNodeId));
               const n = this.getBoundingClientRect();
-              ((f.viewportSize = { width: n.width || 900, height: n.height || 700 }),
-                f.addEventListener("flow:pan-to", (u) => {
-                  const g = u.detail,
-                    x = this.getBoundingClientRect(),
-                    k = x.width || 900,
-                    E = x.height || 700;
+              ((m.viewportSize = { width: n.width || 900, height: n.height || 700 }),
+                m.addEventListener("flow:pan-to", (g) => {
+                  const f = g.detail,
+                    y = this.getBoundingClientRect(),
+                    M = y.width || 900,
+                    I = y.height || 700;
                   ((this._camera = {
                     ...this._camera,
-                    panX: k / 2 - g.worldX * this._camera.scale,
-                    panY: E / 2 - g.worldY * this._camera.scale,
+                    panX: M / 2 - f.worldX * this._camera.scale,
+                    panY: I / 2 - f.worldY * this._camera.scale,
                   }),
                     this.requestUpdate());
                 }));
             }
-            const p = this.shadowRootNode.getElementById("toolbar-el");
-            p &&
-              ((p.zoom = Math.round(this._camera.scale * 100)),
-              (p.isMinimapActive = this._showMinimap),
-              (p.isInspectorActive = this._showInspector),
-              p.addEventListener("flow:zoom-in", () => this.zoomBy(1.2)),
-              p.addEventListener("flow:zoom-out", () => this.zoomBy(0.8333333333333334)),
-              p.addEventListener("flow:fit", () => this.fitToViewport()),
-              p.addEventListener("flow:reset", () => {
+            const c = this.shadowRootNode.getElementById("toolbar-el");
+            c &&
+              ((c.zoom = Math.round(this._camera.scale * 100)),
+              (c.isMinimapActive = this._showMinimap),
+              (c.isInspectorActive = this._showInspector),
+              (c.isEditModeActive = this._isEditMode),
+              c.addEventListener("flow:zoom-in", () => this.zoomBy(1.2)),
+              c.addEventListener("flow:zoom-out", () => this.zoomBy(0.8333333333333334)),
+              c.addEventListener("flow:fit", () => this.fitToViewport()),
+              c.addEventListener("flow:reset", () => {
                 ((this._selectedNodeId = null),
                   (this._selectedEdgeId = null),
                   (this._showInspector = !1),
                   this.fitToViewport());
               }),
-              p.addEventListener("flow:toggle-minimap", () => {
+              c.addEventListener("flow:toggle-edit-mode", () => {
+                this.isEditMode = !this.isEditMode;
+              }),
+              c.addEventListener("flow:snapshot-layout", () => {
+                this.copyLayoutSnapshot();
+              }),
+              c.addEventListener("flow:reset-layout", () => {
+                this.resetLayout();
+              }),
+              c.addEventListener("flow:toggle-minimap", () => {
                 ((this._showMinimap = !this._showMinimap), this.requestUpdate());
               }),
-              p.addEventListener("flow:toggle-inspector", () => {
+              c.addEventListener("flow:toggle-inspector", () => {
                 ((this._showInspector = !this._showInspector), this.requestUpdate());
               }));
-            const y = this.shadowRootNode.getElementById("inspector-el");
-            if (y) {
+            const w = this.shadowRootNode.getElementById("inspector-el");
+            if (w) {
               if (
-                ((y.isOpen = this._showInspector),
-                (y.tools = this._graph.tools || []),
+                ((w.isOpen = this._showInspector),
+                (w.tools = this._graph.tools || []),
                 this._selectedNodeId && t[this._selectedNodeId])
               )
-                y.node = t[this._selectedNodeId];
+                w.node = t[this._selectedNodeId];
               else if (this._selectedEdgeId) {
-                const n = i.find((u) => u.id === this._selectedEdgeId) || a.find((u) => u.id === this._selectedEdgeId);
-                y.edge = n || null;
-              } else ((y.node = null), (y.edge = null));
-              y.addEventListener("flow:close-inspector", () => {
+                const n = i.find((g) => g.id === this._selectedEdgeId) || a.find((g) => g.id === this._selectedEdgeId);
+                w.edge = n || null;
+              } else ((w.node = null), (w.edge = null));
+              w.addEventListener("flow:close-inspector", () => {
                 ((this._showInspector = !1), this.requestUpdate());
               });
             }
           }
         }
         return (
-          c(
-            D,
+          h(
+            F,
             "styles",
             `
     :host {
@@ -2675,6 +3082,24 @@
       fill: #ffffff;
       font-weight: 800;
     }
+    .flow-waypoint-handle {
+      cursor: move;
+      transition: r 120ms ease, stroke-width 120ms ease;
+    }
+    .flow-waypoint-handle:hover {
+      r: 7.5;
+      stroke: #38bdf8;
+      stroke-width: 2.8;
+    }
+    .flow-waypoint-split {
+      cursor: crosshair;
+      transition: r 120ms ease, fill-opacity 120ms ease;
+    }
+    .flow-waypoint-split:hover {
+      r: 6.5;
+      fill-opacity: 0.95;
+      stroke-width: 2;
+    }
     .floating-toolbar {
       position: absolute;
       left: 1rem;
@@ -2693,48 +3118,78 @@
       pointer-events: none;
       transform: translateY(10px);
     }
+    .flow-toast {
+      position: absolute;
+      top: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: color-mix(in srgb, var(--tuto-panel-bg, #10131d) 94%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #38bdf8;
+      border: 1px solid #38bdf8;
+      padding: 0.5rem 1.1rem;
+      border-radius: 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      z-index: 50;
+      pointer-events: none;
+      animation: fadeInDown 180ms ease forwards;
+    }
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
   `,
           ),
-          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", D),
-          O(),
-          (h.BaseElement = $),
-          (h.DEFAULT_CAMERA_PADDING = H),
-          (h.MAX_CAMERA_SCALE = N),
-          (h.MIN_CAMERA_SCALE = M),
-          (h.PRIMARY_FORWARD_EVENTS = W),
-          (h.SVG_NS = j),
-          (h.TutoBadge = L),
-          (h.TutoButton = A),
-          (h.TutoFlowCanvas = D),
-          (h.TutoFlowInspector = Y),
-          (h.TutoFlowMinimap = X),
-          (h.TutoFlowNode = U),
-          (h.TutoFlowToolbar = T),
-          (h.assignLanes = K),
-          (h.autoLayoutColumns = at),
-          (h.bundleEdges = V),
-          (h.centerOnNode = G),
-          (h.clamp = z),
-          (h.colors = _),
-          (h.computeFitBounds = F),
-          (h.computeGraphBounds = et),
-          (h.escapeHtml = v),
-          (h.getPort = m),
-          (h.htmlEl = st),
-          (h.injectThemeTokens = O),
-          (h.isEdgeHighlighted = J),
-          (h.pointsToSvgPath = Q),
-          (h.resolvePillSeats = rt),
-          (h.routeEdgeItem = Z),
-          (h.screenToWorld = it),
-          (h.shouldShowPill = tt),
-          (h.spacing = ot),
-          (h.svgEl = w),
-          (h.typography = I),
-          (h.worldToScreen = nt),
-          (h.zoomAtPoint = B),
-          Object.defineProperty(h, Symbol.toStringTag, { value: "Module" }),
-          h
+          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", F),
+          K(),
+          (p.BaseElement = N),
+          (p.DEFAULT_CAMERA_PADDING = Z),
+          (p.MAX_CAMERA_SCALE = z),
+          (p.MIN_CAMERA_SCALE = A),
+          (p.PRIMARY_FORWARD_EVENTS = et),
+          (p.SVG_NS = J),
+          (p.TutoBadge = Y),
+          (p.TutoButton = X),
+          (p.TutoFlowCanvas = F),
+          (p.TutoFlowInspector = H),
+          (p.TutoFlowMinimap = j),
+          (p.TutoFlowNode = q),
+          (p.TutoFlowToolbar = O),
+          (p.assignLanes = st),
+          (p.autoLayoutColumns = ut),
+          (p.bundleEdges = ot),
+          (p.centerOnNode = tt),
+          (p.clamp = B),
+          (p.colors = E),
+          (p.computeFitBounds = Q),
+          (p.computeGraphBounds = T),
+          (p.escapeHtml = v),
+          (p.getClosestPort = W),
+          (p.getPort = b),
+          (p.htmlEl = ht),
+          (p.injectThemeTokens = K),
+          (p.isEdgeHighlighted = at),
+          (p.pointsToSvgPath = nt),
+          (p.resolvePillSeats = gt),
+          (p.routeEdgeItem = it),
+          (p.screenToWorld = ct),
+          (p.shouldShowPill = rt),
+          (p.spacing = lt),
+          (p.svgEl = x),
+          (p.typography = C),
+          (p.worldToScreen = pt),
+          (p.zoomAtPoint = D),
+          Object.defineProperty(p, Symbol.toStringTag, { value: "Module" }),
+          p
         );
       })({});
     </script>
@@ -2849,6 +3304,8 @@
       <div class="footer-center">
         <span class="kbd-hint"><kbd>Wheel</kbd> Zoom</span>
         <span class="kbd-hint"><kbd>Drag</kbd> Pan</span>
+        <span class="kbd-hint"><kbd>E</kbd> Edit Mode</span>
+        <span class="kbd-hint"><kbd>S</kbd> Snapshot</span>
         <span class="kbd-hint"><kbd>F</kbd> Fit</span>
         <span class="kbd-hint"><kbd>I</kbd> Inspector</span>
         <span class="kbd-hint"><kbd>M</kbd> Minimap</span>
@@ -2863,7 +3320,7 @@
     <script type="application/json" id="workflow-fsm-data">
       {
         "id": "piDirectorWorkflow",
-        "version": "2.4.0",
+        "version": "2.5.0",
         "title": "Pi Director Agent Workflow",
         "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Each mode has a primary home and a secondary gate: primaries do the work; secondaries capture/verify and CALL next. Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
         "session": {
@@ -2917,11 +3374,13 @@
             "primary": "evaluate",
             "secondary": "establish",
             "steps": [
-              "IF session entry (new interactive session, handoff continue, or envision not yet run): RUN envision once (orientation + start/reuse artifact), then evaluate.",
-              "RUN evaluate (primary home): check artifact for unresolved D review, Checklist gaps, scope gaps, and residuals; NEVER CALL next or ask from evaluate.",
-              "IF User answers or routing are needed: RUN establish (secondary gate).",
-              "establish: CALL ask to capture answers when needed; synthesize Goal/Align/Decisions/Checklist/User transcript; then either RETURN to evaluate (more primary work) or CALL next with other modes + handoff only (never align).",
-              "IF Ask routes directly to SPEC or VIBE THEN settle into that mode's primary (explore or execute).",
+              "IF session entry (new interactive session, handoff continue, or envision not yet run): RUN envision once — orientation, start/reuse artifact, then CALL ask ≥1 goal-scope question; never ask before start.",
+              "IF envision Ask routes directly to SPEC or VIBE THEN settle into that mode's primary (explore or execute); on cancel RETURN without evaluate.",
+              "AFTER envision scope is answered (not routed): PROCEED to evaluate.",
+              "RUN evaluate (primary home): check artifact for unresolved D review, Checklist gaps, residuals; CALL ask for D-review, User-requested clarification, RECONCILE_SCOPE, or follow-ups — do not re-fish entry scope already captured in envision; NEVER CALL next from evaluate.",
+              "IF evaluate Ask routes directly to SPEC or VIBE THEN settle into that mode's primary (explore or execute).",
+              "WHEN ready to leave Align or to confirm routing after ask: RUN establish (secondary gate).",
+              "establish: NEVER CALL ask; either RETURN to evaluate (more primary/ask work) or CALL next with other modes + handoff only (never align).",
               "Same-mode stay: do not CALL next with align; User uses ESC/Return or /mode."
             ]
           },
@@ -2934,7 +3393,7 @@
             "steps": [
               "Land on and RUN explore (primary): bounded research into Evidence; decide for material autonomous choices when needed.",
               "WHEN ready to propose or route: RUN elaborate (secondary).",
-              "elaborate: draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT, then either RETURN to explore (more research) or CALL next with other modes only (never spec); prefer Align when D review is open."
+              "elaborate: draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT, then either RETURN to explore (more research) or CALL next with other modes only (never spec). Default Align landing is establish (editor standby, landing:\"establish\", no auto-start). Only when unresolved D ids exist: Align landing evaluate (landing:\"evaluate\", prompt lists D ids, auto-start ask)."
             ]
           },
           {
@@ -2946,7 +3405,7 @@
             "steps": [
               "Land on and RUN execute (primary): implement accepted scope; decide for material autonomous choices when needed.",
               "WHEN ready to verify or route: RUN examine (secondary).",
-              "examine: run checks, RECORD evidence, RUN CLOSE_OUT, then either RETURN to execute (more implementation) or CALL next with other modes only (never vibe); prefer Align when D review or acceptance is needed."
+              "examine: run checks, RECORD evidence, RUN CLOSE_OUT, then either RETURN to execute (more implementation) or CALL next with other modes only (never vibe). Default Align landing is establish (editor standby). Only when unresolved D ids exist: Align landing evaluate with those D ids in prompt (auto-start ask)."
             ]
           }
         ],
@@ -2961,7 +3420,7 @@
           "RECONCILE_SCOPE": [
             "COMPARE message with Goal, accepted follow-ups, and every unresolved C outcome.",
             "IF unambiguous and additive THEN APPEND a stable C outcome without deleting or renaming earlier outcomes; RETURN resolved.",
-            "IF mode = ALIGN THEN ensure establish (secondary) will capture: CALL ask with concrete keep/defer/replace/resolve options; on cancel RETURN unresolved; else APPEND full exchange to User transcript; RECORD synthesis in Goal, Align, Decisions, Checklist; ANNOTATE superseded/deferred/skipped/failed C with reasons; NEVER erase; RETURN resolved.",
+            "IF mode = ALIGN THEN CALL ask from evaluate with concrete keep/defer/replace/resolve options; on cancel RETURN unresolved; else APPEND full exchange to User transcript; RECORD synthesis in Goal, Align, Decisions, Checklist; ANNOTATE superseded/deferred/skipped/failed C with reasons; NEVER erase; RETURN resolved.",
             "IF mode = SPEC or VIBE THEN CALL decide with the same option shape; ACCEPT highest-confidence pick as working choice; ANNOTATE C and leave D review unresolved; RETURN resolved."
           ],
           "WRITE_ARTIFACT": [
@@ -2994,8 +3453,9 @@
             "NEVER mark a D User-approved without an explicit review answer.",
             "PROMOTE only durable orientation or costly quirks to project memory; NEVER advance the hidden memory-review marker.",
             "IF routing disabled THEN ENSURE artifact is resumable and RETURN.",
-            "IF actionable work remains THEN CALL next from the current secondary gate with ranked other modes and handoff only — NEVER include the current persisted mode; each non-handoff action needs plain-English reason (Q/C/D ids only as trailing [] or ()) and a custom instruction grounded in current C/D, intended result, and verification target; runtime prepends Switch context only.",
-            "ELSE IF decision review remains AND current mode is not ALIGN THEN SUMMARIZE and CALL next with ALIGN plus instruction grounded in unresolved D.",
+            "IF actionable work remains THEN CALL next from the current secondary gate with ranked other modes and handoff only — NEVER include the current persisted mode.",
+            "Align dual landing (C12): default align action uses landing \"establish\" (editor standby, prompt optional, no auto-start). Only if unresolved D items need acceptance: a separate align action with landing \"evaluate\", prompt that LISTS those D ids, auto-start ask — do not invent extra questions.",
+            "Spec/Vibe actions still need plain-English reason and contextual prompt; handoff omits prompt. Runtime prepends Switch context only when auto-starting.",
             "ELSE IF more work remains in the current mode THEN RETURN to the mode primary (do not CALL next with the current mode).",
             "ELSE DO NOT CALL next.",
             "ENSURE artifact is resumable and final output is truthful and concise."
@@ -3004,9 +3464,9 @@
             "IF no named artifact exists THEN DO NOT invent a temporary plan; RETURN without handing off.",
             "IF artifact is current format THEN USE the already-written artifact; DO NOT start a checkpoint turn; KEEP leftover current-format files as-is.",
             "ELSE DO NOT mutate the legacy artifact.",
-            "CONTINUE in fresh ALIGN with the ordinary continue line (envision entry then evaluate).",
+            "CONTINUE in fresh ALIGN with the ordinary continue line (envision: artifact ready → ≥1 scope ask → evaluate).",
             "READ the whole current artifact or immutable legacy reference.",
-            "CHOOSE the most important unresolved item before asking the next question."
+            "Envision still CALL ask ≥1 about goal scope ahead after reusing the artifact; choose the most important unresolved scope item for that question."
           ],
           "LEGACY_CONTINUATION": [
             "ACCEPT persisted legacy modes as readable; /questionnaire does not exist.",
@@ -3025,15 +3485,21 @@
             "kind": "guided",
             "userMode": "align",
             "role": "entry",
-            "summary": "Session entry only: capture initial user goal, bounded orientation, and initialize or reuse the named artifact via start.",
+            "summary": "Session entry only: capture goal, bounded orientation, start/reuse artifact, then CALL ask ≥1 about goal scope ahead before evaluate.",
             "permission": "read",
-            "substates": ["goalCapture", "orientation", "ensureArtifact"],
+            "substates": ["goalCapture", "orientation", "ensureArtifact", "scopeAsk"],
             "procedure": [
               "Run once per new interactive session or handoff continue — not a repeating Align loop peer.",
               "Capture user goal and intent when present.",
               "READ only bounded AGENTS.md, .pi state including MEMORY.md, README, named plans, or documentation for orientation.",
               "AFTER orientation reads, IF no named artifact exists THEN CALL start exactly once; ELSE reuse the existing named artifact.",
-              "PROCEED to EVALUATE (Align primary home)."
+              "AFTER the named artifact exists: CALL ask with at least one independent question about goal scope ahead (outcomes, constraints, boundaries). NEVER ask before start.",
+              "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
+              "SYNTHESIZE into Goal, Align, Decisions, and Checklist after answers.",
+              "ASK dependent follow-ups in a later CALL only when still required before leaving envision.",
+              "IF Ask routes directly to SPEC or VIBE THEN proceed to EXPLORE or EXECUTE (skip evaluate).",
+              "On ask cancel: RETURN without evaluate and without calling next; do not invent scope.",
+              "WHEN ≥1 scope ask is answered and not routed: PROCEED to EVALUATE (Align primary home)."
             ]
           },
           "evaluate": {
@@ -3042,15 +3508,23 @@
             "kind": "guided",
             "userMode": "align",
             "role": "primary",
-            "summary": "Align primary home: check the artifact (D review, Checklist, scope gaps, residuals) and decide capture vs further primary work — never CALL next or ask here.",
+            "summary": "Align primary home: artifact check and later asks (D-review, User-driven, reconcile); PWB routes; never CALL next.",
             "permission": "read",
-            "substates": ["artifactCheck", "routeCapture", "primaryWork"],
+            "substates": ["artifactCheck", "askLoop", "synthesize"],
             "procedure": [
-              "Land here after envision, after next→Align, and after establish returns.",
-              "READ Goal, Decisions (unresolved D), Checklist, Work log residuals, and Current work.",
-              "NEVER CALL ask from evaluate — when User answers are needed, PROCEED to ESTABLISH.",
-              "NEVER CALL next from evaluate — when ready to leave Align, PROCEED to ESTABLISH so the secondary gate may CALL next.",
-              "IF more Align primary synthesis remains without User input THEN continue evaluate work, then ESTABLISH when capture or routing is required."
+              "Land here after envision scope ask is answered, after next Align review (landing evaluate), and after establish returns.",
+              "READ Goal, Decisions (unresolved D), Checklist, Work log residuals, Current work, and the kickoff prompt if any.",
+              "IF kickoff/review lists specific D ids: CALL ask ONLY to accept/change/defer those Ds — do not invent new scope questions.",
+              "ELSE IF the User message explicitly requests clarification: CALL ask for that request only.",
+              "ELSE IF RECONCILE_SCOPE needs User keep/defer/replace/resolve options: CALL ask for that only.",
+              "ELSE IF no User answers are required: do NOT CALL ask; summarize briefly and PROCEED to ESTABLISH or RETURN idle.",
+              "NEVER re-fish entry goal-scope questions already captured in envision; NEVER invent fishing questions on entry.",
+              "ASK dependent follow-ups in a later CALL only when still required after answers.",
+              "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
+              "SYNTHESIZE into Goal, Align, Decisions, and Checklist after answers.",
+              "IF Ask routes directly to SPEC or VIBE THEN proceed to EXPLORE or EXECUTE.",
+              "On ask cancel: RETURN without calling next.",
+              "NEVER CALL next from evaluate — when ready to leave Align or confirm routing, PROCEED to ESTABLISH."
             ]
           },
           "establish": {
@@ -3059,18 +3533,15 @@
             "kind": "guided",
             "userMode": "align",
             "role": "secondary",
-            "summary": "Align secondary gate: capture answers via ask and/or CALL next to other modes or handoff; may return to evaluate.",
+            "summary": "Align secondary gate and idle landing from Spec/Vibe next (editor standby); return to evaluate or CALL next/handoff — never ask.",
             "permission": "read",
-            "substates": ["askLoop", "synthesize", "routeNext"],
+            "substates": ["gateCheck", "routeNext"],
             "procedure": [
-              "WHILE User answers are needed: CALL ask as the first User-facing action with 1-4 independent questions.",
-              "ASK dependent follow-ups in a later CALL after incorporating earlier answers.",
-              "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
-              "SYNTHESIZE into Goal, Align, Decisions, and Checklist after answers.",
-              "IF Ask routes directly to SPEC or VIBE THEN proceed to EXPLORE or EXECUTE.",
-              "IF more Align primary work remains THEN RETURN to EVALUATE.",
+              "Land here after next Align idle (landing establish, no auto-start) and after evaluate sends TO_GATE.",
+              "NEVER CALL ask from establish — entry scope ask is envision; other Align asks run in evaluate.",
+              "IF more Align primary or ask work remains THEN RETURN to EVALUATE.",
               "WHEN ready to leave Align: CALL next with ranked other modes and handoff only — NEVER include align.",
-              "On ask cancel: RETURN without calling next."
+              "Idle landing: wait for User message or next; do not invent work."
             ]
           },
           "explore": {
@@ -3083,7 +3554,7 @@
             "permission": "read",
             "substates": ["symbolSearch", "evidenceGathering"],
             "procedure": [
-              "Land here after next→Spec and after elaborate returns for more research.",
+              "Land here after next→Spec, ask-route→Spec, and after elaborate returns for more research.",
               "BEGIN with one bounded exact symbol or path search.",
               "BROADEN only for a named unresolved reason and STOP when evidence answers it.",
               "EXCLUDE node_modules, generated, vendor, cache trees, and source maps unless explicitly targeted.",
@@ -3120,7 +3591,7 @@
             "permission": "write",
             "substates": ["codeMutation", "recordDecision"],
             "procedure": [
-              "Land here after next→Vibe and after examine returns for more implementation.",
+              "Land here after next→Vibe, ask-route→Vibe, and after examine returns for more implementation.",
               "IMPLEMENT accepted scope in project files outside .pi.",
               "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
               "UPDATE cumulative Checklist and append-only Work log throughout implementation.",
@@ -3148,54 +3619,80 @@
         },
         "transitions": [
           {
+            "id": "envision-ask-loop",
+            "from": "envision",
+            "event": "ASK_LOOP",
+            "to": "envision",
+            "label": "Scope ask follow-up",
+            "description": "Dependent entry scope questions stay in ENVISION until ≥1 scope ask is answered or ask routes away."
+          },
+          {
+            "id": "envision-ask-route-spec",
+            "from": "envision",
+            "event": "PWB_SPEC",
+            "to": "explore",
+            "label": "PWB → EXPLORE",
+            "description": "Proceed-with-best from envision scope ask routes to SPEC primary (skips evaluate).",
+            "userMediated": true
+          },
+          {
+            "id": "envision-ask-route-vibe",
+            "from": "envision",
+            "event": "PWB_VIBE",
+            "to": "execute",
+            "label": "PWB → EXECUTE",
+            "description": "Proceed-with-best from envision scope ask routes to VIBE primary (skips evaluate).",
+            "userMediated": true
+          },
+          {
             "id": "envision-to-evaluate",
             "from": "envision",
-            "event": "ENTRY_DONE",
+            "event": "SCOPE_READY",
             "to": "evaluate",
-            "label": "Entry complete → EVALUATE",
-            "description": "Session entry finished (orientation + start/reuse); enter Align primary home."
+            "label": "Scope ready → EVALUATE",
+            "description": "Named artifact exists and ≥1 goal-scope ask was answered after start/reuse; enter Align primary home."
+          },
+          {
+            "id": "evaluate-ask-loop",
+            "from": "evaluate",
+            "event": "ASK_LOOP",
+            "to": "evaluate",
+            "label": "Ask follow-up",
+            "description": "Dependent follow-up questions stay in EVALUATE until answers are captured or ask routes away."
+          },
+          {
+            "id": "evaluate-ask-route-spec",
+            "from": "evaluate",
+            "event": "PWB_SPEC",
+            "to": "explore",
+            "label": "PWB → EXPLORE",
+            "description": "Proceed-with-best from evaluate ask routes to SPEC primary.",
+            "userMediated": true
+          },
+          {
+            "id": "evaluate-ask-route-vibe",
+            "from": "evaluate",
+            "event": "PWB_VIBE",
+            "to": "execute",
+            "label": "PWB → EXECUTE",
+            "description": "Proceed-with-best from evaluate ask routes to VIBE primary.",
+            "userMediated": true
           },
           {
             "id": "evaluate-to-establish",
             "from": "evaluate",
-            "event": "NEED_SECONDARY",
+            "event": "TO_GATE",
             "to": "establish",
-            "label": "Need capture or route → ESTABLISH",
-            "description": "Artifact check needs User answers and/or mode routing via the Align secondary gate."
-          },
-          {
-            "id": "establish-ask-loop",
-            "from": "establish",
-            "event": "ASK_LOOP",
-            "to": "establish",
-            "label": "Ask follow-up",
-            "description": "Dependent follow-up questions stay in ESTABLISH until capture is complete or routing is ready."
+            "label": "To gate → ESTABLISH",
+            "description": "Ask/primary work done enough to decide return vs next at the Align secondary gate."
           },
           {
             "id": "establish-to-evaluate",
             "from": "establish",
-            "event": "RETURN_PRIMARY",
+            "event": "TO_HOME",
             "to": "evaluate",
-            "label": "Return → EVALUATE",
-            "description": "After capture or when more Align primary work remains; re-enter evaluate."
-          },
-          {
-            "id": "establish-ask-route-spec",
-            "from": "establish",
-            "event": "ASK_ROUTED_SPEC",
-            "to": "explore",
-            "label": "Proceed-with-best → EXPLORE",
-            "description": "User accepts scope/review answers and routes to SPEC primary.",
-            "userMediated": true
-          },
-          {
-            "id": "establish-ask-route-vibe",
-            "from": "establish",
-            "event": "ASK_ROUTED_VIBE",
-            "to": "execute",
-            "label": "Proceed-with-best → EXECUTE",
-            "description": "User accepts scope/review answers and routes to VIBE primary.",
-            "userMediated": true
+            "label": "To home → EVALUATE",
+            "description": "More Align primary or ask work remains; re-enter evaluate."
           },
           {
             "id": "establish-next-spec",
@@ -3203,7 +3700,7 @@
             "event": "NEXT_SPEC",
             "to": "explore",
             "label": "next → EXPLORE",
-            "description": "User chooses SPEC; lands on explore (primary). next never includes current mode (align).",
+            "description": "User chooses SPEC from establish gate; lands on explore (primary). next never includes align.",
             "userMediated": true
           },
           {
@@ -3212,7 +3709,7 @@
             "event": "NEXT_VIBE",
             "to": "execute",
             "label": "next → EXECUTE",
-            "description": "User chooses VIBE; lands on execute (primary).",
+            "description": "User chooses VIBE from establish gate; lands on execute (primary).",
             "userMediated": true
           },
           {
@@ -3227,26 +3724,35 @@
           {
             "id": "explore-to-elaborate",
             "from": "explore",
-            "event": "TO_SECONDARY",
+            "event": "TO_GATE",
             "to": "elaborate",
-            "label": "Research ready → ELABORATE",
+            "label": "To gate → ELABORATE",
             "description": "Evidence gathered enough to propose, close out, or route."
           },
           {
             "id": "elaborate-to-explore",
             "from": "elaborate",
-            "event": "RETURN_PRIMARY",
+            "event": "TO_HOME",
             "to": "explore",
-            "label": "Return → EXPLORE",
+            "label": "To home → EXPLORE",
             "description": "More research needed; return to Spec primary without using next."
           },
           {
             "id": "elaborate-next-align",
             "from": "elaborate",
             "event": "NEXT_ALIGN",
+            "to": "establish",
+            "label": "next Align idle → ESTABLISH",
+            "description": "Default Align after proposal: editor standby on establish gate; no auto-start ask.",
+            "userMediated": true
+          },
+          {
+            "id": "elaborate-next-align-review",
+            "from": "elaborate",
+            "event": "NEXT_ALIGN_REVIEW",
             "to": "evaluate",
-            "label": "CLOSE_OUT → next → EVALUATE",
-            "description": "User chooses ALIGN after proposal; lands on evaluate (primary).",
+            "label": "next Align review → EVALUATE",
+            "description": "Align review when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
             "userMediated": true
           },
           {
@@ -3259,28 +3765,46 @@
             "userMediated": true
           },
           {
+            "id": "elaborate-handoff",
+            "from": "elaborate",
+            "event": "NEXT_HANDOFF",
+            "to": "envision",
+            "label": "next → handoff (new session ENVISION)",
+            "description": "Picker prepares /handoff from Spec gate; after the User runs it, a fresh session restarts at ENVISION on the same artifact.",
+            "userMediated": true
+          },
+          {
             "id": "execute-to-examine",
             "from": "execute",
-            "event": "TO_SECONDARY",
+            "event": "TO_GATE",
             "to": "examine",
-            "label": "Implement ready → EXAMINE",
+            "label": "To gate → EXAMINE",
             "description": "Implementation ready for checks, close-out, or routing."
           },
           {
             "id": "examine-to-execute",
             "from": "examine",
-            "event": "RETURN_PRIMARY",
+            "event": "TO_HOME",
             "to": "execute",
-            "label": "Return → EXECUTE",
+            "label": "To home → EXECUTE",
             "description": "More implementation or in-scope fixes; return to Vibe primary without using next."
           },
           {
             "id": "examine-next-align",
             "from": "examine",
             "event": "NEXT_ALIGN",
+            "to": "establish",
+            "label": "next Align idle → ESTABLISH",
+            "description": "Default Align after verification: editor standby on establish gate; no auto-start ask.",
+            "userMediated": true
+          },
+          {
+            "id": "examine-next-align-review",
+            "from": "examine",
+            "event": "NEXT_ALIGN_REVIEW",
             "to": "evaluate",
-            "label": "CLOSE_OUT → next → EVALUATE",
-            "description": "User chooses ALIGN after verification; lands on evaluate (primary).",
+            "label": "next Align review → EVALUATE",
+            "description": "Align review when unresolved D ids are listed; auto-start evaluate ask for those Ds only.",
             "userMediated": true
           },
           {
@@ -3290,6 +3814,15 @@
             "to": "explore",
             "label": "CLOSE_OUT → next → EXPLORE",
             "description": "User chooses SPEC after verification; lands on explore (primary). next never includes vibe.",
+            "userMediated": true
+          },
+          {
+            "id": "examine-handoff",
+            "from": "examine",
+            "event": "NEXT_HANDOFF",
+            "to": "envision",
+            "label": "next → handoff (new session ENVISION)",
+            "description": "Picker prepares /handoff from Vibe gate; after the User runs it, a fresh session restarts at ENVISION on the same artifact.",
             "userMediated": true
           }
         ],
@@ -3334,7 +3867,7 @@
             "next-driven pickers never offer the current mode; ESC and Return to editor stay in the current mode without starting the agent.",
             "Selecting an unrecommended mode in the picker switches the session mode in editor standby.",
             "Manual /align /spec /vibe only record mode and return to the editor; they do not start the agent.",
-            "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN (envision → evaluate)."
+            "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN (envision: artifact → scope ask → evaluate)."
           ]
         },
         "tools": [
@@ -3352,7 +3885,7 @@
           },
           {
             "name": "ask",
-            "summary": "Native ALIGN question loop; used from establish (secondary) to capture answers.",
+            "summary": "Native ALIGN question loop; used from envision (entry scope after start) and evaluate (later asks).",
             "modes": ["align"],
             "gate": [
               "ALIGN-only; SPEC/VIBE ask is a harmless no-op (no picker).",
@@ -3361,8 +3894,10 @@
               "Interactive UI required only when questions will be shown."
             ],
             "mechanics": [
-              "CALL ask from establish to capture scope, constraints, outcomes, and D acceptance answers.",
-              "Answers stay in ALIGN; after capture return to evaluate or CALL next from establish.",
+              "NEVER CALL ask before start writes the named artifact.",
+              "CALL ask from envision after start/reuse with ≥1 question about goal scope ahead; on answered (not routed) PROCEED to evaluate; on cancel RETURN.",
+              "CALL ask from evaluate for D acceptance, User-requested clarification, RECONCILE_SCOPE, and follow-ups — not to re-fish entry scope.",
+              "Answers stay in ALIGN; after evaluate capture continue evaluate or PROCEED to establish for next/handoff; NEVER CALL next from envision or evaluate.",
               "CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly.",
               "KEEP question identifiers, option values, and option labels distinct.",
               "NEVER imitate native action labels.",
@@ -3396,21 +3931,23 @@
             "modes": ["any"],
             "gate": [
               "Empty next records no recommendation and opens no picker.",
-              "Non-empty next requires valid targets and prompts; requires named session plan.",
-              "Every ALIGN/SPEC/VIBE action needs contextual prompt; handoff must omit prompt."
+              "Non-empty next requires valid targets; requires named session plan.",
+              "Spec/Vibe actions need contextual prompt; Align evaluate/review needs prompt listing D ids; Align establish/idle prompt optional; handoff must omit prompt."
             ],
             "mechanics": [
               "CALL next only from secondary gates (establish, elaborate, examine) after capture/verify/CLOSE_OUT as appropriate.",
               "NEVER include an action whose mode equals the current persisted mode; runtime filters those out on next-driven pickers.",
-              "Agent-authored actions SHOULD include a user-facing reason (plain English; Q/C/D ids only as trailing [] or ()) and REQUIRE contextual instructions for ALIGN/SPEC/VIBE; OMIT instruction for handoff.",
-              "Runtime PREPENDS only Switch context and NEVER authors substantive direction.",
-              "Recommended row with a reason shows {mode} — {reason}.",
-              "next→Align lands evaluate; next→Spec lands explore; next→Vibe lands execute.",
+              "Align dual landing: landing \"establish\" (default) = editor standby, no auto-start; landing \"evaluate\" = auto-start ask review — prompt MUST list D ids only.",
+              "Default post-Spec/Vibe Align recommendation is landing establish; use landing evaluate only when unresolved D acceptance is required.",
+              "Agent-authored actions SHOULD include a user-facing reason; Spec/Vibe REQUIRE prompt; handoff OMITs prompt.",
+              "Runtime PREPENDS only Switch context when auto-starting and NEVER authors substantive direction.",
+              "Recommended row with a reason shows {mode} — {reason}. Two Align rows may appear (review vs editor).",
+              "next→Align idle lands establish; next→Align review lands evaluate; next→Spec lands explore; next→Vibe lands execute.",
               "ESC dismiss and Return to editor stay in the current mode without starting the agent.",
               "/mode force picker still lists all modes including the current mode (bypass).",
-              "Manual ALIGN/SPEC/VIBE commands and unrecommended picker choices return to the editor.",
-              "Only a recommended next prompt starts the agent.",
-              "Duplicate next modes collapse; picker-selected handoff prepares /handoff for explicit User execution.",
+              "Manual ALIGN/SPEC/VIBE commands return to the editor without auto-start.",
+              "Only recommended actions with autostart (prompt + non-idle Align) start the agent.",
+              "Picker-selected handoff prepares /handoff for explicit User execution.",
               "Ask-routed SPEC/VIBE and /handoff still auto-start."
             ]
           }
@@ -3441,12 +3978,12 @@
         },
         "initial": "envision",
         "notes": [
-          "Guided session story: envision entry → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
+          "Guided session story: envision (start → ≥1 scope ask) → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
           "Persisted User mode is only align|spec|vibe. Guided states compose modeBodies with roles entry|primary|secondary. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
           "Project permission is read|write only: read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact.",
-          "Only secondary gates establish/elaborate/examine CALL next. next never recommends the current mode. Handoff is establish + /handoff prep (or /handoff direct).",
+          "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then SCOPE_READY→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), NEXT_ALIGN_REVIEW→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
           "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-          "Transition table is the guided graph only. Stay-in-mode via RETURN_PRIMARY, ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
+          "Transition table is the guided graph only. Stay-in-mode via TO_HOME, ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
           "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next.",
           "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
           "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
@@ -3461,19 +3998,37 @@
       const canvas = document.getElementById("flow-canvas");
 
       // 7-"E" Lifecycle Step Node Layout (Spacious 240px-Gap 2-Row Circuit)
-      // Primary (top) / secondary (bottom) columns: entry | align | spec | vibe
       const NODE_LAYOUT = {
-        envision: { x: 80, y: 280, w: 220, h: 44 },
-        evaluate: { x: 420, y: 120, w: 220, h: 44 },
-        establish: { x: 420, y: 440, w: 220, h: 44 },
-        explore: { x: 860, y: 120, w: 220, h: 44 },
-        elaborate: { x: 860, y: 440, w: 220, h: 44 },
-        execute: { x: 1300, y: 120, w: 220, h: 44 },
-        examine: { x: 1300, y: 440, w: 220, h: 44 },
+        envision: { x: 40, y: 310, w: 200, h: 48 },
+        evaluate: { x: 420, y: 70, w: 210, h: 48 },
+        establish: { x: 420, y: 540, w: 210, h: 48 },
+        explore: { x: 920, y: 70, w: 210, h: 48 },
+        elaborate: { x: 920, y: 540, w: 210, h: 48 },
+        execute: { x: 1420, y: 70, w: 210, h: 48 },
+        examine: { x: 1420, y: 540, w: 210, h: 48 },
       };
 
+      // Edge Custom Waypoints (Figma-Style Angle Breaks)
+      const EDGE_WAYPOINTS = {};
+
+      let activeLayout = NODE_LAYOUT;
+      try {
+        const saved = localStorage.getItem("pi_workflow_layout_override");
+        if (saved) {
+          activeLayout = { ...NODE_LAYOUT, ...JSON.parse(saved) };
+        }
+      } catch {}
+
+      let activeEdges = EDGE_WAYPOINTS;
+      try {
+        const savedEdges = localStorage.getItem("pi_workflow_edge_override");
+        if (savedEdges) {
+          activeEdges = { ...EDGE_WAYPOINTS, ...JSON.parse(savedEdges) };
+        }
+      } catch {}
+
       const states = {};
-      for (const [id, pos] of Object.entries(NODE_LAYOUT)) {
+      for (const [id, pos] of Object.entries(activeLayout)) {
         const raw = (fsmData.states && fsmData.states[id]) || {};
         states[id] = {
           ...raw,
@@ -3482,13 +4037,22 @@
         };
       }
 
+      const transitions = (fsmData.transitions || []).map((t, idx) => {
+        const edgeId = t.id || t.from + "->" + t.to + "-" + idx;
+        if (activeEdges[edgeId]) {
+          return { ...t, id: edgeId, waypoints: activeEdges[edgeId] };
+        }
+        return { ...t, id: edgeId };
+      });
+
       canvas.graph = {
         ...fsmData,
         framing: false,
         title: "Pi Director Agent Workflow",
-        subtitle: "Primary homes + secondary gates (v2.4)",
+        subtitle: "SCOPE_READY · PWB · TO_GATE / TO_HOME · NEXT",
         groups: [],
         states,
+        transitions,
       };
 
       // Set footer version badge

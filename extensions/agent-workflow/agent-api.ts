@@ -28,6 +28,7 @@ const REQUIRED_KEYS = [
   "tool.next.description",
   "tool.next.action.reason",
   "tool.next.action.prompt",
+  "tool.next.action.landing",
   "tool.next.actions",
   "message.ask.cancelled",
   "message.ask.routed",

@@ -2,7 +2,7 @@
 
 This guide is a derived visual map of the Agent Workflow contract. The sole operational source is [`extensions/agent-workflow/workflow-fsm.ts`](../extensions/agent-workflow/workflow-fsm.ts); when a diagram and that FSM disagree, the FSM wins. Runtime gates live in [`workflow-machine.ts`](../extensions/agent-workflow/workflow-machine.ts). For an interactive diagram of the same transition table, open [`workflow-fsm.html`](../extensions/agent-workflow/workflow-fsm.html) after `npm run build:content`. The page is a diagram-only flat XState-style view: full FSM states and transitions in a machine frame, event/DO edge pills with optional CMD/ESC bundles, orthogonal routing, and double-click sidebar panels with full instruction bodies.
 
-**Two layers:** persisted User modes are only Align / Spec / Vibe. The guided graph has seven steps composed by `modeBodies` with **roles**: `envision` (entry), primaries (`evaluate` / `explore` / `execute`), and secondaries (`establish` / `elaborate` / `examine`). Project permission is **read** (`.pi` plan only) or **write** (project files). Only **secondary gates** CALL `next` (never the current mode); `next` lands on the target mode’s primary. Same-mode stay is ESC / Return to editor; `/mode` still lists all modes.
+**Two layers:** persisted User modes are only Align / Spec / Vibe. The guided graph has seven steps composed by `modeBodies` with **roles**: `envision` (entry), primaries (`evaluate` / `explore` / `execute`), and secondaries (`establish` / `elaborate` / `examine`). Project permission is **read** (`.pi` plan only) or **write** (project files). Only **secondary gates** CALL `next` (never the current mode). Spec/Vibe `next` lands on the target primary; Align is dual-landing — default `landing:"establish"` (editor standby, no auto-start) or `landing:"evaluate"` (D-review ask auto-start). Same-mode stay is ESC / Return to editor; `/mode` still lists all modes.
 
 Read the layers in order to build a mental model: **Map → Modes → Machinery → Full picture**. Each view summarizes rules instead of duplicating the complete contract. Use the [coverage index](#source-symbol-coverage) to jump from an FSM symbol to its visual home.
 
@@ -95,32 +95,34 @@ stateDiagram-v2
 
 ### mode-align — ALIGN procedure
 
-**envision** runs once on session/handoff entry (orientation + `start`/reuse). **evaluate** is the primary home (artifact check; no `ask`, no `next`). **establish** is the secondary gate (`ask` capture and/or `next` to other modes/handoff, or return to evaluate). Cancel discards the exchange and does not open `next`.
+**envision** runs once on session/handoff entry: orientation → `start`/reuse artifact → **`ask` ≥1 goal-scope** (never before start) → then evaluate (or PWB Spec/Vibe). **evaluate** is the primary home (artifact check + later **`ask`** for D-review / User clarification / reconcile; ask-route to Spec/Vibe; no `next`). **establish** is the secondary gate only (`RETURN` to evaluate or **`next`/handoff** — never ask). Cancel discards the exchange and does not open `next`.
 
 ```mermaid
 flowchart TD
     Enter([ALIGN message]) --> Entry{Session entry / no envision yet?}
-    Entry -- yes --> Orient[envision: bounded orientation<br/>start or reuse artifact]
-    Orient --> Eval
-    Entry -- no --> Eval[evaluate primary:<br/>check D/C/scope residuals]
-    Eval --> Need{Need User answers<br/>or mode routing?}
-    Need -- no more Align work --> Stop([RETURN])
-    Need -- yes --> Est[establish secondary]
-    Est --> Ask[Call ask when capturing]
-    Ask --> Result{Ask result}
-    Result -- cancelled --> Stop
-    Result -- routed Spec/Vibe --> Settle([RETURN<br/>fresh target primary])
-    Result -- answered --> Synth[Synthesize artifact]
-    Synth --> Back{More Align primary<br/>or leave mode?}
-    Est --> Back
-    Back -- primary work --> Eval
-    Back -- leave Align --> Next["Call next: other modes<br/>+ handoff only never align"]
+    Entry -- yes --> Orient[envision: bounded orientation]
+    Orient --> Artifact[start or reuse artifact]
+    Artifact --> ScopeAsk[CALL ask ≥1 goal scope]
+    ScopeAsk --> ScopeResult{Ask result}
+    ScopeResult -- cancelled --> Stop([RETURN])
+    ScopeResult -- routed Spec/Vibe --> Settle([RETURN<br/>fresh target primary])
+    ScopeResult -- answered --> Eval
+    Entry -- no --> Eval[evaluate primary:<br/>check D/C + later ask]
+    Eval --> AskResult{Ask result}
+    AskResult -- cancelled --> Stop
+    AskResult -- routed Spec/Vibe --> Settle
+    AskResult -- answered / no ask --> Gate{Ready to leave Align?}
+    Gate -- more primary/ask --> Eval
+    Gate -- yes --> Est[establish secondary<br/>never ask]
+    Est --> Back{More Align work?}
+    Back -- yes --> Eval
+    Back -- no --> Next["Call next: other modes<br/>+ handoff only never align"]
     Next --> Done([RETURN])
 ```
 
 ### mode-spec — SPEC procedure
 
-**explore** is primary (research). **elaborate** is secondary (proposal, CLOSE_OUT, `next` or return to explore). `next` never includes Spec.
+**explore** is primary (research). **elaborate** is secondary (proposal, CLOSE_OUT, `next` or return to explore). `next` never includes Spec. Default Align recommendation is idle establish; add Align evaluate only when unresolved D ids need acceptance.
 
 ```mermaid
 flowchart TD
@@ -136,7 +138,7 @@ flowchart TD
     Draft --> Close[CLOSE_OUT]
     Close --> Route{More research<br/>or leave Spec?}
     Route -- research --> Research
-    Route -- leave --> Next["Call next: Align/Vibe/handoff<br/>never spec"]
+    Route -- leave --> Next["Call next: Align establish default /<br/>Align evaluate if D review / Vibe / handoff<br/>never spec"]
     Close --> Done([RETURN proposal summary])
     Draft --> Blocked[BLOCKED if not actionable]
     Blocked --> Stop([RETURN unresolved])
@@ -144,7 +146,7 @@ flowchart TD
 
 ### mode-vibe — VIBE procedure
 
-**execute** is primary (implement). **examine** is secondary (checks, CLOSE_OUT, `next` or return to execute). `next` never includes Vibe.
+**execute** is primary (implement). **examine** is secondary (checks, CLOSE_OUT, `next` or return to execute). `next` never includes Vibe. Default Align recommendation is idle establish; add Align evaluate only when unresolved D ids need acceptance.
 
 ```mermaid
 flowchart TD
@@ -164,7 +166,7 @@ flowchart TD
     Blocked --> Stop([RETURN unresolved])
     Close --> Route{More impl<br/>or leave Vibe?}
     Route -- impl --> Implement
-    Route -- leave --> Next["Call next: Align/Spec/handoff<br/>never vibe"]
+    Route -- leave --> Next["Call next: Align establish default /<br/>Align evaluate if D review / Spec / handoff<br/>never vibe"]
     Close --> Done([RETURN result])
 ```
 
@@ -195,8 +197,8 @@ flowchart TD
     Join --> Close[CLOSE_OUT]
     Blocked --> Close
     Close --> Remaining{Actionable work<br/>or decision review?}
-    Remaining -- actionable --> Next[Call next]
-    Remaining -- decision review --> ReviewNext[Call next with ALIGN<br/>and D-grounded instruction]
+    Remaining -- actionable --> Next[Call next<br/>Align default establish idle]
+    Remaining -- decision review --> ReviewNext[Call next Align landing evaluate<br/>prompt lists D ids only]
     Remaining -- none --> Return
     Next --> Return
     ReviewNext --> Return
@@ -444,7 +446,7 @@ flowchart TD
 
     Close --> Remaining{Actionable work<br/>or decision review?}
     Remaining -- actionable work --> Next
-    Remaining -- decision review --> ReviewNext[Call next with ALIGN<br/>and D-grounded instruction]
+    Remaining -- decision review --> ReviewNext[Call next Align landing evaluate<br/>prompt lists D ids only]
     Remaining -- none --> Return
     ReviewNext --> Return
 ```

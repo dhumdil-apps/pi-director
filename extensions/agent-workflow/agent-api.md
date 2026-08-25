@@ -100,7 +100,11 @@ Optional user-facing picker subtitle. Plain English is the focus; Q, C, or D ide
 
 ## tool.next.action.prompt
 
-Follow-up instruction appended after the runtime transition; required for Align, Spec, or Vibe and forbidden for handoff.
+Follow-up instruction appended after the runtime transition. Required for Spec, Vibe, and Align review (landing evaluate). Optional for Align idle (landing establish). Forbidden for handoff.
+
+## tool.next.action.landing
+
+Align only: `establish` (default) = editor standby, no auto-start; `evaluate` = auto-start review ask for Ds named in prompt.
 
 ## tool.next.actions
 
