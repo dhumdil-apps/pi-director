@@ -37,11 +37,6 @@ export interface AskDetails {
   routedMode?: AskRouteMode;
 }
 
-function customAnswerLabel(question: AskQuestion): string {
-  const intent = question.customAnswerLabel?.trim();
-  return intent ? `${WRITE_CUSTOM_ANSWER} → ${intent}` : WRITE_CUSTOM_ANSWER;
-}
-
 function optionAnswer(question: AskQuestion, option: AskOption): AskAnswer {
   return {
     id: question.id,
@@ -147,10 +142,9 @@ export function registerAsk(pi: ExtensionAPI): void {
       try {
         for (const [index, question] of params.questions.entries()) {
           const options = orderedOptions(question);
-          const customLabel = customAnswerLabel(question);
           const remainingQuestions = params.questions.slice(index);
           const routes = canAcceptBest(remainingQuestions) ? ROUTE_OPTIONS : [];
-          const labels = [...options.map(pickerLabel), customLabel, ...routes];
+          const labels = [...options.map(pickerLabel), WRITE_CUSTOM_ANSWER, ...routes];
           const title =
             params.questions.length === 1
               ? question.prompt
@@ -186,7 +180,17 @@ export function registerAsk(pi: ExtensionAPI): void {
               // The current run still carries its Align mode prompt. Defer the
               // User-selected transition until agent_settled so the target starts
               // a fresh run through before_agent_start with the correct marker.
-              pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "routed", target: route });
+              // Carry answers on the settlement signal for the Spec/Vibe kickoff (D1).
+              pi.appendEntry(ASK_SETTLEMENT_EVENT, {
+                outcome: "routed",
+                target: route,
+                answers: answers.map((answer) => ({
+                  id: answer.id,
+                  label: answer.label,
+                  value: answer.value,
+                  ...(answer.wasCustom ? { wasCustom: true } : {}),
+                })),
+              });
               return {
                 content: [{ type: "text" as const, text: resultText(details, params.questions) }],
                 details,
@@ -194,7 +198,7 @@ export function registerAsk(pi: ExtensionAPI): void {
               };
             }
 
-            if (choice === customLabel) {
+            if (choice === WRITE_CUSTOM_ANSWER) {
               const custom = await duringUserWait(pi, "question", () =>
                 ctx.ui.input(`Custom answer · ${question.prompt}`, "Type an answer"),
               );

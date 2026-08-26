@@ -17,7 +17,6 @@ const REQUIRED_KEYS = [
   "tool.ask.question.id",
   "tool.ask.question.context",
   "tool.ask.question.prompt",
-  "tool.ask.question.custom-answer-label",
   "tool.ask.question.options",
   "tool.ask.questions",
   "tool.decide.description",

@@ -2,7 +2,7 @@
 
 This guide is a derived visual map of the Agent Workflow contract. The sole operational source is [`extensions/agent-workflow/workflow-fsm.ts`](../extensions/agent-workflow/workflow-fsm.ts); when a diagram and that FSM disagree, the FSM wins. Runtime gates live in [`workflow-machine.ts`](../extensions/agent-workflow/workflow-machine.ts). For an interactive diagram of the same transition table, open [`workflow-fsm.html`](../extensions/agent-workflow/workflow-fsm.html) after `npm run build:content`. The page is a diagram-only flat XState-style view: full FSM states and transitions in a machine frame, event/DO edge pills with optional CMD/ESC bundles, orthogonal routing, and double-click sidebar panels with full instruction bodies.
 
-**Two layers:** persisted User modes are only Align / Spec / Vibe. The guided graph has seven steps composed by `modeBodies` with **roles**: `envision` (entry), primaries (`evaluate` / `explore` / `execute`), and secondaries (`establish` / `elaborate` / `examine`). Project permission is **read** (`.pi` plan only) or **write** (project files). Only **secondary gates** CALL `next` (never the current mode). Spec/Vibe `next` lands on the target primary; Align is dual-landing — default `landing:"establish"` (editor standby, no auto-start) or `landing:"evaluate"` (D-review ask auto-start). Same-mode stay is ESC / Return to editor; `/mode` still lists all modes.
+**Two layers:** persisted User modes are only Align / Spec / Vibe. The guided graph has seven steps composed by `modeBodies` with **roles**: `envision` (entry), primaries (`evaluate` / `explore` / `execute`), and secondaries (`establish` / `elaborate` / `examine`). Project permission is **read** (plan-state updates only) or **write** (project files); Align’s pre-ask rule is no extra file reads (harness-injected AGENTS.md only; no `.pi/plan` listing, README, package.json, or source exploration). After the first scope ask and `start`, Align may read the session plan then `.pi`. Only **secondary gates** CALL `next` (never the current mode). Spec/Vibe `next` lands on the target primary; Align is dual-landing — default `landing:"establish"` (editor standby, no auto-start) or `landing:"evaluate"` (D-review ask auto-start). Same-mode stay is ESC or Return to editor on the mode picker; `/mode` still lists all modes.
 
 Read the layers in order to build a mental model: **Map → Modes → Machinery → Full picture**. Each view summarizes rules instead of duplicating the complete contract. Use the [coverage index](#source-symbol-coverage) to jump from an FSM symbol to its visual home.
 
@@ -95,18 +95,17 @@ stateDiagram-v2
 
 ### mode-align — ALIGN procedure
 
-**envision** runs once on session/handoff entry: orientation → `start`/reuse artifact → **`ask` ≥1 goal-scope** (never before start) → then evaluate (or PWB Spec/Vibe). **evaluate** is the primary home (artifact check + later **`ask`** for D-review / User clarification / reconcile; ask-route to Spec/Vibe; no `next`). **establish** is the secondary gate only (`RETURN` to evaluate or **`next`/handoff** — never ask). Cancel discards the exchange and does not open `next`.
+**envision** runs once on session/handoff entry: no extra file reads → **`ask` ≥1 goal-scope** (before `start` when no named artifact) → `start`/reuse with a scope-informed slug (first write includes goal + scope) → then evaluate (or PWB Spec/Vibe; PWB with no plan: target `start` then synthesize). **evaluate** is the primary home (artifact check + later **`ask`** for D-review / User clarification / reconcile; ask-route to Spec/Vibe; no `next`). **establish** is the secondary gate only (`RETURN` to evaluate or **`next`/handoff** — never ask). Cancel discards the exchange, does not `start`, and does not open `next`.
 
 ```mermaid
 flowchart TD
     Enter([ALIGN message]) --> Entry{Session entry / no envision yet?}
-    Entry -- yes --> Orient[envision: bounded orientation]
-    Orient --> Artifact[start or reuse artifact]
-    Artifact --> ScopeAsk[CALL ask ≥1 goal scope]
+    Entry -- yes --> ScopeAsk[envision: CALL ask ≥1 goal scope]
     ScopeAsk --> ScopeResult{Ask result}
     ScopeResult -- cancelled --> Stop([RETURN])
     ScopeResult -- routed Spec/Vibe --> Settle([RETURN<br/>fresh target primary])
-    ScopeResult -- answered --> Eval
+    ScopeResult -- answered --> Artifact[start or reuse artifact]
+    Artifact --> Eval
     Entry -- no --> Eval[evaluate primary:<br/>check D/C + later ask]
     Eval --> AskResult{Ask result}
     AskResult -- cancelled --> Stop

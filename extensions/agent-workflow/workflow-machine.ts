@@ -6,6 +6,7 @@
  */
 
 import type { SessionEntry } from "@earendil-works/pi-coding-agent";
+import { evaluateNextGate } from "./next-actions.js";
 import { MODE_EVENT, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
 import { missingSessionPlan } from "./task.js";
 import { WORKFLOW_FSM } from "./workflow-fsm.js";
@@ -21,9 +22,19 @@ export {
 
 export type ArtifactRegion = "none" | "named";
 
+/** Compact ask answer carried on PWB route so the target mode can synthesize the plan. */
+export interface AskSettlementAnswer {
+  id: string;
+  label: string;
+  value: string;
+  wasCustom?: boolean;
+}
+
 export interface AskSettlementSignal {
   outcome: "answered" | "cancelled" | "routed";
   target?: Exclude<WorkflowMode, "align">;
+  /** Present on routed PWB outcomes for kickoff synthesis (D1). */
+  answers?: AskSettlementAnswer[];
 }
 
 /** Turn-local signals; ask outcome and next queue are independent flags. */
@@ -43,14 +54,21 @@ export interface WorkflowSnapshot {
 export type MachineEvent =
   | { type: "TOOL_ASK"; hasQuestions: boolean }
   | { type: "TOOL_DECIDE"; hasQuestions: boolean; allHaveOptions: boolean }
-  | { type: "TOOL_NEXT"; hasActions: boolean; allTargetsValid: boolean; promptsValid: boolean }
+  | {
+      type: "TOOL_NEXT";
+      hasActions: boolean;
+      allTargetsValid: boolean;
+      reasonsValid: boolean;
+      promptsValid: boolean;
+      reviewPromptsValid: boolean;
+    }
   | { type: "AGENT_SETTLED" };
 
 export type GuardResult = { ok: true } | { ok: false; kind: "noop" | "error"; message: string };
 
 export type SettlementDispatch =
   | { action: "none" }
-  | { action: "route"; target: Exclude<WorkflowMode, "align"> }
+  | { action: "route"; target: Exclude<WorkflowMode, "align">; answers?: AskSettlementAnswer[] }
   | { action: "skip_picker" }
   | { action: "open_picker" };
 
@@ -88,12 +106,43 @@ export function currentTurnSignal<T>(
   return undefined;
 }
 
+function readSettlementAnswers(value: unknown): AskSettlementAnswer[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+  const answers: AskSettlementAnswer[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { id?: unknown; label?: unknown; value?: unknown; wasCustom?: unknown };
+    if (typeof row.id !== "string" || typeof row.label !== "string") continue;
+    answers.push({
+      id: row.id,
+      label: row.label,
+      value: typeof row.value === "string" ? row.value : row.label,
+      ...(row.wasCustom === true ? { wasCustom: true } : {}),
+    });
+  }
+  return answers.length ? answers : undefined;
+}
+
+/** Build the agent kickoff instruction that carries PWB answers into Spec/Vibe. */
+export function formatRoutedAnswersPrompt(answers: AskSettlementAnswer[] | undefined): string | undefined {
+  if (!answers?.length) return undefined;
+  const lines = answers.map((answer) => {
+    const via = answer.wasCustom ? "wrote" : "selected";
+    return `- ${answer.id}: ${via} ${answer.label}`;
+  });
+  return [
+    "If no named artifact exists, CALL start first with a scope-informed name. Then synthesize these Proceed-with-best answers into the plan User transcript, Goal, Align, Decisions, and Checklist before other primary work:",
+    ...lines,
+  ].join("\n");
+}
+
 export function readAskSettlement(entries: SessionEntry[]): AskSettlementSignal | undefined {
   return currentTurnSignal(entries, ASK_SETTLEMENT_EVENT, (entry) => {
-    const data = entry.data as { outcome?: unknown; target?: unknown } | undefined;
+    const data = entry.data as { outcome?: unknown; target?: unknown; answers?: unknown } | undefined;
     if (data?.outcome === "answered" || data?.outcome === "cancelled") return { outcome: data.outcome };
     if (data?.outcome === "routed" && (data.target === "spec" || data.target === "vibe")) {
-      return { outcome: "routed", target: data.target };
+      const answers = readSettlementAnswers(data.answers);
+      return { outcome: "routed", target: data.target, ...(answers ? { answers } : {}) };
     }
     return undefined;
   });
@@ -144,7 +193,7 @@ export function receive(snap: WorkflowSnapshot, event: MachineEvent, planError: 
         };
       }
       if (!event.hasQuestions) return { ok: true };
-      if (snap.artifact === "none") return { ok: false, kind: "error", message: planError };
+      // Envision entry may ask before start; decide/next still require a named plan.
       return { ok: true };
     }
     case "TOOL_DECIDE": {
@@ -172,21 +221,8 @@ export function receive(snap: WorkflowSnapshot, event: MachineEvent, planError: 
       if (snap.artifact === "none") return { ok: false, kind: "error", message: planError };
       return { ok: true };
     }
-    case "TOOL_NEXT": {
-      if (!event.hasActions) return { ok: true };
-      if (!event.allTargetsValid) {
-        return { ok: false, kind: "error", message: "every action needs a valid target." };
-      }
-      if (!event.promptsValid) {
-        return {
-          ok: false,
-          kind: "error",
-          message: "every Align, Spec, or Vibe action needs a contextual prompt; handoff must omit it.",
-        };
-      }
-      if (snap.artifact === "none") return { ok: false, kind: "error", message: planError };
-      return { ok: true };
-    }
+    case "TOOL_NEXT":
+      return evaluateNextGate(event, snap.artifact, planError);
     case "AGENT_SETTLED":
       return { ok: true };
     default:
@@ -203,7 +239,7 @@ export function receive(snap: WorkflowSnapshot, event: MachineEvent, planError: 
 export function dispatchSettlement(snap: WorkflowSnapshot): SettlementDispatch {
   const { ask, nextQueued } = snap.settlement;
   if (ask?.outcome === "routed" && ask.target) {
-    return { action: "route", target: ask.target };
+    return { action: "route", target: ask.target, ...(ask.answers?.length ? { answers: ask.answers } : {}) };
   }
   if (ask?.outcome === "cancelled") return { action: "skip_picker" };
   if (nextQueued) return { action: "open_picker" };

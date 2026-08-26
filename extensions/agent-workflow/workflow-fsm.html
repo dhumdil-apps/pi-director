@@ -3539,7 +3539,7 @@
     <script type="application/json" id="workflow-fsm-data">
       {
         "id": "piDirectorWorkflow",
-        "version": "2.6.1",
+        "version": "2.6.6",
         "title": "Pi Director Agent Workflow",
         "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Each mode has a primary home and a secondary gate: primaries do the work; secondaries capture/verify and CALL next. Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
         "session": {
@@ -3557,10 +3557,11 @@
           "A genuinely unrelated goal requires a fresh session; NEVER delete plan artifacts automatically.",
           "NEVER advance the hidden memory-review marker outside /init.",
           "NEVER create or edit .pi/plan/* until start writes the named artifact.",
-          "NEVER CALL ask, decide, or next before start writes the named artifact."
+          "NEVER CALL decide or next before start writes the named artifact. Envision entry MAY CALL ask before start when no named artifact exists."
         ],
         "invariants": [
           "ONLY VIBE MAY change files outside .pi; ALIGN and SPEC update .pi workflow state only.",
+          "ALIGN may NEVER search or read extensions/, deep docs/, or other source — Spec explore owns research; Vibe may read what implementation needs. Envision before the first scope ask: no extra file reads — use the kickoff plus harness-injected AGENTS.md already in context. After that ask and start, Align may read the session plan, then `.pi/AGENTS.md` and `.pi/MEMORY.md` as needed. NEVER list `.pi/plan/` or read sibling plans, root README.md, or package.json just to unlock start.",
           "One versioned .pi/plan/<name>.md continues across modes and handoffs.",
           "Retain Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.",
           "Work log, User transcript, and Agent transcript are append-only.",
@@ -3593,14 +3594,15 @@
             "primary": "evaluate",
             "secondary": "establish",
             "steps": [
-              "IF session entry (new interactive session, handoff continue, or envision not yet run): RUN envision once — orientation, start/reuse artifact, then CALL ask ≥1 goal-scope question; never ask before start.",
+              "IF session entry (new interactive session, handoff continue, or envision not yet run): RUN envision once — no extra file reads, CALL ask ≥1 goal-scope (before start when no named artifact); on answered CALL start with a scope-informed name then evaluate; on cancel do not start.",
               "IF envision Ask routes directly to SPEC or VIBE THEN settle into that mode's primary (explore or execute); on cancel RETURN without evaluate.",
-              "AFTER envision scope is answered (not routed): PROCEED to evaluate.",
-              "RUN evaluate (primary home): check artifact for unresolved D review, Checklist gaps, residuals; CALL ask for D-review, User-requested clarification, RECONCILE_SCOPE, or follow-ups — do not re-fish entry scope already captured in envision; NEVER CALL next from evaluate.",
+              "AFTER envision scope is answered (not routed) and start/reuse has named the artifact: PROCEED to evaluate.",
+              "RUN evaluate (primary home): check artifact for unresolved D review, Checklist gaps, residuals; CALL ask for D-review, User-requested clarification, RECONCILE_SCOPE, or follow-ups — do not re-fish entry scope already captured in envision; NEVER CALL next from evaluate; NEVER explore the codebase in Align.",
               "IF evaluate Ask routes directly to SPEC or VIBE THEN settle into that mode's primary (explore or execute).",
               "WHEN ready to leave Align or to confirm routing after ask: RUN establish (secondary gate).",
-              "establish: NEVER CALL ask; either RETURN to evaluate (more primary/ask work) or CALL next with other modes + handoff only (never align).",
-              "Same-mode stay: do not CALL next with align; User uses ESC/Return or /mode."
+              "establish: NEVER CALL ask; either RETURN to evaluate (more primary/ask work) or CALL next with other modes + handoff only (never align). Agent-driven Align never ends a turn with neither ask nor next.",
+              "Same-mode stay: do not CALL next with align; User uses ESC/Return or /mode.",
+              "Align reads: before the first scope ask, harness-injected AGENTS.md only (no extra file reads); after that ask and start, the session plan then `.pi` as needed — all codebase exploration is Spec (or Vibe when implementing)."
             ]
           },
           {
@@ -3612,7 +3614,7 @@
             "steps": [
               "Land on and RUN explore (primary): bounded research into Evidence; decide for material autonomous choices when needed.",
               "WHEN ready to propose or route: RUN elaborate (secondary).",
-              "elaborate: draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT, then either RETURN to explore (more research) or CALL next with other modes only (never spec). Default Align landing is establish (editor standby, landing:\"establish\", no auto-start). Only when unresolved D ids exist: Align landing evaluate (landing:\"evaluate\", prompt lists D ids, auto-start ask)."
+              "elaborate: draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT, then either RETURN to explore (more research) or CALL next with other modes only (never spec). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate (landing:\"evaluate\", prompt includes a standalone D id such as D1 or D-12, auto-start ask)."
             ]
           },
           {
@@ -3624,7 +3626,7 @@
             "steps": [
               "Land on and RUN execute (primary): implement accepted scope; decide for material autonomous choices when needed.",
               "WHEN ready to verify or route: RUN examine (secondary).",
-              "examine: run checks, RECORD evidence, RUN CLOSE_OUT, then either RETURN to execute (more implementation) or CALL next with other modes only (never vibe). Default Align landing is establish (editor standby). Only when unresolved D ids exist: Align landing evaluate with those D ids in prompt (auto-start ask)."
+              "examine: run checks, RECORD evidence, RUN CLOSE_OUT, then either RETURN to execute (more implementation) or CALL next with other modes only (never vibe). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate with a standalone D id (D1 or D-12) in prompt (auto-start ask)."
             ]
           }
         ],
@@ -3632,9 +3634,9 @@
           "CAPTURE_TURN": [
             "IF message is workflow-generated or a command THEN RETURN.",
             "Redact credentials, secret values, and attachment bodies.",
-            "IF no named artifact exists THEN RETAIN captured message in session only.",
+            "IF no named artifact exists OR the first envision scope ask has not completed THEN RETAIN captured message in session only; do not CREATE or EDIT .pi/plan/* until start.",
             "ELSE APPEND captured message verbatim to User transcript before substantive work.",
-            "RUN WRITE_ARTIFACT when the artifact exists."
+            "RUN WRITE_ARTIFACT when the artifact exists AND the retain-before-first-ask rule does not apply."
           ],
           "RECONCILE_SCOPE": [
             "COMPARE message with Goal, accepted follow-ups, and every unresolved C outcome.",
@@ -3671,11 +3673,11 @@
             "NEVER present the task as complete while an accepted outcome remains unresolved.",
             "NEVER mark a D User-approved without an explicit review answer.",
             "PROMOTE only durable orientation or costly quirks to project memory; NEVER advance the hidden memory-review marker.",
-            "IF routing disabled THEN ENSURE artifact is resumable and RETURN.",
             "IF actionable work remains THEN CALL next from the current secondary gate with ranked other modes and handoff only — NEVER include the current persisted mode.",
-            "Align dual landing (C12): default align action uses landing \"establish\" (editor standby, prompt optional, no auto-start). Only if unresolved D items need acceptance: a separate align action with landing \"evaluate\", prompt that LISTS those D ids, auto-start ask — do not invent extra questions.",
-            "Spec/Vibe actions still need plain-English reason and contextual prompt; handoff omits prompt. Runtime prepends Switch context only when auto-starting.",
+            "Align dual landing (C12): do not emit agent Align landing \"establish\" idle rows — static Return→ALIGN (and Return to editor) cover editor standby. Only if unresolved D items need acceptance: align action with landing \"evaluate\", prompt that includes a standalone D id (D1 or D-12), auto-start ask — do not invent extra questions. Runtime drops redundant establish recommendations if emitted.",
+            "next reason MUST be a short user-facing slug in plain English (what the User gets); plan ids (Q/C/D/G) only as optional trailing [] or (); never bare codes as the whole reason. Runtime rejects a blank/whitespace-only reason. Spec/Vibe still need contextual prompt; Align evaluate needs a standalone D id (D1 or D-12); handoff omits prompt. Runtime prepends Switch context only when auto-starting.",
             "ELSE IF more work remains in the current mode THEN RETURN to the mode primary (do not CALL next with the current mode).",
+            "ELSE IF persisted mode is align THEN CALL next from establish with other modes and handoff only (never align); never idle an agent-driven Align turn without ask or next. Runtime NEXT_ALIGN establish landing is not an agent turn.",
             "ELSE DO NOT CALL next.",
             "ENSURE artifact is resumable and final output is truthful and concise."
           ],
@@ -3704,20 +3706,21 @@
             "kind": "guided",
             "userMode": "align",
             "role": "entry",
-            "summary": "Session entry only: capture goal, bounded orientation, start/reuse artifact, then CALL ask ≥1 about goal scope ahead before evaluate.",
+            "summary": "Session entry only: capture goal, no extra file reads, CALL ask ≥1 about goal scope ahead, then start/reuse the named artifact before evaluate.",
             "permission": "read",
-            "substates": ["goalCapture", "orientation", "ensureArtifact", "scopeAsk"],
+            "substates": ["goalCapture", "scopeAsk", "ensureArtifact"],
             "procedure": [
               "Run once per new interactive session or handoff continue — not a repeating Align loop peer.",
               "Capture user goal and intent when present.",
-              "READ only bounded AGENTS.md, .pi state including MEMORY.md, README, named plans, or documentation for orientation.",
-              "AFTER orientation reads, IF no named artifact exists THEN CALL start exactly once; ELSE reuse the existing named artifact.",
-              "AFTER the named artifact exists: CALL ask with at least one independent question about goal scope ahead (outcomes, constraints, boundaries). NEVER ask before start.",
+              "Do not READ extra files before the first scope ask: use the kickoff plus harness-injected AGENTS.md already in context. NEVER re-read AGENTS.md, NEVER read `.pi/AGENTS.md`, `.pi/MEMORY.md`, `.pi/plan/`, sibling plans, root README.md, package.json, or source to unlock start.",
+              "IF a named artifact already exists THEN reuse it (handoff continue). ELSE do not CALL start yet.",
+              "CALL ask with at least one independent question about goal scope ahead (outcomes, constraints, boundaries). Envision entry MAY CALL ask before start when no named artifact exists.",
+              "On ask cancel: RETURN without evaluate, without start, and without calling next; do not invent scope.",
+              "AFTER the first scope ask is answered (not routed): IF no named artifact exists THEN CALL start exactly once with a scope-informed 2–4 word name; the first write includes initial goal and settled scope. ELSE keep the existing named artifact.",
               "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
-              "SYNTHESIZE into Goal, Align, Decisions, and Checklist after answers.",
-              "ASK dependent follow-ups in a later CALL only when still required before leaving envision.",
-              "IF Ask routes directly to SPEC or VIBE THEN proceed to EXPLORE or EXECUTE (skip evaluate).",
-              "On ask cancel: RETURN without evaluate and without calling next; do not invent scope.",
+              "SYNTHESIZE into Goal, Align, Decisions, and Checklist after start (or into the reused artifact).",
+              "ASK dependent follow-ups in a later CALL only when still required before leaving envision; those later asks need a named plan.",
+              "IF Ask routes directly to SPEC or VIBE THEN: if no named artifact, the target CALL start first then synthesize; proceed to EXPLORE or EXECUTE (skip evaluate).",
               "WHEN ≥1 scope ask is answered and not routed: PROCEED to EVALUATE (Align primary home)."
             ]
           },
@@ -3731,12 +3734,13 @@
             "permission": "read",
             "substates": ["artifactCheck", "askLoop", "synthesize"],
             "procedure": [
-              "Land here after envision scope ask is answered, after RETURN_ALIGN (landing evaluate), and after establish returns via the ALIGN body edge.",
-              "READ Goal, Decisions (unresolved D), Checklist, Work log residuals, Current work, and the kickoff prompt if any.",
+              "Land here after envision scope ask is answered and start/reuse has named the artifact, after RETURN_ALIGN (landing evaluate), and after establish returns via the ALIGN body edge.",
+              "READ Goal, Decisions (unresolved D), Checklist, Work log residuals, Current work, and the kickoff prompt if any — from the plan artifact; `.pi/AGENTS.md` and `.pi/MEMORY.md` as needed.",
+              "NEVER explore the codebase in evaluate; if facts are missing, route to Spec (next or PWB) rather than searching source.",
               "IF kickoff/review lists specific D ids: CALL ask ONLY to accept/change/defer those Ds — do not invent new scope questions.",
               "ELSE IF the User message explicitly requests clarification: CALL ask for that request only.",
               "ELSE IF RECONCILE_SCOPE needs User keep/defer/replace/resolve options: CALL ask for that only.",
-              "ELSE IF no User answers are required: do NOT CALL ask; summarize briefly and PROCEED to ESTABLISH or RETURN idle.",
+              "ELSE IF no User answers are required: do NOT CALL ask; summarize briefly and PROCEED to ESTABLISH, which CALLs next (never wait in editor without ask or next).",
               "NEVER re-fish entry goal-scope questions already captured in envision; NEVER invent fishing questions on entry.",
               "ASK dependent follow-ups in a later CALL only when still required after answers.",
               "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
@@ -3758,9 +3762,10 @@
             "procedure": [
               "Land here after next Align idle (NEXT_ALIGN, landing establish, no auto-start) and after evaluate proceeds on the ALIGN body edge.",
               "NEVER CALL ask from establish — entry scope ask is envision; other Align asks run in evaluate.",
+              "No research in establish — gate and route only.",
               "IF more Align primary or ask work remains THEN RETURN to EVALUATE.",
-              "WHEN ready to leave Align: CALL next with ranked other modes and handoff only — NEVER include align.",
-              "Idle landing: wait for User message or next; do not invent work."
+              "ELSE CALL next with ranked other modes and handoff only — NEVER include align. Agent-driven establish never idles without next.",
+              "Idle landing (runtime NEXT_ALIGN, no agent turn): wait for User message or /mode; do not invent ask or next."
             ]
           },
           "explore": {
@@ -3869,7 +3874,7 @@
             "event": "ARTIFACT",
             "to": "evaluate",
             "label": "ARTIFACT → EVALUATE",
-            "description": "Named artifact exists and ≥1 goal-scope ask was answered after start/reuse; enter Align primary home."
+            "description": "≥1 goal-scope ask was answered and start/reuse has named the artifact; enter Align primary home."
           },
           {
             "id": "evaluate-ask-loop",
@@ -4071,38 +4076,40 @@
         "tools": [
           {
             "name": "start",
-            "summary": "First .pi/plan write triggered by user input on start: named artifact or linked legacy continuation.",
+            "summary": "First .pi/plan write: named artifact after the first answered envision scope ask, or linked legacy continuation.",
             "modes": ["any"],
             "gate": ["Creates or continues the named plan; no plan file exists until start succeeds."],
             "mechanics": [
-              "User input triggers start tool to create the named artifact before substantive ALIGN work.",
-              "CALL start with a context-informed 2-4 word task name; include a ticket ID when applicable.",
-              "start is the first CALL tool when no named artifact exists.",
+              "CALL start after the first envision scope ask is answered (not cancelled), or in the Spec/Vibe target before synthesize when PWB routed with no plan.",
+              "CALL start with a scope-informed 2-4 word task name from settled scope plus the initial goal; include a ticket ID when applicable.",
+              "Do not CALL start before that ask on a new session; do not create .pi/plan/* on cancel. When a named artifact already exists, reuse it and skip start.",
               "Legacy artifacts stay immutable; start forks a linked current-format continuation."
             ]
           },
           {
             "name": "ask",
-            "summary": "Native ALIGN question loop; used from envision (entry scope after start) and evaluate (later asks).",
+            "summary": "Native ALIGN question loop; used from envision (entry scope; may precede start) and evaluate (later asks).",
             "modes": ["align"],
             "gate": [
               "ALIGN-only; SPEC/VIBE ask is a harmless no-op (no picker).",
               "Empty ask is a harmless no-op.",
-              "Non-empty ask requires a named session plan file; otherwise error without picker.",
+              "Non-empty ALIGN ask may run when no named plan exists (envision entry). Decide and next still require a named plan.",
               "Interactive UI required only when questions will be shown."
             ],
             "mechanics": [
-              "NEVER CALL ask before start writes the named artifact.",
-              "CALL ask from envision after start/reuse with ≥1 question about goal scope ahead; on answered (not routed) PROCEED to evaluate; on cancel RETURN.",
+              "Envision entry MAY CALL ask before start when no named artifact exists; evaluate asks require a named plan.",
+              "CALL ask from envision with ≥1 question about goal scope ahead; do not CREATE .pi/plan/* until that ask is answered; persist User-transcript meaning after start; on answered (not routed) CALL start if needed then PROCEED to evaluate; on cancel RETURN without start.",
               "CALL ask from evaluate for D acceptance, User-requested clarification, RECONCILE_SCOPE, and follow-ups — not to re-fish entry scope.",
               "Answers stay in ALIGN; after evaluate capture continue evaluate or PROCEED to establish for next/handoff; NEVER CALL next from envision or evaluate.",
               "CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly.",
               "KEEP question identifiers, option values, and option labels distinct.",
               "NEVER imitate native action labels.",
-              "USE customAnswerLabel for User-supplied detail; NEVER offer a selectable option that merely says specify.",
+              "NEVER customize the Write a custom answer row label — it is always plain Write a custom answer; put User-supplied detail in question context or real options; NEVER offer a selectable option that merely says specify.",
               "BATCH only independent questions; dependent follow-ups in a later CALL.",
               "An optionless ask question offers custom input but no Proceed-with-best route.",
               "Proceed-with-best accepts prior answers plus remaining highest-confidence answers and starts fresh SPEC/VIBE at that mode's primary.",
+              "On PWB route, runtime carries structured answers in the target kickoff; if no named artifact yet, the target CALL start first with a scope-informed name, then synthesizes User transcript / Goal / Align / Decisions / Checklist before other primary work (Align turn ends via terminate).",
+              "Ask option order: selectable options, then Write a custom answer, then Proceed-with-best routes last.",
               "Agent persists User-transcript meaning; runtime does not write the User transcript."
             ]
           },
@@ -4129,19 +4136,20 @@
             "modes": ["any"],
             "gate": [
               "Empty next records no recommendation and opens no picker.",
-              "Non-empty next requires valid targets; requires named session plan.",
-              "Spec/Vibe actions need contextual prompt; Align evaluate/review needs prompt listing D ids; Align establish/idle prompt optional; handoff must omit prompt."
+              "Non-empty next requires valid targets and a non-empty user-facing reason on every action; requires named session plan.",
+              "Spec/Vibe actions need contextual prompt; Align evaluate/review needs a prompt with a standalone D id (D1 or D-12); Align establish/idle prompt optional; handoff must omit prompt."
             ],
             "mechanics": [
               "CALL next only from secondary gates (establish, elaborate, examine) after capture/verify/CLOSE_OUT as appropriate.",
               "NEVER include an action whose mode equals the current persisted mode; runtime filters those out on next-driven pickers.",
-              "Align dual landing: landing \"establish\" (default) = editor standby, no auto-start; landing \"evaluate\" = auto-start ask review — prompt MUST list D ids only.",
-              "Default post-Spec/Vibe Align recommendation is landing establish; use landing evaluate only when unresolved D acceptance is required.",
-              "Agent-authored actions SHOULD include a user-facing reason; Spec/Vibe REQUIRE prompt; handoff OMITs prompt.",
+              "Align dual landing: landing \"establish\" (default) ≡ graph NEXT_ALIGN → establish (editor standby, no auto-start); landing \"evaluate\" ≡ graph RETURN_ALIGN → evaluate (auto-start ask review — prompt MUST include a standalone D id: D1 or D-12).",
+              "Do not recommend Align landing establish idle after Spec/Vibe — static Return→ALIGN covers it; use landing evaluate only when unresolved D acceptance is required.",
+              "When Align evaluate is recommended with other modes, list landing evaluate (RETURN_ALIGN) last among recommended rows (PWB-style separation).",
+              "Agent-authored reason MUST be a short user-facing slug in plain English; Q/C/D/G ids only as optional trailing [] or (); never the whole reason. Runtime requires a non-empty normalized reason. Spec/Vibe REQUIRE prompt; Align evaluate REQUIRES a standalone D id (D1 or D-12); handoff OMITs prompt.",
               "Runtime PREPENDS only Switch context when auto-starting and NEVER authors substantive direction.",
               "Recommended row with a reason shows {mode} — {reason}. Two Align rows may appear (review vs editor).",
               "next→Align idle lands establish; next→Align review lands evaluate; next→Spec lands explore; next→Vibe lands execute.",
-              "ESC dismiss and Return to editor stay in the current mode without starting the agent.",
+              "ESC dismisses the mode picker with no change. Mode pickers end with Return to editor (same as ESC), then Return → ALIGN last when not already in Align (static establish, no agent start). /mode lists the same trailing rows.",
               "/mode force picker still lists all modes including the current mode (bypass).",
               "Manual ALIGN/SPEC/VIBE commands return to the editor without auto-start.",
               "Only recommended actions with autostart (prompt + non-idle Align) start the agent.",
@@ -4176,13 +4184,14 @@
         },
         "initial": "envision",
         "notes": [
-          "Guided session story: envision (start → ≥1 scope ask) → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
+          "Guided session story: envision (ask ≥1 → start/reuse) → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
           "Persisted User mode is only align|spec|vibe. Guided states compose modeBodies with roles entry|primary|secondary. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
-          "Project permission is read|write only: read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact.",
-          "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 after start then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
+          "Project permission is read|write only (project-write boundary): read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact. Align’s pre-ask rule (Agent, not a runtime sandbox): no extra file reads before the first scope ask (harness-injected AGENTS.md only); after that ask and start, the session plan then `.pi` as needed.",
+          "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 goal-scope (before start when no named artifact) then start/reuse then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
           "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
           "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
-          "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next.",
+          "Substates on guided states are narrative procedure phases for agents and diagrams, not separate graph nodes.",
+          "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next. Agent-driven Align ends via ask (envision/evaluate) or next (establish); silent idle is only runtime NEXT_ALIGN.",
           "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
           "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
           "tools validate required shapes and protocol enums, not workflow quality."
@@ -4196,37 +4205,37 @@
         "nodes": {
           "envision": {
             "x": 450,
-            "y": -150,
+            "y": -130,
             "w": 200,
             "h": 48
           },
           "evaluate": {
             "x": 440,
-            "y": 50,
+            "y": 30,
             "w": 210,
             "h": 48
           },
           "establish": {
             "x": 430,
-            "y": 140,
+            "y": 160,
             "w": 210,
             "h": 48
           },
           "explore": {
-            "x": 430,
+            "x": 420,
             "y": 320,
             "w": 210,
             "h": 48
           },
           "elaborate": {
-            "x": 420,
-            "y": 420,
+            "x": 410,
+            "y": 460,
             "w": 210,
             "h": 48
           },
           "execute": {
             "x": 420,
-            "y": 630,
+            "y": 610,
             "w": 210,
             "h": 48
           },
@@ -4243,7 +4252,7 @@
             [750, 280]
           ],
           "envision-ask-route-vibe": [
-            [770, 20],
+            [760, 20],
             [780, 540]
           ],
           "envision-to-evaluate": [[550, -40]],
@@ -4252,49 +4261,49 @@
             [700, 280]
           ],
           "evaluate-ask-route-vibe": [
-            [720, 120],
-            [730, 550]
+            [710, 130],
+            [720, 520]
           ],
           "align-body": [[540, 120]],
           "establish-next-spec": [[530, 250]],
           "establish-next-vibe": [
-            [680, 220],
-            [680, 530]
+            [660, 260],
+            [660, 510]
           ],
           "establish-handoff": [
-            [390, 100],
-            [400, -70]
+            [390, 120],
+            [390, -20]
           ],
           "spec-body": [[530, 390]],
           "elaborate-next-align": [
             [380, 380],
-            [380, 200]
+            [380, 240]
           ],
           "elaborate-return-align": [
-            [340, 380],
-            [350, 100]
+            [360, 390],
+            [360, 100]
           ],
           "elaborate-next-vibe": [[520, 550]],
           "elaborate-handoff": [
-            [300, 390],
-            [310, -30]
+            [340, 390],
+            [340, -10]
           ],
           "vibe-body": [[520, 700]],
           "examine-next-align": [
-            [240, 630],
-            [250, 170]
+            [280, 630],
+            [280, 240]
           ],
           "examine-return-align": [
-            [200, 630],
-            [200, 110]
+            [250, 630],
+            [250, 120]
           ],
           "examine-next-spec": [
-            [270, 620],
-            [270, 350]
+            [300, 620],
+            [300, 370]
           ],
           "examine-handoff": [
-            [160, 620],
-            [170, -30]
+            [220, 630],
+            [220, -10]
           ]
         }
       }

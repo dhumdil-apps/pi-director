@@ -154,6 +154,11 @@ writeFileSync(join(DIST, "workflow-diagrams.json"), JSON.stringify(layers, null,
 // Canonical FSM (same object agents and the HTML visualizer use)
 const fsmModuleUrl = pathToFileURL(join(ROOT, "extensions/agent-workflow/workflow-fsm.ts")).href;
 const { WORKFLOW_FSM, formatWorkflowPrompt, serializeWorkflowFsm, toMermaid } = await import(fsmModuleUrl);
+const validateModuleUrl = pathToFileURL(join(ROOT, "extensions/agent-workflow/workflow-fsm-validate.ts")).href;
+const { assertWorkflowFsm } = await import(validateModuleUrl);
+
+assertWorkflowFsm(WORKFLOW_FSM);
+
 const promptBody = formatWorkflowPrompt(WORKFLOW_FSM);
 const fsmJson = serializeWorkflowFsm();
 const mermaid = toMermaid();

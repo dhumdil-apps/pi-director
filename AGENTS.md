@@ -21,12 +21,13 @@ Run these checks from the repository root before sharing changes:
 ```bash
 npm run format:check
 npm run typecheck
+npm test
 git diff --check
 ```
 
-There is currently no executable test script or checked-in `*.test.ts` suite;
-use focused source or interactive review for behavior that the retained checks
-do not cover.
+`npm run verify` runs the same sequence. The Node built-in test runner covers
+FSM graph integrity and `next` tool gates; use focused source or interactive
+review for behavior those checks do not cover.
 
 ## Safety and Git
 

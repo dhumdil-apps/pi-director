@@ -5,12 +5,21 @@ import { Type, type Static } from "@sinclair/typebox";
 import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { MODE_LABEL, recordWorkflowMode, resolveWorkflowMode, WORKFLOW_MODES, type WorkflowMode } from "./mode.js";
+import {
+  inspectNextActions,
+  normalizeAction,
+  type AlignLanding,
+  type NextStepAction,
+  type NextStepActionMode,
+} from "./next-actions.js";
+import { metaPickerLabels, RETURN_ALIGN_OPTION, RETURN_OPTION, withoutRedundantAlignEstablish } from "./picker-meta.js";
 import { duringUserWait } from "./user-wait.js";
 import {
   ASK_SETTLEMENT_EVENT,
   currentTurnSignal,
   dispatchSettlement,
   formatGateText,
+  formatRoutedAnswersPrompt,
   NEXT_STEP_EVENT,
   planMissingMessage,
   receive,
@@ -18,20 +27,9 @@ import {
 } from "./workflow-machine.js";
 
 export const HANDOFF_OPTION = "🤝 Hand off to a fresh session";
-export const RETURN_OPTION = "↩ Return to editor";
+export { RETURN_ALIGN_OPTION, RETURN_OPTION };
 export { ASK_SETTLEMENT_EVENT, NEXT_STEP_EVENT };
-
-export type NextStepActionMode = WorkflowMode | "handoff";
-/** Align dual landing (C12): establish = editor standby; evaluate = auto-start ask review. */
-export type AlignLanding = "establish" | "evaluate";
-
-interface NextStepAction {
-  mode: NextStepActionMode;
-  reason?: string;
-  prompt?: string;
-  /** Align only. Default establish (idle gate / editor). */
-  landing?: AlignLanding;
-}
+export type { AlignLanding, NextStepAction, NextStepActionMode };
 
 interface NextStepEvent {
   mode: WorkflowMode;
@@ -42,7 +40,7 @@ interface NextStepEvent {
 
 const NextStepActionParams = Type.Object({
   mode: Type.Union([Type.Literal("align"), Type.Literal("spec"), Type.Literal("vibe"), Type.Literal("handoff")]),
-  reason: Type.Optional(Type.String({ description: agentApiText("tool.next.action.reason") })),
+  reason: Type.String({ description: agentApiText("tool.next.action.reason") }),
   prompt: Type.Optional(Type.String({ description: agentApiText("tool.next.action.prompt") })),
   landing: Type.Optional(
     Type.Union([Type.Literal("establish"), Type.Literal("evaluate")], {
@@ -69,37 +67,6 @@ interface PickerState {
   actions: Map<string, PickerAction>;
 }
 
-function normalizeReason(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
-  return value.replace(/\s+/g, " ").trim() || undefined;
-}
-
-function normalizeLanding(mode: NextStepActionMode, landing: unknown): AlignLanding | undefined {
-  if (mode !== "align") return undefined;
-  return landing === "evaluate" ? "evaluate" : "establish";
-}
-
-function normalizeAction(value: unknown): NextStepAction | undefined {
-  if (!value || typeof value !== "object") return undefined;
-  const { mode, reason, prompt, landing } = value as {
-    mode?: unknown;
-    reason?: unknown;
-    prompt?: unknown;
-    landing?: unknown;
-  };
-  const normalizedMode = mode === "questionnaire" ? "align" : mode === "phase-boundary" ? "handoff" : mode;
-  if (!(["align", "spec", "vibe", "handoff"] as unknown[]).includes(normalizedMode)) return undefined;
-  const asMode = normalizedMode as NextStepActionMode;
-  const normalizedPrompt = typeof prompt === "string" && prompt.trim() ? prompt : undefined;
-  const normalizedLanding = normalizeLanding(asMode, landing);
-  return {
-    mode: asMode,
-    ...(normalizeReason(reason) ? { reason: normalizeReason(reason) } : {}),
-    ...(normalizedPrompt ? { prompt: normalizedPrompt } : {}),
-    ...(normalizedLanding ? { landing: normalizedLanding } : {}),
-  };
-}
-
 /** Align evaluate/review auto-starts; Align establish/idle never auto-starts. Spec/Vibe auto-start when prompt present. */
 function actionAutostart(action: NextStepAction): boolean {
   if (action.mode === "handoff") return false;
@@ -112,16 +79,20 @@ function actionDedupeKey(action: NextStepAction): string {
   return action.mode;
 }
 
-function promptsValidForActions(actions: NextStepAction[]): boolean {
-  return actions.every((action) => {
-    if (action.mode === "handoff") return !action.prompt;
-    if (action.mode === "align") {
-      // Idle establish: prompt optional. Review evaluate: prompt required (name Ds).
-      if ((action.landing ?? "establish") === "establish") return true;
-      return Boolean(action.prompt);
-    }
-    return Boolean(action.prompt);
-  });
+/**
+ * Stable order for recommended rows: ordinary modes first, handoff next,
+ * Align review (RETURN_ALIGN / landing evaluate) last — PWB-style separation.
+ */
+function sortRecommendedActions(actions: NextStepAction[]): NextStepAction[] {
+  const rank = (action: NextStepAction): number => {
+    if (action.mode === "align" && (action.landing ?? "establish") === "evaluate") return 2;
+    if (action.mode === "handoff") return 1;
+    return 0;
+  };
+  return actions
+    .map((action, index) => ({ action, index }))
+    .sort((left, right) => rank(left.action) - rank(right.action) || left.index - right.index)
+    .map(({ action }) => action);
 }
 
 /** Drop same-mode recommendations; handoff always kept. */
@@ -197,7 +168,7 @@ function transitionLabel(current: WorkflowMode, next: WorkflowMode, landing?: Al
   return `${MODE_LABEL[next]} — Continue in ${MODE_LABEL[next]}`;
 }
 
-function pickerState(
+export function pickerState(
   current: WorkflowMode,
   explicit: NextStepAction[] = [],
   options?: { includeCurrentMode?: boolean },
@@ -212,7 +183,9 @@ function pickerState(
     actions.set(rendered, action);
   };
 
-  const explicitActions = includeCurrentMode ? explicit : crossModeActions(current, explicit);
+  const scoped = includeCurrentMode ? explicit : crossModeActions(current, explicit);
+  // Static Return→ALIGN covers establish/idle; keep evaluate/D-review rows only.
+  const explicitActions = sortRecommendedActions(withoutRedundantAlignEstablish(scoped));
   for (const action of explicitActions) {
     const key = actionDedupeKey(action);
     if (recommended.has(key)) continue;
@@ -237,25 +210,26 @@ function pickerState(
   }
 
   for (const mode of WORKFLOW_MODES) {
-    // Neutral Align fill-in = establish standby (C12). Spec/Vibe fill-ins unchanged.
-    const fillKey = mode === "align" ? "align:establish" : mode;
-    if (recommended.has(fillKey)) continue;
-    if (mode === current) {
-      if (includeCurrentMode) add(`${MODE_LABEL[mode]} — Continue current mode`, { kind: "continue", mode });
+    // Cross-mode Align idle is trailing RETURN_ALIGN_OPTION only (no agent establish row).
+    if (mode === "align") {
+      if (mode === current && includeCurrentMode) {
+        add(`${MODE_LABEL[mode]} — Continue current mode`, { kind: "continue", mode });
+      }
       continue;
     }
-    if (mode === "align") {
-      add(`${MODE_LABEL.align} — Editor (establish)`, {
-        kind: "switch",
-        mode: "align",
-        autostart: false,
-      });
+    if (recommended.has(mode)) continue;
+    if (mode === current) {
+      if (includeCurrentMode) add(`${MODE_LABEL[mode]} — Continue current mode`, { kind: "continue", mode });
       continue;
     }
     add(`${MODE_LABEL[mode]} — Switch mode`, { kind: "switch", mode });
   }
   if (!recommended.has("handoff")) add(HANDOFF_OPTION, { kind: "handoff" });
-  add(RETURN_OPTION, { kind: "return" });
+  // Trailing meta: Return (ESC); static Return→ALIGN last when not already in Align.
+  for (const label of metaPickerLabels(current)) {
+    if (label === RETURN_OPTION) add(RETURN_OPTION, { kind: "return" });
+    else add(RETURN_ALIGN_OPTION, { kind: "switch", mode: "align", autostart: false });
+  }
   return { options: labels, actions };
 }
 
@@ -280,44 +254,50 @@ export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext, force
   // next-driven pickers omit current mode; /mode force keeps full escape-hatch list (D4).
   const state = pickerState(current, explicit ?? [], { includeCurrentMode: force });
   const checkpoint = openCheckpoint(pi, "mode");
-  let choice: string | undefined;
   try {
-    choice = await duringUserWait(pi, "mode", () => ctx.ui.select("What next?", state.options));
+    while (true) {
+      const choice = await duringUserWait(pi, "mode", () => ctx.ui.select("What next?", state.options));
+      if (choice === undefined) {
+        resolveCheckpoint(pi, checkpoint.id, "dismissed");
+        return;
+      }
+      const action = state.actions.get(choice);
+      if (!action) {
+        resolveCheckpoint(pi, checkpoint.id, "dismissed");
+        return;
+      }
+      if (action.kind === "return") {
+        resolveCheckpoint(pi, checkpoint.id, "return");
+        return;
+      }
+      if (action.kind === "handoff") {
+        resolveCheckpoint(pi, checkpoint.id, "handoff");
+        const command = `/handoff ${pi.getSessionName() ?? ""}`.trim();
+        if (!ctx.ui.getEditorText().trim()) ctx.ui.setEditorText(command);
+        ctx.ui.notify(`Press Enter to run ${command} in a new session.`, "info");
+        return;
+      }
+
+      if (action.kind === "continue") {
+        resolveCheckpoint(pi, checkpoint.id, "continue");
+        if (action.autostart && action.prompt) {
+          sendContinueKickoff(pi, action.mode, action.prompt, "continue", current);
+        }
+        return;
+      }
+      resolveCheckpoint(pi, checkpoint.id, action.mode);
+      await applyMode(pi, ctx, action.mode, current);
+      // C12: Align establish/idle never kickoff; Align evaluate/review and Spec/Vibe kickoff when autostart.
+      if (action.autostart && action.prompt) {
+        sendContinueKickoff(pi, action.mode, action.prompt, "start", current);
+      } else if (action.mode === "align" && ctx.hasUI) {
+        ctx.ui.notify(`${MODE_LABEL.align} ready in editor (establish). No agent start.`, "info");
+      }
+      return;
+    }
   } catch (error) {
     resolveCheckpoint(pi, checkpoint.id, "failure");
     throw error;
-  }
-  if (choice === undefined) {
-    resolveCheckpoint(pi, checkpoint.id, "dismissed");
-    return;
-  }
-  const action = state.actions.get(choice);
-  if (!action || action.kind === "return") {
-    resolveCheckpoint(pi, checkpoint.id, action?.kind === "return" ? "return" : "dismissed");
-    return;
-  }
-  if (action.kind === "handoff") {
-    resolveCheckpoint(pi, checkpoint.id, "handoff");
-    const command = `/handoff ${pi.getSessionName() ?? ""}`.trim();
-    if (!ctx.ui.getEditorText().trim()) ctx.ui.setEditorText(command);
-    ctx.ui.notify(`Press Enter to run ${command} in a new session.`, "info");
-    return;
-  }
-
-  if (action.kind === "continue") {
-    resolveCheckpoint(pi, checkpoint.id, "continue");
-    if (action.autostart && action.prompt) {
-      sendContinueKickoff(pi, action.mode, action.prompt, "continue", current);
-    }
-    return;
-  }
-  resolveCheckpoint(pi, checkpoint.id, action.mode);
-  await applyMode(pi, ctx, action.mode, current);
-  // C12: Align establish/idle never kickoff; Align evaluate/review and Spec/Vibe kickoff when autostart.
-  if (action.autostart && action.prompt) {
-    sendContinueKickoff(pi, action.mode, action.prompt, "start", current);
-  } else if (action.mode === "align" && ctx.hasUI) {
-    ctx.ui.notify(`${MODE_LABEL.align} ready in editor (establish). No agent start.`, "info");
   }
 }
 
@@ -330,18 +310,17 @@ export function registerModePicker(pi: ExtensionAPI): void {
     async execute(_toolCallId, params: NextStepInput, _signal, _onUpdate, ctx) {
       const branch = ctx.sessionManager.getBranch();
       const mode = resolveWorkflowMode(branch);
-      const actions = params.actions.map(normalizeAction);
-      const allTargetsValid = params.actions.length === 0 || actions.every(Boolean);
-      const normalized = actions.filter((action): action is NextStepAction => Boolean(action));
-      const promptsValid = params.actions.length === 0 || (allTargetsValid && promptsValidForActions(normalized));
+      const inspected = inspectNextActions(params.actions);
       const snap = snapshot(branch, ctx.cwd, pi.getSessionName());
       const gate = receive(
         snap,
         {
           type: "TOOL_NEXT",
           hasActions: params.actions.length > 0,
-          allTargetsValid,
-          promptsValid,
+          allTargetsValid: inspected.allTargetsValid,
+          reasonsValid: inspected.reasonsValid,
+          promptsValid: inspected.promptsValid,
+          reviewPromptsValid: inspected.reviewPromptsValid,
         },
         planMissingMessage(ctx.cwd, pi.getSessionName()),
       );
@@ -359,8 +338,10 @@ export function registerModePicker(pi: ExtensionAPI): void {
           details: { mode, actions: [], queued: false },
         };
       }
-      const filtered = crossModeActions(mode, normalized);
-      const dropped = normalized.length - filtered.length;
+      const filtered = sortRecommendedActions(
+        withoutRedundantAlignEstablish(crossModeActions(mode, inspected.normalized)),
+      );
+      const dropped = inspected.normalized.length - filtered.length;
       const event: NextStepEvent = { mode, actions: filtered, queued: true };
       pi.appendEntry(NEXT_STEP_EVENT, event);
       const ranked =
@@ -387,7 +368,7 @@ export function registerModePicker(pi: ExtensionAPI): void {
     const dispatch = dispatchSettlement(snap);
     if (dispatch.action === "route") {
       await applyMode(pi, ctx, dispatch.target, mode);
-      startModeContinuation(pi, dispatch.target, mode);
+      startModeContinuation(pi, dispatch.target, mode, formatRoutedAnswersPrompt(dispatch.answers));
       return;
     }
     if (dispatch.action === "skip_picker") return;
