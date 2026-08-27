@@ -180,7 +180,7 @@ export function registerAsk(pi: ExtensionAPI): void {
               // The current run still carries its Align mode prompt. Defer the
               // User-selected transition until agent_settled so the target starts
               // a fresh run through before_agent_start with the correct marker.
-              // Carry answers on the settlement signal for the Spec/Vibe kickoff (D1).
+              // Carry answers on the settlement signal for the Spec/Vibe kickoff.
               pi.appendEntry(ASK_SETTLEMENT_EVENT, {
                 outcome: "routed",
                 target: route,

@@ -42,7 +42,12 @@ describe("next action inspection", () => {
       { mode: "spec", reason: "Map next gates", prompt: "Research the validator seam." },
       { mode: "vibe", reason: "Implement enforcement", prompt: "Ship the gates and tests." },
       { mode: "align", reason: "Wait in editor", landing: "establish" },
-      { mode: "align", reason: "Review the split flags", prompt: "Accept or change D1.", landing: "evaluate" },
+      {
+        mode: "align",
+        reason: "Review the split flags",
+        prompt: "Accept or change D-split-flags.",
+        landing: "evaluate",
+      },
       { mode: "handoff", reason: "Continue later on the same plan" },
     ];
     const inspected = inspectNextActions(raw);
@@ -88,15 +93,21 @@ describe("next action inspection", () => {
     assert.match(gateText(handoff), /handoff must omit prompt/);
   });
 
-  it("accepts standalone D1 and D-12 review prompts", () => {
-    assert.equal(hasStandaloneDecisionId("Accept or change D1."), true);
-    assert.equal(hasStandaloneDecisionId("Review D-12 only."), true);
-    const d1 = [{ mode: "align", reason: "Review split flags", prompt: "Accept D1.", landing: "evaluate" }];
-    const hyphen = [{ mode: "align", reason: "Review hyphen ids", prompt: "Accept D-12.", landing: "evaluate" }];
-    assert.equal(inspectNextActions(d1).reviewPromptsValid, true);
-    assert.equal(inspectNextActions(hyphen).reviewPromptsValid, true);
-    assert.deepEqual(evaluateNextGate(nextEvent(d1), "named", PLAN_ERROR), { ok: true });
-    assert.deepEqual(evaluateNextGate(nextEvent(hyphen), "named", PLAN_ERROR), { ok: true });
+  it("accepts standalone D-topic review prompts", () => {
+    assert.equal(hasStandaloneDecisionId("Accept or change D-split-flags."), true);
+    assert.equal(hasStandaloneDecisionId("Review D-id-shape only."), true);
+    assert.equal(hasStandaloneDecisionId("Accept D1."), false);
+    assert.equal(hasStandaloneDecisionId("Review D-12 only."), false);
+    const slug = [
+      { mode: "align", reason: "Review split flags", prompt: "Accept D-split-flags.", landing: "evaluate" },
+    ];
+    const hyphenSlug = [
+      { mode: "align", reason: "Review hyphen ids", prompt: "Accept D-id-shape.", landing: "evaluate" },
+    ];
+    assert.equal(inspectNextActions(slug).reviewPromptsValid, true);
+    assert.equal(inspectNextActions(hyphenSlug).reviewPromptsValid, true);
+    assert.deepEqual(evaluateNextGate(nextEvent(slug), "named", PLAN_ERROR), { ok: true });
+    assert.deepEqual(evaluateNextGate(nextEvent(hyphenSlug), "named", PLAN_ERROR), { ok: true });
   });
 
   it("rejects Align evaluate prompts without a standalone decision id", () => {
@@ -109,11 +120,17 @@ describe("next action inspection", () => {
     ];
     assert.equal(inspectNextActions(noId).promptsValid, true);
     assert.equal(inspectNextActions(noId).reviewPromptsValid, false);
-    assert.match(gateText(noId), /D1 or D-12/);
+    assert.match(gateText(noId), /D-topic/);
 
-    const nested = [{ mode: "align", reason: "Review split flags", prompt: "See QD1 notes.", landing: "evaluate" }];
+    const nested = [
+      { mode: "align", reason: "Review split flags", prompt: "See QD-topic notes.", landing: "evaluate" },
+    ];
     assert.equal(inspectNextActions(nested).reviewPromptsValid, false);
-    assert.match(gateText(nested), /D1 or D-12/);
+    assert.match(gateText(nested), /D-topic/);
+
+    const numeric = [{ mode: "align", reason: "Review split flags", prompt: "Accept D1.", landing: "evaluate" }];
+    assert.equal(inspectNextActions(numeric).reviewPromptsValid, false);
+    assert.match(gateText(numeric), /D-topic/);
   });
 
   it("rejects unknown targets and absent plans", () => {
@@ -144,7 +161,7 @@ describe("mode picker trailing rows", () => {
     const rows = [
       { mode: "vibe", reason: "Ship the fix", prompt: "Implement C7.", landing: undefined },
       { mode: "align", reason: "idle editor after Spec proposal", landing: "establish" },
-      { mode: "align", reason: "review open D", prompt: "Accept D1.", landing: "evaluate" },
+      { mode: "align", reason: "review open D", prompt: "Accept D-id-shape.", landing: "evaluate" },
       { mode: "handoff", reason: "Continue later" },
     ];
     assert.equal(isRedundantAlignEstablish(rows[1]!), true);

@@ -326,7 +326,7 @@ export async function openModePicker(
       }
       resolveCheckpoint(pi, checkpoint.id, action.mode);
       await applyMode(pi, ctx, action.mode, current);
-      // C12: Align establish/idle never kickoff; Align evaluate/review and Spec/Vibe kickoff when autostart.
+      // Align establish/idle never kickoff; Align evaluate/review and Spec/Vibe kickoff when autostart.
       if (action.autostart && action.prompt) {
         sendContinueKickoff(pi, action.mode, action.prompt, "start", current);
       } else if (action.mode === "align" && ctx.hasUI) {

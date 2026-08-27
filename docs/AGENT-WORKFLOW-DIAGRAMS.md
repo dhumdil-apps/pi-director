@@ -95,12 +95,12 @@ stateDiagram-v2
 
 ### mode-align — ALIGN procedure
 
-**envision** runs once on session/handoff entry: no extra file reads → **`ask` ≥1 goal-scope** (before `start` when no named artifact) → `start`/reuse with a scope-informed slug (first write includes goal + scope) → then evaluate (or PWB Spec/Vibe; PWB with no plan: target `start` then synthesize). **evaluate** is the primary home (artifact check + later **`ask`** for D-review / User clarification / reconcile; ask-route to Spec/Vibe; no `next`). **establish** is the secondary gate only (`RETURN` to evaluate or **`next`/handoff** — never ask). Cancel discards the exchange, does not `start`, and does not open `next`.
+**envision** runs once on session/handoff entry: no extra file reads → **`ask` once for goal-scope** (one CALL, batch independent questions; before `start` when no named artifact) → `start`/reuse with a scope-informed slug (first write includes goal + scope) → then evaluate (or PWB Spec/Vibe; PWB with no plan: target `start` then synthesize). **evaluate** is the primary home (artifact check + later **`ask`** for D-review / User clarification / reconcile; ask-route to Spec/Vibe; no `next`). **establish** is the secondary gate only (`RETURN` to evaluate or **`next`/handoff** — never ask). Cancel discards the exchange, does not `start`, and does not open `next`.
 
 ```mermaid
 flowchart TD
     Enter([ALIGN message]) --> Entry{Session entry / no envision yet?}
-    Entry -- yes --> ScopeAsk[envision: CALL ask ≥1 goal scope]
+    Entry -- yes --> ScopeAsk[envision: CALL ask once for goal scope]
     ScopeAsk --> ScopeResult{Ask result}
     ScopeResult -- cancelled --> Stop([RETURN])
     ScopeResult -- routed Spec/Vibe --> Settle([RETURN<br/>fresh target primary])

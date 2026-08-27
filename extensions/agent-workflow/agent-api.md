@@ -48,7 +48,7 @@ Integer used to rank this option; 1 is lowest and 5 is highest.
 
 ## tool.ask.question.id
 
-Stable question identifier returned with its answer.
+Stable question slug returned with its answer (Q-goal-scope). User and Agent share this string.
 
 ## tool.ask.question.context
 
@@ -92,11 +92,11 @@ Record ranked actions for the post-turn picker without changing mode.
 
 ## tool.next.action.reason
 
-Required user-facing picker subtitle. Runtime rejects blank or whitespace-only values after normalization. Short plain-English slug (what the User gets); Q, C, D, or G identifiers only as a trailing [] or (), never the whole subtitle. Shown as `{mode} — {reason}` in place of the canned mode subtitle.
+Required user-facing picker subtitle. Runtime rejects blank or whitespace-only values after normalization. Short plain-English slug (what the User gets); plan slugs (Q-topic/C-topic/D-topic) only as a trailing [] or (), never the whole subtitle. Shown as `{mode} — {reason}` in place of the canned mode subtitle.
 
 ## tool.next.action.prompt
 
-Follow-up instruction appended after the runtime transition. Required for Spec, Vibe, and Align review (landing evaluate). Align evaluate must include a standalone decision id (D1 or D-12). Optional for Align idle (landing establish). Forbidden for handoff.
+Follow-up instruction appended after the runtime transition. Required for Spec, Vibe, and Align review (landing evaluate). Align evaluate must include a standalone decision slug (D-tighten-writes). Optional for Align idle (landing establish). Forbidden for handoff.
 
 ## tool.next.action.landing
 

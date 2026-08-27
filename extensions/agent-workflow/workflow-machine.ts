@@ -36,7 +36,7 @@ export interface AskSettlementAnswer {
 export interface AskSettlementSignal {
   outcome: "answered" | "cancelled" | "routed";
   target?: Exclude<WorkflowMode, "align">;
-  /** Present on routed PWB outcomes for kickoff synthesis (D1). */
+  /** Present on routed PWB outcomes for kickoff synthesis. */
   answers?: AskSettlementAnswer[];
 }
 

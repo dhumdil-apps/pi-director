@@ -9,6 +9,7 @@
  * Runtime tool gates live in `workflow-machine.ts` and must stay aligned with
  * `tools.*.gate` and the transition table below.
  *
+ * v2.6.11 — Q/D/C ids are shared topic slugs (`D-tighten-writes`); Align evaluate rejects `D1`/`D-12`. Envision is one ask call that may batch.
  * v2.6.10 — ## Digest (Current / Desired) is the Show plan summary; Current work is the Progress Tracker working row.
  * v2.6.9 — primary self-loops: evaluate ASK_LOOP; explore/execute DECIDE_LOOP. Secondaries confirm and return vs next.
  * v2.6.8 — drop envision ASK_LOOP; one envision ask CALL then start then evaluate.
@@ -23,7 +24,7 @@
  * - Align dual landing: NEXT_ALIGN → establish (idle, no agent); RETURN_ALIGN → evaluate (D-review ask)
  */
 
-export const WORKFLOW_FSM_VERSION = "2.6.10";
+export const WORKFLOW_FSM_VERSION = "2.6.11";
 
 export type FsmStateId = "envision" | "establish" | "explore" | "elaborate" | "execute" | "examine" | "evaluate";
 
@@ -172,7 +173,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     "Retain Digest, Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.",
     "Work log, User transcript, and Agent transcript are append-only.",
     "Checklist is cumulative; latest explicit state wins without hiding earlier lifecycle context.",
-    "Assign every question, Agent decision, and checklist outcome one stable Agent-chosen Q, D, or C id; NEVER reuse or rename.",
+    "Assign every question, Agent decision, and checklist outcome one stable Agent-chosen slug (`Q-goal-scope`, `D-tighten-writes`, `C-diagnose-jobs`); NEVER reuse or rename. User and Agent see the same slug. NEVER embed those ids in option labels.",
     "KEEP **Current work:** as the Progress Tracker working-row phrase: one short in-flight C or D line while a run is in flight, or empty while waiting on User.",
     "NEVER copy Checklist, HTML comments, or format markers into Current work and NEVER add a todo tool.",
     "KEEP ## Digest as two short bullets Current (where we are) and Desired (where this task goes). Show plan displays only Digest. Rewrite Digest when direction changes; do not append history there.",
@@ -201,7 +202,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       primary: "evaluate",
       secondary: "establish",
       steps: [
-        "IF session entry (new interactive session, handoff continue, or envision not yet run): RUN envision once — no extra file reads, CALL ask ≥1 goal-scope (before start when no named artifact); on answered CALL start with a scope-informed name then evaluate; on cancel do not start.",
+        "IF session entry (new interactive session, handoff continue, or envision not yet run): RUN envision once — no extra file reads, CALL ask once for goal-scope (one CALL, batch independent questions; before start when no named artifact); on answered CALL start with a scope-informed name then evaluate; on cancel do not start.",
         "IF envision Ask routes directly to SPEC or VIBE THEN settle into that mode's primary (explore or execute); on cancel RETURN without evaluate.",
         "AFTER envision scope is answered (not routed) and start/reuse has named the artifact: PROCEED to evaluate.",
         "RUN evaluate (primary home): check artifact for unresolved D review, Checklist gaps, residuals; CALL ask for D-review, User-requested clarification, RECONCILE_SCOPE, or follow-ups — do not re-fish entry scope already captured in envision; NEVER CALL next from evaluate; NEVER explore the codebase in Align.",
@@ -221,7 +222,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       steps: [
         "Land on and RUN explore (primary): bounded research into Evidence; decide for material autonomous choices when needed.",
         "WHEN ready to propose or route: RUN elaborate (secondary).",
-        'elaborate: confirm/summarize — draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT, then either RETURN to explore (more research) or CALL next with other modes only (never spec). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate (landing:"evaluate", prompt includes a standalone D id such as D1 or D-12, auto-start ask).',
+        'elaborate: confirm/summarize — draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT, then either RETURN to explore (more research) or CALL next with other modes only (never spec). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate (landing:"evaluate", prompt includes a standalone D-topic slug such as D-tighten-writes, auto-start ask).',
       ],
     },
     {
@@ -233,7 +234,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       steps: [
         "Land on and RUN execute (primary): implement accepted scope; decide for material autonomous choices when needed.",
         "WHEN ready to verify or route: RUN examine (secondary).",
-        "examine: confirm/summarize — run checks, RECORD evidence, RUN CLOSE_OUT, then either RETURN to execute (more implementation) or CALL next with other modes only (never vibe). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate with a standalone D id (D1 or D-12) in prompt (auto-start ask).",
+        "examine: confirm/summarize — run checks, RECORD evidence, RUN CLOSE_OUT, then either RETURN to execute (more implementation) or CALL next with other modes only (never vibe). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate with a standalone D-topic slug (D-tighten-writes) in prompt (auto-start ask).",
       ],
     },
   ],
@@ -282,8 +283,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       "NEVER mark a D User-approved without an explicit review answer.",
       "PROMOTE only durable orientation or costly quirks to project memory; NEVER advance the hidden memory-review marker.",
       "IF actionable work remains THEN CALL next from the current secondary gate with ranked other modes and handoff only — NEVER include the current persisted mode.",
-      'Align dual landing (C12): do not emit agent Align landing "establish" idle rows — static Return→ALIGN (and Return to editor) cover editor standby. Only if unresolved D items need acceptance: align action with landing "evaluate", prompt that includes a standalone D id (D1 or D-12), auto-start ask — do not invent extra questions. Runtime drops redundant establish recommendations if emitted.',
-      "next reason MUST be a short user-facing slug in plain English (what the User gets); plan ids (Q/C/D/G) only as optional trailing [] or (); never bare codes as the whole reason. Runtime rejects a blank/whitespace-only reason. Spec/Vibe still need contextual prompt; Align evaluate needs a standalone D id (D1 or D-12); handoff omits prompt. Runtime prepends Switch context only when auto-starting.",
+      'Align dual landing: do not emit agent Align landing "establish" idle rows — static Return→ALIGN (and Return to editor) cover editor standby. Only if unresolved D items need acceptance: align action with landing "evaluate", prompt that includes a standalone D-topic slug (D-tighten-writes), auto-start ask — do not invent extra questions. Runtime drops redundant establish recommendations if emitted.',
+      "next reason MUST be a short user-facing slug in plain English (what the User gets); plan slugs (Q-topic/C-topic/D-topic) only as optional trailing [] or (); never bare codes as the whole reason. Runtime rejects a blank/whitespace-only reason. Spec/Vibe still need contextual prompt; Align evaluate needs a standalone D-topic slug (D-tighten-writes); handoff omits prompt. Runtime prepends Switch context only when auto-starting.",
       "ELSE IF more work remains in the current mode THEN RETURN to the mode primary (do not CALL next with the current mode).",
       "ELSE IF persisted mode is align THEN CALL next from establish with other modes and handoff only (never align); never idle an agent-driven Align turn without ask or next. Runtime NEXT_ALIGN establish landing is not an agent turn.",
       "ELSE DO NOT CALL next.",
@@ -293,9 +294,9 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       "IF no named artifact exists THEN DO NOT invent a temporary plan; RETURN without handing off.",
       "IF artifact is current format THEN USE the already-written artifact; DO NOT start a checkpoint turn; KEEP leftover current-format files as-is.",
       "ELSE DO NOT mutate the legacy artifact.",
-      "CONTINUE in fresh ALIGN with the ordinary continue line (envision: artifact ready → ≥1 scope ask → evaluate).",
+      "CONTINUE in fresh ALIGN with the ordinary continue line (envision: artifact ready → one ask call → evaluate).",
       "READ the whole current artifact or immutable legacy reference.",
-      "Envision still CALL ask ≥1 about goal scope ahead after reusing the artifact; choose the most important unresolved scope item for that question.",
+      "Envision still CALL ask once about goal scope ahead after reusing the artifact (one CALL, batch independent questions); choose the most important unresolved scope item for that question.",
     ],
     LEGACY_CONTINUATION: [
       "ACCEPT persisted legacy modes as readable; /questionnaire does not exist.",
@@ -315,7 +316,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMode: "align",
       role: "entry",
       summary:
-        "Session entry only: capture goal, no extra file reads, CALL ask ≥1 about goal scope ahead, then start/reuse the named artifact before evaluate.",
+        "Session entry only: capture goal, no extra file reads, CALL ask once about goal scope ahead (one CALL, batch independent questions), then start/reuse the named artifact before evaluate.",
       permission: "read",
       substates: ["goalCapture", "scopeAsk", "ensureArtifact"],
       procedure: [
@@ -330,7 +331,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "SYNTHESIZE into Goal, Align, Decisions, and Checklist after start (or into the reused artifact).",
         "Do not CALL ask again from envision; dependent follow-ups run in evaluate after ARTIFACT.",
         "IF Ask routes directly to SPEC or VIBE THEN: if no named artifact, the target CALL start first then synthesize; proceed to EXPLORE or EXECUTE (skip evaluate).",
-        "WHEN ≥1 scope ask is answered and not routed: PROCEED to EVALUATE (Align primary home).",
+        "WHEN the envision ask is answered and not routed: PROCEED to EVALUATE (Align primary home).",
       ],
     },
     evaluate: {
@@ -477,7 +478,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       event: "ARTIFACT",
       to: "evaluate",
       label: "ARTIFACT → EVALUATE",
-      description: "≥1 goal-scope ask was answered and start/reuse has named the artifact; enter Align primary home.",
+      description: "The envision ask was answered and start/reuse has named the artifact; enter Align primary home.",
     },
     {
       id: "evaluate-ask-loop",
@@ -709,11 +710,11 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       ],
       mechanics: [
         "Envision entry MAY CALL ask before start when no named artifact exists; evaluate asks require a named plan.",
-        "CALL ask from envision once with ≥1 independent question about goal scope ahead (one CALL, may batch); do not CREATE .pi/plan/* until that ask is answered; persist User-transcript meaning after start; on answered (not routed) CALL start if needed then PROCEED to evaluate; on cancel RETURN without start. Do not CALL ask again from envision.",
+        "CALL ask from envision once (one CALL; batch independent questions); do not CREATE .pi/plan/* until that ask is answered; persist User-transcript meaning after start; on answered (not routed) CALL start if needed then PROCEED to evaluate; on cancel RETURN without start. Do not CALL ask again from envision.",
         "CALL ask from evaluate for D acceptance, User-requested clarification, RECONCILE_SCOPE, and follow-ups — not to re-fish entry scope.",
         "Answers stay in ALIGN; after evaluate capture continue evaluate or PROCEED to establish for next/handoff; NEVER CALL next from envision or evaluate.",
         "CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly.",
-        "KEEP question identifiers, option values, and option labels distinct.",
+        "KEEP question identifiers, option values, and option labels distinct. Question id is a Q-topic slug the User and Agent share. Option labels are short slugs; NEVER embed Q/D/C ids in labels.",
         "NEVER imitate native action labels.",
         "NEVER customize the Write a custom answer row label — it is always plain Write a custom answer; put User-supplied detail in question context or real options; NEVER offer a selectable option that merely says specify.",
         "BATCH only independent questions; dependent follow-ups in a later CALL from evaluate, not a second envision CALL.",
@@ -749,15 +750,15 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       gate: [
         "Empty next records no recommendation and opens no picker.",
         "Non-empty next requires valid targets and a non-empty user-facing reason on every action; requires named session plan.",
-        "Spec/Vibe actions need contextual prompt; Align evaluate/review needs a prompt with a standalone D id (D1 or D-12); Align establish/idle prompt optional; handoff must omit prompt.",
+        "Spec/Vibe actions need contextual prompt; Align evaluate/review needs a prompt with a standalone D-topic slug (D-tighten-writes); Align establish/idle prompt optional; handoff must omit prompt.",
       ],
       mechanics: [
         "CALL next only from secondary gates (establish, elaborate, examine) after capture/verify/CLOSE_OUT as appropriate.",
         "NEVER include an action whose mode equals the current persisted mode; runtime filters those out on next-driven pickers.",
-        'Align dual landing: landing "establish" (default) ≡ graph NEXT_ALIGN → establish (editor standby, no auto-start); landing "evaluate" ≡ graph RETURN_ALIGN → evaluate (auto-start ask review — prompt MUST include a standalone D id: D1 or D-12).',
+        'Align dual landing: landing "establish" (default) ≡ graph NEXT_ALIGN → establish (editor standby, no auto-start); landing "evaluate" ≡ graph RETURN_ALIGN → evaluate (auto-start ask review — prompt MUST include a standalone D-topic slug: D-tighten-writes).',
         "Do not recommend Align landing establish idle after Spec/Vibe — static Return→ALIGN covers it; use landing evaluate only when unresolved D acceptance is required.",
         "When Align evaluate is recommended with other modes, list landing evaluate (RETURN_ALIGN) last among recommended rows (PWB-style separation).",
-        "Agent-authored reason MUST be a short user-facing slug in plain English; Q/C/D/G ids only as optional trailing [] or (); never the whole reason. Runtime requires a non-empty normalized reason. Spec/Vibe REQUIRE prompt; Align evaluate REQUIRES a standalone D id (D1 or D-12); handoff OMITs prompt.",
+        "Agent-authored reason MUST be a short user-facing slug in plain English; plan slugs (Q-topic/C-topic/D-topic) only as optional trailing [] or (); never the whole reason. Runtime requires a non-empty normalized reason. Spec/Vibe REQUIRE prompt; Align evaluate REQUIRES a standalone D-topic slug (D-tighten-writes); handoff OMITs prompt.",
         "Runtime PREPENDS only Switch context when auto-starting and NEVER authors substantive direction.",
         "Recommended row with a reason shows {mode} — {reason}. Two Align rows may appear (review vs editor).",
         "next→Align idle lands establish; next→Align review lands evaluate; next→Spec lands explore; next→Vibe lands execute.",
@@ -784,9 +785,9 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       "Agent transcript",
     ],
     identifiers: {
-      Q: "Stable immutable question id (e.g. Q1)",
-      D: "Stable immutable decision id (e.g. D1)",
-      C: "Stable immutable checklist outcome id (e.g. C1)",
+      Q: "Stable immutable question slug (e.g. Q-goal-scope)",
+      D: "Stable immutable decision slug (e.g. D-tighten-writes)",
+      C: "Stable immutable checklist slug (e.g. C-diagnose-jobs)",
     },
     rules: [
       "PRESERVE historical prose and APPEND lifecycle developments instead of rewriting history.",
@@ -797,10 +798,10 @@ export const WORKFLOW_FSM: WorkflowFsm = {
   },
   initial: "envision",
   notes: [
-    "Guided session story: envision (ask ≥1 → start/reuse) → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
+    "Guided session story: envision (one ask call → start/reuse) → mode primary ⇄ secondary gate → next to another mode's primary; Handoff = fresh session at envision on the same artifact. Idle product UI is not a graph node.",
     "Persisted User mode is only align|spec|vibe. Guided states compose modeBodies with roles entry|primary|secondary. closeOut, blocked, and handoff are procedural helpers — not peer session modes.",
     "Project permission is read|write only (project-write boundary): read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact. Align’s pre-ask rule (Agent, not a runtime sandbox): no extra file reads before the first scope ask (harness-injected AGENTS.md only); after that ask and start, the session plan then `.pi` as needed.",
-    "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 goal-scope (before start when no named artifact) then start/reuse then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
+    "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask once for goal-scope (one CALL, batch independent questions; before start when no named artifact) then start/reuse then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
     "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
     "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Primaries self-loop: evaluate ASK_LOOP; explore and execute DECIDE_LOOP. Envision runs one ask CALL then start/reuse then ARTIFACT→evaluate (no ASK_LOOP). Secondaries only confirm/summarize then RETURN to the primary or CALL next. Manual /mode bypasses live under Exceptions.",
     "Substates on guided states are narrative procedure phases for agents and diagrams, not separate graph nodes.",

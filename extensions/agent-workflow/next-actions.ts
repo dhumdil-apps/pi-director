@@ -13,8 +13,8 @@ export interface NextStepAction {
 
 export const NEXT_ACTION_MODES = ["align", "spec", "vibe", "handoff"] as const;
 
-/** Standalone decision ids: `D1`, `D12`, or `D-12` — not `QD1` or `Ds`. */
-export const STANDALONE_DECISION_ID = /\bD(?:-\d+|\d+)\b/;
+/** Standalone decision slugs: `D-tighten-writes` — not `D1`, `D-12`, or `QD-topic`. */
+export const STANDALONE_DECISION_ID = /\bD-[a-z][a-z0-9]*(?:-[a-z0-9]+)*\b/;
 
 export function hasStandaloneDecisionId(prompt: string): boolean {
   return STANDALONE_DECISION_ID.test(prompt);
@@ -109,7 +109,7 @@ export function evaluateNextGate(event: NextGateEvent, artifact: "none" | "named
     return {
       ok: false,
       kind: "error",
-      message: "Align evaluate needs a prompt that names a decision id (D1 or D-12).",
+      message: "Align evaluate needs a prompt that names a decision slug (D-topic).",
     };
   }
   if (artifact === "none") return { ok: false, kind: "error", message: planError };
