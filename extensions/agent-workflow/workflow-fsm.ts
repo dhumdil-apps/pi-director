@@ -9,6 +9,7 @@
  * Runtime tool gates live in `workflow-machine.ts` and must stay aligned with
  * `tools.*.gate` and the transition table below.
  *
+ * v2.6.10 — ## Digest (Current / Desired) is the Show plan summary; Current work is the Progress Tracker working row.
  * v2.6.9 — primary self-loops: evaluate ASK_LOOP; explore/execute DECIDE_LOOP. Secondaries confirm and return vs next.
  * v2.6.8 — drop envision ASK_LOOP; one envision ask CALL then start then evaluate.
  * v2.6.7 — drop evaluate ASK_LOOP; Align loop-back is bidirectional ALIGN only.
@@ -22,7 +23,7 @@
  * - Align dual landing: NEXT_ALIGN → establish (idle, no agent); RETURN_ALIGN → evaluate (D-review ask)
  */
 
-export const WORKFLOW_FSM_VERSION = "2.6.9";
+export const WORKFLOW_FSM_VERSION = "2.6.10";
 
 export type FsmStateId = "envision" | "establish" | "explore" | "elaborate" | "execute" | "examine" | "evaluate";
 
@@ -143,8 +144,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
   version: WORKFLOW_FSM_VERSION,
   title: "Pi Director Agent Workflow",
   summary:
-    "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). " +
-    "Each mode has a primary home and a secondary gate: primaries do the work; secondaries capture/verify and CALL next. " +
+    "7-E Compound Lifecycle across user-owned modes: ALIGN (envision entry, evaluate primary, establish secondary), SPEC (explore primary, elaborate secondary), VIBE (execute primary, examine secondary). " +
+    "New interactive sessions and handoffs start at envision in ALIGN. Each mode has a primary home for active execution/self-loops and a secondary gate to capture/verify and CALL next. " +
     "Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. " +
     "Agent owns judgment, artifact meaning, scope, decisions, and final output.",
   session: {
@@ -168,14 +169,15 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     "ONLY VIBE MAY change files outside .pi; ALIGN and SPEC update .pi workflow state only.",
     "ALIGN may NEVER search or read extensions/, deep docs/, or other source — Spec explore owns research; Vibe may read what implementation needs. Envision before the first scope ask: no extra file reads — use the kickoff plus harness-injected AGENTS.md already in context. After that ask and start, Align may read the session plan, then `.pi/AGENTS.md` and `.pi/MEMORY.md` as needed. NEVER list `.pi/plan/` or read sibling plans, root README.md, or package.json just to unlock start.",
     "One versioned .pi/plan/<name>.md continues across modes and handoffs.",
-    "Retain Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.",
+    "Retain Digest, Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.",
     "Work log, User transcript, and Agent transcript are append-only.",
     "Checklist is cumulative; latest explicit state wins without hiding earlier lifecycle context.",
     "Assign every question, Agent decision, and checklist outcome one stable Agent-chosen Q, D, or C id; NEVER reuse or rename.",
-    "KEEP **Current work:** as one short in-flight phrase of the active C or D, or empty while waiting on User.",
+    "KEEP **Current work:** as the Progress Tracker working-row phrase: one short in-flight C or D line while a run is in flight, or empty while waiting on User.",
     "NEVER copy Checklist, HTML comments, or format markers into Current work and NEVER add a todo tool.",
+    "KEEP ## Digest as two short bullets Current (where we are) and Desired (where this task goes). Show plan displays only Digest. Rewrite Digest when direction changes; do not append history there.",
     "KEEP the artifact resumable without relying on chat history after every turn.",
-    "Runtime does not parse artifact prose (only time-spent envelope and Current work line).",
+    "Runtime does not parse artifact prose (only time-spent envelope, Current work line, and ## Digest for Show plan).",
     "ONLY secondary gates (establish, elaborate, examine) may CALL next; primaries never CALL next.",
     "NEVER recommend the current persisted mode in next actions; same-mode stay is ESC, Return to editor, or /mode.",
   ],
@@ -251,7 +253,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     ],
     WRITE_ARTIFACT: [
       "IF no named artifact exists THEN RETURN success without creating .pi/plan/*.",
-      "INCLUDE **Current work:** when the in-flight outcome changed.",
+      "INCLUDE **Current work:** when the in-flight outcome starts or changes so the Progress Tracker working row can paint this run.",
+      "KEEP ## Digest Current / Desired current when direction changes.",
       "TRY EDIT or APPEND; IF fail THEN RETRY once.",
       "IF retry fails THEN WARN concisely and CONTINUE only when still safely resumable; IF HANDOFF requires the change THEN RETURN failure.",
     ],
@@ -342,7 +345,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       substates: ["artifactCheck", "askLoop", "synthesize"],
       procedure: [
         "Land here after envision scope ask is answered and start/reuse has named the artifact, after RETURN_ALIGN (landing evaluate), and after establish returns via the ALIGN body edge.",
-        "READ Goal, Decisions (unresolved D), Checklist, Work log residuals, Current work, and the kickoff prompt if any — from the plan artifact; `.pi/AGENTS.md` and `.pi/MEMORY.md` as needed.",
+        "READ Digest, Goal, Decisions (unresolved D), Checklist, Work log residuals, Current work, and the kickoff prompt if any — from the plan artifact; `.pi/AGENTS.md` and `.pi/MEMORY.md` as needed.",
         "NEVER explore the codebase in evaluate; if facts are missing, route to Spec (next or PWB) rather than searching source.",
         "IF kickoff/review lists specific D ids: CALL ask ONLY to accept/change/defer those Ds — do not invent new scope questions.",
         "ELSE IF the User message explicitly requests clarification: CALL ask for that request only.",
@@ -654,32 +657,14 @@ export const WORKFLOW_FSM: WorkflowFsm = {
   exceptions: {
     title: "Manual Bypass & Escape Hatches",
     summary:
-      "The /mode command is the universal manual bypass. Running /mode opens the option picker at any time so the User can choose what to do next (jump to ALIGN, SPEC, VIBE, or hand off) without being gated by agent completion. next-driven pickers omit the current mode; /mode still lists all modes.",
+      "The /mode command is the universal manual bypass. Running /mode opens the option picker at any time so the User can choose between ALIGN, SPEC, and VIBE (or hand off) without being gated by agent completion. next-driven pickers omit the current mode; /mode lists all 3 modes.",
     commands: [
       {
         command: "/mode",
-        label: "Open Option Picker (Universal Bypass)",
-        summary: "Opens the mode option picker to choose any target mode or action, including the current mode.",
+        label: "Open Mode Picker (Universal Bypass)",
+        summary: "Opens the mode option picker to choose any target mode (ALIGN, SPEC, VIBE) or hand off.",
         description:
-          "User-triggered escape hatch. Opens the interactive option picker in editor standby with the full mode list (not cross-mode-filtered) so the User can switch mode, hand off, or return.",
-      },
-      {
-        command: "/align",
-        label: "Switch to ALIGN (standby)",
-        summary: "Records ALIGN mode and returns to the editor without starting a turn.",
-        description: "Manual escape hatch. Sets persisted mode to ALIGN and notifies; does not auto-start the agent.",
-      },
-      {
-        command: "/spec",
-        label: "Switch to SPEC (standby)",
-        summary: "Records SPEC mode and returns to the editor without starting a turn.",
-        description: "Manual escape hatch. Sets persisted mode to SPEC and notifies; does not auto-start the agent.",
-      },
-      {
-        command: "/vibe",
-        label: "Switch to VIBE (standby)",
-        summary: "Records VIBE mode and returns to the editor without starting a turn.",
-        description: "Manual escape hatch. Sets persisted mode to VIBE and notifies; does not auto-start the agent.",
+          "User-triggered escape hatch. Opens the interactive option picker in editor standby with the full mode list (ALIGN, SPEC, VIBE) so the User can switch mode, hand off, or return at any time.",
       },
       {
         command: "/handoff [name]",
@@ -690,11 +675,10 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       },
     ],
     rules: [
-      "The /mode command is the canonical User-owned bypass to open the option picker and choose what to do next.",
+      "The /mode command is the canonical User-owned bypass to open the option picker and choose between ALIGN, SPEC, and VIBE.",
       "Manual bypass transitions are never gated on workflow completeness, pending recommendations, or unresolved D items.",
-      "next-driven pickers never offer the current mode; ESC and Return to editor stay in the current mode without starting the agent.",
-      "Selecting an unrecommended mode in the picker switches the session mode in editor standby.",
-      "Manual /align /spec /vibe only record mode and return to the editor; they do not start the agent.",
+      "next-driven pickers never offer the current mode; ESC and Return to editor stay in the current mode without starting the agent. Show plan displays ## Digest and returns to the picker.",
+      "Selecting an unrecommended mode in the /mode picker switches the session mode in editor standby.",
       "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN (envision: artifact → scope ask → evaluate).",
     ],
   },
@@ -777,7 +761,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "Runtime PREPENDS only Switch context when auto-starting and NEVER authors substantive direction.",
         "Recommended row with a reason shows {mode} — {reason}. Two Align rows may appear (review vs editor).",
         "next→Align idle lands establish; next→Align review lands evaluate; next→Spec lands explore; next→Vibe lands execute.",
-        "ESC dismisses the mode picker with no change. Mode pickers end with Return to editor (same as ESC), then Return → ALIGN last when not already in Align (static establish, no agent start). /mode lists the same trailing rows.",
+        "ESC dismisses the mode picker with no change. Mode pickers end with Return to editor (same as ESC), then Return → ALIGN when not already in Align (static establish, no agent start), then Show plan (## Digest only; returns to the picker). /mode lists the same trailing rows.",
         "/mode force picker still lists all modes including the current mode (bypass).",
         "Manual ALIGN/SPEC/VIBE commands return to the editor without auto-start.",
         "Only recommended actions with autostart (prompt + non-idle Align) start the agent.",
@@ -788,6 +772,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
   ],
   artifact: {
     sections: [
+      "Digest",
       "Goal",
       "Align",
       "Decisions",
@@ -817,7 +802,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     "Project permission is read|write only (project-write boundary): read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact. Align’s pre-ask rule (Agent, not a runtime sandbox): no extra file reads before the first scope ask (harness-injected AGENTS.md only); after that ask and start, the session plan then `.pi` as needed.",
     "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 goal-scope (before start when no named artifact) then start/reuse then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
     "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-    "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Primaries self-loop: evaluate ASK_LOOP; explore and execute DECIDE_LOOP. Envision runs one ask CALL then start/reuse then ARTIFACT→evaluate (no ASK_LOOP). Secondaries only confirm/summarize then RETURN to the primary or CALL next. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
+    "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Primaries self-loop: evaluate ASK_LOOP; explore and execute DECIDE_LOOP. Envision runs one ask CALL then start/reuse then ARTIFACT→evaluate (no ASK_LOOP). Secondaries only confirm/summarize then RETURN to the primary or CALL next. Manual /mode bypasses live under Exceptions.",
     "Substates on guided states are narrative procedure phases for agents and diagrams, not separate graph nodes.",
     "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next. Agent-driven Align ends via ask (envision/evaluate) or next (establish); silent idle is only runtime NEXT_ALIGN.",
     "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",

@@ -1,4 +1,4 @@
-/** Agent-owned one-liner; Progress Tracker displays it while a run is in flight. */
+/** Agent-owned one-liner; Progress Tracker working row shows it while a run is in flight. */
 const CURRENT_WORK_LINE = /^\*\*Current work:\*\*[ \t]*(.*)$/m;
 const HTML_COMMENT = /<!--[\s\S]*?-->/g;
 

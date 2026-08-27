@@ -2,9 +2,11 @@
 
 export const RETURN_OPTION = "↩ Return to editor";
 export const RETURN_ALIGN_OPTION = "Return → ❓ ALIGN";
+export const SHOW_PLAN_OPTION = "Show plan";
 
 export function metaPickerLabels(currentMode: "align" | "spec" | "vibe"): string[] {
-  return currentMode === "align" ? [RETURN_OPTION] : [RETURN_OPTION, RETURN_ALIGN_OPTION];
+  const trailing = currentMode === "align" ? [RETURN_OPTION] : [RETURN_OPTION, RETURN_ALIGN_OPTION];
+  return [...trailing, SHOW_PLAN_OPTION];
 }
 
 /** Align establish/idle is covered by static Return→ALIGN (cross-mode) or already being in Align. */

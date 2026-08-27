@@ -12,10 +12,7 @@ export interface HelpEntry {
  * the extensions register; `/help` is this command itself.
  */
 export const HELP_COMMANDS: HelpEntry[] = [
-  { name: "/align", description: "Switch to ALIGN and auto-start with a neutral switch or continue line." },
-  { name: "/spec", description: "Switch to SPEC and auto-start with a neutral switch or continue line." },
-  { name: "/vibe", description: "Switch to VIBE and auto-start with a neutral switch or continue line." },
-  { name: "/mode", description: "Open the manual ALIGN / SPEC / VIBE picker." },
+  { name: "/mode", description: "Open the manual ALIGN / SPEC / VIBE picker (Show plan reads ## Digest and returns)." },
   { name: "/handoff [session-name]", description: "Continue the same artifact in a fresh ALIGN session." },
   { name: "/help", description: "Show this overview of extensions, commands, and shortcuts." },
   {

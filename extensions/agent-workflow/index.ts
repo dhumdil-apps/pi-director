@@ -36,22 +36,6 @@ export default function createExtension(pi: ExtensionAPI): void {
   // Last, so any handler that settles first has already run.
   registerModePicker(pi);
 
-  const setModeCommand = (mode: WorkflowMode) => async (_args: string, ctx: ExtensionCommandContext) => {
-    const previous = resolveWorkflowMode(ctx.sessionManager.getBranch());
-    await applyMode(pi, ctx, mode, previous);
-  };
-  pi.registerCommand("align", {
-    description: agentApiText("command.align"),
-    handler: setModeCommand("align"),
-  });
-  pi.registerCommand("spec", {
-    description: agentApiText("command.spec"),
-    handler: setModeCommand("spec"),
-  });
-  pi.registerCommand("vibe", {
-    description: agentApiText("command.vibe"),
-    handler: setModeCommand("vibe"),
-  });
   pi.registerCommand("mode", {
     description: agentApiText("command.mode"),
     handler: async (_args, ctx) => openModePicker(pi, ctx, true),

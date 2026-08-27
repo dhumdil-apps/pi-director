@@ -8,8 +8,11 @@
 import type { SessionEntry } from "@earendil-works/pi-coding-agent";
 import { evaluateNextGate } from "./next-actions.js";
 import { MODE_EVENT, resolveWorkflowMode, type WorkflowMode } from "./mode.js";
+import { dispatchSettlement as dispatchSettlementFromSignals } from "./settlement.js";
 import { missingSessionPlan } from "./task.js";
 import { WORKFLOW_FSM } from "./workflow-fsm.js";
+
+export type { SettlementDispatch } from "./settlement.js";
 
 export {
   WORKFLOW_FSM,
@@ -41,6 +44,8 @@ export interface AskSettlementSignal {
 export interface SettlementSignals {
   ask?: AskSettlementSignal;
   nextQueued: boolean;
+  /** True when this turn recorded an explicit empty next (`queued: false`). */
+  nextSkip: boolean;
 }
 
 export interface WorkflowSnapshot {
@@ -65,12 +70,6 @@ export type MachineEvent =
   | { type: "AGENT_SETTLED" };
 
 export type GuardResult = { ok: true } | { ok: false; kind: "noop" | "error"; message: string };
-
-export type SettlementDispatch =
-  | { action: "none" }
-  | { action: "route"; target: Exclude<WorkflowMode, "align">; answers?: AskSettlementAnswer[] }
-  | { action: "skip_picker" }
-  | { action: "open_picker" };
 
 /** Session custom entry types used for current-turn settlement signals. */
 export const NEXT_STEP_EVENT = "agent-workflow:next-step";
@@ -161,10 +160,24 @@ export function readNextQueued(entries: SessionEntry[], current: WorkflowMode): 
   );
 }
 
+export function readNextSkip(entries: SessionEntry[], current: WorkflowMode): boolean {
+  return Boolean(
+    currentTurnSignal(entries, NEXT_STEP_EVENT, (entry) => {
+      const data = entry.data as { mode?: unknown; actions?: unknown; queued?: unknown } | undefined;
+      if (data?.mode !== current || !Array.isArray(data.actions)) return undefined;
+      if (data.queued === true) return undefined;
+      if (data.queued === false) return true;
+      if (data.actions.length === 0) return true;
+      return undefined;
+    }),
+  );
+}
+
 export function settlementSignals(entries: SessionEntry[], mode: WorkflowMode): SettlementSignals {
   return {
     ask: readAskSettlement(entries),
     nextQueued: readNextQueued(entries, mode),
+    nextSkip: readNextSkip(entries, mode),
   };
 }
 
@@ -231,17 +244,13 @@ export function receive(snap: WorkflowSnapshot, event: MachineEvent, planError: 
 }
 
 /**
- * Post-turn UI dispatch.
- * Priority: ask route > ask cancel (suppress picker) > next queue.
- * ask_answered does not suppress next_queued (matches ask-without-siblings norm,
- * but still opens picker if both signals exist).
+ * Post-turn UI dispatch. See settlement.ts for priority, including Align fallback.
  */
-export function dispatchSettlement(snap: WorkflowSnapshot): SettlementDispatch {
-  const { ask, nextQueued } = snap.settlement;
-  if (ask?.outcome === "routed" && ask.target) {
-    return { action: "route", target: ask.target, ...(ask.answers?.length ? { answers: ask.answers } : {}) };
-  }
-  if (ask?.outcome === "cancelled") return { action: "skip_picker" };
-  if (nextQueued) return { action: "open_picker" };
-  return { action: "none" };
+export function dispatchSettlement(snap: WorkflowSnapshot) {
+  return dispatchSettlementFromSignals({
+    mode: snap.mode,
+    ask: snap.settlement.ask,
+    nextQueued: snap.settlement.nextQueued,
+    nextSkip: snap.settlement.nextSkip,
+  });
 }

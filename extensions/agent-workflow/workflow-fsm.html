@@ -400,13 +400,13 @@
 
     <!-- Self-Contained tuto-ui Library (zero external requests, file:// safe) -->
     <script>
-      var TutoUI = (function (p) {
+      var TutoUI = (function (u) {
         "use strict";
-        var Xt = Object.defineProperty;
-        var qt = (p, L, z) =>
-          L in p ? Xt(p, L, { enumerable: !0, configurable: !0, writable: !0, value: z }) : (p[L] = z);
-        var l = (p, L, z) => qt(p, typeof L != "symbol" ? L + "" : L, z);
-        const L = {
+        var Yt = Object.defineProperty;
+        var Dt = (u, $, W) =>
+          $ in u ? Yt(u, $, { enumerable: !0, configurable: !0, writable: !0, value: W }) : (u[$] = W);
+        var l = (u, $, W) => Dt(u, typeof $ != "symbol" ? $ + "" : $, W);
+        const $ = {
             dark: {
               bg: "#090a0f",
               grid: "rgba(255, 255, 255, 0.04)",
@@ -467,7 +467,7 @@
               handoff: { accent: "#64748b", badge: "PROCEDURE", perm: "STANDBY", permClass: "perm-standby" },
             },
           },
-          z = {
+          W = {
             fonts: {
               sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
               mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
@@ -508,7 +508,7 @@
             transitions: { fast: "150ms ease", default: "200ms ease", smooth: "300ms cubic-bezier(0.4, 0, 0.2, 1)" },
             zIndex: { canvas: 0, edge: 1, node: 5, overlay: 10, drawer: 20, tooltip: 30 },
           };
-        function pt() {
+        function ft() {
           if (typeof document > "u" || document.getElementById("tuto-theme-tokens")) return;
           const e = document.createElement("style");
           ((e.id = "tuto-theme-tokens"),
@@ -562,7 +562,7 @@
   `),
             document.head.appendChild(e));
         }
-        const D = class D extends HTMLElement {
+        const Y = class Y extends HTMLElement {
           constructor(t = {}) {
             super();
             l(this, "_isRenderPending", !1);
@@ -582,15 +582,15 @@
             if (!(!i || !this.shadowRootNode)) {
               if ("adoptedStyleSheets" in Document.prototype && "adoptedStyleSheets" in ShadowRoot.prototype)
                 try {
-                  let s = D._styleSheetMap.get(t);
-                  (s || ((s = new CSSStyleSheet()), s.replaceSync(i), D._styleSheetMap.set(t, s)),
-                    this.shadowRootNode.adoptedStyleSheets.includes(s) ||
-                      (this.shadowRootNode.adoptedStyleSheets = [...this.shadowRootNode.adoptedStyleSheets, s]));
+                  let o = Y._styleSheetMap.get(t);
+                  (o || ((o = new CSSStyleSheet()), o.replaceSync(i), Y._styleSheetMap.set(t, o)),
+                    this.shadowRootNode.adoptedStyleSheets.includes(o) ||
+                      (this.shadowRootNode.adoptedStyleSheets = [...this.shadowRootNode.adoptedStyleSheets, o]));
                   return;
                 } catch {}
               if (!this.shadowRootNode.querySelector("style[data-tuto-style]")) {
-                const s = document.createElement("style");
-                (s.setAttribute("data-tuto-style", "true"), (s.textContent = i), this.shadowRootNode.prepend(s));
+                const o = document.createElement("style");
+                (o.setAttribute("data-tuto-style", "true"), (o.textContent = i), this.shadowRootNode.prepend(o));
               }
             }
           }
@@ -604,9 +604,9 @@
                   this.updated());
               }));
           }
-          emit(t, i, s = {}) {
-            const o = new CustomEvent(t, { bubbles: !0, composed: !0, cancelable: !0, detail: i, ...s });
-            return this.dispatchEvent(o);
+          emit(t, i, o = {}) {
+            const s = new CustomEvent(t, { bubbles: !0, composed: !0, cancelable: !0, detail: i, ...o });
+            return this.dispatchEvent(s);
           }
           get renderRoot() {
             return this.shadowRootNode || this;
@@ -614,23 +614,23 @@
           firstUpdated() {}
           updated() {}
         };
-        (l(D, "styles", ""), l(D, "_styleSheetMap", new WeakMap()));
-        let U = D;
-        const gt = "http://www.w3.org/2000/svg";
-        function k(e, d = {}, t) {
-          const i = document.createElementNS(gt, e);
-          for (const [s, o] of Object.entries(d)) o != null && o !== !1 && i.setAttribute(s, String(o));
+        (l(Y, "styles", ""), l(Y, "_styleSheetMap", new WeakMap()));
+        let A = Y;
+        const mt = "http://www.w3.org/2000/svg";
+        function M(e, n = {}, t) {
+          const i = document.createElementNS(mt, e);
+          for (const [o, s] of Object.entries(n)) s != null && s !== !1 && i.setAttribute(o, String(s));
           return (t && t.appendChild(i), i);
         }
-        function Nt(e, d = {}, t) {
+        function $t(e, n = {}, t) {
           const i = document.createElement(e);
-          for (const [s, o] of Object.entries(d))
-            o != null &&
-              o !== !1 &&
-              (s === "className" || s === "class" ? (i.className = String(o)) : i.setAttribute(s, String(o)));
+          for (const [o, s] of Object.entries(n))
+            s != null &&
+              s !== !1 &&
+              (o === "className" || o === "class" ? (i.className = String(s)) : i.setAttribute(o, String(s)));
           return (t && t.appendChild(i), i);
         }
-        function v(e) {
+        function m(e) {
           return e == null
             ? ""
             : String(e)
@@ -640,30 +640,30 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-        function V(e, d, t) {
-          return Math.max(d, Math.min(t, e));
+        function K(e, n, t) {
+          return Math.max(n, Math.min(t, e));
         }
-        class et extends U {
+        class it extends A {
           static get observedAttributes() {
             return ["variant", "size", "disabled"];
           }
           get variant() {
             return this.getAttribute("variant") || "secondary";
           }
-          set variant(d) {
-            this.setAttribute("variant", d);
+          set variant(n) {
+            this.setAttribute("variant", n);
           }
           get size() {
             return this.getAttribute("size") || "md";
           }
-          set size(d) {
-            this.setAttribute("size", d);
+          set size(n) {
+            this.setAttribute("size", n);
           }
           get disabled() {
             return this.hasAttribute("disabled");
           }
-          set disabled(d) {
-            d ? this.setAttribute("disabled", "") : this.removeAttribute("disabled");
+          set disabled(n) {
+            n ? this.setAttribute("disabled", "") : this.removeAttribute("disabled");
           }
           attributeChangedCallback() {
             this.requestUpdate();
@@ -678,7 +678,7 @@
           }
         }
         (l(
-          et,
+          it,
           "styles",
           `
     :host {
@@ -776,16 +776,16 @@
     }
   `,
         ),
-          customElements.get("tuto-button") || customElements.define("tuto-button", et));
-        class ot extends U {
+          customElements.get("tuto-button") || customElements.define("tuto-button", it));
+        class at extends A {
           static get observedAttributes() {
             return ["variant"];
           }
           get variant() {
             return this.getAttribute("variant") || "default";
           }
-          set variant(d) {
-            this.setAttribute("variant", d);
+          set variant(n) {
+            this.setAttribute("variant", n);
           }
           attributeChangedCallback() {
             this.requestUpdate();
@@ -800,7 +800,7 @@
           }
         }
         (l(
-          ot,
+          at,
           "styles",
           `
     :host {
@@ -854,44 +854,44 @@
     }
   `,
         ),
-          customElements.get("tuto-badge") || customElements.define("tuto-badge", ot));
-        const T = 0.2,
-          q = 3.5,
-          ut = 44;
-        function ft(e, d, t = ut, i = 1.25) {
-          const s = e.width || 900,
-            o = e.height || 700,
-            n = d.w || 2e3,
-            r = d.h || 1e3,
-            c = V(Math.min((s - t * 2) / n, (o - t * 2) / r), T, i),
-            g = (s - n * c) / 2 - d.x * c,
-            u = (o - r * c) / 2 - d.y * c;
-          return { panX: g, panY: u, scale: c };
-        }
-        function st(e, d, t, i, s = T, o = q) {
-          const n = V(e.scale * i, s, o);
-          if (n === e.scale) return e;
-          const r = d - ((d - e.panX) * n) / e.scale,
-            c = t - ((t - e.panY) * n) / e.scale;
-          return { panX: r, panY: c, scale: n };
-        }
-        function bt(e, d, t = 1.05) {
-          const i = e.width || 900,
+          customElements.get("tuto-badge") || customElements.define("tuto-badge", at));
+        const X = 0.2,
+          j = 3.5,
+          bt = 44;
+        function vt(e, n, t = bt, i = 1.25) {
+          const o = e.width || 900,
             s = e.height || 700,
-            o = V(t, T, q),
-            n = d.x + d.w / 2,
-            r = d.y + d.h / 2,
-            c = i / 2 - n * o,
-            g = s / 2 - r * o;
-          return { panX: c, panY: g, scale: o };
+            r = n.w || 2e3,
+            d = n.h || 1e3,
+            c = K(Math.min((o - t * 2) / r, (s - t * 2) / d), X, i),
+            g = (o - r * c) / 2 - n.x * c,
+            f = (s - d * c) / 2 - n.y * c;
+          return { panX: g, panY: f, scale: c };
         }
-        function $t(e, d) {
-          return { x: (e.x - d.panX) / d.scale, y: (e.y - d.panY) / d.scale };
+        function rt(e, n, t, i, o = X, s = j) {
+          const r = K(e.scale * i, o, s);
+          if (r === e.scale) return e;
+          const d = n - ((n - e.panX) * r) / e.scale,
+            c = t - ((t - e.panY) * r) / e.scale;
+          return { panX: d, panY: c, scale: r };
         }
-        function Pt(e, d) {
-          return { x: e.x * d.scale + d.panX, y: e.y * d.scale + d.panY };
+        function wt(e, n, t = 1.05) {
+          const i = e.width || 900,
+            o = e.height || 700,
+            s = K(t, X, j),
+            r = n.x + n.w / 2,
+            d = n.y + n.h / 2,
+            c = i / 2 - r * s,
+            g = o / 2 - d * s;
+          return { panX: c, panY: g, scale: s };
         }
-        const mt = new Set([
+        function Nt(e, n) {
+          return { x: (e.x - n.panX) / n.scale, y: (e.y - n.panY) / n.scale };
+        }
+        function Pt(e, n) {
+          return { x: e.x * n.scale + n.panX, y: e.y * n.scale + n.panY };
+        }
+        const yt = new Set([
           "GOAL_SET",
           "ASK_ROUTED_SPEC",
           "ASK_ROUTED_VIBE",
@@ -903,32 +903,32 @@
           "CLOSE_OUT",
           "NEXT_HANDOFF",
         ]);
-        function vt(e) {
-          return e.map((d, t) => ({
-            id: d.id || `${d.from}->${d.to}-${t}`,
-            from: d.from,
-            to: d.to,
-            self: d.from === d.to,
-            label: d.label || d.event || "",
-            event: d.event || d.label || "",
-            events: d.event ? [d.event] : [],
-            description: d.description || "",
-            descriptions: d.description ? [d.description] : [],
+        function _t(e) {
+          return e.map((n, t) => ({
+            id: n.id || `${n.from}->${n.to}-${t}`,
+            from: n.from,
+            to: n.to,
+            self: n.from === n.to,
+            label: n.label || n.event || "",
+            event: n.event || n.label || "",
+            events: n.event ? [n.event] : [],
+            description: n.description || "",
+            descriptions: n.description ? [n.description] : [],
             userMediated: !1,
-            waypoints: d.waypoints ? [...d.waypoints] : void 0,
+            waypoints: n.waypoints ? [...n.waypoints] : void 0,
           }));
         }
-        function Rt(e, d, t = 0.5) {
+        function Rt(e, n, t = 0.5) {
           const i = Math.min(0.9, Math.max(0.1, t));
-          return d === "left"
+          return n === "left"
             ? { x: e.x, y: e.y + e.h * i }
-            : d === "right"
+            : n === "right"
               ? { x: e.x + e.w, y: e.y + e.h * i }
-              : d === "top"
+              : n === "top"
                 ? { x: e.x + e.w * i, y: e.y }
                 : { x: e.x + e.w * i, y: e.y + e.h };
         }
-        function it(e, d) {
+        function nt(e, n) {
           const t = [
             { point: [e.x, e.y + e.h / 2], side: "left" },
             { point: [e.x + e.w, e.y + e.h / 2], side: "right" },
@@ -936,41 +936,41 @@
             { point: [e.x + e.w / 2, e.y + e.h], side: "bottom" },
           ];
           let i = t[0],
-            s = 1 / 0;
-          for (const o of t) {
-            const n = Math.hypot(o.point[0] - d[0], o.point[1] - d[1]);
-            n < s && ((s = n), (i = o));
+            o = 1 / 0;
+          for (const s of t) {
+            const r = Math.hypot(s.point[0] - n[0], s.point[1] - n[1]);
+            r < o && ((o = r), (i = s));
           }
           return i;
         }
-        function wt(e, d = !0) {
+        function xt(e, n = !0) {
           if (!e || e.length === 0) return [0, 0];
           if (e.length === 1) return e[0];
           if (e.length === 2) return [(e[0][0] + e[1][0]) / 2, (e[0][1] + e[1][1]) / 2];
-          if (d && e.length === 3) return e[1];
+          if (n && e.length === 3) return e[1];
           let t = 0;
           const i = [];
-          for (let n = 0; n < e.length - 1; n++) {
-            const r = Math.hypot(e[n + 1][0] - e[n][0], e[n + 1][1] - e[n][1]);
-            (i.push(r), (t += r));
+          for (let r = 0; r < e.length - 1; r++) {
+            const d = Math.hypot(e[r + 1][0] - e[r][0], e[r + 1][1] - e[r][1]);
+            (i.push(d), (t += d));
           }
           if (t === 0) return e[0];
-          const s = t / 2;
-          let o = 0;
-          for (let n = 0; n < i.length; n++) {
-            const r = i[n];
-            if (o + r >= s) {
-              const c = s - o,
-                g = r > 0 ? c / r : 0.5,
-                u = e[n],
-                h = e[n + 1];
-              return [u[0] + (h[0] - u[0]) * g, u[1] + (h[1] - u[1]) * g];
+          const o = t / 2;
+          let s = 0;
+          for (let r = 0; r < i.length; r++) {
+            const d = i[r];
+            if (s + d >= o) {
+              const c = o - s,
+                g = d > 0 ? c / d : 0.5,
+                f = e[r],
+                h = e[r + 1];
+              return [f[0] + (h[0] - f[0]) * g, f[1] + (h[1] - f[1]) * g];
             }
-            o += r;
+            s += d;
           }
           return e[Math.floor(e.length / 2)];
         }
-        function yt(e, d) {
+        function kt(e, n) {
           const t = [
               [e.x, e.y + e.h / 2],
               [e.x + e.w, e.y + e.h / 2],
@@ -978,142 +978,142 @@
               [e.x + e.w / 2, e.y + e.h],
             ],
             i = [
-              [d.x, d.y + d.h / 2],
-              [d.x + d.w, d.y + d.h / 2],
-              [d.x + d.w / 2, d.y],
-              [d.x + d.w / 2, d.y + d.h],
+              [n.x, n.y + n.h / 2],
+              [n.x + n.w, n.y + n.h / 2],
+              [n.x + n.w / 2, n.y],
+              [n.x + n.w / 2, n.y + n.h],
             ];
-          let s = t[0],
-            o = i[0],
-            n = 1 / 0;
-          for (const r of t)
+          let o = t[0],
+            s = i[0],
+            r = 1 / 0;
+          for (const d of t)
             for (const c of i) {
-              const g = Math.hypot(c[0] - r[0], c[1] - r[1]);
-              g < n && ((n = g), (s = r), (o = c));
+              const g = Math.hypot(c[0] - d[0], c[1] - d[1]);
+              g < r && ((r = g), (o = d), (s = c));
             }
-          return { p1: s, p2: o };
+          return { p1: o, p2: s };
         }
-        function _t(e, d) {
+        function Et(e, n) {
           return e;
         }
-        function xt(e, d) {
-          const t = d[e.from],
-            i = d[e.to];
+        function Mt(e, n) {
+          const t = n[e.from],
+            i = n[e.to];
           if (!t || !i) return null;
           if (e.waypoints && e.waypoints.length > 0) {
-            const n = e.self || e.from === e.to,
-              r = e.waypoints[0],
+            const r = e.self || e.from === e.to,
+              d = e.waypoints[0],
               c = e.waypoints[e.waypoints.length - 1];
-            let g = it(t, r),
-              u = it(i, c),
+            let g = nt(t, d),
+              f = nt(i, c),
               h = g.point,
-              f = u.point;
-            n &&
-              Math.hypot(h[0] - f[0], h[1] - f[1]) < 8 &&
+              v = f.point;
+            r &&
+              Math.hypot(h[0] - v[0], h[1] - v[1]) < 8 &&
               (g.side === "right" || g.side === "left"
-                ? ((h = [h[0], h[1] - 12]), (f = [f[0], f[1] + 12]))
-                : ((h = [h[0] - 16, h[1]]), (f = [f[0] + 16, f[1]])));
-            const E = [h, ...e.waypoints, f],
-              [N, _] = wt(E, !0);
-            return { points: E, seatX: N, seatY: _, seatSide: "h" };
+                ? ((h = [h[0], h[1] - 12]), (v = [v[0], v[1] + 12]))
+                : ((h = [h[0] - 16, h[1]]), (v = [v[0] + 16, v[1]])));
+            const I = [h, ...e.waypoints, v],
+              [N, p] = xt(I, !0);
+            return { points: I, seatX: N, seatY: p, seatSide: "h" };
           }
           if (e.self || e.from === e.to) {
-            const n = t.x + t.w,
-              r = t.y + t.h / 2,
+            const r = t.x + t.w,
+              d = t.y + t.h / 2,
               c = 38;
             return {
               points: [
-                [n, r - 10],
-                [n + c, r - 18],
-                [n + c, r + 18],
-                [n, r + 10],
+                [r, d - 10],
+                [r + c, d - 18],
+                [r + c, d + 18],
+                [r, d + 10],
               ],
-              seatX: n + c + 24,
-              seatY: r,
+              seatX: r + c + 24,
+              seatY: d,
               seatSide: "h",
             };
           }
-          const { p1: s, p2: o } = yt(t, i);
-          return { points: [s, o], seatX: (s[0] + o[0]) / 2, seatY: (s[1] + o[1]) / 2, seatSide: "h" };
+          const { p1: o, p2: s } = kt(t, i);
+          return { points: [o, s], seatX: (o[0] + s[0]) / 2, seatY: (o[1] + s[1]) / 2, seatSide: "h" };
         }
         function Ct(e) {}
-        function kt(e, d = !1, t = 10) {
+        function St(e, n = !1, t = 10) {
           if (!e || e.length === 0) return "";
           if (e.length === 1) return `M ${e[0][0]} ${e[0][1]}`;
-          if (d && e.length === 4)
+          if (n && e.length === 4)
             return `M ${e[0][0]} ${e[0][1]} C ${e[1][0]} ${e[1][1]}, ${e[2][0]} ${e[2][1]}, ${e[3][0]} ${e[3][1]}`;
           if (e.length === 2) return `M ${e[0][0]} ${e[0][1]} L ${e[1][0]} ${e[1][1]}`;
-          if (t <= 0) return e.map((o, n) => `${n === 0 ? "M" : "L"} ${o[0]} ${o[1]}`).join(" ");
+          if (t <= 0) return e.map((s, r) => `${r === 0 ? "M" : "L"} ${s[0]} ${s[1]}`).join(" ");
           let i = `M ${e[0][0]} ${e[0][1]}`;
-          for (let o = 1; o < e.length - 1; o++) {
-            const n = e[o - 1],
-              r = e[o],
-              c = e[o + 1],
-              g = r[0] - n[0],
-              u = r[1] - n[1],
-              h = Math.hypot(g, u),
-              f = c[0] - r[0],
-              E = c[1] - r[1],
-              N = Math.hypot(f, E);
+          for (let s = 1; s < e.length - 1; s++) {
+            const r = e[s - 1],
+              d = e[s],
+              c = e[s + 1],
+              g = d[0] - r[0],
+              f = d[1] - r[1],
+              h = Math.hypot(g, f),
+              v = c[0] - d[0],
+              I = c[1] - d[1],
+              N = Math.hypot(v, I);
             if (h < 1 || N < 1) {
-              i += ` L ${r[0]} ${r[1]}`;
+              i += ` L ${d[0]} ${d[1]}`;
               continue;
             }
-            const _ = Math.min(t, h / 2, N / 2),
-              S = r[0] - (g / h) * _,
-              M = r[1] - (u / h) * _,
-              $ = r[0] + (f / N) * _,
-              B = r[1] + (E / N) * _;
-            ((i += ` L ${S} ${M}`), (i += ` Q ${r[0]} ${r[1]} ${$} ${B}`));
+            const p = Math.min(t, h / 2, N / 2),
+              _ = d[0] - (g / h) * p,
+              b = d[1] - (f / h) * p,
+              S = d[0] + (v / N) * p,
+              P = d[1] + (I / N) * p;
+            ((i += ` L ${_} ${b}`), (i += ` Q ${d[0]} ${d[1]} ${S} ${P}`));
           }
-          const s = e[e.length - 1];
-          return ((i += ` L ${s[0]} ${s[1]}`), i);
+          const o = e[e.length - 1];
+          return ((i += ` L ${o[0]} ${o[1]}`), i);
         }
-        function Ut(e, d, t, i) {
-          return t === e.id || i === e.id ? !0 : d ? e.from === d || e.to === d : !1;
+        function Ut(e, n, t, i) {
+          return t === e.id || i === e.id ? !0 : n ? e.from === n || e.to === n : !1;
         }
-        function Bt(e, d, t, i, s = mt) {
+        function Bt(e, n, t, i, o = yt) {
           return !0;
         }
-        function J(e, d = 64, t = 56, i = 46, s) {
-          let o = 1 / 0,
-            n = 1 / 0,
-            r = -1 / 0,
+        function Z(e, n = 64, t = 56, i = 46, o) {
+          let s = 1 / 0,
+            r = 1 / 0,
+            d = -1 / 0,
             c = -1 / 0;
           const g = Object.values(e);
-          if (g.length === 0 && (!s || s.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
+          if (g.length === 0 && (!o || o.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
           for (const h of g)
-            ((o = Math.min(o, h.x)),
-              (n = Math.min(n, h.y)),
-              (r = Math.max(r, h.x + h.w)),
+            ((s = Math.min(s, h.x)),
+              (r = Math.min(r, h.y)),
+              (d = Math.max(d, h.x + h.w)),
               (c = Math.max(c, h.y + h.h)));
-          if (s)
-            for (const h of s)
-              ((o = Math.min(o, h.x)),
-                (n = Math.min(n, h.y)),
-                (r = Math.max(r, h.x + h.w)),
+          if (o)
+            for (const h of o)
+              ((s = Math.min(s, h.x)),
+                (r = Math.min(r, h.y)),
+                (d = Math.max(d, h.x + h.w)),
                 (c = Math.max(c, h.y + h.h)));
-          const u = i > 0;
-          return { x: o - d, y: n - t - (u ? i : 0), w: r - o + d * 2, h: c - n + t * 2 + (u ? i + 80 : 0) };
+          const f = i > 0;
+          return { x: s - n, y: r - t - (f ? i : 0), w: d - s + n * 2, h: c - r + t * 2 + (f ? i + 80 : 0) };
         }
-        function At(e, d = {}) {
-          const t = d.colWidth || 420,
-            i = d.colGap || 180,
-            s = d.rowGap || 40,
-            o = d.startX || 120,
-            n = d.startY || 120,
-            r = {};
-          let c = o,
-            g = n;
+        function zt(e, n = {}) {
+          const t = n.colWidth || 420,
+            i = n.colGap || 180,
+            o = n.rowGap || 40,
+            s = n.startX || 120,
+            r = n.startY || 120,
+            d = {};
+          let c = s,
+            g = r;
           return (
-            e.forEach((u, h) => {
-              ((r[u.id] = { ...u, x: u.x ?? c, y: u.y ?? g, w: u.w || t, h: u.h || 280 }),
-                (h + 1) % 3 === 0 ? ((c += t + i), (g = n)) : (g += (u.h || 280) + s));
+            e.forEach((f, h) => {
+              ((d[f.id] = { ...f, x: f.x ?? c, y: f.y ?? g, w: f.w || t, h: f.h || 280 }),
+                (h + 1) % 3 === 0 ? ((c += t + i), (g = r)) : (g += (f.h || 280) + o));
             }),
-            r
+            d
           );
         }
-        class at extends U {
+        class dt extends A {
           constructor() {
             super(...arguments);
             l(this, "_node", null);
@@ -1148,9 +1148,9 @@
           render() {
             if (!this.shadowRootNode || !this._node) return;
             const t = this._node,
-              i = L.accents[t.id] || (t.permission ? L.accents[t.permission] : null) || L.accents.spec;
+              i = $.accents[t.id] || (t.permission ? $.accents[t.permission] : null) || $.accents.spec;
             this.style.setProperty("--node-accent", i.accent);
-            const s = [
+            const o = [
               "node-card",
               "compact",
               this._selected ? "selected" : "",
@@ -1160,24 +1160,24 @@
               .filter(Boolean)
               .join(" ");
             this.shadowRootNode.innerHTML = `
-      <div class="${s}" role="button" tabindex="0">
+      <div class="${o}" role="button" tabindex="0">
         <div class="node-head">
           <div class="node-head-left">
             <span class="state-dot"></span>
-            <span class="head-title">${v(t.label || t.id)}</span>
+            <span class="head-title">${m(t.label || t.id)}</span>
           </div>
         </div>
       </div>
     `;
-            const o = this.shadowRootNode.querySelector(".node-card");
-            o &&
-              o.addEventListener("click", (n) => {
-                (n.stopPropagation(), this.emit("flow:select-node", { node: this._node }));
+            const s = this.shadowRootNode.querySelector(".node-card");
+            s &&
+              s.addEventListener("click", (r) => {
+                (r.stopPropagation(), this.emit("flow:select-node", { node: this._node }));
               });
           }
         }
         (l(
-          at,
+          dt,
           "styles",
           `
     :host {
@@ -1304,8 +1304,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-node") || customElements.define("tuto-flow-node", at));
-        class rt extends U {
+          customElements.get("tuto-flow-node") || customElements.define("tuto-flow-node", dt));
+        class lt extends A {
           constructor() {
             super(...arguments);
             l(this, "_zoom", 100);
@@ -1344,11 +1344,11 @@
             ((this._toolMode = t ? "edit" : "view"), this.requestUpdate());
           }
           render() {
-            var o, n, r, c, g, u, h, f, E;
+            var s, r, d, c, g, f, h, v, I;
             if (!this.shadowRootNode) return;
             const t = this._toolMode === "move",
               i = this._toolMode === "edit",
-              s = t || i;
+              o = t || i;
             ((this.shadowRootNode.innerHTML = `
       <div class="toolbar-container">
         <!-- Camera Controls -->
@@ -1401,7 +1401,7 @@
           </svg>
         </button>
         ${
-          s
+          o
             ? `
         <button class="tool-btn" id="btn-snapshot" title="Snapshot Layout JSON to Clipboard (S)" aria-label="Snapshot Layout">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1430,16 +1430,16 @@
         </button>
       </div>
     `),
-              (o = this.shadowRootNode.getElementById("btn-zoom-in")) == null ||
-                o.addEventListener("click", () => {
+              (s = this.shadowRootNode.getElementById("btn-zoom-in")) == null ||
+                s.addEventListener("click", () => {
                   this.emit("flow:zoom-in");
                 }),
-              (n = this.shadowRootNode.getElementById("btn-zoom-out")) == null ||
-                n.addEventListener("click", () => {
+              (r = this.shadowRootNode.getElementById("btn-zoom-out")) == null ||
+                r.addEventListener("click", () => {
                   this.emit("flow:zoom-out");
                 }),
-              (r = this.shadowRootNode.getElementById("btn-fit")) == null ||
-                r.addEventListener("click", () => {
+              (d = this.shadowRootNode.getElementById("btn-fit")) == null ||
+                d.addEventListener("click", () => {
                   this.emit("flow:fit");
                 }),
               (c = this.shadowRootNode.getElementById("btn-reset")) == null ||
@@ -1450,26 +1450,26 @@
                 g.addEventListener("click", () => {
                   this.emit("flow:toggle-move-mode");
                 }),
-              (u = this.shadowRootNode.getElementById("btn-edit-mode")) == null ||
-                u.addEventListener("click", () => {
+              (f = this.shadowRootNode.getElementById("btn-edit-mode")) == null ||
+                f.addEventListener("click", () => {
                   this.emit("flow:toggle-edit-mode");
                 }),
               (h = this.shadowRootNode.getElementById("btn-snapshot")) == null ||
                 h.addEventListener("click", () => {
                   this.emit("flow:snapshot-layout");
                 }),
-              (f = this.shadowRootNode.getElementById("btn-reset-layout")) == null ||
-                f.addEventListener("click", () => {
+              (v = this.shadowRootNode.getElementById("btn-reset-layout")) == null ||
+                v.addEventListener("click", () => {
                   this.emit("flow:reset-layout");
                 }),
-              (E = this.shadowRootNode.getElementById("btn-inspector")) == null ||
-                E.addEventListener("click", () => {
+              (I = this.shadowRootNode.getElementById("btn-inspector")) == null ||
+                I.addEventListener("click", () => {
                   this.emit("flow:toggle-inspector");
                 }));
           }
         }
         (l(
-          rt,
+          lt,
           "styles",
           `
     :host {
@@ -1531,8 +1531,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", rt));
-        class nt extends U {
+          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", lt));
+        class ct extends A {
           constructor() {
             super(...arguments);
             l(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
@@ -1595,29 +1595,29 @@
           }
           panToEvent(t) {
             const i = this.getBoundingClientRect(),
-              s = t.clientX - i.left,
-              o = t.clientY - i.top,
-              n = i.width || 170,
-              r = i.height || 120,
+              o = t.clientX - i.left,
+              s = t.clientY - i.top,
+              r = i.width || 170,
+              d = i.height || 120,
               c = this._bounds.w || 2e3,
               g = this._bounds.h || 1e3,
-              u = Math.min(n / c, r / g),
-              h = s / u + this._bounds.x,
-              f = o / u + this._bounds.y;
-            this.emit("flow:pan-to", { worldX: h, worldY: f });
+              f = Math.min(r / c, d / g),
+              h = o / f + this._bounds.x,
+              v = s / f + this._bounds.y;
+            this.emit("flow:pan-to", { worldX: h, worldY: v });
           }
           render() {
-            var S, M;
+            var _, b;
             if (!this.shadowRootNode) return;
             this.shadowRootNode.innerHTML = "";
-            const t = k("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
+            const t = M("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
               i = 170,
-              s = 120,
-              o = this._bounds.w || 2e3,
-              n = this._bounds.h || 1e3,
-              r = Math.min(i / o, s / n),
-              c = k("g", { transform: `scale(${r}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
-            k(
+              o = 120,
+              s = this._bounds.w || 2e3,
+              r = this._bounds.h || 1e3,
+              d = Math.min(i / s, o / r),
+              c = M("g", { transform: `scale(${d}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
+            M(
               "rect",
               {
                 x: this._bounds.x,
@@ -1631,40 +1631,40 @@
               },
               c,
             );
-            for (const [$, B] of Object.entries(this._nodes)) {
-              const W =
-                ((S = L.accents[$]) == null ? void 0 : S.accent) ||
-                ((M = L.accents[B.kind]) == null ? void 0 : M.accent) ||
+            for (const [S, P] of Object.entries(this._nodes)) {
+              const R =
+                ((_ = $.accents[S]) == null ? void 0 : _.accent) ||
+                ((b = $.accents[P.kind]) == null ? void 0 : b.accent) ||
                 "#3b82f6";
-              k(
+              M(
                 "rect",
                 {
-                  x: B.x,
-                  y: B.y,
-                  width: B.w,
-                  height: B.h,
+                  x: P.x,
+                  y: P.y,
+                  width: P.w,
+                  height: P.h,
                   rx: 10,
-                  fill: $ === this._selectedNodeId ? W : "var(--tuto-head-bg, #1a2030)",
-                  stroke: W,
+                  fill: S === this._selectedNodeId ? R : "var(--tuto-head-bg, #1a2030)",
+                  stroke: R,
                   "stroke-width": 2,
                 },
                 c,
               );
             }
             const g = this._viewportSize.width || 900,
-              u = this._viewportSize.height || 700,
+              f = this._viewportSize.height || 700,
               h = this._camera.scale || 1,
-              f = (-this._camera.panX / h - this._bounds.x) * r,
-              E = (-this._camera.panY / h - this._bounds.y) * r,
-              N = (g / h) * r,
-              _ = (u / h) * r;
-            k(
+              v = (-this._camera.panX / h - this._bounds.x) * d,
+              I = (-this._camera.panY / h - this._bounds.y) * d,
+              N = (g / h) * d,
+              p = (f / h) * d;
+            M(
               "rect",
               {
-                x: Math.max(0, Math.min(i, f)),
-                y: Math.max(0, Math.min(s, E)),
+                x: Math.max(0, Math.min(i, v)),
+                y: Math.max(0, Math.min(o, I)),
                 width: Math.max(4, Math.min(i, N)),
-                height: Math.max(4, Math.min(s, _)),
+                height: Math.max(4, Math.min(o, p)),
                 fill: "rgba(59, 130, 246, 0.15)",
                 stroke: "var(--tuto-hot, #3b82f6)",
                 "stroke-width": 1.5,
@@ -1675,7 +1675,7 @@
           }
         }
         (l(
-          nt,
+          ct,
           "styles",
           `
     :host {
@@ -1699,14 +1699,21 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", nt));
-        class dt extends U {
+          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", ct));
+        class ht extends A {
           constructor() {
             super(...arguments);
             l(this, "_isOpen", !1);
             l(this, "_node", null);
             l(this, "_edge", null);
+            l(this, "_graph", null);
             l(this, "_tools", []);
+          }
+          get graph() {
+            return this._graph;
+          }
+          set graph(t) {
+            ((this._graph = t), this.requestUpdate());
           }
           get isOpen() {
             return this._isOpen;
@@ -1733,51 +1740,51 @@
             ((this._tools = t), this.requestUpdate());
           }
           render() {
-            var s, o, n;
+            var s, r, d, c, g, f, h, v, I, N;
             if (!this.shadowRootNode) return;
             let t = "",
               i = "";
             if (this._node) {
-              const r = this._node,
-                c = L.accents[r.id] ||
-                  L.accents[r.kind] || {
+              const p = this._node,
+                _ = $.accents[p.id] ||
+                  $.accents[p.kind] || {
                     accent: "#3b82f6",
-                    badge: (r.kind || "MODE").toUpperCase(),
-                    perm: (r.permission || "READ-ONLY").toUpperCase(),
-                    permClass: `perm-${r.permission || "readonly"}`,
+                    badge: (p.kind || "MODE").toUpperCase(),
+                    perm: (p.permission || "READ-ONLY").toUpperCase(),
+                    permClass: `perm-${p.permission || "readonly"}`,
                   },
-                u =
-                  c.perm === "WRITE"
+                S =
+                  _.perm === "WRITE"
                     ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
                     : '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';
-              (this.style.setProperty("--drawer-accent", c.accent),
+              (this.style.setProperty("--drawer-accent", _.accent),
                 (t = `
         <div class="header-titles">
-          <h2>${v(r.label || r.id)}</h2>
+          <h2>${m(p.label || p.id)}</h2>
           <div class="header-badges">
-            <span class="badge badge-accent">${v(c.badge)}</span>
-            <span class="badge badge-perm ${c.permClass}">${u}${v(c.perm)}</span>
+            <span class="badge badge-accent">${m(_.badge)}</span>
+            <span class="badge badge-perm ${_.permClass}">${S}${m(_.perm)}</span>
           </div>
         </div>
       `));
-              const h = (r.substates || []).length
+              const P = (p.substates || []).length
                   ? `<div>
             <h4 class="section-title">Substates</h4>
             <div class="chip-group">
-              ${r.substates.map((_) => `<span class="chip">${v(_)}</span>`).join("")}
+              ${p.substates.map((C) => `<span class="chip">${m(C)}</span>`).join("")}
             </div>
           </div>`
                   : "",
-                f = (r.procedure || []).length
+                R = (p.procedure || []).length
                   ? `<div>
-            <h4 class="section-title">Ordered Instructions (${r.procedure.length})</h4>
+            <h4 class="section-title">Ordered Instructions (${p.procedure.length})</h4>
             <ol class="instruction-list">
-              ${r.procedure
+              ${p.procedure
                 .map(
-                  (_, S) => `
+                  (C, a) => `
                 <li class="instruction-item">
-                  <span class="instruction-idx">${S + 1}.</span>
-                  <span>${v(_)}</span>
+                  <span class="instruction-idx">${a + 1}.</span>
+                  <span>${m(C)}</span>
                 </li>
               `,
                 )
@@ -1785,21 +1792,21 @@
             </ol>
           </div>`
                   : "",
-                E = this._tools.filter((_) => (_.modes || []).includes(r.id) || (_.modes || []).includes("any")),
-                N = E.length
+                D = this._tools.filter((C) => (C.modes || []).includes(p.id) || (C.modes || []).includes("any")),
+                Q = D.length
                   ? `<div>
-            <h4 class="section-title">Permitted Tools & Gates (${E.length})</h4>
+            <h4 class="section-title">Permitted Tools & Gates (${D.length})</h4>
             <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-              ${E.map((_) => {
-                var S;
+              ${D.map((C) => {
+                var a;
                 return `
                 <div class="tool-card">
                   <div class="tool-title">
-                    <span>${v(_.name)}</span>
+                    <span>${m(C.name)}</span>
                     <span class="chip">TOOL</span>
                   </div>
-                  <p class="section-text" style="font-size: 0.78rem;">${v(_.summary)}</p>
-                  ${(S = _.gate) != null && S.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${v(_.gate.join(" · "))}</div>` : ""}
+                  <p class="section-text" style="font-size: 0.78rem;">${m(C.summary)}</p>
+                  ${(a = C.gate) != null && a.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${m(C.gate.join(" · "))}</div>` : ""}
                 </div>
               `;
               }).join("")}
@@ -1807,21 +1814,21 @@
           </div>`
                   : "";
               i = `
-        ${r.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${v(r.summary)}</p></div>` : ""}
-        ${h}
-        ${f}
-        ${N}
+        ${p.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${m(p.summary)}</p></div>` : ""}
+        ${P}
+        ${R}
+        ${Q}
       `;
             } else if (this._edge) {
-              const r = this._edge;
+              const p = this._edge;
               this.style.setProperty("--drawer-accent", "#3b82f6");
-              const c = r.event || r.label || "Transition";
+              const _ = p.event || p.label || "Transition";
               ((t = `
         <div class="header-titles">
-          <h2>${v(c)}</h2>
+          <h2>${m(_)}</h2>
           <div class="header-badges">
             <span class="badge badge-accent">TRANSITION</span>
-            ${r.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
+            ${p.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
           </div>
         </div>
       `),
@@ -1829,33 +1836,33 @@
         <div>
           <h4 class="section-title">Route Connection</h4>
           <p class="section-text" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(r.from.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${m(p.from.toUpperCase())}</span>
             <span style="color: var(--tuto-muted);">──►</span>
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${v(r.to.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${m(p.to.toUpperCase())}</span>
           </p>
         </div>
-        ${r.label && r.label !== c ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${v(r.label)}</p></div>` : ""}
-        ${r.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${v(r.description)}</p></div>` : ""}
+        ${p.label && p.label !== _ ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${m(p.label)}</p></div>` : ""}
+        ${p.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${m(p.description)}</p></div>` : ""}
         ${
-          (s = r.events) != null && s.length
+          (s = p.events) != null && s.length
             ? `<div>
-                <h4 class="section-title">Trigger Events (${r.events.length})</h4>
+                <h4 class="section-title">Trigger Events (${p.events.length})</h4>
                 <div class="chip-group">
-                  ${r.events.map((g) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${v(g)}</span>`).join("")}
+                  ${p.events.map((b) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${m(b)}</span>`).join("")}
                 </div>
               </div>`
             : ""
         }
         ${
-          (o = r.descriptions) != null && o.length && r.descriptions.length > 1
+          (r = p.descriptions) != null && r.length && p.descriptions.length > 1
             ? `<div>
                 <h4 class="section-title">Bundled Paths</h4>
                 <ul class="instruction-list">
-                  ${r.descriptions
+                  ${p.descriptions
                     .map(
-                      (g) => `
+                      (b) => `
                     <li class="instruction-item">
-                      <span>${v(g)}</span>
+                      <span>${m(b)}</span>
                     </li>
                   `,
                     )
@@ -1865,18 +1872,92 @@
             : ""
         }
       `));
-            } else
+            } else {
+              this.style.setProperty("--drawer-accent", "#f97316");
+              const p = ((d = this._graph) == null ? void 0 : d.title) || "Workflow Overview",
+                _ = ((c = this._graph) == null ? void 0 : c.version) || "",
+                b = (g = this._graph) == null ? void 0 : g.exceptions,
+                S = ((f = this._graph) == null ? void 0 : f.rules) || (b == null ? void 0 : b.rules) || [],
+                P =
+                  ((h = this._graph) == null ? void 0 : h.description) ||
+                  ((v = this._graph) == null ? void 0 : v.summary) ||
+                  "";
               ((t = `
         <div class="header-titles">
-          <h2>Inspector</h2>
+          <h2>${m(p)}</h2>
+          <div class="header-badges">
+            <span class="badge badge-accent" style="background: #f97316;">OVERVIEW</span>
+            ${_ ? `<span class="badge badge-perm perm-standby">${m(_)}</span>` : ""}
+          </div>
         </div>
       `),
                 (i = `
-        <div class="empty-state">
-          Select any state card or transition edge to inspect its instructions and properties.
+        ${
+          P
+            ? `<div>
+                <h4 class="section-title">Big Picture & Architecture</h4>
+                <p class="section-text" style="line-height: 1.6; color: var(--tuto-text, #e8eaed); font-size: 0.84rem;">${m(P)}</p>
+              </div>`
+            : ""
+        }
+
+        ${
+          b
+            ? `<div>
+                <h4 class="section-title" style="color: #f97316; display: flex; align-items: center; gap: 0.4rem;">
+                  <span>${m(b.title || "Exceptions & Escape Hatches")}</span>
+                </h4>
+                ${b.summary ? `<p class="section-text" style="line-height: 1.55; margin-bottom: 0.75rem; font-size: 0.82rem;">${m(b.summary)}</p>` : ""}
+                ${
+                  (I = b.commands) != null && I.length
+                    ? `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        ${b.commands
+                          .map(
+                            (R) => `
+                          <div class="tool-card" style="border-left: 3px solid #f97316; padding: 0.65rem 0.8rem;">
+                            <div class="tool-title" style="margin-bottom: 0.25rem;">
+                              <span style="color: #f97316; font-size: 0.84rem; font-weight: 700;">${m(R.command)}</span>
+                              ${R.label ? `<span class="chip" style="color: #fdba74; border-color: rgba(249, 115, 22, 0.3); font-size: 0.68rem;">${m(R.label)}</span>` : ""}
+                            </div>
+                            <p class="section-text" style="font-size: 0.78rem; line-height: 1.45;">${m(R.summary || R.description || "")}</p>
+                          </div>
+                        `,
+                          )
+                          .join("")}
+                      </div>`
+                    : ""
+                }
+              </div>`
+            : ""
+        }
+
+        ${
+          S.length
+            ? `<div>
+                <h4 class="section-title">Workflow Invariants & Rules</h4>
+                <ul class="instruction-list">
+                  ${S.map(
+                    (R) => `
+                    <li class="instruction-item">
+                      <span class="instruction-idx" style="color: #f97316;">•</span>
+                      <span style="font-size: 0.8rem; line-height: 1.45;">${m(R)}</span>
+                    </li>
+                  `,
+                  ).join("")}
+                </ul>
+              </div>`
+            : ""
+        }
+
+        <div>
+          <h4 class="section-title" style="color: var(--tuto-muted, #64748b);">Interactive Inspection</h4>
+          <p class="section-text" style="font-size: 0.78rem; color: var(--tuto-text-muted, #94a3b8); line-height: 1.5;">
+            Click any state node card or transition edge on the canvas to inspect its step-by-step instructions, permissions, and tool gates.
+          </p>
         </div>
       `));
-            ((this.shadowRootNode.innerHTML = `
+            }
+            this.shadowRootNode.innerHTML = `
       <aside class="drawer ${this._isOpen ? "is-open" : ""}">
         <div class="drawer-header">
           ${t}
@@ -1886,15 +1967,19 @@
           ${i}
         </div>
       </aside>
-    `),
-              (n = this.shadowRootNode.getElementById("btn-close")) == null ||
-                n.addEventListener("click", () => {
+    `;
+            const o = this.shadowRootNode.querySelector(".drawer");
+            (o &&
+              (o.addEventListener("pointerdown", (p) => p.stopPropagation()),
+              o.addEventListener("mousedown", (p) => p.stopPropagation())),
+              (N = this.shadowRootNode.getElementById("btn-close")) == null ||
+                N.addEventListener("click", () => {
                   this.emit("flow:close-inspector");
                 }));
           }
         }
         (l(
-          dt,
+          ht,
           "styles",
           `
     :host {
@@ -1909,6 +1994,8 @@
       pointer-events: none;
       font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
       color: var(--tuto-text, #e8eaed);
+      user-select: text;
+      -webkit-user-select: text;
     }
     .drawer {
       width: 100%;
@@ -1924,6 +2011,9 @@
       transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: auto;
       box-sizing: border-box;
+      user-select: text;
+      -webkit-user-select: text;
+      cursor: auto;
     }
     .drawer.is-open {
       transform: translateX(0);
@@ -1936,6 +2026,8 @@
       justify-content: space-between;
       gap: 0.75rem;
       background: var(--tuto-panel-head, #1c2128);
+      user-select: text;
+      -webkit-user-select: text;
     }
     .header-titles h2 {
       margin: 0 0 0.4rem 0;
@@ -2078,8 +2170,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", dt));
-        class lt extends U {
+          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", ht));
+        class pt extends A {
           constructor() {
             super(...arguments);
             l(this, "_graph", null);
@@ -2090,7 +2182,8 @@
             l(this, "_selectedEdgeId", null);
             l(this, "_hoveredEdgeId", null);
             l(this, "_showMinimap", !1);
-            l(this, "_showInspector", !1);
+            l(this, "_showInspector", !0);
+            l(this, "_hasRestoredCamera", !1);
             l(this, "_theme", "dark");
             l(this, "_toolMode", "view");
             l(this, "_isDragging", !1);
@@ -2122,7 +2215,7 @@
                           (this._selectedEdgeId = null),
                           this.requestUpdate())
                         : t.key === "i" || t.key === "I"
-                          ? ((this._showInspector = !this._showInspector), this.requestUpdate())
+                          ? this._toggleInspector()
                           : t.key === "m" || t.key === "M"
                             ? (this.toolMode = this._toolMode === "move" ? "view" : "move")
                             : t.key === "e" || t.key === "E"
@@ -2139,7 +2232,7 @@
                                         this.requestUpdate())
                                       : this._toolMode !== "view"
                                         ? (this.toolMode = "view")
-                                        : ((this._showInspector = !1), this.requestUpdate())));
+                                        : this._closeInspector()));
             });
             l(this, "handleResize", () => {
               this.requestUpdate();
@@ -2147,13 +2240,13 @@
             l(this, "handleWheel", (t) => {
               t.preventDefault();
               const i = this.getBoundingClientRect(),
-                s = t.clientX - i.left,
-                o = t.clientY - i.top,
-                n = t.deltaY < 0 ? 1.12 : 0.89;
-              ((this._camera = st(this._camera, s, o, n, T, q)), this.requestUpdate());
+                o = t.clientX - i.left,
+                s = t.clientY - i.top,
+                r = t.deltaY < 0 ? 1.12 : 0.89;
+              ((this._camera = rt(this._camera, o, s, r, X, j)), this._saveCamera(), this.requestUpdate());
             });
             l(this, "handlePointerDown", (t) => {
-              var o;
+              var s;
               if (
                 t.button !== 0 ||
                 t.target.closest(
@@ -2163,8 +2256,8 @@
                 return;
               ((this._isDragging = !0),
                 (this._dragStart = { x: t.clientX, y: t.clientY, panX: this._camera.panX, panY: this._camera.panY }));
-              const s = (o = this.shadowRootNode) == null ? void 0 : o.querySelector("svg.flow-svg");
-              (s == null || s.classList.add("grabbing"),
+              const o = (s = this.shadowRootNode) == null ? void 0 : s.querySelector("svg.flow-svg");
+              (o == null || o.classList.add("grabbing"),
                 window.addEventListener("pointermove", this.handlePointerMove),
                 window.addEventListener("pointerup", this.handlePointerUp));
             });
@@ -2180,8 +2273,9 @@
             l(this, "handlePointerUp", () => {
               var i;
               (this._isDragging &&
-                Math.hypot(this._camera.panX - this._dragStart.panX, this._camera.panY - this._dragStart.panY) < 4 &&
-                ((this._selectedNodeId = null), (this._activeStateId = null), (this._selectedEdgeId = null)),
+                (Math.hypot(this._camera.panX - this._dragStart.panX, this._camera.panY - this._dragStart.panY) < 4 &&
+                  ((this._selectedNodeId = null), (this._activeStateId = null), (this._selectedEdgeId = null)),
+                this._saveCamera()),
                 (this._isDragging = !1));
               const t = (i = this.shadowRootNode) == null ? void 0 : i.querySelector("svg.flow-svg");
               (t == null || t.classList.remove("grabbing"),
@@ -2193,15 +2287,15 @@
               if (!this._draggedNodeId || !this._dragNodeStart || !this._graph) return;
               const i = this._graph.states[this._draggedNodeId];
               if (!i) return;
-              const s = this._camera.scale || 1,
-                o = (t.clientX - this._dragNodeStart.startX) / s,
-                n = (t.clientY - this._dragNodeStart.startY) / s;
-              Math.hypot(o, n) > 4 && (this._nodeDragMoved = !0);
-              const r = this._dragNodeStart.nodeOrigX + o,
-                c = this._dragNodeStart.nodeOrigY + n;
-              ((i.x = Math.round(r / 10) * 10), (i.y = Math.round(c / 10) * 10));
+              const o = this._camera.scale || 1,
+                s = (t.clientX - this._dragNodeStart.startX) / o,
+                r = (t.clientY - this._dragNodeStart.startY) / o;
+              Math.hypot(s, r) > 4 && (this._nodeDragMoved = !0);
+              const d = this._dragNodeStart.nodeOrigX + s,
+                c = this._dragNodeStart.nodeOrigY + r;
+              ((i.x = Math.round(d / 10) * 10), (i.y = Math.round(c / 10) * 10));
               const g = this._graph.framing !== !1;
-              ((this._bounds = J(this._graph.states, g ? 64 : 40, g ? 56 : 30, g ? 46 : 0, this._graph.groups)),
+              ((this._bounds = Z(this._graph.states, g ? 64 : 40, g ? 56 : 30, g ? 46 : 0, this._graph.groups)),
                 this.requestUpdate());
             });
             l(this, "handleNodePointerUp", () => {
@@ -2227,15 +2321,15 @@
             });
             l(this, "handleWaypointPointerMove", (t) => {
               if (!this._draggedWaypoint) return;
-              const { edgeId: i, waypointIndex: s, startX: o, startY: n, origX: r, origY: c } = this._draggedWaypoint,
+              const { edgeId: i, waypointIndex: o, startX: s, startY: r, origX: d, origY: c } = this._draggedWaypoint,
                 g = this._edgeWaypoints.get(i);
-              if (!g || !g[s]) return;
-              const u = this._camera.scale || 1,
-                h = (t.clientX - o) / u,
-                f = (t.clientY - n) / u,
-                E = Math.round((r + h) / 10) * 10,
-                N = Math.round((c + f) / 10) * 10;
-              ((g[s] = [E, N]), this.requestUpdate());
+              if (!g || !g[o]) return;
+              const f = this._camera.scale || 1,
+                h = (t.clientX - s) / f,
+                v = (t.clientY - r) / f,
+                I = Math.round((d + h) / 10) * 10,
+                N = Math.round((c + v) / 10) * 10;
+              ((g[o] = [I, N]), this.requestUpdate());
             });
             l(this, "handleWaypointPointerUp", () => {
               this._draggedWaypoint &&
@@ -2254,39 +2348,51 @@
             if (((this._graph = t), t)) {
               if (!this._defaultLayout && t.states) {
                 this._defaultLayout = {};
-                for (const [s, o] of Object.entries(t.states))
-                  this._defaultLayout[s] = { x: o.x, y: o.y, w: o.w, h: o.h };
+                for (const [o, s] of Object.entries(t.states))
+                  this._defaultLayout[o] = { x: s.x, y: s.y, w: s.w, h: s.h };
               }
               if ((this._edgeWaypoints.clear(), t.transitions))
-                for (const s of t.transitions)
-                  s.waypoints &&
-                    s.waypoints.length > 0 &&
+                for (const o of t.transitions)
+                  o.waypoints &&
+                    o.waypoints.length > 0 &&
                     this._edgeWaypoints.set(
-                      s.id,
-                      s.waypoints.map((o) => [...o]),
+                      o.id,
+                      o.waypoints.map((s) => [...s]),
                     );
               try {
-                const s = localStorage.getItem("pi_workflow_edge_override");
-                if (s !== null) {
-                  const o = JSON.parse(s);
+                const o = localStorage.getItem("pi_workflow_edge_override");
+                if (o !== null) {
+                  const s = JSON.parse(o);
                   this._edgeWaypoints.clear();
-                  for (const [n, r] of Object.entries(o))
-                    Array.isArray(r) && r.length > 0 && this._edgeWaypoints.set(n, r);
+                  for (const [r, d] of Object.entries(s))
+                    Array.isArray(d) && d.length > 0 && this._edgeWaypoints.set(r, d);
                 }
               } catch {}
               this._activeStateId || (this._activeStateId = t.initial || Object.keys(t.states || {})[0] || null);
               const i = t.framing !== !1;
-              ((this._bounds = J(t.states, i ? 64 : 40, i ? 56 : 30, i ? 46 : 0, t.groups)),
-                requestAnimationFrame(() => this.fitToViewport()));
+              if (
+                ((this._bounds = Z(t.states, i ? 64 : 40, i ? 56 : 30, i ? 46 : 0, t.groups)), !this._hasRestoredCamera)
+              )
+                try {
+                  const o = localStorage.getItem("pi_workflow_camera");
+                  if (o) {
+                    const s = JSON.parse(o);
+                    s &&
+                      typeof s.scale == "number" &&
+                      typeof s.panX == "number" &&
+                      ((this._camera = s), (this._hasRestoredCamera = !0));
+                  }
+                } catch {}
+              this._hasRestoredCamera || requestAnimationFrame(() => this.fitToViewport());
             }
             this.requestUpdate();
           }
           _removeWaypoint(t, i) {
-            const s = [...(this._edgeWaypoints.get(t) || [])];
-            (i >= 0 && i < s.length && s.splice(i, 1),
-              s.length === 0
+            const o = [...(this._edgeWaypoints.get(t) || [])];
+            (i >= 0 && i < o.length && o.splice(i, 1),
+              o.length === 0
                 ? (this._edgeWaypoints.delete(t), this.showToast("✓ Straightened edge (0 breakpoints)"))
-                : (this._edgeWaypoints.set(t, s), this.showToast(`✓ Removed breakpoint (${s.length}/2 remaining)`)),
+                : (this._edgeWaypoints.set(t, o), this.showToast(`✓ Removed breakpoint (${o.length}/2 remaining)`)),
               (this._activePopover = null),
               this._saveEdgeWaypoints(),
               this.emit("flow:layout-change", { layout: this.exportLayoutSnapshot() }),
@@ -2300,40 +2406,40 @@
               this.showToast("✓ Reset edge to straight line (0 breakpoints)"),
               this.requestUpdate());
           }
-          _addWaypointToEdge(t, i, s) {
-            const o = this._edgeWaypoints.get(t) ? [...this._edgeWaypoints.get(t)] : [];
-            if (o.length >= 2) {
+          _addWaypointToEdge(t, i, o) {
+            const s = this._edgeWaypoints.get(t) ? [...this._edgeWaypoints.get(t)] : [];
+            if (s.length >= 2) {
               this.showToast("Maximum 2 breakpoints per line");
               return;
             }
-            const n = Math.round(i / 10) * 10,
-              r = Math.round(s / 10) * 10;
-            (o.push([n, r]),
-              this._edgeWaypoints.set(t, o),
-              (this._activePopover = { type: "waypoint", id: t, index: o.length - 1, worldX: n, worldY: r }),
+            const r = Math.round(i / 10) * 10,
+              d = Math.round(o / 10) * 10;
+            (s.push([r, d]),
+              this._edgeWaypoints.set(t, s),
+              (this._activePopover = { type: "waypoint", id: t, index: s.length - 1, worldX: r, worldY: d }),
               this._saveEdgeWaypoints(),
               this.emit("flow:layout-change", { layout: this.exportLayoutSnapshot() }),
-              this.showToast(`✓ Added breakpoint (${o.length}/2)`),
+              this.showToast(`✓ Added breakpoint (${s.length}/2)`),
               this.requestUpdate());
           }
           _resetNode(t) {
-            var i, s;
+            var i, o;
             if (
               this._defaultLayout &&
               this._defaultLayout[t] &&
-              (s = (i = this._graph) == null ? void 0 : i.states) != null &&
-              s[t]
+              (o = (i = this._graph) == null ? void 0 : i.states) != null &&
+              o[t]
             ) {
-              const o = this._defaultLayout[t];
-              ((this._graph.states[t].x = o.x),
-                (this._graph.states[t].y = o.y),
-                (this._graph.states[t].w = o.w),
-                (this._graph.states[t].h = o.h));
+              const s = this._defaultLayout[t];
+              ((this._graph.states[t].x = s.x),
+                (this._graph.states[t].y = s.y),
+                (this._graph.states[t].w = s.w),
+                (this._graph.states[t].h = s.h));
               try {
-                const n = localStorage.getItem("pi_workflow_layout_override");
-                if (n) {
-                  const r = JSON.parse(n);
-                  (delete r[t], localStorage.setItem("pi_workflow_layout_override", JSON.stringify(r)));
+                const r = localStorage.getItem("pi_workflow_layout_override");
+                if (r) {
+                  const d = JSON.parse(r);
+                  (delete d[t], localStorage.setItem("pi_workflow_layout_override", JSON.stringify(d)));
                 }
               } catch {}
               ((this._activePopover = null),
@@ -2346,11 +2452,11 @@
             var t, i;
             if (!this._activePopover) return "";
             if (this._activePopover.type === "waypoint") {
-              const s = this._activePopover.id,
-                o = this._edgeWaypoints.get(s) || [];
+              const o = this._activePopover.id,
+                s = this._edgeWaypoints.get(o) || [];
               return `
         <span class="flow-fab-label">
-          Breakpoint #${(this._activePopover.index ?? 0) + 1} of ${o.length}
+          Breakpoint #${(this._activePopover.index ?? 0) + 1} of ${s.length}
           <span class="flow-fab-badge">${Math.round(this._activePopover.worldX)}, ${Math.round(this._activePopover.worldY)}</span>
         </span>
         <button type="button" class="flow-fab-btn danger" data-action="remove-waypoint" title="Remove this breakpoint">
@@ -2363,17 +2469,17 @@
       `;
             }
             if (this._activePopover.type === "edge") {
-              const s = this._activePopover.id,
-                o = this._edgeWaypoints.get(s) || [],
-                n = o.length > 0,
-                r = o.length < 2;
+              const o = this._activePopover.id,
+                s = this._edgeWaypoints.get(o) || [],
+                r = s.length > 0,
+                d = s.length < 2;
               return `
         <span class="flow-fab-label">
-          ${v(this._activePopover.label || s)}
-          <span class="flow-fab-badge">${n ? `${o.length}/2 bp` : "Straight (0 bp)"}</span>
+          ${m(this._activePopover.label || o)}
+          <span class="flow-fab-badge">${r ? `${s.length}/2 bp` : "Straight (0 bp)"}</span>
         </span>
         ${
-          n
+          r
             ? `<button type="button" class="flow-fab-btn warning" data-action="reset-edge" title="Straighten line (remove all breakpoints)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
                 Straighten
@@ -2381,8 +2487,8 @@
             : ""
         }
         ${
-          r
-            ? `<button type="button" class="flow-fab-btn primary" data-action="add-waypoint" title="Add a breakpoint (${o.length + 1}/2)">
+          d
+            ? `<button type="button" class="flow-fab-btn primary" data-action="add-waypoint" title="Add a breakpoint (${s.length + 1}/2)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Add Breakpoint
               </button>`
@@ -2394,12 +2500,12 @@
       `;
             }
             if (this._activePopover.type === "node") {
-              const s = this._activePopover.id,
-                o = (i = (t = this._graph) == null ? void 0 : t.states) == null ? void 0 : i[s];
+              const o = this._activePopover.id,
+                s = (i = (t = this._graph) == null ? void 0 : t.states) == null ? void 0 : i[o];
               return `
         <span class="flow-fab-label">
-          ${v(this._activePopover.label || s)}
-          <span class="flow-fab-badge">${Math.round((o == null ? void 0 : o.x) || 0)}, ${Math.round((o == null ? void 0 : o.y) || 0)}</span>
+          ${m(this._activePopover.label || o)}
+          <span class="flow-fab-badge">${Math.round((s == null ? void 0 : s.x) || 0)}, ${Math.round((s == null ? void 0 : s.y) || 0)}</span>
         </span>
         <button type="button" class="flow-fab-btn warning" data-action="reset-node" title="Reset node position to default">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
@@ -2474,8 +2580,20 @@
             ((this._theme = t), this.setAttribute("data-theme", t), this.requestUpdate());
           }
           connectedCallback() {
-            (super.connectedCallback(),
-              window.addEventListener("keydown", this.handleKeyDown),
+            super.connectedCallback();
+            try {
+              const t = localStorage.getItem("pi_workflow_inspector_open");
+              t !== null ? (this._showInspector = JSON.parse(t)) : (this._showInspector = !0);
+              const i = localStorage.getItem("pi_workflow_camera");
+              if (i !== null) {
+                const o = JSON.parse(i);
+                o &&
+                  typeof o.scale == "number" &&
+                  typeof o.panX == "number" &&
+                  ((this._camera = o), (this._hasRestoredCamera = !0));
+              }
+            } catch {}
+            (window.addEventListener("keydown", this.handleKeyDown),
               window.addEventListener("resize", this.handleResize));
           }
           disconnectedCallback() {
@@ -2489,20 +2607,48 @@
               window.removeEventListener("pointermove", this.handleWaypointPointerMove),
               window.removeEventListener("pointerup", this.handleWaypointPointerUp));
           }
+          _saveCamera() {
+            try {
+              localStorage.setItem("pi_workflow_camera", JSON.stringify(this._camera));
+            } catch {}
+          }
+          _toggleInspector() {
+            this._showInspector = !this._showInspector;
+            try {
+              localStorage.setItem("pi_workflow_inspector_open", JSON.stringify(this._showInspector));
+            } catch {}
+            this.requestUpdate();
+          }
+          _closeInspector() {
+            this._showInspector = !1;
+            try {
+              localStorage.setItem("pi_workflow_inspector_open", JSON.stringify(!1));
+            } catch {}
+            this.requestUpdate();
+          }
           fitToViewport() {
-            const t = this.getBoundingClientRect();
-            ((this._camera = ft({ width: t.width || 900, height: t.height || 700 }, this._bounds)),
-              this.requestUpdate());
+            const t = this.getBoundingClientRect(),
+              i = t.width || 900,
+              o = t.height || 700,
+              s = this._showInspector ? Math.min(420, i * 0.45) : 0,
+              r = i - s,
+              d = vt({ width: r, height: o }, this._bounds);
+            ((this._camera = { scale: d.scale, panX: d.panX, panY: d.panY }), this._saveCamera(), this.requestUpdate());
           }
           centerOnState(t) {
-            var o;
-            if (!((o = this._graph) != null && o.states[t])) return;
+            var g;
+            if (!((g = this._graph) != null && g.states[t])) return;
             const i = this._graph.states[t],
-              s = this.getBoundingClientRect();
-            ((this._camera = bt({ width: s.width || 900, height: s.height || 700 }, i)),
+              o = this.getBoundingClientRect(),
+              s = o.width || 900,
+              r = o.height || 700,
+              d = this._showInspector ? Math.min(420, s * 0.45) : 0,
+              c = s - d;
+            ((this._camera = wt({ width: c, height: r }, i)),
               (this._activeStateId = t),
               (this._selectedNodeId = t),
               (this._selectedEdgeId = null),
+              this._saveCamera(),
               this.requestUpdate());
           }
           showToast(t) {
@@ -2514,27 +2660,27 @@
               }, 2500)));
           }
           exportLayoutSnapshot() {
-            var s;
+            var o;
             const t = {};
-            if ((s = this._graph) != null && s.states)
-              for (const [o, n] of Object.entries(this._graph.states))
-                t[o] = { x: Math.round(n.x), y: Math.round(n.y), w: Math.round(n.w), h: Math.round(n.h) };
+            if ((o = this._graph) != null && o.states)
+              for (const [s, r] of Object.entries(this._graph.states))
+                t[s] = { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h) };
             const i = {};
-            for (const [o, n] of this._edgeWaypoints.entries())
-              n && n.length > 0 && (i[o] = n.map(([r, c]) => [Math.round(r), Math.round(c)]));
+            for (const [s, r] of this._edgeWaypoints.entries())
+              r && r.length > 0 && (i[s] = r.map(([d, c]) => [Math.round(d), Math.round(c)]));
             return { ...t, nodes: t, edges: i };
           }
           async copyLayoutSnapshot() {
             const t = this.exportLayoutSnapshot(),
               i = t.nodes || {},
-              s = t.edges || {},
-              o = { nodes: i, edges: s },
-              n = JSON.stringify(o, null, 2);
+              o = t.edges || {},
+              s = { nodes: i, edges: o },
+              r = JSON.stringify(s, null, 2);
             try {
               typeof navigator < "u" &&
                 navigator.clipboard &&
                 navigator.clipboard.writeText &&
-                (await navigator.clipboard.writeText(n));
+                (await navigator.clipboard.writeText(r));
             } catch {}
             try {
               (localStorage.setItem("pi_workflow_layout_override", JSON.stringify(i)), this._saveEdgeWaypoints());
@@ -2542,61 +2688,61 @@
             return (
               console.log(
                 `Exported layout JSON:
-` + n,
+` + r,
               ),
               this.showToast("✓ Layout JSON copied to clipboard!"),
-              this.emit("flow:snapshot-layout", { snapshot: t, code: n, json: o }),
-              n
+              this.emit("flow:snapshot-layout", { snapshot: t, code: r, json: s }),
+              r
             );
           }
           resetLayout() {
             var i;
             if (!this._defaultLayout || !((i = this._graph) != null && i.states)) return;
-            for (const [s, o] of Object.entries(this._defaultLayout))
-              this._graph.states[s] &&
-                ((this._graph.states[s].x = o.x),
-                (this._graph.states[s].y = o.y),
-                (this._graph.states[s].w = o.w),
-                (this._graph.states[s].h = o.h));
+            for (const [o, s] of Object.entries(this._defaultLayout))
+              this._graph.states[o] &&
+                ((this._graph.states[o].x = s.x),
+                (this._graph.states[o].y = s.y),
+                (this._graph.states[o].w = s.w),
+                (this._graph.states[o].h = s.h));
             this._edgeWaypoints.clear();
             try {
               (localStorage.removeItem("pi_workflow_layout_override"),
                 localStorage.removeItem("pi_workflow_edge_override"));
             } catch {}
             const t = this._graph.framing !== !1;
-            ((this._bounds = J(this._graph.states, t ? 64 : 40, t ? 56 : 30, t ? 46 : 0, this._graph.groups)),
+            ((this._bounds = Z(this._graph.states, t ? 64 : 40, t ? 56 : 30, t ? 46 : 0, this._graph.groups)),
               this.showToast("✓ Reset layout to default"),
               this.emit("flow:reset-layout"),
               this.requestUpdate());
           }
           zoomBy(t) {
             const i = this.getBoundingClientRect(),
-              s = i.width / 2,
-              o = i.height / 2;
-            ((this._camera = st(this._camera, s, o, t, T, q)), this.requestUpdate());
+              o = i.width / 2,
+              s = i.height / 2;
+            ((this._camera = rt(this._camera, o, s, t, X, j)), this._saveCamera(), this.requestUpdate());
           }
           _startNodeDrag(t, i) {
-            var o;
-            const s = (o = this._graph) == null ? void 0 : o.states[t];
-            s &&
+            var s;
+            const o = (s = this._graph) == null ? void 0 : s.states[t];
+            o &&
               ((this._draggedNodeId = t),
               (this._nodeDragMoved = !1),
-              (this._dragNodeStart = { startX: i.clientX, startY: i.clientY, nodeOrigX: s.x, nodeOrigY: s.y }),
+              (this._dragNodeStart = { startX: i.clientX, startY: i.clientY, nodeOrigX: o.x, nodeOrigY: o.y }),
               window.addEventListener("pointermove", this.handleNodePointerMove),
               window.addEventListener("pointerup", this.handleNodePointerUp),
               this.requestUpdate());
           }
-          _startWaypointDrag(t, i, s) {
-            const o = this._edgeWaypoints.get(t);
-            if (!o || !o[i]) return;
-            const n = o[i];
+          _startWaypointDrag(t, i, o) {
+            const s = this._edgeWaypoints.get(t);
+            if (!s || !s[i]) return;
+            const r = s[i];
             ((this._draggedWaypoint = {
               edgeId: t,
               waypointIndex: i,
-              startX: s.clientX,
-              startY: s.clientY,
-              origX: n[0],
-              origY: n[1],
+              startX: o.clientX,
+              startY: o.clientY,
+              origX: r[0],
+              origY: r[1],
             }),
               window.addEventListener("pointermove", this.handleWaypointPointerMove),
               window.addEventListener("pointerup", this.handleWaypointPointerUp),
@@ -2605,12 +2751,12 @@
           _saveEdgeWaypoints() {
             try {
               const t = {};
-              for (const [i, s] of this._edgeWaypoints.entries()) s && s.length > 0 && (t[i] = s);
+              for (const [i, o] of this._edgeWaypoints.entries()) o && o.length > 0 && (t[i] = o);
               localStorage.setItem("pi_workflow_edge_override", JSON.stringify(t));
             } catch {}
           }
           render() {
-            var B, W, Et, Mt, St;
+            var P, R, D, Q, C;
             if (!this.shadowRootNode) return;
             if (!this._graph) {
               this.shadowRootNode.innerHTML = `
@@ -2622,29 +2768,29 @@
             }
             const t = this._graph.states,
               i = this._graph.transitions || [],
-              s = _t(vt(i));
-            for (const a of s) {
+              o = Et(_t(i));
+            for (const a of o) {
               this._edgeWaypoints.has(a.id) ? (a.waypoints = this._edgeWaypoints.get(a.id)) : (a.waypoints = void 0);
-              const b = xt(a, t);
-              b && (a.route = b);
+              const w = Mt(a, t);
+              w && (a.route = w);
             }
-            const o = this._selectedNodeId || this._activeStateId || null,
-              n = this._toolMode === "move",
-              r = this._toolMode === "edit",
-              c = n || r;
+            const s = this._selectedNodeId || this._activeStateId || null,
+              r = this._toolMode === "move",
+              d = this._toolMode === "edit",
+              c = r || d;
             let g = "";
-            if (r && this._activePopover) {
+            if (d && this._activePopover) {
               const a = this._camera.panX + this._activePopover.worldX * this._camera.scale,
-                b = this._camera.panY + this._activePopover.worldY * this._camera.scale;
+                w = this._camera.panY + this._activePopover.worldY * this._camera.scale;
               g = `
-        <div class="flow-fab-popover" id="action-popover" style="left: ${a}px; top: ${b}px;">
+        <div class="flow-fab-popover" id="action-popover" style="left: ${a}px; top: ${w}px;">
           ${this._renderPopoverContent()}
         </div>
       `;
             }
             this.shadowRootNode.innerHTML = `
-      <div class="canvas-root ${n ? "move-mode edit-mode" : r ? "edit-mode" : ""}">
-        ${this._toastMessage ? `<div class="flow-toast">${v(this._toastMessage)}</div>` : ""}
+      <div class="canvas-root ${r ? "move-mode edit-mode" : d ? "edit-mode" : ""}">
+        ${this._toastMessage ? `<div class="flow-toast">${m(this._toastMessage)}</div>` : ""}
         ${g}
 
         <svg class="flow-svg" id="flow-svg">
@@ -2683,9 +2829,9 @@
                 stroke="var(--tuto-border, #283040)"
                 stroke-width="1.2"
               />
-              <text x="${this._bounds.x + 20}" y="${this._bounds.y + 28}" fill="var(--tuto-text, #ffffff)" font-size="12" font-weight="700" letter-spacing="0.05em" font-family="var(--tuto-font-sans, sans-serif)">${v(this._graph.title.toUpperCase())}</text>
-              ${this._graph.subtitle ? `<text x="${this._bounds.x + 20 + this._graph.title.length * 7.5 + 16}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-sans, sans-serif)">${v(this._graph.subtitle)}</text>` : ""}
-              <text x="${this._bounds.x + this._bounds.w - 20}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-mono, monospace)" text-anchor="end">${v(this._graph.version || "v1.0")}</text>
+              <text x="${this._bounds.x + 20}" y="${this._bounds.y + 28}" fill="var(--tuto-text, #ffffff)" font-size="12" font-weight="700" letter-spacing="0.05em" font-family="var(--tuto-font-sans, sans-serif)">${m(this._graph.title.toUpperCase())}</text>
+              ${this._graph.subtitle ? `<text x="${this._bounds.x + 20 + this._graph.title.length * 7.5 + 16}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-sans, sans-serif)">${m(this._graph.subtitle)}</text>` : ""}
+              <text x="${this._bounds.x + this._bounds.w - 20}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-mono, monospace)" text-anchor="end">${m(this._graph.version || "v1.0")}</text>
             </g>`
                 : ""
             }
@@ -2716,20 +2862,20 @@
         <tuto-flow-inspector id="inspector-el"></tuto-flow-inspector>
       </div>
     `;
-            const u = this.shadowRootNode.querySelector("svg.flow-svg");
-            u &&
-              (u.addEventListener("wheel", this.handleWheel, { passive: !1 }),
-              u.addEventListener("pointerdown", this.handlePointerDown));
+            const f = this.shadowRootNode.querySelector("svg.flow-svg");
+            f &&
+              (f.addEventListener("wheel", this.handleWheel, { passive: !1 }),
+              f.addEventListener("pointerdown", this.handlePointerDown));
             const h = this.shadowRootNode.getElementById("groups-group"),
-              f = this.shadowRootNode.getElementById("edges-paths-group"),
-              E = this.shadowRootNode.getElementById("edges-pills-group"),
+              v = this.shadowRootNode.getElementById("edges-paths-group"),
+              I = this.shadowRootNode.getElementById("edges-pills-group"),
               N = this.shadowRootNode.getElementById("edges-handles-group"),
-              _ = this.shadowRootNode.getElementById("nodes-group");
+              p = this.shadowRootNode.getElementById("nodes-group");
             if (this._graph.groups)
               for (const a of this._graph.groups) {
-                const b = k("g", { class: "flow-group-container" }, h),
-                  m = a.accent || "#3b82f6";
-                (k(
+                const w = M("g", { class: "flow-group-container" }, h),
+                  y = a.accent || "#3b82f6";
+                (M(
                   "rect",
                   {
                     x: a.x,
@@ -2739,94 +2885,94 @@
                     rx: 14,
                     fill: "var(--tuto-card-bg, #12161c)",
                     "fill-opacity": "0.38",
-                    stroke: m,
+                    stroke: y,
                     "stroke-width": 1.2,
                     "stroke-opacity": "0.35",
                   },
-                  b,
+                  w,
                 ),
-                  k(
+                  M(
                     "path",
                     {
                       d: `M ${a.x} ${a.y + 14} Q ${a.x} ${a.y} ${a.x + 14} ${a.y} L ${a.x + a.w - 14} ${a.y} Q ${a.x + a.w} ${a.y} ${a.x + a.w} ${a.y + 14} L ${a.x + a.w} ${a.y + 28} L ${a.x} ${a.y + 28} Z`,
-                      fill: m,
+                      fill: y,
                       "fill-opacity": "0.12",
                     },
-                    b,
+                    w,
                   ));
-                const w = k(
+                const x = M(
                   "text",
                   {
                     x: a.x + 14,
                     y: a.y + 18,
-                    fill: m,
+                    fill: y,
                     "font-size": 10.5,
                     "font-weight": 800,
                     "letter-spacing": "0.08em",
                     "font-family": "var(--tuto-font-mono, monospace)",
                   },
-                  b,
+                  w,
                 );
-                w.textContent = a.label.toUpperCase();
+                x.textContent = a.label.toUpperCase();
               }
             if (this._graph.initial && t[this._graph.initial]) {
               const a = t[this._graph.initial],
-                b = a.x - 14,
-                m = a.y + a.h / 2,
-                w = a.x,
-                C = a.y + a.h / 2,
-                y = k("g", { class: "flow-initial-indicator" }, f);
-              (k("circle", { cx: b - 4, cy: m, r: 4, fill: "#ffffff" }, y),
-                k(
+                w = a.x - 14,
+                y = a.y + a.h / 2,
+                x = a.x,
+                z = a.y + a.h / 2,
+                k = M("g", { class: "flow-initial-indicator" }, v);
+              (M("circle", { cx: w - 4, cy: y, r: 4, fill: "#ffffff" }, k),
+                M(
                   "path",
                   {
-                    d: `M ${b} ${m} L ${w} ${C}`,
+                    d: `M ${w} ${y} L ${x} ${z}`,
                     stroke: "#ffffff",
                     "stroke-width": 2,
                     fill: "none",
                     "marker-end": "url(#flow-arrow-init)",
                   },
-                  y,
+                  k,
                 ));
             }
-            for (const a of s) {
+            for (const a of o) {
               if (!a.route || !a.route.points || a.route.points.length < 2) continue;
-              const b = !!(this._selectedNodeId && a.from === this._selectedNodeId),
-                m = !!(this._selectedNodeId && a.to === this._selectedNodeId),
-                w = b || m;
-              if (this._selectedNodeId && !w) continue;
-              const C = a.id === this._selectedEdgeId;
+              const w = !!(this._selectedNodeId && a.from === this._selectedNodeId),
+                y = !!(this._selectedNodeId && a.to === this._selectedNodeId),
+                x = w || y;
+              if (this._selectedNodeId && !x) continue;
+              const z = a.id === this._selectedEdgeId;
               (a.id, this._hoveredEdgeId);
-              const y = C || b,
-                K = this._selectedNodeId ? m : !1,
-                zt = !!((a.self || a.from === a.to) && (!a.waypoints || a.waypoints.length === 0)),
-                Tt = kt(a.route.points, zt, 12);
-              k(
+              const k = z || w,
+                tt = this._selectedNodeId ? y : !1,
+                At = !!((a.self || a.from === a.to) && (!a.waypoints || a.waypoints.length === 0)),
+                Tt = St(a.route.points, At, 12);
+              M(
                 "path",
                 {
                   d: Tt,
-                  class: `flow-edge-path ${y ? "hot available" : ""} ${K ? "dimmed" : ""} ${C ? "selected" : ""}`,
-                  stroke: y ? "#38bdf8" : K ? "#334155" : "#64748b",
-                  "stroke-width": y ? 2.8 : K ? 1.4 : 1.8,
+                  class: `flow-edge-path ${k ? "hot available" : ""} ${tt ? "dimmed" : ""} ${z ? "selected" : ""}`,
+                  stroke: k ? "#38bdf8" : tt ? "#334155" : "#64748b",
+                  "stroke-width": k ? 2.8 : tt ? 1.4 : 1.8,
                   fill: "none",
-                  "marker-end": y ? "url(#flow-arrow-hot)" : K ? "url(#flow-arrow)" : "url(#flow-arrow-init)",
+                  "marker-end": k ? "url(#flow-arrow-hot)" : tt ? "url(#flow-arrow)" : "url(#flow-arrow-init)",
                 },
-                f,
-              ).addEventListener("click", (x) => {
-                var I, P;
-                if ((x.stopPropagation(), !n)) {
-                  if (r) {
-                    const R = x,
-                      H = this.getBoundingClientRect(),
-                      F = this._camera.scale || 1,
-                      Q = (R.clientX - H.left - this._camera.panX) / F,
-                      X = (R.clientY - H.top - this._camera.panY) / F;
+                v,
+              ).addEventListener("click", (E) => {
+                var L, U;
+                if ((E.stopPropagation(), !r)) {
+                  if (d) {
+                    const B = E,
+                      G = this.getBoundingClientRect(),
+                      V = this._camera.scale || 1,
+                      ot = (B.clientX - G.left - this._camera.panX) / V,
+                      O = (B.clientY - G.top - this._camera.panY) / V;
                     ((this._activePopover = {
                       type: "edge",
                       id: a.id,
-                      worldX: ((I = a.route) == null ? void 0 : I.seatX) || Q,
-                      worldY: ((P = a.route) == null ? void 0 : P.seatY) || X,
-                      label: Z,
+                      worldX: ((L = a.route) == null ? void 0 : L.seatX) || ot,
+                      worldY: ((U = a.route) == null ? void 0 : U.seatY) || O,
+                      label: et,
                     }),
                       (this._selectedEdgeId = a.id),
                       this.requestUpdate());
@@ -2842,99 +2988,99 @@
                     : ((this._selectedEdgeId = a.id), this.emit("flow:select-edge", { edge: a }), this.requestUpdate());
                 }
               });
-              const Z = a.event || a.label || "",
-                O = Math.max(76, Math.min(240, Z.length * 8 + 28)),
-                j = 28,
-                ct = a.route.seatX - O / 2,
-                ht = a.route.seatY - j / 2,
-                Dt = ((B = this._draggedWaypoint) == null ? void 0 : B.edgeId) === a.id,
-                Y = b || !this._selectedNodeId,
-                A = k(
+              const et = a.event || a.label || "",
+                H = Math.max(76, Math.min(240, et.length * 8 + 28)),
+                F = 28,
+                gt = a.route.seatX - H / 2,
+                ut = a.route.seatY - F / 2,
+                Wt = ((P = this._draggedWaypoint) == null ? void 0 : P.edgeId) === a.id,
+                q = w || !this._selectedNodeId,
+                T = M(
                   "g",
                   {
-                    class: `flow-edge-pill ${Y ? "available" : "dimmed"} ${Dt ? "dragging" : ""}`,
-                    transform: `translate(${ct}, ${ht})`,
+                    class: `flow-edge-pill ${q ? "available" : "dimmed"} ${Wt ? "dragging" : ""}`,
+                    transform: `translate(${gt}, ${ut})`,
                   },
-                  E,
+                  I,
                 );
-              k(
+              M(
                 "rect",
                 {
-                  width: O,
-                  height: j,
+                  width: H,
+                  height: F,
                   rx: 14,
-                  fill: Y ? "#3b82f6" : "#202636",
-                  stroke: Y ? "#93c5fd" : "rgba(255, 255, 255, 0.12)",
-                  "stroke-width": Y ? 2 : 1,
-                  filter: Y
+                  fill: q ? "#3b82f6" : "#202636",
+                  stroke: q ? "#93c5fd" : "rgba(255, 255, 255, 0.12)",
+                  "stroke-width": q ? 2 : 1,
+                  filter: q
                     ? "drop-shadow(0 4px 14px rgba(59, 130, 246, 0.55))"
                     : "drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4))",
                 },
-                A,
+                T,
               );
-              const Yt = k(
+              const Xt = M(
                 "text",
                 {
-                  x: O / 2,
-                  y: j / 2,
+                  x: H / 2,
+                  y: F / 2,
                   "text-anchor": "middle",
                   "dominant-baseline": "central",
-                  fill: Y ? "#ffffff" : "#94a3b8",
+                  fill: q ? "#ffffff" : "#94a3b8",
                   "font-size": 11,
                   "font-weight": 800,
                   "letter-spacing": "0.04em",
                   "font-family": "var(--tuto-font-sans, sans-serif)",
                 },
-                A,
+                T,
               );
               if (
-                ((Yt.textContent = Z),
-                n
-                  ? A.addEventListener("pointerdown", (x) => {
-                      var F, Q;
-                      if (x.button !== 0) return;
-                      x.stopPropagation();
-                      let I = this._edgeWaypoints.get(a.id) ? [...this._edgeWaypoints.get(a.id)] : [],
-                        P = 0;
-                      const R = ((F = a.route) == null ? void 0 : F.seatX) || ct + O / 2,
-                        H = ((Q = a.route) == null ? void 0 : Q.seatY) || ht + j / 2;
-                      if (I.length === 0) {
-                        const X = Math.round(R / 10) * 10,
-                          tt = Math.round(H / 10) * 10;
-                        ((I = [[X, tt]]),
-                          this._edgeWaypoints.set(a.id, I),
+                ((Xt.textContent = et),
+                r
+                  ? T.addEventListener("pointerdown", (E) => {
+                      var V, ot;
+                      if (E.button !== 0) return;
+                      E.stopPropagation();
+                      let L = this._edgeWaypoints.get(a.id) ? [...this._edgeWaypoints.get(a.id)] : [],
+                        U = 0;
+                      const B = ((V = a.route) == null ? void 0 : V.seatX) || gt + H / 2,
+                        G = ((ot = a.route) == null ? void 0 : ot.seatY) || ut + F / 2;
+                      if (L.length === 0) {
+                        const O = Math.round(B / 10) * 10,
+                          st = Math.round(G / 10) * 10;
+                        ((L = [[O, st]]),
+                          this._edgeWaypoints.set(a.id, L),
                           this._saveEdgeWaypoints(),
                           this.emit("flow:layout-change", { layout: this.exportLayoutSnapshot() }),
-                          (P = 0));
+                          (U = 0));
                       } else {
-                        let X = 0,
-                          tt = 1 / 0;
-                        for (let G = 0; G < I.length; G++) {
-                          const It = Math.hypot(I[G][0] - R, I[G][1] - H);
-                          It < tt && ((tt = It), (X = G));
+                        let O = 0,
+                          st = 1 / 0;
+                        for (let J = 0; J < L.length; J++) {
+                          const It = Math.hypot(L[J][0] - B, L[J][1] - G);
+                          It < st && ((st = It), (O = J));
                         }
-                        P = X;
+                        U = O;
                       }
-                      this._startWaypointDrag(a.id, P, x);
+                      this._startWaypointDrag(a.id, U, E);
                     })
-                  : r
-                    ? (A.addEventListener("pointerdown", (x) => x.stopPropagation()),
-                      A.addEventListener("click", (x) => {
-                        var I, P;
-                        (x.stopPropagation(),
+                  : d
+                    ? (T.addEventListener("pointerdown", (E) => E.stopPropagation()),
+                      T.addEventListener("click", (E) => {
+                        var L, U;
+                        (E.stopPropagation(),
                           (this._activePopover = {
                             type: "edge",
                             id: a.id,
-                            worldX: ((I = a.route) == null ? void 0 : I.seatX) || ct + O / 2,
-                            worldY: ((P = a.route) == null ? void 0 : P.seatY) || ht + j / 2,
-                            label: Z,
+                            worldX: ((L = a.route) == null ? void 0 : L.seatX) || gt + H / 2,
+                            worldY: ((U = a.route) == null ? void 0 : U.seatY) || ut + F / 2,
+                            label: et,
                           }),
                           (this._selectedEdgeId = a.id),
                           this.requestUpdate());
                       }))
-                    : (A.addEventListener("pointerdown", (x) => x.stopPropagation()),
-                      A.addEventListener("click", (x) => {
-                        (x.stopPropagation(),
+                    : (T.addEventListener("pointerdown", (E) => E.stopPropagation()),
+                      T.addEventListener("click", (E) => {
+                        (E.stopPropagation(),
                           a.to &&
                             ((this._activeStateId = a.to),
                             (this._selectedNodeId = a.to),
@@ -2943,21 +3089,21 @@
                             t[a.to] && this.emit("flow:select-node", { node: t[a.to] }),
                             this.requestUpdate()));
                       })),
-                A.addEventListener("dblclick", (x) => {
-                  (x.stopPropagation(),
+                T.addEventListener("dblclick", (E) => {
+                  (E.stopPropagation(),
                     (this._selectedEdgeId = a.id),
                     (this._showInspector = !0),
                     this.requestUpdate());
                 }),
                 c && a.waypoints && a.waypoints.length > 0)
               )
-                for (let x = 0; x < a.waypoints.length; x++) {
-                  const I = a.waypoints[x],
-                    P = k(
+                for (let E = 0; E < a.waypoints.length; E++) {
+                  const L = a.waypoints[E],
+                    U = M(
                       "circle",
                       {
-                        cx: I[0],
-                        cy: I[1],
+                        cx: L[0],
+                        cy: L[1],
                         r: 6,
                         class: "flow-waypoint-handle",
                         fill: "#ffffff",
@@ -2966,41 +3112,41 @@
                       },
                       N,
                     );
-                  n
-                    ? P.addEventListener("pointerdown", (R) => {
-                        R.button === 0 && (R.stopPropagation(), this._startWaypointDrag(a.id, x, R));
+                  r
+                    ? U.addEventListener("pointerdown", (B) => {
+                        B.button === 0 && (B.stopPropagation(), this._startWaypointDrag(a.id, E, B));
                       })
-                    : r &&
-                      (P.addEventListener("pointerdown", (R) => R.stopPropagation()),
-                      P.addEventListener("click", (R) => {
-                        (R.stopPropagation(),
-                          (this._activePopover = { type: "waypoint", id: a.id, index: x, worldX: I[0], worldY: I[1] }),
+                    : d &&
+                      (U.addEventListener("pointerdown", (B) => B.stopPropagation()),
+                      U.addEventListener("click", (B) => {
+                        (B.stopPropagation(),
+                          (this._activePopover = { type: "waypoint", id: a.id, index: E, worldX: L[0], worldY: L[1] }),
                           this.requestUpdate());
                       }));
                 }
             }
             for (const a of Object.values(t)) {
-              const b = k(
+              const w = M(
                 "foreignObject",
-                { x: a.x, y: a.y, width: a.w, height: a.h, style: n ? "cursor: grab;" : "" },
-                _,
+                { x: a.x, y: a.y, width: a.w, height: a.h, style: r ? "cursor: grab;" : "" },
+                p,
               );
-              b.addEventListener("pointerdown", (w) => w.stopPropagation());
-              const m = document.createElement("tuto-flow-node");
+              w.addEventListener("pointerdown", (x) => x.stopPropagation());
+              const y = document.createElement("tuto-flow-node");
               if (
-                ((m.node = a),
-                (m.selected = o === a.id),
-                (m.draggableNode = n),
-                (m.isDragging = this._draggedNodeId === a.id),
-                n)
+                ((y.node = a),
+                (y.selected = s === a.id),
+                (y.draggableNode = r),
+                (y.isDragging = this._draggedNodeId === a.id),
+                r)
               )
-                m.addEventListener("pointerdown", (w) => {
-                  w.button === 0 && (w.stopPropagation(), this._startNodeDrag(a.id, w));
+                y.addEventListener("pointerdown", (x) => {
+                  x.button === 0 && (x.stopPropagation(), this._startNodeDrag(a.id, x));
                 });
-              else if (r)
-                (m.addEventListener("pointerdown", (w) => w.stopPropagation()),
-                  m.addEventListener("click", (w) => {
-                    (w.stopPropagation(),
+              else if (d)
+                (y.addEventListener("pointerdown", (x) => x.stopPropagation()),
+                  y.addEventListener("click", (x) => {
+                    (x.stopPropagation(),
                       (this._activePopover = {
                         type: "node",
                         id: a.id,
@@ -3011,123 +3157,124 @@
                       this.requestUpdate());
                   }));
               else {
-                m.addEventListener("pointerdown", (C) => {
-                  C.stopPropagation();
+                y.addEventListener("pointerdown", (z) => {
+                  z.stopPropagation();
                 });
-                const w = (C) => {
-                  C.stopPropagation();
-                  const y = a.id;
-                  (this._selectedNodeId === y
+                const x = (z) => {
+                  z.stopPropagation();
+                  const k = a.id;
+                  (this._selectedNodeId === k
                     ? ((this._selectedNodeId = null),
                       (this._activeStateId = null),
                       (this._selectedEdgeId = null),
                       this.emit("flow:select-node", { node: null }))
-                    : ((this._selectedNodeId = y),
-                      (this._activeStateId = y),
+                    : ((this._selectedNodeId = k),
+                      (this._activeStateId = k),
                       (this._selectedEdgeId = null),
                       this.emit("flow:select-node", { node: a })),
                     this.requestUpdate());
                 };
-                (m.addEventListener("flow:select-node", w), m.addEventListener("click", w));
+                (y.addEventListener("flow:select-node", x), y.addEventListener("click", x));
               }
-              (m.addEventListener("dblclick", (w) => {
-                (w.stopPropagation(),
+              (y.addEventListener("dblclick", (x) => {
+                (x.stopPropagation(),
                   (this._selectedNodeId = a.id),
                   (this._activeStateId = a.id),
                   (this._selectedEdgeId = null),
                   (this._showInspector = !0),
                   this.requestUpdate());
               }),
-                b.appendChild(m));
+                w.appendChild(y));
             }
-            const S = this.shadowRootNode.getElementById("action-popover");
-            if (S) {
-              S.addEventListener("pointerdown", (y) => y.stopPropagation());
-              const a = S.querySelector("[data-action='remove-waypoint']");
+            const _ = this.shadowRootNode.getElementById("action-popover");
+            if (_) {
+              _.addEventListener("pointerdown", (k) => k.stopPropagation());
+              const a = _.querySelector("[data-action='remove-waypoint']");
               a &&
-                ((W = this._activePopover) == null ? void 0 : W.type) === "waypoint" &&
-                a.addEventListener("click", (y) => {
-                  (y.stopPropagation(), this._removeWaypoint(this._activePopover.id, this._activePopover.index));
+                ((R = this._activePopover) == null ? void 0 : R.type) === "waypoint" &&
+                a.addEventListener("click", (k) => {
+                  (k.stopPropagation(), this._removeWaypoint(this._activePopover.id, this._activePopover.index));
                 });
-              const b = S.querySelector("[data-action='reset-edge']");
-              b &&
-                ((Et = this._activePopover) == null ? void 0 : Et.type) === "edge" &&
-                b.addEventListener("click", (y) => {
-                  (y.stopPropagation(), this._resetEdge(this._activePopover.id));
+              const w = _.querySelector("[data-action='reset-edge']");
+              w &&
+                ((D = this._activePopover) == null ? void 0 : D.type) === "edge" &&
+                w.addEventListener("click", (k) => {
+                  (k.stopPropagation(), this._resetEdge(this._activePopover.id));
                 });
-              const m = S.querySelector("[data-action='add-waypoint']");
-              m &&
-                ((Mt = this._activePopover) == null ? void 0 : Mt.type) === "edge" &&
-                m.addEventListener("click", (y) => {
-                  (y.stopPropagation(),
+              const y = _.querySelector("[data-action='add-waypoint']");
+              y &&
+                ((Q = this._activePopover) == null ? void 0 : Q.type) === "edge" &&
+                y.addEventListener("click", (k) => {
+                  (k.stopPropagation(),
                     this._addWaypointToEdge(
                       this._activePopover.id,
                       this._activePopover.worldX,
                       this._activePopover.worldY,
                     ));
                 });
-              const w = S.querySelector("[data-action='reset-node']");
-              w &&
-                ((St = this._activePopover) == null ? void 0 : St.type) === "node" &&
-                w.addEventListener("click", (y) => {
-                  (y.stopPropagation(), this._resetNode(this._activePopover.id));
+              const x = _.querySelector("[data-action='reset-node']");
+              x &&
+                ((C = this._activePopover) == null ? void 0 : C.type) === "node" &&
+                x.addEventListener("click", (k) => {
+                  (k.stopPropagation(), this._resetNode(this._activePopover.id));
                 });
-              const C = S.querySelector("[data-action='close-popover']");
-              C &&
-                C.addEventListener("click", (y) => {
-                  (y.stopPropagation(), (this._activePopover = null), this.requestUpdate());
+              const z = _.querySelector("[data-action='close-popover']");
+              z &&
+                z.addEventListener("click", (k) => {
+                  (k.stopPropagation(), (this._activePopover = null), this.requestUpdate());
                 });
             }
-            const M = this.shadowRootNode.getElementById("toolbar-el");
-            M &&
-              ((M.zoom = Math.round(this._camera.scale * 100)),
-              (M.isInspectorActive = this._showInspector),
-              (M.toolMode = this._toolMode),
-              M.addEventListener("flow:zoom-in", () => this.zoomBy(1.2)),
-              M.addEventListener("flow:zoom-out", () => this.zoomBy(0.8333333333333334)),
-              M.addEventListener("flow:fit", () => this.fitToViewport()),
-              M.addEventListener("flow:reset", () => {
+            const b = this.shadowRootNode.getElementById("toolbar-el");
+            b &&
+              ((b.zoom = Math.round(this._camera.scale * 100)),
+              (b.isInspectorActive = this._showInspector),
+              (b.toolMode = this._toolMode),
+              b.addEventListener("flow:zoom-in", () => this.zoomBy(1.2)),
+              b.addEventListener("flow:zoom-out", () => this.zoomBy(0.8333333333333334)),
+              b.addEventListener("flow:fit", () => this.fitToViewport()),
+              b.addEventListener("flow:reset", () => {
                 ((this._selectedNodeId = null),
                   (this._selectedEdgeId = null),
                   (this._showInspector = !1),
                   this.fitToViewport());
               }),
-              M.addEventListener("flow:toggle-move-mode", () => {
+              b.addEventListener("flow:toggle-move-mode", () => {
                 this.toolMode = this._toolMode === "move" ? "view" : "move";
               }),
-              M.addEventListener("flow:toggle-edit-mode", () => {
+              b.addEventListener("flow:toggle-edit-mode", () => {
                 this.toolMode = this._toolMode === "edit" ? "view" : "edit";
               }),
-              M.addEventListener("flow:snapshot-layout", () => {
+              b.addEventListener("flow:snapshot-layout", () => {
                 this.copyLayoutSnapshot();
               }),
-              M.addEventListener("flow:reset-layout", () => {
+              b.addEventListener("flow:reset-layout", () => {
                 this.resetLayout();
               }),
-              M.addEventListener("flow:toggle-inspector", () => {
-                ((this._showInspector = !this._showInspector), this.requestUpdate());
+              b.addEventListener("flow:toggle-inspector", () => {
+                this._toggleInspector();
               }));
-            const $ = this.shadowRootNode.getElementById("inspector-el");
-            if ($) {
+            const S = this.shadowRootNode.getElementById("inspector-el");
+            if (S) {
               if (
-                (($.isOpen = this._showInspector),
-                ($.tools = this._graph.tools || []),
+                ((S.isOpen = this._showInspector),
+                (S.graph = this._graph),
+                (S.tools = this._graph.tools || []),
                 this._selectedNodeId && t[this._selectedNodeId])
               )
-                $.node = t[this._selectedNodeId];
+                S.node = t[this._selectedNodeId];
               else if (this._selectedEdgeId) {
-                const a = i.find((b) => b.id === this._selectedEdgeId) || s.find((b) => b.id === this._selectedEdgeId);
-                $.edge = a || null;
-              } else (($.node = null), ($.edge = null));
-              $.addEventListener("flow:close-inspector", () => {
-                ((this._showInspector = !1), this.requestUpdate());
+                const a = i.find((w) => w.id === this._selectedEdgeId) || o.find((w) => w.id === this._selectedEdgeId);
+                S.edge = a || null;
+              } else ((S.node = null), (S.edge = null));
+              S.addEventListener("flow:close-inspector", () => {
+                this._closeInspector();
               });
             }
           }
         }
         return (
           l(
-            lt,
+            pt,
             "styles",
             `
     :host {
@@ -3444,49 +3591,49 @@
     }
   `,
           ),
-          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", lt),
-          pt(),
-          (p.BaseElement = U),
-          (p.DEFAULT_CAMERA_PADDING = ut),
-          (p.MAX_CAMERA_SCALE = q),
-          (p.MIN_CAMERA_SCALE = T),
-          (p.PRIMARY_FORWARD_EVENTS = mt),
-          (p.SVG_NS = gt),
-          (p.TutoBadge = ot),
-          (p.TutoButton = et),
-          (p.TutoFlowCanvas = lt),
-          (p.TutoFlowInspector = dt),
-          (p.TutoFlowMinimap = nt),
-          (p.TutoFlowNode = at),
-          (p.TutoFlowToolbar = rt),
-          (p.assignLanes = _t),
-          (p.autoLayoutColumns = At),
-          (p.bundleEdges = vt),
-          (p.centerOnNode = bt),
-          (p.clamp = V),
-          (p.colors = L),
-          (p.computeFitBounds = ft),
-          (p.computeGraphBounds = J),
-          (p.computePolylineMidpoint = wt),
-          (p.escapeHtml = v),
-          (p.getBestPortPair = yt),
-          (p.getClosestPort = it),
-          (p.getPort = Rt),
-          (p.htmlEl = Nt),
-          (p.injectThemeTokens = pt),
-          (p.isEdgeHighlighted = Ut),
-          (p.pointsToSvgPath = kt),
-          (p.resolvePillSeats = Ct),
-          (p.routeEdgeItem = xt),
-          (p.screenToWorld = $t),
-          (p.shouldShowPill = Bt),
-          (p.spacing = Lt),
-          (p.svgEl = k),
-          (p.typography = z),
-          (p.worldToScreen = Pt),
-          (p.zoomAtPoint = st),
-          Object.defineProperty(p, Symbol.toStringTag, { value: "Module" }),
-          p
+          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", pt),
+          ft(),
+          (u.BaseElement = A),
+          (u.DEFAULT_CAMERA_PADDING = bt),
+          (u.MAX_CAMERA_SCALE = j),
+          (u.MIN_CAMERA_SCALE = X),
+          (u.PRIMARY_FORWARD_EVENTS = yt),
+          (u.SVG_NS = mt),
+          (u.TutoBadge = at),
+          (u.TutoButton = it),
+          (u.TutoFlowCanvas = pt),
+          (u.TutoFlowInspector = ht),
+          (u.TutoFlowMinimap = ct),
+          (u.TutoFlowNode = dt),
+          (u.TutoFlowToolbar = lt),
+          (u.assignLanes = Et),
+          (u.autoLayoutColumns = zt),
+          (u.bundleEdges = _t),
+          (u.centerOnNode = wt),
+          (u.clamp = K),
+          (u.colors = $),
+          (u.computeFitBounds = vt),
+          (u.computeGraphBounds = Z),
+          (u.computePolylineMidpoint = xt),
+          (u.escapeHtml = m),
+          (u.getBestPortPair = kt),
+          (u.getClosestPort = nt),
+          (u.getPort = Rt),
+          (u.htmlEl = $t),
+          (u.injectThemeTokens = ft),
+          (u.isEdgeHighlighted = Ut),
+          (u.pointsToSvgPath = St),
+          (u.resolvePillSeats = Ct),
+          (u.routeEdgeItem = Mt),
+          (u.screenToWorld = Nt),
+          (u.shouldShowPill = Bt),
+          (u.spacing = Lt),
+          (u.svgEl = M),
+          (u.typography = W),
+          (u.worldToScreen = Pt),
+          (u.zoomAtPoint = rt),
+          Object.defineProperty(u, Symbol.toStringTag, { value: "Module" }),
+          u
         );
       })({});
     </script>
@@ -3614,9 +3761,9 @@
     <script type="application/json" id="workflow-fsm-data">
       {
         "id": "piDirectorWorkflow",
-        "version": "2.6.9",
+        "version": "2.6.10",
         "title": "Pi Director Agent Workflow",
-        "summary": "User-owned modes ALIGN (clarify & review), SPEC (research & propose), VIBE (implement & verify). Each mode has a primary home and a secondary gate: primaries do the work; secondaries capture/verify and CALL next. Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
+        "summary": "7-E Compound Lifecycle across user-owned modes: ALIGN (envision entry, evaluate primary, establish secondary), SPEC (explore primary, elaborate secondary), VIBE (execute primary, examine secondary). New interactive sessions and handoffs start at envision in ALIGN. Each mode has a primary home for active execution/self-loops and a secondary gate to capture/verify and CALL next. Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. Agent owns judgment, artifact meaning, scope, decisions, and final output.",
         "session": {
           "mode": "latest persisted User choice (align | spec | vibe); new and handed-off interactive sessions start in ALIGN",
           "artifact": "one versioned .pi/plan/<name>.md continued across modes and handoffs",
@@ -3638,14 +3785,15 @@
           "ONLY VIBE MAY change files outside .pi; ALIGN and SPEC update .pi workflow state only.",
           "ALIGN may NEVER search or read extensions/, deep docs/, or other source — Spec explore owns research; Vibe may read what implementation needs. Envision before the first scope ask: no extra file reads — use the kickoff plus harness-injected AGENTS.md already in context. After that ask and start, Align may read the session plan, then `.pi/AGENTS.md` and `.pi/MEMORY.md` as needed. NEVER list `.pi/plan/` or read sibling plans, root README.md, or package.json just to unlock start.",
           "One versioned .pi/plan/<name>.md continues across modes and handoffs.",
-          "Retain Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.",
+          "Retain Digest, Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.",
           "Work log, User transcript, and Agent transcript are append-only.",
           "Checklist is cumulative; latest explicit state wins without hiding earlier lifecycle context.",
           "Assign every question, Agent decision, and checklist outcome one stable Agent-chosen Q, D, or C id; NEVER reuse or rename.",
-          "KEEP **Current work:** as one short in-flight phrase of the active C or D, or empty while waiting on User.",
+          "KEEP **Current work:** as the Progress Tracker working-row phrase: one short in-flight C or D line while a run is in flight, or empty while waiting on User.",
           "NEVER copy Checklist, HTML comments, or format markers into Current work and NEVER add a todo tool.",
+          "KEEP ## Digest as two short bullets Current (where we are) and Desired (where this task goes). Show plan displays only Digest. Rewrite Digest when direction changes; do not append history there.",
           "KEEP the artifact resumable without relying on chat history after every turn.",
-          "Runtime does not parse artifact prose (only time-spent envelope and Current work line).",
+          "Runtime does not parse artifact prose (only time-spent envelope, Current work line, and ## Digest for Show plan).",
           "ONLY secondary gates (establish, elaborate, examine) may CALL next; primaries never CALL next.",
           "NEVER recommend the current persisted mode in next actions; same-mode stay is ESC, Return to editor, or /mode."
         ],
@@ -3721,7 +3869,8 @@
           ],
           "WRITE_ARTIFACT": [
             "IF no named artifact exists THEN RETURN success without creating .pi/plan/*.",
-            "INCLUDE **Current work:** when the in-flight outcome changed.",
+            "INCLUDE **Current work:** when the in-flight outcome starts or changes so the Progress Tracker working row can paint this run.",
+            "KEEP ## Digest Current / Desired current when direction changes.",
             "TRY EDIT or APPEND; IF fail THEN RETRY once.",
             "IF retry fails THEN WARN concisely and CONTINUE only when still safely resumable; IF HANDOFF requires the change THEN RETURN failure."
           ],
@@ -3810,7 +3959,7 @@
             "substates": ["artifactCheck", "askLoop", "synthesize"],
             "procedure": [
               "Land here after envision scope ask is answered and start/reuse has named the artifact, after RETURN_ALIGN (landing evaluate), and after establish returns via the ALIGN body edge.",
-              "READ Goal, Decisions (unresolved D), Checklist, Work log residuals, Current work, and the kickoff prompt if any — from the plan artifact; `.pi/AGENTS.md` and `.pi/MEMORY.md` as needed.",
+              "READ Digest, Goal, Decisions (unresolved D), Checklist, Work log residuals, Current work, and the kickoff prompt if any — from the plan artifact; `.pi/AGENTS.md` and `.pi/MEMORY.md` as needed.",
               "NEVER explore the codebase in evaluate; if facts are missing, route to Spec (next or PWB) rather than searching source.",
               "IF kickoff/review lists specific D ids: CALL ask ONLY to accept/change/defer those Ds — do not invent new scope questions.",
               "ELSE IF the User message explicitly requests clarification: CALL ask for that request only.",
@@ -4114,31 +4263,13 @@
         ],
         "exceptions": {
           "title": "Manual Bypass & Escape Hatches",
-          "summary": "The /mode command is the universal manual bypass. Running /mode opens the option picker at any time so the User can choose what to do next (jump to ALIGN, SPEC, VIBE, or hand off) without being gated by agent completion. next-driven pickers omit the current mode; /mode still lists all modes.",
+          "summary": "The /mode command is the universal manual bypass. Running /mode opens the option picker at any time so the User can choose between ALIGN, SPEC, and VIBE (or hand off) without being gated by agent completion. next-driven pickers omit the current mode; /mode lists all 3 modes.",
           "commands": [
             {
               "command": "/mode",
-              "label": "Open Option Picker (Universal Bypass)",
-              "summary": "Opens the mode option picker to choose any target mode or action, including the current mode.",
-              "description": "User-triggered escape hatch. Opens the interactive option picker in editor standby with the full mode list (not cross-mode-filtered) so the User can switch mode, hand off, or return."
-            },
-            {
-              "command": "/align",
-              "label": "Switch to ALIGN (standby)",
-              "summary": "Records ALIGN mode and returns to the editor without starting a turn.",
-              "description": "Manual escape hatch. Sets persisted mode to ALIGN and notifies; does not auto-start the agent."
-            },
-            {
-              "command": "/spec",
-              "label": "Switch to SPEC (standby)",
-              "summary": "Records SPEC mode and returns to the editor without starting a turn.",
-              "description": "Manual escape hatch. Sets persisted mode to SPEC and notifies; does not auto-start the agent."
-            },
-            {
-              "command": "/vibe",
-              "label": "Switch to VIBE (standby)",
-              "summary": "Records VIBE mode and returns to the editor without starting a turn.",
-              "description": "Manual escape hatch. Sets persisted mode to VIBE and notifies; does not auto-start the agent."
+              "label": "Open Mode Picker (Universal Bypass)",
+              "summary": "Opens the mode option picker to choose any target mode (ALIGN, SPEC, VIBE) or hand off.",
+              "description": "User-triggered escape hatch. Opens the interactive option picker in editor standby with the full mode list (ALIGN, SPEC, VIBE) so the User can switch mode, hand off, or return at any time."
             },
             {
               "command": "/handoff [name]",
@@ -4148,11 +4279,10 @@
             }
           ],
           "rules": [
-            "The /mode command is the canonical User-owned bypass to open the option picker and choose what to do next.",
+            "The /mode command is the canonical User-owned bypass to open the option picker and choose between ALIGN, SPEC, and VIBE.",
             "Manual bypass transitions are never gated on workflow completeness, pending recommendations, or unresolved D items.",
-            "next-driven pickers never offer the current mode; ESC and Return to editor stay in the current mode without starting the agent.",
-            "Selecting an unrecommended mode in the picker switches the session mode in editor standby.",
-            "Manual /align /spec /vibe only record mode and return to the editor; they do not start the agent.",
+            "next-driven pickers never offer the current mode; ESC and Return to editor stay in the current mode without starting the agent. Show plan displays ## Digest and returns to the picker.",
+            "Selecting an unrecommended mode in the /mode picker switches the session mode in editor standby.",
             "Direct /handoff swaps the plan file and seeds a fresh session in ALIGN (envision: artifact → scope ask → evaluate)."
           ]
         },
@@ -4232,7 +4362,7 @@
               "Runtime PREPENDS only Switch context when auto-starting and NEVER authors substantive direction.",
               "Recommended row with a reason shows {mode} — {reason}. Two Align rows may appear (review vs editor).",
               "next→Align idle lands establish; next→Align review lands evaluate; next→Spec lands explore; next→Vibe lands execute.",
-              "ESC dismisses the mode picker with no change. Mode pickers end with Return to editor (same as ESC), then Return → ALIGN last when not already in Align (static establish, no agent start). /mode lists the same trailing rows.",
+              "ESC dismisses the mode picker with no change. Mode pickers end with Return to editor (same as ESC), then Return → ALIGN when not already in Align (static establish, no agent start), then Show plan (## Digest only; returns to the picker). /mode lists the same trailing rows.",
               "/mode force picker still lists all modes including the current mode (bypass).",
               "Manual ALIGN/SPEC/VIBE commands return to the editor without auto-start.",
               "Only recommended actions with autostart (prompt + non-idle Align) start the agent.",
@@ -4243,6 +4373,7 @@
         ],
         "artifact": {
           "sections": [
+            "Digest",
             "Goal",
             "Align",
             "Decisions",
@@ -4272,7 +4403,7 @@
           "Project permission is read|write only (project-write boundary): read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact. Align’s pre-ask rule (Agent, not a runtime sandbox): no extra file reads before the first scope ask (harness-injected AGENTS.md only); after that ask and start, the session plan then `.pi` as needed.",
           "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 goal-scope (before start when no named artifact) then start/reuse then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
           "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-          "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Primaries self-loop: evaluate ASK_LOOP; explore and execute DECIDE_LOOP. Envision runs one ask CALL then start/reuse then ARTIFACT→evaluate (no ASK_LOOP). Secondaries only confirm/summarize then RETURN to the primary or CALL next. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
+          "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Primaries self-loop: evaluate ASK_LOOP; explore and execute DECIDE_LOOP. Envision runs one ask CALL then start/reuse then ARTIFACT→evaluate (no ASK_LOOP). Secondaries only confirm/summarize then RETURN to the primary or CALL next. Manual /mode bypasses live under Exceptions.",
           "Substates on guided states are narrative procedure phases for agents and diagrams, not separate graph nodes.",
           "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next. Agent-driven Align ends via ask (envision/evaluate) or next (establish); silent idle is only runtime NEXT_ALIGN.",
           "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",

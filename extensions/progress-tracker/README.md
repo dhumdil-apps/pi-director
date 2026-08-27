@@ -37,12 +37,14 @@ renders the one thing the transcript cannot show.
   tiny per-turn mode message varies.
 - Working state — while a run is in flight the idle prompt gives way to the
   spinner and accent-colored active timing. The plan's `**Current work:**`
-  phrase follows the timer in dim (`⠋ 12s C5 seed current-work line`) when
-  non-empty, and is clipped so the Align/Spec/Vibe times stay visible. Idle,
-  waiting, missing plans, empty lines, and HTML comments (including the
-  `<!-- pi-director-plan:v2 -->` marker) omit it. The tracker
-  re-reads the named plan on adopt, `agent_start`, `tool_execution_end`, and
-  `agent_settled`; it does not parse Checklist prose or expose a todo tool.
+  phrase is the working-row label (FSM): it follows the timer in dim
+  (`⠋ 12s C5 seed current-work line`) when non-empty, and is clipped so the
+  Align/Spec/Vibe times stay visible. Idle, waiting, missing plans, empty
+  lines, and HTML comments (including the `<!-- pi-director-plan:v2 -->`
+  marker) omit it. The tracker re-reads the named plan on adopt, `agent_start`,
+  `tool_execution_end`, and `agent_settled`; it does not parse Checklist or
+  Digest prose or expose a todo tool. Show plan on the mode picker displays
+  `## Digest`, not this row.
 - Work/cache timer — one compact accent-colored readout follows the active
   spinner and counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
   ALIGN, SPEC, or VIBE work begins rather than displaying grand-total task time.

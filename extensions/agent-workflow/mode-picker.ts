@@ -2,9 +2,11 @@
 
 import type { ExtensionAPI, ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
+import { readFile } from "node:fs/promises";
 import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { MODE_LABEL, recordWorkflowMode, resolveWorkflowMode, WORKFLOW_MODES, type WorkflowMode } from "./mode.js";
+import { readPlanDigest } from "./plan-digest.js";
 import {
   inspectNextActions,
   normalizeAction,
@@ -12,8 +14,15 @@ import {
   type NextStepAction,
   type NextStepActionMode,
 } from "./next-actions.js";
-import { metaPickerLabels, RETURN_ALIGN_OPTION, RETURN_OPTION, withoutRedundantAlignEstablish } from "./picker-meta.js";
+import {
+  metaPickerLabels,
+  RETURN_ALIGN_OPTION,
+  RETURN_OPTION,
+  SHOW_PLAN_OPTION,
+  withoutRedundantAlignEstablish,
+} from "./picker-meta.js";
 import { duringUserWait } from "./user-wait.js";
+import { missingSessionPlan, planPath } from "./task.js";
 import {
   ASK_SETTLEMENT_EVENT,
   currentTurnSignal,
@@ -27,7 +36,7 @@ import {
 } from "./workflow-machine.js";
 
 export const HANDOFF_OPTION = "🤝 Hand off to a fresh session";
-export { RETURN_ALIGN_OPTION, RETURN_OPTION };
+export { RETURN_ALIGN_OPTION, RETURN_OPTION, SHOW_PLAN_OPTION };
 export { ASK_SETTLEMENT_EVENT, NEXT_STEP_EVENT };
 export type { AlignLanding, NextStepAction, NextStepActionMode };
 
@@ -60,7 +69,8 @@ type PickerAction =
   | { kind: "continue"; mode: WorkflowMode; prompt?: string; autostart?: boolean }
   | { kind: "handoff" }
   | { kind: "switch"; mode: WorkflowMode; prompt?: string; autostart?: boolean }
-  | { kind: "return" };
+  | { kind: "return" }
+  | { kind: "show-plan" };
 
 interface PickerState {
   options: string[];
@@ -225,12 +235,31 @@ export function pickerState(
     add(`${MODE_LABEL[mode]} — Switch mode`, { kind: "switch", mode });
   }
   if (!recommended.has("handoff")) add(HANDOFF_OPTION, { kind: "handoff" });
-  // Trailing meta: Return (ESC); static Return→ALIGN last when not already in Align.
+  // Trailing meta: Return (ESC); Return→ALIGN when not already in Align; Show plan last.
   for (const label of metaPickerLabels(current)) {
     if (label === RETURN_OPTION) add(RETURN_OPTION, { kind: "return" });
-    else add(RETURN_ALIGN_OPTION, { kind: "switch", mode: "align", autostart: false });
+    else if (label === RETURN_ALIGN_OPTION)
+      add(RETURN_ALIGN_OPTION, { kind: "switch", mode: "align", autostart: false });
+    else add(SHOW_PLAN_OPTION, { kind: "show-plan" });
   }
   return { options: labels, actions };
+}
+
+async function presentPlanDigest(pi: ExtensionAPI, ctx: PickerContext): Promise<void> {
+  if (!ctx.hasUI) return;
+  const name = pi.getSessionName();
+  const missing = missingSessionPlan(ctx.cwd, name);
+  if (missing) {
+    ctx.ui.notify(missing, "warning");
+    return;
+  }
+  const contents = await readFile(planPath(ctx.cwd, name!), "utf8").catch(() => "");
+  const digest = readPlanDigest(contents);
+  if (!digest) {
+    ctx.ui.notify("No Digest in the plan yet.", "info");
+    return;
+  }
+  await ctx.ui.confirm("Plan digest", digest);
 }
 
 export async function applyMode(
@@ -243,13 +272,19 @@ export async function applyMode(
   if (ctx.hasUI) ctx.ui.notify(`${MODE_LABEL[mode]} mode selected for this session.`, "info");
 }
 
-export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext, force = false): Promise<void> {
+export async function openModePicker(
+  pi: ExtensionAPI,
+  ctx: PickerContext,
+  force = false,
+  allowEmpty = false,
+): Promise<void> {
   if (!ctx.hasUI) return;
   const branch = ctx.sessionManager.getBranch();
   const current = resolveWorkflowMode(branch);
   const explicit = deriveNextStepSignal(branch, current);
   // next-driven: explicit is [] | non-empty array; /mode force: explicit may be undefined.
-  if (!force && explicit === undefined) return;
+  // allowEmpty: Align silent-idle fallback opens fill-ins with no NEXT_STEP_EVENT.
+  if (!force && explicit === undefined && !allowEmpty) return;
 
   // next-driven pickers omit current mode; /mode force keeps full escape-hatch list (D4).
   const state = pickerState(current, explicit ?? [], { includeCurrentMode: force });
@@ -265,6 +300,10 @@ export async function openModePicker(pi: ExtensionAPI, ctx: PickerContext, force
       if (!action) {
         resolveCheckpoint(pi, checkpoint.id, "dismissed");
         return;
+      }
+      if (action.kind === "show-plan") {
+        await duringUserWait(pi, "mode", () => presentPlanDigest(pi, ctx));
+        continue;
       }
       if (action.kind === "return") {
         resolveCheckpoint(pi, checkpoint.id, "return");
@@ -372,6 +411,6 @@ export function registerModePicker(pi: ExtensionAPI): void {
       return;
     }
     if (dispatch.action === "skip_picker") return;
-    if (dispatch.action === "open_picker") await openModePicker(pi, ctx);
+    if (dispatch.action === "open_picker") await openModePicker(pi, ctx, false, true);
   });
 }

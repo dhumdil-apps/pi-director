@@ -63,6 +63,8 @@ describe("workflow FSM graph", () => {
 
   it("lets envision ask before start without extra pre-ask file reads", () => {
     const prompt = formatWorkflowPrompt();
+    assert.match(prompt, /Progress Tracker working-row/);
+    assert.match(prompt, /Show plan displays only Digest/);
     assert.match(prompt, /MAY CALL ask before start/);
     assert.match(prompt, /harness-injected AGENTS\.md/);
     assert.doesNotMatch(prompt, /never ask before start/i);

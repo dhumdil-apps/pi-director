@@ -7,6 +7,11 @@
 
 **Current work:**
 
+## Digest
+
+- Current: <where we are>
+- Desired: <where this task goes>
+
 ## Goal
 
 <goal and lifecycle context>

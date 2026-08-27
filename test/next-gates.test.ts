@@ -12,6 +12,7 @@ import {
   metaPickerLabels,
   RETURN_ALIGN_OPTION,
   RETURN_OPTION,
+  SHOW_PLAN_OPTION,
   withoutRedundantAlignEstablish,
 } from "../extensions/agent-workflow/picker-meta.ts";
 import { optionReferences, orderedOptions, pickerLabel } from "../extensions/agent-workflow/question-labels.ts";
@@ -134,8 +135,8 @@ describe("next action inspection", () => {
 
 describe("mode picker trailing rows", () => {
   it("keeps Return to editor and omits Write a follow-up", () => {
-    assert.deepEqual(metaPickerLabels("spec"), [RETURN_OPTION, RETURN_ALIGN_OPTION]);
-    assert.deepEqual(metaPickerLabels("align"), [RETURN_OPTION]);
+    assert.deepEqual(metaPickerLabels("spec"), [RETURN_OPTION, RETURN_ALIGN_OPTION, SHOW_PLAN_OPTION]);
+    assert.deepEqual(metaPickerLabels("align"), [RETURN_OPTION, SHOW_PLAN_OPTION]);
     assert.equal(/write a follow-up/i.test(metaPickerLabels("vibe").join("\n")), false);
   });
 
