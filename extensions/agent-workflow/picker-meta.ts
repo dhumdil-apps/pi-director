@@ -3,6 +3,8 @@
 export const RETURN_OPTION = "↩ Return to editor";
 export const RETURN_ALIGN_OPTION = "Return → ❓ ALIGN";
 export const SHOW_PLAN_OPTION = "Show plan";
+/** Single dismiss on the Digest viewer — not a yes/no confirm. */
+export const SHOW_PLAN_DISMISS = "Return";
 
 export function metaPickerLabels(currentMode: "align" | "spec" | "vibe"): string[] {
   const trailing = currentMode === "align" ? [RETURN_OPTION] : [RETURN_OPTION, RETURN_ALIGN_OPTION];

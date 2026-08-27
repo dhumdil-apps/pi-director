@@ -18,6 +18,7 @@ import {
   metaPickerLabels,
   RETURN_ALIGN_OPTION,
   RETURN_OPTION,
+  SHOW_PLAN_DISMISS,
   SHOW_PLAN_OPTION,
   withoutRedundantAlignEstablish,
 } from "./picker-meta.js";
@@ -36,7 +37,7 @@ import {
 } from "./workflow-machine.js";
 
 export const HANDOFF_OPTION = "🤝 Hand off to a fresh session";
-export { RETURN_ALIGN_OPTION, RETURN_OPTION, SHOW_PLAN_OPTION };
+export { RETURN_ALIGN_OPTION, RETURN_OPTION, SHOW_PLAN_DISMISS, SHOW_PLAN_OPTION };
 export { ASK_SETTLEMENT_EVENT, NEXT_STEP_EVENT };
 export type { AlignLanding, NextStepAction, NextStepActionMode };
 
@@ -259,7 +260,7 @@ async function presentPlanDigest(pi: ExtensionAPI, ctx: PickerContext): Promise<
     ctx.ui.notify("No Digest in the plan yet.", "info");
     return;
   }
-  await ctx.ui.confirm("Plan digest", digest);
+  await ctx.ui.select(digest, [SHOW_PLAN_DISMISS]);
 }
 
 export async function applyMode(

@@ -44,7 +44,7 @@ renders the one thing the transcript cannot show.
   marker) omit it. The tracker re-reads the named plan on adopt, `agent_start`,
   `tool_execution_end`, and `agent_settled`; it does not parse Checklist or
   Digest prose or expose a todo tool. Show plan on the mode picker displays
-  `## Digest`, not this row.
+  `## Digest` with a single Return, not this row.
 - Work/cache timer — one compact accent-colored readout follows the active
   spinner and counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
   ALIGN, SPEC, or VIBE work begins rather than displaying grand-total task time.

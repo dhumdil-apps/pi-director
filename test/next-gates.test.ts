@@ -12,6 +12,7 @@ import {
   metaPickerLabels,
   RETURN_ALIGN_OPTION,
   RETURN_OPTION,
+  SHOW_PLAN_DISMISS,
   SHOW_PLAN_OPTION,
   withoutRedundantAlignEstablish,
 } from "../extensions/agent-workflow/picker-meta.ts";
@@ -155,6 +156,7 @@ describe("mode picker trailing rows", () => {
     assert.deepEqual(metaPickerLabels("spec"), [RETURN_OPTION, RETURN_ALIGN_OPTION, SHOW_PLAN_OPTION]);
     assert.deepEqual(metaPickerLabels("align"), [RETURN_OPTION, SHOW_PLAN_OPTION]);
     assert.equal(/write a follow-up/i.test(metaPickerLabels("vibe").join("\n")), false);
+    assert.equal(SHOW_PLAN_DISMISS, "Return");
   });
 
   it("drops agent Align-establish idle rows that duplicate static Return→ALIGN", () => {

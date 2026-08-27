@@ -211,7 +211,7 @@ writeFileSync(join(DIST, "workflow-fsm.data.js"), dataJsContent);
 const visualizerFiles = [
   "workflow-fsm.html",
   "workflow-fsm.css",
-  "workflow-fsm.js",
+  "workflow-visualizer.js",
   "workflow-layout.js",
   "theme.css",
   "tuto-ui.iife.js",
@@ -241,7 +241,7 @@ const contentPkg = {
     "./workflow-fsm.mmd": "./workflow-fsm.mmd",
     "./workflow-fsm.html": "./workflow-fsm.html",
     "./workflow-fsm.css": "./workflow-fsm.css",
-    "./workflow-fsm.js": "./workflow-fsm.js",
+    "./workflow-visualizer.js": "./workflow-visualizer.js",
     "./workflow-layout.js": "./workflow-layout.js",
     "./workflow-fsm.data.js": "./workflow-fsm.data.js",
     "./theme.css": "./theme.css",

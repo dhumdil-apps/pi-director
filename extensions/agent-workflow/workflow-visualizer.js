@@ -1,6 +1,8 @@
 /**
  * Client bootstrap script for Pi Director Workflow FSM visualizer.
  * Reads window.WORKFLOW_FSM_DATA and window.WORKFLOW_LAYOUT_DATA.
+ * Named workflow-visualizer.js so it does not shadow workflow-fsm.ts when
+ * the extension loader resolves `./workflow-fsm.js`.
  */
 (function () {
   const fsmData = window.WORKFLOW_FSM_DATA || {};

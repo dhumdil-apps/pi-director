@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   WORKFLOW_FSM,
   formatWorkflowPrompt,
@@ -69,5 +72,11 @@ describe("workflow FSM graph", () => {
     assert.match(prompt, /harness-injected AGENTS\.md/);
     assert.doesNotMatch(prompt, /never ask before start/i);
     assert.doesNotMatch(prompt, /Envision before the first scope ask may READ only root AGENTS\.md/);
+  });
+
+  it("does not shadow workflow-fsm.ts with a browser workflow-fsm.js", () => {
+    const dir = join(dirname(fileURLToPath(import.meta.url)), "../extensions/agent-workflow");
+    assert.equal(existsSync(join(dir, "workflow-fsm.js")), false);
+    assert.equal(existsSync(join(dir, "workflow-visualizer.js")), true);
   });
 });
