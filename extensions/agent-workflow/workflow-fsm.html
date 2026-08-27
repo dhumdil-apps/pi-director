@@ -400,13 +400,13 @@
 
     <!-- Self-Contained tuto-ui Library (zero external requests, file:// safe) -->
     <script>
-      var TutoUI = (function (u) {
+      var TutoUI = (function (g) {
         "use strict";
-        var Yt = Object.defineProperty;
-        var Dt = (u, $, W) =>
-          $ in u ? Yt(u, $, { enumerable: !0, configurable: !0, writable: !0, value: W }) : (u[$] = W);
-        var l = (u, $, W) => Dt(u, typeof $ != "symbol" ? $ + "" : $, W);
-        const $ = {
+        var Xt = Object.defineProperty;
+        var qt = (g, N, j) =>
+          N in g ? Xt(g, N, { enumerable: !0, configurable: !0, writable: !0, value: j }) : (g[N] = j);
+        var l = (g, N, j) => qt(g, typeof N != "symbol" ? N + "" : N, j);
+        const N = {
             dark: {
               bg: "#090a0f",
               grid: "rgba(255, 255, 255, 0.04)",
@@ -467,7 +467,7 @@
               handoff: { accent: "#64748b", badge: "PROCEDURE", perm: "STANDBY", permClass: "perm-standby" },
             },
           },
-          W = {
+          j = {
             fonts: {
               sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
               mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
@@ -484,7 +484,7 @@
             weights: { normal: "400", medium: "500", semibold: "600", bold: "700", extrabold: "800" },
             lineHeights: { tight: "1.15", normal: "1.4", relaxed: "1.6" },
           },
-          Lt = {
+          Ct = {
             space: {
               1: "0.25rem",
               2: "0.5rem",
@@ -508,11 +508,11 @@
             transitions: { fast: "150ms ease", default: "200ms ease", smooth: "300ms cubic-bezier(0.4, 0, 0.2, 1)" },
             zIndex: { canvas: 0, edge: 1, node: 5, overlay: 10, drawer: 20, tooltip: 30 },
           };
-        function ft() {
+        function yt() {
           if (typeof document > "u" || document.getElementById("tuto-theme-tokens")) return;
-          const e = document.createElement("style");
-          ((e.id = "tuto-theme-tokens"),
-            (e.textContent = `
+          const o = document.createElement("style");
+          ((o.id = "tuto-theme-tokens"),
+            (o.textContent = `
     :root {
       --tuto-bg: #0c0e12;
       --tuto-grid: color-mix(in srgb, #94a3b8 9%, transparent);
@@ -560,9 +560,9 @@
       --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
     }
   `),
-            document.head.appendChild(e));
+            document.head.appendChild(o));
         }
-        const Y = class Y extends HTMLElement {
+        const F = class F extends HTMLElement {
           constructor(t = {}) {
             super();
             l(this, "_isRenderPending", !1);
@@ -578,19 +578,19 @@
           disconnectedCallback() {}
           adoptStyles() {
             const t = this.constructor,
-              i = t.styles;
-            if (!(!i || !this.shadowRootNode)) {
+              a = t.styles;
+            if (!(!a || !this.shadowRootNode)) {
               if ("adoptedStyleSheets" in Document.prototype && "adoptedStyleSheets" in ShadowRoot.prototype)
                 try {
-                  let o = Y._styleSheetMap.get(t);
-                  (o || ((o = new CSSStyleSheet()), o.replaceSync(i), Y._styleSheetMap.set(t, o)),
-                    this.shadowRootNode.adoptedStyleSheets.includes(o) ||
-                      (this.shadowRootNode.adoptedStyleSheets = [...this.shadowRootNode.adoptedStyleSheets, o]));
+                  let s = F._styleSheetMap.get(t);
+                  (s || ((s = new CSSStyleSheet()), s.replaceSync(a), F._styleSheetMap.set(t, s)),
+                    this.shadowRootNode.adoptedStyleSheets.includes(s) ||
+                      (this.shadowRootNode.adoptedStyleSheets = [...this.shadowRootNode.adoptedStyleSheets, s]));
                   return;
                 } catch {}
               if (!this.shadowRootNode.querySelector("style[data-tuto-style]")) {
-                const o = document.createElement("style");
-                (o.setAttribute("data-tuto-style", "true"), (o.textContent = i), this.shadowRootNode.prepend(o));
+                const s = document.createElement("style");
+                (s.setAttribute("data-tuto-style", "true"), (s.textContent = a), this.shadowRootNode.prepend(s));
               }
             }
           }
@@ -604,9 +604,9 @@
                   this.updated());
               }));
           }
-          emit(t, i, o = {}) {
-            const s = new CustomEvent(t, { bubbles: !0, composed: !0, cancelable: !0, detail: i, ...o });
-            return this.dispatchEvent(s);
+          emit(t, a, s = {}) {
+            const i = new CustomEvent(t, { bubbles: !0, composed: !0, cancelable: !0, detail: a, ...s });
+            return this.dispatchEvent(i);
           }
           get renderRoot() {
             return this.shadowRootNode || this;
@@ -614,36 +614,36 @@
           firstUpdated() {}
           updated() {}
         };
-        (l(Y, "styles", ""), l(Y, "_styleSheetMap", new WeakMap()));
-        let A = Y;
-        const mt = "http://www.w3.org/2000/svg";
-        function M(e, n = {}, t) {
-          const i = document.createElementNS(mt, e);
-          for (const [o, s] of Object.entries(n)) s != null && s !== !1 && i.setAttribute(o, String(s));
-          return (t && t.appendChild(i), i);
+        (l(F, "styles", ""), l(F, "_styleSheetMap", new WeakMap()));
+        let T = F;
+        const _t = "http://www.w3.org/2000/svg";
+        function S(o, n = {}, t) {
+          const a = document.createElementNS(_t, o);
+          for (const [s, i] of Object.entries(n)) i != null && i !== !1 && a.setAttribute(s, String(i));
+          return (t && t.appendChild(a), a);
         }
-        function $t(e, n = {}, t) {
-          const i = document.createElement(e);
-          for (const [o, s] of Object.entries(n))
-            s != null &&
-              s !== !1 &&
-              (o === "className" || o === "class" ? (i.className = String(s)) : i.setAttribute(o, String(s)));
-          return (t && t.appendChild(i), i);
+        function zt(o, n = {}, t) {
+          const a = document.createElement(o);
+          for (const [s, i] of Object.entries(n))
+            i != null &&
+              i !== !1 &&
+              (s === "className" || s === "class" ? (a.className = String(i)) : a.setAttribute(s, String(i)));
+          return (t && t.appendChild(a), a);
         }
-        function m(e) {
-          return e == null
+        function u(o) {
+          return o == null
             ? ""
-            : String(e)
+            : String(o)
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-        function K(e, n, t) {
-          return Math.max(n, Math.min(t, e));
+        function rt(o, n, t) {
+          return Math.max(n, Math.min(t, o));
         }
-        class it extends A {
+        class ct extends T {
           static get observedAttributes() {
             return ["variant", "size", "disabled"];
           }
@@ -678,7 +678,7 @@
           }
         }
         (l(
-          it,
+          ct,
           "styles",
           `
     :host {
@@ -776,8 +776,8 @@
     }
   `,
         ),
-          customElements.get("tuto-button") || customElements.define("tuto-button", it));
-        class at extends A {
+          customElements.get("tuto-button") || customElements.define("tuto-button", ct));
+        class ht extends T {
           static get observedAttributes() {
             return ["variant"];
           }
@@ -800,7 +800,7 @@
           }
         }
         (l(
-          at,
+          ht,
           "styles",
           `
     :host {
@@ -854,44 +854,44 @@
     }
   `,
         ),
-          customElements.get("tuto-badge") || customElements.define("tuto-badge", at));
-        const X = 0.2,
-          j = 3.5,
-          bt = 44;
-        function vt(e, n, t = bt, i = 1.25) {
-          const o = e.width || 900,
-            s = e.height || 700,
+          customElements.get("tuto-badge") || customElements.define("tuto-badge", ht));
+        const H = 0.2,
+          K = 3.5,
+          xt = 44;
+        function kt(o, n, t = xt, a = 1.25) {
+          const s = o.width || 900,
+            i = o.height || 700,
             r = n.w || 2e3,
             d = n.h || 1e3,
-            c = K(Math.min((o - t * 2) / r, (s - t * 2) / d), X, i),
-            g = (o - r * c) / 2 - n.x * c,
-            f = (s - d * c) / 2 - n.y * c;
-          return { panX: g, panY: f, scale: c };
+            c = rt(Math.min((s - t * 2) / r, (i - t * 2) / d), H, a),
+            p = (s - r * c) / 2 - n.x * c,
+            f = (i - d * c) / 2 - n.y * c;
+          return { panX: p, panY: f, scale: c };
         }
-        function rt(e, n, t, i, o = X, s = j) {
-          const r = K(e.scale * i, o, s);
-          if (r === e.scale) return e;
-          const d = n - ((n - e.panX) * r) / e.scale,
-            c = t - ((t - e.panY) * r) / e.scale;
+        function pt(o, n, t, a, s = H, i = K) {
+          const r = rt(o.scale * a, s, i);
+          if (r === o.scale) return o;
+          const d = n - ((n - o.panX) * r) / o.scale,
+            c = t - ((t - o.panY) * r) / o.scale;
           return { panX: d, panY: c, scale: r };
         }
-        function wt(e, n, t = 1.05) {
-          const i = e.width || 900,
-            o = e.height || 700,
-            s = K(t, X, j),
+        function Et(o, n, t = 1.05) {
+          const a = o.width || 900,
+            s = o.height || 700,
+            i = rt(t, H, K),
             r = n.x + n.w / 2,
             d = n.y + n.h / 2,
-            c = i / 2 - r * s,
-            g = o / 2 - d * s;
-          return { panX: c, panY: g, scale: s };
+            c = a / 2 - r * i,
+            p = s / 2 - d * i;
+          return { panX: c, panY: p, scale: i };
         }
-        function Nt(e, n) {
-          return { x: (e.x - n.panX) / n.scale, y: (e.y - n.panY) / n.scale };
+        function Ut(o, n) {
+          return { x: (o.x - n.panX) / n.scale, y: (o.y - n.panY) / n.scale };
         }
-        function Pt(e, n) {
-          return { x: e.x * n.scale + n.panX, y: e.y * n.scale + n.panY };
+        function Bt(o, n) {
+          return { x: o.x * n.scale + n.panX, y: o.y * n.scale + n.panY };
         }
-        const yt = new Set([
+        const Mt = new Set([
           "GOAL_SET",
           "ASK_ROUTED_SPEC",
           "ASK_ROUTED_VIBE",
@@ -903,8 +903,8 @@
           "CLOSE_OUT",
           "NEXT_HANDOFF",
         ]);
-        function _t(e) {
-          return e.map((n, t) => ({
+        function St(o) {
+          return o.map((n, t) => ({
             id: n.id || `${n.from}->${n.to}-${t}`,
             from: n.from,
             to: n.to,
@@ -918,106 +918,106 @@
             waypoints: n.waypoints ? [...n.waypoints] : void 0,
           }));
         }
-        function Rt(e, n, t = 0.5) {
-          const i = Math.min(0.9, Math.max(0.1, t));
+        function At(o, n, t = 0.5) {
+          const a = Math.min(0.9, Math.max(0.1, t));
           return n === "left"
-            ? { x: e.x, y: e.y + e.h * i }
+            ? { x: o.x, y: o.y + o.h * a }
             : n === "right"
-              ? { x: e.x + e.w, y: e.y + e.h * i }
+              ? { x: o.x + o.w, y: o.y + o.h * a }
               : n === "top"
-                ? { x: e.x + e.w * i, y: e.y }
-                : { x: e.x + e.w * i, y: e.y + e.h };
+                ? { x: o.x + o.w * a, y: o.y }
+                : { x: o.x + o.w * a, y: o.y + o.h };
         }
-        function nt(e, n) {
+        function gt(o, n) {
           const t = [
-            { point: [e.x, e.y + e.h / 2], side: "left" },
-            { point: [e.x + e.w, e.y + e.h / 2], side: "right" },
-            { point: [e.x + e.w / 2, e.y], side: "top" },
-            { point: [e.x + e.w / 2, e.y + e.h], side: "bottom" },
+            { point: [o.x, o.y + o.h / 2], side: "left" },
+            { point: [o.x + o.w, o.y + o.h / 2], side: "right" },
+            { point: [o.x + o.w / 2, o.y], side: "top" },
+            { point: [o.x + o.w / 2, o.y + o.h], side: "bottom" },
           ];
-          let i = t[0],
-            o = 1 / 0;
-          for (const s of t) {
-            const r = Math.hypot(s.point[0] - n[0], s.point[1] - n[1]);
-            r < o && ((o = r), (i = s));
+          let a = t[0],
+            s = 1 / 0;
+          for (const i of t) {
+            const r = Math.hypot(i.point[0] - n[0], i.point[1] - n[1]);
+            r < s && ((s = r), (a = i));
           }
-          return i;
+          return a;
         }
-        function xt(e, n = !0) {
-          if (!e || e.length === 0) return [0, 0];
-          if (e.length === 1) return e[0];
-          if (e.length === 2) return [(e[0][0] + e[1][0]) / 2, (e[0][1] + e[1][1]) / 2];
-          if (n && e.length === 3) return e[1];
+        function It(o, n = !0) {
+          if (!o || o.length === 0) return [0, 0];
+          if (o.length === 1) return o[0];
+          if (o.length === 2) return [(o[0][0] + o[1][0]) / 2, (o[0][1] + o[1][1]) / 2];
+          if (n && o.length === 3) return o[1];
           let t = 0;
-          const i = [];
-          for (let r = 0; r < e.length - 1; r++) {
-            const d = Math.hypot(e[r + 1][0] - e[r][0], e[r + 1][1] - e[r][1]);
-            (i.push(d), (t += d));
+          const a = [];
+          for (let r = 0; r < o.length - 1; r++) {
+            const d = Math.hypot(o[r + 1][0] - o[r][0], o[r + 1][1] - o[r][1]);
+            (a.push(d), (t += d));
           }
-          if (t === 0) return e[0];
-          const o = t / 2;
-          let s = 0;
-          for (let r = 0; r < i.length; r++) {
-            const d = i[r];
-            if (s + d >= o) {
-              const c = o - s,
-                g = d > 0 ? c / d : 0.5,
-                f = e[r],
-                h = e[r + 1];
-              return [f[0] + (h[0] - f[0]) * g, f[1] + (h[1] - f[1]) * g];
+          if (t === 0) return o[0];
+          const s = t / 2;
+          let i = 0;
+          for (let r = 0; r < a.length; r++) {
+            const d = a[r];
+            if (i + d >= s) {
+              const c = s - i,
+                p = d > 0 ? c / d : 0.5,
+                f = o[r],
+                h = o[r + 1];
+              return [f[0] + (h[0] - f[0]) * p, f[1] + (h[1] - f[1]) * p];
             }
-            s += d;
+            i += d;
           }
-          return e[Math.floor(e.length / 2)];
+          return o[Math.floor(o.length / 2)];
         }
-        function kt(e, n) {
+        function $t(o, n) {
           const t = [
-              [e.x, e.y + e.h / 2],
-              [e.x + e.w, e.y + e.h / 2],
-              [e.x + e.w / 2, e.y],
-              [e.x + e.w / 2, e.y + e.h],
+              [o.x, o.y + o.h / 2],
+              [o.x + o.w, o.y + o.h / 2],
+              [o.x + o.w / 2, o.y],
+              [o.x + o.w / 2, o.y + o.h],
             ],
-            i = [
+            a = [
               [n.x, n.y + n.h / 2],
               [n.x + n.w, n.y + n.h / 2],
               [n.x + n.w / 2, n.y],
               [n.x + n.w / 2, n.y + n.h],
             ];
-          let o = t[0],
-            s = i[0],
+          let s = t[0],
+            i = a[0],
             r = 1 / 0;
           for (const d of t)
-            for (const c of i) {
-              const g = Math.hypot(c[0] - d[0], c[1] - d[1]);
-              g < r && ((r = g), (o = d), (s = c));
+            for (const c of a) {
+              const p = Math.hypot(c[0] - d[0], c[1] - d[1]);
+              p < r && ((r = p), (s = d), (i = c));
             }
-          return { p1: o, p2: s };
+          return { p1: s, p2: i };
         }
-        function Et(e, n) {
-          return e;
+        function Lt(o, n) {
+          return o;
         }
-        function Mt(e, n) {
-          const t = n[e.from],
-            i = n[e.to];
-          if (!t || !i) return null;
-          if (e.waypoints && e.waypoints.length > 0) {
-            const r = e.self || e.from === e.to,
-              d = e.waypoints[0],
-              c = e.waypoints[e.waypoints.length - 1];
-            let g = nt(t, d),
-              f = nt(i, c),
-              h = g.point,
-              v = f.point;
+        function Nt(o, n) {
+          const t = n[o.from],
+            a = n[o.to];
+          if (!t || !a) return null;
+          if (o.waypoints && o.waypoints.length > 0) {
+            const r = o.self || o.from === o.to,
+              d = o.waypoints[0],
+              c = o.waypoints[o.waypoints.length - 1];
+            let p = gt(t, d),
+              f = gt(a, c),
+              h = p.point,
+              y = f.point;
             r &&
-              Math.hypot(h[0] - v[0], h[1] - v[1]) < 8 &&
-              (g.side === "right" || g.side === "left"
-                ? ((h = [h[0], h[1] - 12]), (v = [v[0], v[1] + 12]))
-                : ((h = [h[0] - 16, h[1]]), (v = [v[0] + 16, v[1]])));
-            const I = [h, ...e.waypoints, v],
-              [N, p] = xt(I, !0);
-            return { points: I, seatX: N, seatY: p, seatSide: "h" };
+              Math.hypot(h[0] - y[0], h[1] - y[1]) < 8 &&
+              (p.side === "right" || p.side === "left"
+                ? ((h = [h[0], h[1] - 12]), (y = [y[0], y[1] + 12]))
+                : ((h = [h[0] - 16, h[1]]), (y = [y[0] + 16, y[1]])));
+            const $ = [h, ...o.waypoints, y],
+              [P, C] = It($, !0);
+            return { points: $, seatX: P, seatY: C, seatSide: "h" };
           }
-          if (e.self || e.from === e.to) {
+          if (o.self || o.from === o.to) {
             const r = t.x + t.w,
               d = t.y + t.h / 2,
               c = 38;
@@ -1033,87 +1033,87 @@
               seatSide: "h",
             };
           }
-          const { p1: o, p2: s } = kt(t, i);
-          return { points: [o, s], seatX: (o[0] + s[0]) / 2, seatY: (o[1] + s[1]) / 2, seatSide: "h" };
+          const { p1: s, p2: i } = $t(t, a);
+          return { points: [s, i], seatX: (s[0] + i[0]) / 2, seatY: (s[1] + i[1]) / 2, seatSide: "h" };
         }
-        function Ct(e) {}
-        function St(e, n = !1, t = 10) {
-          if (!e || e.length === 0) return "";
-          if (e.length === 1) return `M ${e[0][0]} ${e[0][1]}`;
-          if (n && e.length === 4)
-            return `M ${e[0][0]} ${e[0][1]} C ${e[1][0]} ${e[1][1]}, ${e[2][0]} ${e[2][1]}, ${e[3][0]} ${e[3][1]}`;
-          if (e.length === 2) return `M ${e[0][0]} ${e[0][1]} L ${e[1][0]} ${e[1][1]}`;
-          if (t <= 0) return e.map((s, r) => `${r === 0 ? "M" : "L"} ${s[0]} ${s[1]}`).join(" ");
-          let i = `M ${e[0][0]} ${e[0][1]}`;
-          for (let s = 1; s < e.length - 1; s++) {
-            const r = e[s - 1],
-              d = e[s],
-              c = e[s + 1],
-              g = d[0] - r[0],
+        function Tt(o) {}
+        function Pt(o, n = !1, t = 10) {
+          if (!o || o.length === 0) return "";
+          if (o.length === 1) return `M ${o[0][0]} ${o[0][1]}`;
+          if (n && o.length === 4)
+            return `M ${o[0][0]} ${o[0][1]} C ${o[1][0]} ${o[1][1]}, ${o[2][0]} ${o[2][1]}, ${o[3][0]} ${o[3][1]}`;
+          if (o.length === 2) return `M ${o[0][0]} ${o[0][1]} L ${o[1][0]} ${o[1][1]}`;
+          if (t <= 0) return o.map((i, r) => `${r === 0 ? "M" : "L"} ${i[0]} ${i[1]}`).join(" ");
+          let a = `M ${o[0][0]} ${o[0][1]}`;
+          for (let i = 1; i < o.length - 1; i++) {
+            const r = o[i - 1],
+              d = o[i],
+              c = o[i + 1],
+              p = d[0] - r[0],
               f = d[1] - r[1],
-              h = Math.hypot(g, f),
-              v = c[0] - d[0],
-              I = c[1] - d[1],
-              N = Math.hypot(v, I);
-            if (h < 1 || N < 1) {
-              i += ` L ${d[0]} ${d[1]}`;
+              h = Math.hypot(p, f),
+              y = c[0] - d[0],
+              $ = c[1] - d[1],
+              P = Math.hypot(y, $);
+            if (h < 1 || P < 1) {
+              a += ` L ${d[0]} ${d[1]}`;
               continue;
             }
-            const p = Math.min(t, h / 2, N / 2),
-              _ = d[0] - (g / h) * p,
-              b = d[1] - (f / h) * p,
-              S = d[0] + (v / N) * p,
-              P = d[1] + (I / N) * p;
-            ((i += ` L ${_} ${b}`), (i += ` Q ${d[0]} ${d[1]} ${S} ${P}`));
+            const C = Math.min(t, h / 2, P / 2),
+              R = d[0] - (p / h) * C,
+              M = d[1] - (f / h) * C,
+              L = d[0] + (y / P) * C,
+              z = d[1] + ($ / P) * C;
+            ((a += ` L ${R} ${M}`), (a += ` Q ${d[0]} ${d[1]} ${L} ${z}`));
           }
-          const o = e[e.length - 1];
-          return ((i += ` L ${o[0]} ${o[1]}`), i);
+          const s = o[o.length - 1];
+          return ((a += ` L ${s[0]} ${s[1]}`), a);
         }
-        function Ut(e, n, t, i) {
-          return t === e.id || i === e.id ? !0 : n ? e.from === n || e.to === n : !1;
+        function Wt(o, n, t, a) {
+          return t === o.id || a === o.id ? !0 : n ? o.from === n || o.to === n : !1;
         }
-        function Bt(e, n, t, i, o = yt) {
+        function Yt(o, n, t, a, s = Mt) {
           return !0;
         }
-        function Z(e, n = 64, t = 56, i = 46, o) {
-          let s = 1 / 0,
+        function nt(o, n = 64, t = 56, a = 46, s) {
+          let i = 1 / 0,
             r = 1 / 0,
             d = -1 / 0,
             c = -1 / 0;
-          const g = Object.values(e);
-          if (g.length === 0 && (!o || o.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
-          for (const h of g)
-            ((s = Math.min(s, h.x)),
+          const p = Object.values(o);
+          if (p.length === 0 && (!s || s.length === 0)) return { x: 0, y: 0, w: 1e3, h: 600 };
+          for (const h of p)
+            ((i = Math.min(i, h.x)),
               (r = Math.min(r, h.y)),
               (d = Math.max(d, h.x + h.w)),
               (c = Math.max(c, h.y + h.h)));
-          if (o)
-            for (const h of o)
-              ((s = Math.min(s, h.x)),
+          if (s)
+            for (const h of s)
+              ((i = Math.min(i, h.x)),
                 (r = Math.min(r, h.y)),
                 (d = Math.max(d, h.x + h.w)),
                 (c = Math.max(c, h.y + h.h)));
-          const f = i > 0;
-          return { x: s - n, y: r - t - (f ? i : 0), w: d - s + n * 2, h: c - r + t * 2 + (f ? i + 80 : 0) };
+          const f = a > 0;
+          return { x: i - n, y: r - t - (f ? a : 0), w: d - i + n * 2, h: c - r + t * 2 + (f ? a + 80 : 0) };
         }
-        function zt(e, n = {}) {
+        function Dt(o, n = {}) {
           const t = n.colWidth || 420,
-            i = n.colGap || 180,
-            o = n.rowGap || 40,
-            s = n.startX || 120,
+            a = n.colGap || 180,
+            s = n.rowGap || 40,
+            i = n.startX || 120,
             r = n.startY || 120,
             d = {};
-          let c = s,
-            g = r;
+          let c = i,
+            p = r;
           return (
-            e.forEach((f, h) => {
-              ((d[f.id] = { ...f, x: f.x ?? c, y: f.y ?? g, w: f.w || t, h: f.h || 280 }),
-                (h + 1) % 3 === 0 ? ((c += t + i), (g = r)) : (g += (f.h || 280) + o));
+            o.forEach((f, h) => {
+              ((d[f.id] = { ...f, x: f.x ?? c, y: f.y ?? p, w: f.w || t, h: f.h || 280 }),
+                (h + 1) % 3 === 0 ? ((c += t + a), (p = r)) : (p += (f.h || 280) + s));
             }),
             d
           );
         }
-        class dt extends A {
+        class ut extends T {
           constructor() {
             super(...arguments);
             l(this, "_node", null);
@@ -1148,9 +1148,9 @@
           render() {
             if (!this.shadowRootNode || !this._node) return;
             const t = this._node,
-              i = $.accents[t.id] || (t.permission ? $.accents[t.permission] : null) || $.accents.spec;
-            this.style.setProperty("--node-accent", i.accent);
-            const o = [
+              a = N.accents[t.id] || (t.permission ? N.accents[t.permission] : null) || N.accents.spec;
+            this.style.setProperty("--node-accent", a.accent);
+            const s = [
               "node-card",
               "compact",
               this._selected ? "selected" : "",
@@ -1160,24 +1160,24 @@
               .filter(Boolean)
               .join(" ");
             this.shadowRootNode.innerHTML = `
-      <div class="${o}" role="button" tabindex="0">
+      <div class="${s}" role="button" tabindex="0">
         <div class="node-head">
           <div class="node-head-left">
             <span class="state-dot"></span>
-            <span class="head-title">${m(t.label || t.id)}</span>
+            <span class="head-title">${u(t.label || t.id)}</span>
           </div>
         </div>
       </div>
     `;
-            const s = this.shadowRootNode.querySelector(".node-card");
-            s &&
-              s.addEventListener("click", (r) => {
+            const i = this.shadowRootNode.querySelector(".node-card");
+            i &&
+              i.addEventListener("click", (r) => {
                 (r.stopPropagation(), this.emit("flow:select-node", { node: this._node }));
               });
           }
         }
         (l(
-          dt,
+          ut,
           "styles",
           `
     :host {
@@ -1304,8 +1304,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-node") || customElements.define("tuto-flow-node", dt));
-        class lt extends A {
+          customElements.get("tuto-flow-node") || customElements.define("tuto-flow-node", ut));
+        class ft extends T {
           constructor() {
             super(...arguments);
             l(this, "_zoom", 100);
@@ -1344,11 +1344,11 @@
             ((this._toolMode = t ? "edit" : "view"), this.requestUpdate());
           }
           render() {
-            var s, r, d, c, g, f, h, v, I;
+            var i, r, d, c, p, f, h, y, $;
             if (!this.shadowRootNode) return;
             const t = this._toolMode === "move",
-              i = this._toolMode === "edit",
-              o = t || i;
+              a = this._toolMode === "edit",
+              s = t || a;
             ((this.shadowRootNode.innerHTML = `
       <div class="toolbar-container">
         <!-- Camera Controls -->
@@ -1394,14 +1394,14 @@
         </button>
 
         <!-- Edit Actions Mode -->
-        <button class="tool-btn ${i ? "active" : ""}" id="btn-edit-mode" title="Edit Actions Mode (E) — Click labels & nodes for actions/removal" aria-label="Edit Actions Mode">
+        <button class="tool-btn ${a ? "active" : ""}" id="btn-edit-mode" title="Edit Actions Mode (E) — Click labels & nodes for actions/removal" aria-label="Edit Actions Mode">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9"></path>
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
           </svg>
         </button>
         ${
-          o
+          s
             ? `
         <button class="tool-btn" id="btn-snapshot" title="Snapshot Layout JSON to Clipboard (S)" aria-label="Snapshot Layout">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1430,8 +1430,8 @@
         </button>
       </div>
     `),
-              (s = this.shadowRootNode.getElementById("btn-zoom-in")) == null ||
-                s.addEventListener("click", () => {
+              (i = this.shadowRootNode.getElementById("btn-zoom-in")) == null ||
+                i.addEventListener("click", () => {
                   this.emit("flow:zoom-in");
                 }),
               (r = this.shadowRootNode.getElementById("btn-zoom-out")) == null ||
@@ -1446,8 +1446,8 @@
                 c.addEventListener("click", () => {
                   this.emit("flow:reset");
                 }),
-              (g = this.shadowRootNode.getElementById("btn-move-mode")) == null ||
-                g.addEventListener("click", () => {
+              (p = this.shadowRootNode.getElementById("btn-move-mode")) == null ||
+                p.addEventListener("click", () => {
                   this.emit("flow:toggle-move-mode");
                 }),
               (f = this.shadowRootNode.getElementById("btn-edit-mode")) == null ||
@@ -1458,18 +1458,18 @@
                 h.addEventListener("click", () => {
                   this.emit("flow:snapshot-layout");
                 }),
-              (v = this.shadowRootNode.getElementById("btn-reset-layout")) == null ||
-                v.addEventListener("click", () => {
+              (y = this.shadowRootNode.getElementById("btn-reset-layout")) == null ||
+                y.addEventListener("click", () => {
                   this.emit("flow:reset-layout");
                 }),
-              (I = this.shadowRootNode.getElementById("btn-inspector")) == null ||
-                I.addEventListener("click", () => {
+              ($ = this.shadowRootNode.getElementById("btn-inspector")) == null ||
+                $.addEventListener("click", () => {
                   this.emit("flow:toggle-inspector");
                 }));
           }
         }
         (l(
-          lt,
+          ft,
           "styles",
           `
     :host {
@@ -1531,8 +1531,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", lt));
-        class ct extends A {
+          customElements.get("tuto-flow-toolbar") || customElements.define("tuto-flow-toolbar", ft));
+        class mt extends T {
           constructor() {
             super(...arguments);
             l(this, "_bounds", { x: 0, y: 0, w: 2e3, h: 1e3 });
@@ -1594,30 +1594,30 @@
               window.removeEventListener("pointerup", this.handlePointerUp));
           }
           panToEvent(t) {
-            const i = this.getBoundingClientRect(),
-              o = t.clientX - i.left,
-              s = t.clientY - i.top,
-              r = i.width || 170,
-              d = i.height || 120,
+            const a = this.getBoundingClientRect(),
+              s = t.clientX - a.left,
+              i = t.clientY - a.top,
+              r = a.width || 170,
+              d = a.height || 120,
               c = this._bounds.w || 2e3,
-              g = this._bounds.h || 1e3,
-              f = Math.min(r / c, d / g),
-              h = o / f + this._bounds.x,
-              v = s / f + this._bounds.y;
-            this.emit("flow:pan-to", { worldX: h, worldY: v });
+              p = this._bounds.h || 1e3,
+              f = Math.min(r / c, d / p),
+              h = s / f + this._bounds.x,
+              y = i / f + this._bounds.y;
+            this.emit("flow:pan-to", { worldX: h, worldY: y });
           }
           render() {
-            var _, b;
+            var R, M;
             if (!this.shadowRootNode) return;
             this.shadowRootNode.innerHTML = "";
-            const t = M("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
-              i = 170,
-              o = 120,
-              s = this._bounds.w || 2e3,
+            const t = S("svg", { viewBox: "0 0 170 120", preserveAspectRatio: "xMidYMid meet" }, this.shadowRootNode),
+              a = 170,
+              s = 120,
+              i = this._bounds.w || 2e3,
               r = this._bounds.h || 1e3,
-              d = Math.min(i / s, o / r),
-              c = M("g", { transform: `scale(${d}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
-            M(
+              d = Math.min(a / i, s / r),
+              c = S("g", { transform: `scale(${d}) translate(${-this._bounds.x}, ${-this._bounds.y})` }, t);
+            S(
               "rect",
               {
                 x: this._bounds.x,
@@ -1631,40 +1631,40 @@
               },
               c,
             );
-            for (const [S, P] of Object.entries(this._nodes)) {
-              const R =
-                ((_ = $.accents[S]) == null ? void 0 : _.accent) ||
-                ((b = $.accents[P.kind]) == null ? void 0 : b.accent) ||
+            for (const [L, z] of Object.entries(this._nodes)) {
+              const X =
+                ((R = N.accents[L]) == null ? void 0 : R.accent) ||
+                ((M = N.accents[z.kind]) == null ? void 0 : M.accent) ||
                 "#3b82f6";
-              M(
+              S(
                 "rect",
                 {
-                  x: P.x,
-                  y: P.y,
-                  width: P.w,
-                  height: P.h,
+                  x: z.x,
+                  y: z.y,
+                  width: z.w,
+                  height: z.h,
                   rx: 10,
-                  fill: S === this._selectedNodeId ? R : "var(--tuto-head-bg, #1a2030)",
-                  stroke: R,
+                  fill: L === this._selectedNodeId ? X : "var(--tuto-head-bg, #1a2030)",
+                  stroke: X,
                   "stroke-width": 2,
                 },
                 c,
               );
             }
-            const g = this._viewportSize.width || 900,
+            const p = this._viewportSize.width || 900,
               f = this._viewportSize.height || 700,
               h = this._camera.scale || 1,
-              v = (-this._camera.panX / h - this._bounds.x) * d,
-              I = (-this._camera.panY / h - this._bounds.y) * d,
-              N = (g / h) * d,
-              p = (f / h) * d;
-            M(
+              y = (-this._camera.panX / h - this._bounds.x) * d,
+              $ = (-this._camera.panY / h - this._bounds.y) * d,
+              P = (p / h) * d,
+              C = (f / h) * d;
+            S(
               "rect",
               {
-                x: Math.max(0, Math.min(i, v)),
-                y: Math.max(0, Math.min(o, I)),
-                width: Math.max(4, Math.min(i, N)),
-                height: Math.max(4, Math.min(o, p)),
+                x: Math.max(0, Math.min(a, y)),
+                y: Math.max(0, Math.min(s, $)),
+                width: Math.max(4, Math.min(a, P)),
+                height: Math.max(4, Math.min(s, C)),
                 fill: "rgba(59, 130, 246, 0.15)",
                 stroke: "var(--tuto-hot, #3b82f6)",
                 "stroke-width": 1.5,
@@ -1675,7 +1675,7 @@
           }
         }
         (l(
-          ct,
+          mt,
           "styles",
           `
     :host {
@@ -1699,8 +1699,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", ct));
-        class ht extends A {
+          customElements.get("tuto-flow-minimap") || customElements.define("tuto-flow-minimap", mt));
+        class bt extends T {
           constructor() {
             super(...arguments);
             l(this, "_isOpen", !1);
@@ -1740,51 +1740,51 @@
             ((this._tools = t), this.requestUpdate());
           }
           render() {
-            var s, r, d, c, g, f, h, v, I, N;
+            var i, r, d, c, p, f, h, y, $, P, C, R, M, L, z, X, Z, Q, tt;
             if (!this.shadowRootNode) return;
             let t = "",
-              i = "";
+              a = "";
             if (this._node) {
-              const p = this._node,
-                _ = $.accents[p.id] ||
-                  $.accents[p.kind] || {
+              const e = this._node,
+                m = N.accents[e.id] ||
+                  N.accents[e.kind] || {
                     accent: "#3b82f6",
-                    badge: (p.kind || "MODE").toUpperCase(),
-                    perm: (p.permission || "READ-ONLY").toUpperCase(),
-                    permClass: `perm-${p.permission || "readonly"}`,
+                    badge: (e.kind || "MODE").toUpperCase(),
+                    perm: (e.permission || "READ-ONLY").toUpperCase(),
+                    permClass: `perm-${e.permission || "readonly"}`,
                   },
-                S =
-                  _.perm === "WRITE"
+                b =
+                  m.perm === "WRITE"
                     ? '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>'
                     : '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';
-              (this.style.setProperty("--drawer-accent", _.accent),
+              (this.style.setProperty("--drawer-accent", m.accent),
                 (t = `
         <div class="header-titles">
-          <h2>${m(p.label || p.id)}</h2>
+          <h2>${u(e.label || e.id)}</h2>
           <div class="header-badges">
-            <span class="badge badge-accent">${m(_.badge)}</span>
-            <span class="badge badge-perm ${_.permClass}">${S}${m(_.perm)}</span>
+            <span class="badge badge-accent">${u(m.badge)}</span>
+            <span class="badge badge-perm ${m.permClass}">${b}${u(m.perm)}</span>
           </div>
         </div>
       `));
-              const P = (p.substates || []).length
+              const x = (e.substates || []).length
                   ? `<div>
             <h4 class="section-title">Substates</h4>
             <div class="chip-group">
-              ${p.substates.map((C) => `<span class="chip">${m(C)}</span>`).join("")}
+              ${e.substates.map((E) => `<span class="chip">${u(E)}</span>`).join("")}
             </div>
           </div>`
                   : "",
-                R = (p.procedure || []).length
+                w = (e.procedure || []).length
                   ? `<div>
-            <h4 class="section-title">Ordered Instructions (${p.procedure.length})</h4>
+            <h4 class="section-title">Ordered Instructions (${e.procedure.length})</h4>
             <ol class="instruction-list">
-              ${p.procedure
+              ${e.procedure
                 .map(
-                  (C, a) => `
+                  (E, D) => `
                 <li class="instruction-item">
-                  <span class="instruction-idx">${a + 1}.</span>
-                  <span>${m(C)}</span>
+                  <span class="instruction-idx">${D + 1}.</span>
+                  <span>${u(E)}</span>
                 </li>
               `,
                 )
@@ -1792,77 +1792,77 @@
             </ol>
           </div>`
                   : "",
-                D = this._tools.filter((C) => (C.modes || []).includes(p.id) || (C.modes || []).includes("any")),
-                Q = D.length
+                A = this._tools.filter((E) => (E.modes || []).includes(e.id) || (E.modes || []).includes("any")),
+                G = A.length
                   ? `<div>
-            <h4 class="section-title">Permitted Tools & Gates (${D.length})</h4>
+            <h4 class="section-title">Permitted Tools & Gates (${A.length})</h4>
             <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-              ${D.map((C) => {
-                var a;
+              ${A.map((E) => {
+                var D;
                 return `
                 <div class="tool-card">
                   <div class="tool-title">
-                    <span>${m(C.name)}</span>
+                    <span>${u(E.name)}</span>
                     <span class="chip">TOOL</span>
                   </div>
-                  <p class="section-text" style="font-size: 0.78rem;">${m(C.summary)}</p>
-                  ${(a = C.gate) != null && a.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${m(C.gate.join(" · "))}</div>` : ""}
+                  <p class="section-text" style="font-size: 0.78rem;">${u(E.summary)}</p>
+                  ${(D = E.gate) != null && D.length ? `<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${u(E.gate.join(" · "))}</div>` : ""}
                 </div>
               `;
               }).join("")}
             </div>
           </div>`
                   : "";
-              i = `
-        ${p.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${m(p.summary)}</p></div>` : ""}
-        ${P}
-        ${R}
-        ${Q}
+              a = `
+        ${e.summary ? `<div><h4 class="section-title">Summary</h4><p class="section-text">${u(e.summary)}</p></div>` : ""}
+        ${x}
+        ${w}
+        ${G}
       `;
             } else if (this._edge) {
-              const p = this._edge;
+              const e = this._edge;
               this.style.setProperty("--drawer-accent", "#3b82f6");
-              const _ = p.event || p.label || "Transition";
+              const m = e.event || e.label || "Transition";
               ((t = `
         <div class="header-titles">
-          <h2>${m(_)}</h2>
+          <h2>${u(m)}</h2>
           <div class="header-badges">
             <span class="badge badge-accent">TRANSITION</span>
-            ${p.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
+            ${e.userMediated ? '<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>' : '<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
           </div>
         </div>
       `),
-                (i = `
+                (a = `
         <div>
           <h4 class="section-title">Route Connection</h4>
           <p class="section-text" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${m(p.from.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${u(e.from.toUpperCase())}</span>
             <span style="color: var(--tuto-muted);">──►</span>
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${m(p.to.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${u(e.to.toUpperCase())}</span>
           </p>
         </div>
-        ${p.label && p.label !== _ ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${m(p.label)}</p></div>` : ""}
-        ${p.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${m(p.description)}</p></div>` : ""}
+        ${e.label && e.label !== m ? `<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${u(e.label)}</p></div>` : ""}
+        ${e.description ? `<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${u(e.description)}</p></div>` : ""}
         ${
-          (s = p.events) != null && s.length
+          (i = e.events) != null && i.length
             ? `<div>
-                <h4 class="section-title">Trigger Events (${p.events.length})</h4>
+                <h4 class="section-title">Trigger Events (${e.events.length})</h4>
                 <div class="chip-group">
-                  ${p.events.map((b) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${m(b)}</span>`).join("")}
+                  ${e.events.map((v) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${u(v)}</span>`).join("")}
                 </div>
               </div>`
             : ""
         }
         ${
-          (r = p.descriptions) != null && r.length && p.descriptions.length > 1
+          (r = e.descriptions) != null && r.length && e.descriptions.length > 1
             ? `<div>
                 <h4 class="section-title">Bundled Paths</h4>
                 <ul class="instruction-list">
-                  ${p.descriptions
+                  ${e.descriptions
                     .map(
-                      (b) => `
+                      (v) => `
                     <li class="instruction-item">
-                      <span>${m(b)}</span>
+                      <span>${u(v)}</span>
                     </li>
                   `,
                     )
@@ -1874,80 +1874,229 @@
       `));
             } else {
               this.style.setProperty("--drawer-accent", "#f97316");
-              const p = ((d = this._graph) == null ? void 0 : d.title) || "Workflow Overview",
-                _ = ((c = this._graph) == null ? void 0 : c.version) || "",
-                b = (g = this._graph) == null ? void 0 : g.exceptions,
-                S = ((f = this._graph) == null ? void 0 : f.rules) || (b == null ? void 0 : b.rules) || [],
-                P =
-                  ((h = this._graph) == null ? void 0 : h.description) ||
-                  ((v = this._graph) == null ? void 0 : v.summary) ||
-                  "";
-              ((t = `
+              const e = ((d = this._graph) == null ? void 0 : d.title) || "Workflow Overview",
+                m = ((c = this._graph) == null ? void 0 : c.version) || "",
+                v =
+                  ((p = this._graph) == null ? void 0 : p.description) ||
+                  ((f = this._graph) == null ? void 0 : f.summary) ||
+                  "",
+                b = (h = this._graph) == null ? void 0 : h.session,
+                x = (y = this._graph) == null ? void 0 : y.exceptions,
+                w =
+                  (($ = this._graph) == null ? void 0 : $.invariants) ||
+                  ((P = this._graph) == null ? void 0 : P.rules) ||
+                  (x == null ? void 0 : x.rules) ||
+                  [],
+                A = ((C = this._graph) == null ? void 0 : C.ownership) || [],
+                G = ((R = this._graph) == null ? void 0 : R.always) || [],
+                E = (M = this._graph) == null ? void 0 : M.artifact,
+                D = ((L = this._graph) == null ? void 0 : L.procedures) || {};
+              t = `
         <div class="header-titles">
-          <h2>${m(p)}</h2>
+          <h2>${u(e)}</h2>
           <div class="header-badges">
             <span class="badge badge-accent" style="background: #f97316;">OVERVIEW</span>
-            ${_ ? `<span class="badge badge-perm perm-standby">${m(_)}</span>` : ""}
+            ${m ? `<span class="badge badge-perm perm-standby">${u(m)}</span>` : ""}
           </div>
         </div>
-      `),
-                (i = `
+      `;
+              const V = b
+                  ? `<div>
+            <h4 class="section-title" style="color: var(--tuto-accent, #38bdf8);">Session Model & Artifact Contract</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              ${b.mode ? `<div class="info-card"><span class="info-card-label">Session Mode</span><span class="info-card-value">${u(b.mode)}</span></div>` : ""}
+              ${b.artifact ? `<div class="info-card"><span class="info-card-label">Plan Artifact</span><span class="info-card-value">${u(b.artifact)}</span></div>` : ""}
+              ${b.scope ? `<div class="info-card"><span class="info-card-label">Session Scope</span><span class="info-card-value">${u(b.scope)}</span></div>` : ""}
+              ${b.review ? `<div class="info-card"><span class="info-card-label">Review State</span><span class="info-card-value">${u(b.review)}</span></div>` : ""}
+            </div>
+          </div>`
+                  : "",
+                q = x
+                  ? `<div>
+            <h4 class="section-title" style="color: #f97316;">${u(x.title || "Exceptions & Escape Hatches")}</h4>
+            ${x.summary ? `<p class="section-text" style="line-height: 1.55; margin-bottom: 0.75rem; font-size: 0.82rem;">${u(x.summary)}</p>` : ""}
+            ${
+              (z = x.commands) != null && z.length
+                ? `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    ${x.commands
+                      .map(
+                        (k) => `
+                      <div class="tool-card" style="border-left: 3px solid #f97316; padding: 0.65rem 0.8rem;">
+                        <div class="tool-title" style="margin-bottom: 0.25rem;">
+                          <span style="color: #f97316; font-size: 0.84rem; font-weight: 700;">${u(k.command)}</span>
+                          ${k.label ? `<span class="chip" style="color: #fdba74; border-color: rgba(249, 115, 22, 0.3); font-size: 0.68rem;">${u(k.label)}</span>` : ""}
+                        </div>
+                        <p class="section-text" style="font-size: 0.78rem; line-height: 1.45;">${u(k.summary || k.description || "")}</p>
+                      </div>
+                    `,
+                      )
+                      .join("")}
+                  </div>`
+                : ""
+            }
+            ${
+              (X = x.rules) != null && X.length
+                ? `<ul class="instruction-list">
+                    ${x.rules
+                      .map(
+                        (k) => `
+                      <li class="instruction-item">
+                        <span class="instruction-idx" style="color: #f97316;">•</span>
+                        <span style="font-size: 0.8rem; line-height: 1.45;">${u(k)}</span>
+                      </li>
+                    `,
+                      )
+                      .join("")}
+                  </ul>`
+                : ""
+            }
+          </div>`
+                  : "",
+                O = w.length
+                  ? `<div>
+            <h4 class="section-title">Workflow Invariants & Boundaries</h4>
+            <ul class="instruction-list">
+              ${w
+                .map(
+                  (k) => `
+                <li class="instruction-item">
+                  <span class="instruction-idx" style="color: #f97316;">•</span>
+                  <span style="font-size: 0.8rem; line-height: 1.45;">${u(k)}</span>
+                </li>
+              `,
+                )
+                .join("")}
+            </ul>
+          </div>`
+                  : "",
+                et = A.length
+                  ? `<div>
+            <h4 class="section-title">Ownership & Roles</h4>
+            <ul class="instruction-list">
+              ${A.map(
+                (k) => `
+                <li class="instruction-item">
+                  <span class="instruction-idx" style="color: #3b82f6;">•</span>
+                  <span style="font-size: 0.8rem; line-height: 1.45;">${u(k)}</span>
+                </li>
+              `,
+              ).join("")}
+            </ul>
+          </div>`
+                  : "",
+                ot = E
+                  ? `<div>
+            <h4 class="section-title">Artifact Sections & Identifiers</h4>
+            ${
+              (Z = E.sections) != null && Z.length
+                ? `<div style="margin-bottom: 0.6rem;">
+                    <div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b); margin-bottom: 0.35rem; font-weight: 700;">REQUIRED SECTIONS (${E.sections.length})</div>
+                    <div class="chip-group">
+                      ${E.sections.map((k) => `<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${u(k)}</span>`).join("")}
+                    </div>
+                  </div>`
+                : ""
+            }
+            ${
+              E.identifiers && Object.keys(E.identifiers).length
+                ? `<div style="margin-bottom: 0.6rem;">
+                    <div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b); margin-bottom: 0.35rem; font-weight: 700;">STABLE LIFECYCLE IDENTIFIERS</div>
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                      ${Object.entries(E.identifiers)
+                        .map(
+                          ([k, _]) => `
+                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem;">
+                          <span class="chip" style="font-weight: 700; color: #f97316;">${u(k)}</span>
+                          <span style="color: var(--tuto-text-muted, #94a3b8);">${u(_)}</span>
+                        </div>
+                      `,
+                        )
+                        .join("")}
+                    </div>
+                  </div>`
+                : ""
+            }
+            ${
+              (Q = E.rules) != null && Q.length
+                ? `<ul class="instruction-list">
+                    ${E.rules
+                      .map(
+                        (k) => `
+                      <li class="instruction-item">
+                        <span class="instruction-idx" style="color: #38bdf8;">•</span>
+                        <span style="font-size: 0.8rem; line-height: 1.45;">${u(k)}</span>
+                      </li>
+                    `,
+                      )
+                      .join("")}
+                  </ul>`
+                : ""
+            }
+          </div>`
+                  : "",
+                wt = G.length
+                  ? `<div>
+            <h4 class="section-title">Execution Principles (ALWAYS)</h4>
+            <ul class="instruction-list">
+              ${G.map(
+                (k) => `
+                <li class="instruction-item">
+                  <span class="instruction-idx" style="color: #22c55e;">•</span>
+                  <span style="font-size: 0.8rem; line-height: 1.45;">${u(k)}</span>
+                </li>
+              `,
+              ).join("")}
+            </ul>
+          </div>`
+                  : "",
+                W = Object.keys(D),
+                Y = W.length
+                  ? `<div>
+            <h4 class="section-title">Global Procedures (${W.length})</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+              ${W.map(
+                (k) => `
+                <details class="spec-details">
+                  <summary>
+                    <span>${u(k)}</span>
+                    <span class="chip" style="font-size: 0.68rem;">${(D[k] || []).length} steps</span>
+                  </summary>
+                  <div class="spec-details-content">
+                    <ol class="instruction-list" style="gap: 0.4rem;">
+                      ${(D[k] || [])
+                        .map(
+                          (_, I) => `
+                        <li class="instruction-item" style="padding: 0.45rem 0.6rem; font-size: 0.78rem;">
+                          <span class="instruction-idx">${I + 1}.</span>
+                          <span>${u(_)}</span>
+                        </li>
+                      `,
+                        )
+                        .join("")}
+                    </ol>
+                  </div>
+                </details>
+              `,
+              ).join("")}
+            </div>
+          </div>`
+                  : "";
+              a = `
         ${
-          P
+          v
             ? `<div>
                 <h4 class="section-title">Big Picture & Architecture</h4>
-                <p class="section-text" style="line-height: 1.6; color: var(--tuto-text, #e8eaed); font-size: 0.84rem;">${m(P)}</p>
+                <p class="section-text" style="line-height: 1.6; color: var(--tuto-text, #e8eaed); font-size: 0.84rem;">${u(v)}</p>
               </div>`
             : ""
         }
-
-        ${
-          b
-            ? `<div>
-                <h4 class="section-title" style="color: #f97316; display: flex; align-items: center; gap: 0.4rem;">
-                  <span>${m(b.title || "Exceptions & Escape Hatches")}</span>
-                </h4>
-                ${b.summary ? `<p class="section-text" style="line-height: 1.55; margin-bottom: 0.75rem; font-size: 0.82rem;">${m(b.summary)}</p>` : ""}
-                ${
-                  (I = b.commands) != null && I.length
-                    ? `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        ${b.commands
-                          .map(
-                            (R) => `
-                          <div class="tool-card" style="border-left: 3px solid #f97316; padding: 0.65rem 0.8rem;">
-                            <div class="tool-title" style="margin-bottom: 0.25rem;">
-                              <span style="color: #f97316; font-size: 0.84rem; font-weight: 700;">${m(R.command)}</span>
-                              ${R.label ? `<span class="chip" style="color: #fdba74; border-color: rgba(249, 115, 22, 0.3); font-size: 0.68rem;">${m(R.label)}</span>` : ""}
-                            </div>
-                            <p class="section-text" style="font-size: 0.78rem; line-height: 1.45;">${m(R.summary || R.description || "")}</p>
-                          </div>
-                        `,
-                          )
-                          .join("")}
-                      </div>`
-                    : ""
-                }
-              </div>`
-            : ""
-        }
-
-        ${
-          S.length
-            ? `<div>
-                <h4 class="section-title">Workflow Invariants & Rules</h4>
-                <ul class="instruction-list">
-                  ${S.map(
-                    (R) => `
-                    <li class="instruction-item">
-                      <span class="instruction-idx" style="color: #f97316;">•</span>
-                      <span style="font-size: 0.8rem; line-height: 1.45;">${m(R)}</span>
-                    </li>
-                  `,
-                  ).join("")}
-                </ul>
-              </div>`
-            : ""
-        }
+        ${V}
+        ${q}
+        ${O}
+        ${et}
+        ${ot}
+        ${wt}
+        ${Y}
 
         <div>
           <h4 class="section-title" style="color: var(--tuto-muted, #64748b);">Interactive Inspection</h4>
@@ -1955,7 +2104,7 @@
             Click any state node card or transition edge on the canvas to inspect its step-by-step instructions, permissions, and tool gates.
           </p>
         </div>
-      `));
+      `;
             }
             this.shadowRootNode.innerHTML = `
       <aside class="drawer ${this._isOpen ? "is-open" : ""}">
@@ -1964,22 +2113,22 @@
           <button class="btn-close" id="btn-close" title="Close Drawer">×</button>
         </div>
         <div class="drawer-body">
-          ${i}
+          ${a}
         </div>
       </aside>
     `;
-            const o = this.shadowRootNode.querySelector(".drawer");
-            (o &&
-              (o.addEventListener("pointerdown", (p) => p.stopPropagation()),
-              o.addEventListener("mousedown", (p) => p.stopPropagation())),
-              (N = this.shadowRootNode.getElementById("btn-close")) == null ||
-                N.addEventListener("click", () => {
+            const s = this.shadowRootNode.querySelector(".drawer");
+            (s &&
+              (s.addEventListener("pointerdown", (e) => e.stopPropagation()),
+              s.addEventListener("mousedown", (e) => e.stopPropagation())),
+              (tt = this.shadowRootNode.getElementById("btn-close")) == null ||
+                tt.addEventListener("click", () => {
                   this.emit("flow:close-inspector");
                 }));
           }
         }
         (l(
-          ht,
+          bt,
           "styles",
           `
     :host {
@@ -2162,6 +2311,57 @@
       padding: 0.15rem 0.5rem;
       border-radius: 6px;
     }
+    .info-card {
+      background: var(--tuto-head-bg, #1a2030);
+      border: 1px solid var(--tuto-border-subtle, #21262d);
+      border-radius: 8px;
+      padding: 0.65rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .info-card-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--tuto-muted, #64748b);
+    }
+    .info-card-value {
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: var(--tuto-text, #e8eaed);
+    }
+    details.spec-details {
+      background: var(--tuto-tool-bg, #141a24);
+      border: 1px solid var(--tuto-border, #30363d);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    details.spec-details summary {
+      padding: 0.6rem 0.8rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--tuto-text, #e8eaed);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      background: var(--tuto-head-bg, #1a2030);
+    }
+    details.spec-details summary:hover {
+      background: color-mix(in srgb, var(--tuto-head-bg, #1a2030) 80%, white);
+    }
+    details.spec-details[open] summary {
+      border-bottom: 1px solid var(--tuto-border-subtle, #21262d);
+    }
+    .spec-details-content {
+      padding: 0.75rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
     .empty-state {
       text-align: center;
       color: var(--tuto-muted, #64748b);
@@ -2170,8 +2370,8 @@
     }
   `,
         ),
-          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", ht));
-        class pt extends A {
+          customElements.get("tuto-flow-inspector") || customElements.define("tuto-flow-inspector", bt));
+        class vt extends T {
           constructor() {
             super(...arguments);
             l(this, "_graph", null);
@@ -2198,7 +2398,7 @@
             l(this, "_toastTimeout", null);
             l(this, "_activePopover", null);
             l(this, "handleKeyDown", (t) => {
-              var i;
+              var a;
               t.target instanceof HTMLInputElement ||
                 t.target instanceof HTMLTextAreaElement ||
                 (t.key === "+" || t.key === "="
@@ -2208,8 +2408,8 @@
                     : t.key === "0" || t.key === "f" || t.key === "F"
                       ? this.fitToViewport()
                       : t.key === "r" || t.key === "R"
-                        ? (i = this._graph) != null &&
-                          i.initial &&
+                        ? (a = this._graph) != null &&
+                          a.initial &&
                           ((this._activeStateId = this._graph.initial),
                           (this._selectedNodeId = this._graph.initial),
                           (this._selectedEdgeId = null),
@@ -2239,14 +2439,14 @@
             });
             l(this, "handleWheel", (t) => {
               t.preventDefault();
-              const i = this.getBoundingClientRect(),
-                o = t.clientX - i.left,
-                s = t.clientY - i.top,
+              const a = this.getBoundingClientRect(),
+                s = t.clientX - a.left,
+                i = t.clientY - a.top,
                 r = t.deltaY < 0 ? 1.12 : 0.89;
-              ((this._camera = rt(this._camera, o, s, r, X, j)), this._saveCamera(), this.requestUpdate());
+              ((this._camera = pt(this._camera, s, i, r, H, K)), this._saveCamera(), this.requestUpdate());
             });
             l(this, "handlePointerDown", (t) => {
-              var s;
+              var i;
               if (
                 t.button !== 0 ||
                 t.target.closest(
@@ -2256,8 +2456,8 @@
                 return;
               ((this._isDragging = !0),
                 (this._dragStart = { x: t.clientX, y: t.clientY, panX: this._camera.panX, panY: this._camera.panY }));
-              const o = (s = this.shadowRootNode) == null ? void 0 : s.querySelector("svg.flow-svg");
-              (o == null || o.classList.add("grabbing"),
+              const s = (i = this.shadowRootNode) == null ? void 0 : i.querySelector("svg.flow-svg");
+              (s == null || s.classList.add("grabbing"),
                 window.addEventListener("pointermove", this.handlePointerMove),
                 window.addEventListener("pointerup", this.handlePointerUp));
             });
@@ -2271,13 +2471,13 @@
                 this.requestUpdate());
             });
             l(this, "handlePointerUp", () => {
-              var i;
+              var a;
               (this._isDragging &&
                 (Math.hypot(this._camera.panX - this._dragStart.panX, this._camera.panY - this._dragStart.panY) < 4 &&
                   ((this._selectedNodeId = null), (this._activeStateId = null), (this._selectedEdgeId = null)),
                 this._saveCamera()),
                 (this._isDragging = !1));
-              const t = (i = this.shadowRootNode) == null ? void 0 : i.querySelector("svg.flow-svg");
+              const t = (a = this.shadowRootNode) == null ? void 0 : a.querySelector("svg.flow-svg");
               (t == null || t.classList.remove("grabbing"),
                 window.removeEventListener("pointermove", this.handlePointerMove),
                 window.removeEventListener("pointerup", this.handlePointerUp),
@@ -2285,21 +2485,21 @@
             });
             l(this, "handleNodePointerMove", (t) => {
               if (!this._draggedNodeId || !this._dragNodeStart || !this._graph) return;
-              const i = this._graph.states[this._draggedNodeId];
-              if (!i) return;
-              const o = this._camera.scale || 1,
-                s = (t.clientX - this._dragNodeStart.startX) / o,
-                r = (t.clientY - this._dragNodeStart.startY) / o;
-              Math.hypot(s, r) > 4 && (this._nodeDragMoved = !0);
-              const d = this._dragNodeStart.nodeOrigX + s,
+              const a = this._graph.states[this._draggedNodeId];
+              if (!a) return;
+              const s = this._camera.scale || 1,
+                i = (t.clientX - this._dragNodeStart.startX) / s,
+                r = (t.clientY - this._dragNodeStart.startY) / s;
+              Math.hypot(i, r) > 4 && (this._nodeDragMoved = !0);
+              const d = this._dragNodeStart.nodeOrigX + i,
                 c = this._dragNodeStart.nodeOrigY + r;
-              ((i.x = Math.round(d / 10) * 10), (i.y = Math.round(c / 10) * 10));
-              const g = this._graph.framing !== !1;
-              ((this._bounds = Z(this._graph.states, g ? 64 : 40, g ? 56 : 30, g ? 46 : 0, this._graph.groups)),
+              ((a.x = Math.round(d / 10) * 10), (a.y = Math.round(c / 10) * 10));
+              const p = this._graph.framing !== !1;
+              ((this._bounds = nt(this._graph.states, p ? 64 : 40, p ? 56 : 30, p ? 46 : 0, this._graph.groups)),
                 this.requestUpdate());
             });
             l(this, "handleNodePointerUp", () => {
-              var i;
+              var a;
               if (!this._draggedNodeId) return;
               const t = this._draggedNodeId;
               ((this._draggedNodeId = null),
@@ -2314,22 +2514,22 @@
                       this.emit("flow:select-node", { node: null }))
                     : ((this._selectedNodeId = t),
                       (this._activeStateId = t),
-                      (i = this._graph) != null &&
-                        i.states[t] &&
+                      (a = this._graph) != null &&
+                        a.states[t] &&
                         this.emit("flow:select-node", { node: this._graph.states[t] })),
                 this.requestUpdate());
             });
             l(this, "handleWaypointPointerMove", (t) => {
               if (!this._draggedWaypoint) return;
-              const { edgeId: i, waypointIndex: o, startX: s, startY: r, origX: d, origY: c } = this._draggedWaypoint,
-                g = this._edgeWaypoints.get(i);
-              if (!g || !g[o]) return;
+              const { edgeId: a, waypointIndex: s, startX: i, startY: r, origX: d, origY: c } = this._draggedWaypoint,
+                p = this._edgeWaypoints.get(a);
+              if (!p || !p[s]) return;
               const f = this._camera.scale || 1,
-                h = (t.clientX - s) / f,
-                v = (t.clientY - r) / f,
-                I = Math.round((d + h) / 10) * 10,
-                N = Math.round((c + v) / 10) * 10;
-              ((g[o] = [I, N]), this.requestUpdate());
+                h = (t.clientX - i) / f,
+                y = (t.clientY - r) / f,
+                $ = Math.round((d + h) / 10) * 10,
+                P = Math.round((c + y) / 10) * 10;
+              ((p[s] = [$, P]), this.requestUpdate());
             });
             l(this, "handleWaypointPointerUp", () => {
               this._draggedWaypoint &&
@@ -2348,51 +2548,52 @@
             if (((this._graph = t), t)) {
               if (!this._defaultLayout && t.states) {
                 this._defaultLayout = {};
-                for (const [o, s] of Object.entries(t.states))
-                  this._defaultLayout[o] = { x: s.x, y: s.y, w: s.w, h: s.h };
+                for (const [s, i] of Object.entries(t.states))
+                  this._defaultLayout[s] = { x: i.x, y: i.y, w: i.w, h: i.h };
               }
               if ((this._edgeWaypoints.clear(), t.transitions))
-                for (const o of t.transitions)
-                  o.waypoints &&
-                    o.waypoints.length > 0 &&
+                for (const s of t.transitions)
+                  s.waypoints &&
+                    s.waypoints.length > 0 &&
                     this._edgeWaypoints.set(
-                      o.id,
-                      o.waypoints.map((s) => [...s]),
+                      s.id,
+                      s.waypoints.map((i) => [...i]),
                     );
               try {
-                const o = localStorage.getItem("pi_workflow_edge_override");
-                if (o !== null) {
-                  const s = JSON.parse(o);
+                const s = localStorage.getItem("pi_workflow_edge_override");
+                if (s !== null) {
+                  const i = JSON.parse(s);
                   this._edgeWaypoints.clear();
-                  for (const [r, d] of Object.entries(s))
+                  for (const [r, d] of Object.entries(i))
                     Array.isArray(d) && d.length > 0 && this._edgeWaypoints.set(r, d);
                 }
               } catch {}
               this._activeStateId || (this._activeStateId = t.initial || Object.keys(t.states || {})[0] || null);
-              const i = t.framing !== !1;
+              const a = t.framing !== !1;
               if (
-                ((this._bounds = Z(t.states, i ? 64 : 40, i ? 56 : 30, i ? 46 : 0, t.groups)), !this._hasRestoredCamera)
+                ((this._bounds = nt(t.states, a ? 64 : 40, a ? 56 : 30, a ? 46 : 0, t.groups)),
+                !this._hasRestoredCamera)
               )
                 try {
-                  const o = localStorage.getItem("pi_workflow_camera");
-                  if (o) {
-                    const s = JSON.parse(o);
-                    s &&
-                      typeof s.scale == "number" &&
-                      typeof s.panX == "number" &&
-                      ((this._camera = s), (this._hasRestoredCamera = !0));
+                  const s = localStorage.getItem("pi_workflow_camera");
+                  if (s) {
+                    const i = JSON.parse(s);
+                    i &&
+                      typeof i.scale == "number" &&
+                      typeof i.panX == "number" &&
+                      ((this._camera = i), (this._hasRestoredCamera = !0));
                   }
                 } catch {}
               this._hasRestoredCamera || requestAnimationFrame(() => this.fitToViewport());
             }
             this.requestUpdate();
           }
-          _removeWaypoint(t, i) {
-            const o = [...(this._edgeWaypoints.get(t) || [])];
-            (i >= 0 && i < o.length && o.splice(i, 1),
-              o.length === 0
+          _removeWaypoint(t, a) {
+            const s = [...(this._edgeWaypoints.get(t) || [])];
+            (a >= 0 && a < s.length && s.splice(a, 1),
+              s.length === 0
                 ? (this._edgeWaypoints.delete(t), this.showToast("✓ Straightened edge (0 breakpoints)"))
-                : (this._edgeWaypoints.set(t, o), this.showToast(`✓ Removed breakpoint (${o.length}/2 remaining)`)),
+                : (this._edgeWaypoints.set(t, s), this.showToast(`✓ Removed breakpoint (${s.length}/2 remaining)`)),
               (this._activePopover = null),
               this._saveEdgeWaypoints(),
               this.emit("flow:layout-change", { layout: this.exportLayoutSnapshot() }),
@@ -2406,35 +2607,35 @@
               this.showToast("✓ Reset edge to straight line (0 breakpoints)"),
               this.requestUpdate());
           }
-          _addWaypointToEdge(t, i, o) {
-            const s = this._edgeWaypoints.get(t) ? [...this._edgeWaypoints.get(t)] : [];
-            if (s.length >= 2) {
+          _addWaypointToEdge(t, a, s) {
+            const i = this._edgeWaypoints.get(t) ? [...this._edgeWaypoints.get(t)] : [];
+            if (i.length >= 2) {
               this.showToast("Maximum 2 breakpoints per line");
               return;
             }
-            const r = Math.round(i / 10) * 10,
-              d = Math.round(o / 10) * 10;
-            (s.push([r, d]),
-              this._edgeWaypoints.set(t, s),
-              (this._activePopover = { type: "waypoint", id: t, index: s.length - 1, worldX: r, worldY: d }),
+            const r = Math.round(a / 10) * 10,
+              d = Math.round(s / 10) * 10;
+            (i.push([r, d]),
+              this._edgeWaypoints.set(t, i),
+              (this._activePopover = { type: "waypoint", id: t, index: i.length - 1, worldX: r, worldY: d }),
               this._saveEdgeWaypoints(),
               this.emit("flow:layout-change", { layout: this.exportLayoutSnapshot() }),
-              this.showToast(`✓ Added breakpoint (${s.length}/2)`),
+              this.showToast(`✓ Added breakpoint (${i.length}/2)`),
               this.requestUpdate());
           }
           _resetNode(t) {
-            var i, o;
+            var a, s;
             if (
               this._defaultLayout &&
               this._defaultLayout[t] &&
-              (o = (i = this._graph) == null ? void 0 : i.states) != null &&
-              o[t]
+              (s = (a = this._graph) == null ? void 0 : a.states) != null &&
+              s[t]
             ) {
-              const s = this._defaultLayout[t];
-              ((this._graph.states[t].x = s.x),
-                (this._graph.states[t].y = s.y),
-                (this._graph.states[t].w = s.w),
-                (this._graph.states[t].h = s.h));
+              const i = this._defaultLayout[t];
+              ((this._graph.states[t].x = i.x),
+                (this._graph.states[t].y = i.y),
+                (this._graph.states[t].w = i.w),
+                (this._graph.states[t].h = i.h));
               try {
                 const r = localStorage.getItem("pi_workflow_layout_override");
                 if (r) {
@@ -2449,14 +2650,14 @@
             }
           }
           _renderPopoverContent() {
-            var t, i;
+            var t, a;
             if (!this._activePopover) return "";
             if (this._activePopover.type === "waypoint") {
-              const o = this._activePopover.id,
-                s = this._edgeWaypoints.get(o) || [];
+              const s = this._activePopover.id,
+                i = this._edgeWaypoints.get(s) || [];
               return `
         <span class="flow-fab-label">
-          Breakpoint #${(this._activePopover.index ?? 0) + 1} of ${s.length}
+          Breakpoint #${(this._activePopover.index ?? 0) + 1} of ${i.length}
           <span class="flow-fab-badge">${Math.round(this._activePopover.worldX)}, ${Math.round(this._activePopover.worldY)}</span>
         </span>
         <button type="button" class="flow-fab-btn danger" data-action="remove-waypoint" title="Remove this breakpoint">
@@ -2469,14 +2670,14 @@
       `;
             }
             if (this._activePopover.type === "edge") {
-              const o = this._activePopover.id,
-                s = this._edgeWaypoints.get(o) || [],
-                r = s.length > 0,
-                d = s.length < 2;
+              const s = this._activePopover.id,
+                i = this._edgeWaypoints.get(s) || [],
+                r = i.length > 0,
+                d = i.length < 2;
               return `
         <span class="flow-fab-label">
-          ${m(this._activePopover.label || o)}
-          <span class="flow-fab-badge">${r ? `${s.length}/2 bp` : "Straight (0 bp)"}</span>
+          ${u(this._activePopover.label || s)}
+          <span class="flow-fab-badge">${r ? `${i.length}/2 bp` : "Straight (0 bp)"}</span>
         </span>
         ${
           r
@@ -2488,7 +2689,7 @@
         }
         ${
           d
-            ? `<button type="button" class="flow-fab-btn primary" data-action="add-waypoint" title="Add a breakpoint (${s.length + 1}/2)">
+            ? `<button type="button" class="flow-fab-btn primary" data-action="add-waypoint" title="Add a breakpoint (${i.length + 1}/2)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Add Breakpoint
               </button>`
@@ -2500,12 +2701,12 @@
       `;
             }
             if (this._activePopover.type === "node") {
-              const o = this._activePopover.id,
-                s = (i = (t = this._graph) == null ? void 0 : t.states) == null ? void 0 : i[o];
+              const s = this._activePopover.id,
+                i = (a = (t = this._graph) == null ? void 0 : t.states) == null ? void 0 : a[s];
               return `
         <span class="flow-fab-label">
-          ${m(this._activePopover.label || o)}
-          <span class="flow-fab-badge">${Math.round((s == null ? void 0 : s.x) || 0)}, ${Math.round((s == null ? void 0 : s.y) || 0)}</span>
+          ${u(this._activePopover.label || s)}
+          <span class="flow-fab-badge">${Math.round((i == null ? void 0 : i.x) || 0)}, ${Math.round((i == null ? void 0 : i.y) || 0)}</span>
         </span>
         <button type="button" class="flow-fab-btn warning" data-action="reset-node" title="Reset node position to default">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
@@ -2584,13 +2785,13 @@
             try {
               const t = localStorage.getItem("pi_workflow_inspector_open");
               t !== null ? (this._showInspector = JSON.parse(t)) : (this._showInspector = !0);
-              const i = localStorage.getItem("pi_workflow_camera");
-              if (i !== null) {
-                const o = JSON.parse(i);
-                o &&
-                  typeof o.scale == "number" &&
-                  typeof o.panX == "number" &&
-                  ((this._camera = o), (this._hasRestoredCamera = !0));
+              const a = localStorage.getItem("pi_workflow_camera");
+              if (a !== null) {
+                const s = JSON.parse(a);
+                s &&
+                  typeof s.scale == "number" &&
+                  typeof s.panX == "number" &&
+                  ((this._camera = s), (this._hasRestoredCamera = !0));
               }
             } catch {}
             (window.addEventListener("keydown", this.handleKeyDown),
@@ -2628,23 +2829,23 @@
           }
           fitToViewport() {
             const t = this.getBoundingClientRect(),
-              i = t.width || 900,
-              o = t.height || 700,
-              s = this._showInspector ? Math.min(420, i * 0.45) : 0,
-              r = i - s,
-              d = vt({ width: r, height: o }, this._bounds);
+              a = t.width || 900,
+              s = t.height || 700,
+              i = this._showInspector ? Math.min(420, a * 0.45) : 0,
+              r = a - i,
+              d = kt({ width: r, height: s }, this._bounds);
             ((this._camera = { scale: d.scale, panX: d.panX, panY: d.panY }), this._saveCamera(), this.requestUpdate());
           }
           centerOnState(t) {
-            var g;
-            if (!((g = this._graph) != null && g.states[t])) return;
-            const i = this._graph.states[t],
-              o = this.getBoundingClientRect(),
-              s = o.width || 900,
-              r = o.height || 700,
-              d = this._showInspector ? Math.min(420, s * 0.45) : 0,
-              c = s - d;
-            ((this._camera = wt({ width: c, height: r }, i)),
+            var p;
+            if (!((p = this._graph) != null && p.states[t])) return;
+            const a = this._graph.states[t],
+              s = this.getBoundingClientRect(),
+              i = s.width || 900,
+              r = s.height || 700,
+              d = this._showInspector ? Math.min(420, i * 0.45) : 0,
+              c = i - d;
+            ((this._camera = Et({ width: c, height: r }, a)),
               (this._activeStateId = t),
               (this._selectedNodeId = t),
               (this._selectedEdgeId = null),
@@ -2660,22 +2861,22 @@
               }, 2500)));
           }
           exportLayoutSnapshot() {
-            var o;
+            var s;
             const t = {};
-            if ((o = this._graph) != null && o.states)
-              for (const [s, r] of Object.entries(this._graph.states))
-                t[s] = { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h) };
-            const i = {};
-            for (const [s, r] of this._edgeWaypoints.entries())
-              r && r.length > 0 && (i[s] = r.map(([d, c]) => [Math.round(d), Math.round(c)]));
-            return { ...t, nodes: t, edges: i };
+            if ((s = this._graph) != null && s.states)
+              for (const [i, r] of Object.entries(this._graph.states))
+                t[i] = { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h) };
+            const a = {};
+            for (const [i, r] of this._edgeWaypoints.entries())
+              r && r.length > 0 && (a[i] = r.map(([d, c]) => [Math.round(d), Math.round(c)]));
+            return { ...t, nodes: t, edges: a };
           }
           async copyLayoutSnapshot() {
             const t = this.exportLayoutSnapshot(),
-              i = t.nodes || {},
-              o = t.edges || {},
-              s = { nodes: i, edges: o },
-              r = JSON.stringify(s, null, 2);
+              a = t.nodes || {},
+              s = t.edges || {},
+              i = { nodes: a, edges: s },
+              r = JSON.stringify(i, null, 2);
             try {
               typeof navigator < "u" &&
                 navigator.clipboard &&
@@ -2683,7 +2884,7 @@
                 (await navigator.clipboard.writeText(r));
             } catch {}
             try {
-              (localStorage.setItem("pi_workflow_layout_override", JSON.stringify(i)), this._saveEdgeWaypoints());
+              (localStorage.setItem("pi_workflow_layout_override", JSON.stringify(a)), this._saveEdgeWaypoints());
             } catch {}
             return (
               console.log(
@@ -2691,56 +2892,56 @@
 ` + r,
               ),
               this.showToast("✓ Layout JSON copied to clipboard!"),
-              this.emit("flow:snapshot-layout", { snapshot: t, code: r, json: s }),
+              this.emit("flow:snapshot-layout", { snapshot: t, code: r, json: i }),
               r
             );
           }
           resetLayout() {
-            var i;
-            if (!this._defaultLayout || !((i = this._graph) != null && i.states)) return;
-            for (const [o, s] of Object.entries(this._defaultLayout))
-              this._graph.states[o] &&
-                ((this._graph.states[o].x = s.x),
-                (this._graph.states[o].y = s.y),
-                (this._graph.states[o].w = s.w),
-                (this._graph.states[o].h = s.h));
+            var a;
+            if (!this._defaultLayout || !((a = this._graph) != null && a.states)) return;
+            for (const [s, i] of Object.entries(this._defaultLayout))
+              this._graph.states[s] &&
+                ((this._graph.states[s].x = i.x),
+                (this._graph.states[s].y = i.y),
+                (this._graph.states[s].w = i.w),
+                (this._graph.states[s].h = i.h));
             this._edgeWaypoints.clear();
             try {
               (localStorage.removeItem("pi_workflow_layout_override"),
                 localStorage.removeItem("pi_workflow_edge_override"));
             } catch {}
             const t = this._graph.framing !== !1;
-            ((this._bounds = Z(this._graph.states, t ? 64 : 40, t ? 56 : 30, t ? 46 : 0, this._graph.groups)),
+            ((this._bounds = nt(this._graph.states, t ? 64 : 40, t ? 56 : 30, t ? 46 : 0, this._graph.groups)),
               this.showToast("✓ Reset layout to default"),
               this.emit("flow:reset-layout"),
               this.requestUpdate());
           }
           zoomBy(t) {
-            const i = this.getBoundingClientRect(),
-              o = i.width / 2,
-              s = i.height / 2;
-            ((this._camera = rt(this._camera, o, s, t, X, j)), this._saveCamera(), this.requestUpdate());
+            const a = this.getBoundingClientRect(),
+              s = a.width / 2,
+              i = a.height / 2;
+            ((this._camera = pt(this._camera, s, i, t, H, K)), this._saveCamera(), this.requestUpdate());
           }
-          _startNodeDrag(t, i) {
-            var s;
-            const o = (s = this._graph) == null ? void 0 : s.states[t];
-            o &&
+          _startNodeDrag(t, a) {
+            var i;
+            const s = (i = this._graph) == null ? void 0 : i.states[t];
+            s &&
               ((this._draggedNodeId = t),
               (this._nodeDragMoved = !1),
-              (this._dragNodeStart = { startX: i.clientX, startY: i.clientY, nodeOrigX: o.x, nodeOrigY: o.y }),
+              (this._dragNodeStart = { startX: a.clientX, startY: a.clientY, nodeOrigX: s.x, nodeOrigY: s.y }),
               window.addEventListener("pointermove", this.handleNodePointerMove),
               window.addEventListener("pointerup", this.handleNodePointerUp),
               this.requestUpdate());
           }
-          _startWaypointDrag(t, i, o) {
-            const s = this._edgeWaypoints.get(t);
-            if (!s || !s[i]) return;
-            const r = s[i];
+          _startWaypointDrag(t, a, s) {
+            const i = this._edgeWaypoints.get(t);
+            if (!i || !i[a]) return;
+            const r = i[a];
             ((this._draggedWaypoint = {
               edgeId: t,
-              waypointIndex: i,
-              startX: o.clientX,
-              startY: o.clientY,
+              waypointIndex: a,
+              startX: s.clientX,
+              startY: s.clientY,
               origX: r[0],
               origY: r[1],
             }),
@@ -2751,12 +2952,12 @@
           _saveEdgeWaypoints() {
             try {
               const t = {};
-              for (const [i, o] of this._edgeWaypoints.entries()) o && o.length > 0 && (t[i] = o);
+              for (const [a, s] of this._edgeWaypoints.entries()) s && s.length > 0 && (t[a] = s);
               localStorage.setItem("pi_workflow_edge_override", JSON.stringify(t));
             } catch {}
           }
           render() {
-            var P, R, D, Q, C;
+            var z, X, Z, Q, tt;
             if (!this.shadowRootNode) return;
             if (!this._graph) {
               this.shadowRootNode.innerHTML = `
@@ -2767,31 +2968,31 @@
               return;
             }
             const t = this._graph.states,
-              i = this._graph.transitions || [],
-              o = Et(_t(i));
-            for (const a of o) {
-              this._edgeWaypoints.has(a.id) ? (a.waypoints = this._edgeWaypoints.get(a.id)) : (a.waypoints = void 0);
-              const w = Mt(a, t);
-              w && (a.route = w);
+              a = this._graph.transitions || [],
+              s = Lt(St(a));
+            for (const e of s) {
+              this._edgeWaypoints.has(e.id) ? (e.waypoints = this._edgeWaypoints.get(e.id)) : (e.waypoints = void 0);
+              const m = Nt(e, t);
+              m && (e.route = m);
             }
-            const s = this._selectedNodeId || this._activeStateId || null,
+            const i = this._selectedNodeId || this._activeStateId || null,
               r = this._toolMode === "move",
               d = this._toolMode === "edit",
               c = r || d;
-            let g = "";
+            let p = "";
             if (d && this._activePopover) {
-              const a = this._camera.panX + this._activePopover.worldX * this._camera.scale,
-                w = this._camera.panY + this._activePopover.worldY * this._camera.scale;
-              g = `
-        <div class="flow-fab-popover" id="action-popover" style="left: ${a}px; top: ${w}px;">
+              const e = this._camera.panX + this._activePopover.worldX * this._camera.scale,
+                m = this._camera.panY + this._activePopover.worldY * this._camera.scale;
+              p = `
+        <div class="flow-fab-popover" id="action-popover" style="left: ${e}px; top: ${m}px;">
           ${this._renderPopoverContent()}
         </div>
       `;
             }
             this.shadowRootNode.innerHTML = `
       <div class="canvas-root ${r ? "move-mode edit-mode" : d ? "edit-mode" : ""}">
-        ${this._toastMessage ? `<div class="flow-toast">${m(this._toastMessage)}</div>` : ""}
-        ${g}
+        ${this._toastMessage ? `<div class="flow-toast">${u(this._toastMessage)}</div>` : ""}
+        ${p}
 
         <svg class="flow-svg" id="flow-svg">
           <defs>
@@ -2829,9 +3030,9 @@
                 stroke="var(--tuto-border, #283040)"
                 stroke-width="1.2"
               />
-              <text x="${this._bounds.x + 20}" y="${this._bounds.y + 28}" fill="var(--tuto-text, #ffffff)" font-size="12" font-weight="700" letter-spacing="0.05em" font-family="var(--tuto-font-sans, sans-serif)">${m(this._graph.title.toUpperCase())}</text>
-              ${this._graph.subtitle ? `<text x="${this._bounds.x + 20 + this._graph.title.length * 7.5 + 16}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-sans, sans-serif)">${m(this._graph.subtitle)}</text>` : ""}
-              <text x="${this._bounds.x + this._bounds.w - 20}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-mono, monospace)" text-anchor="end">${m(this._graph.version || "v1.0")}</text>
+              <text x="${this._bounds.x + 20}" y="${this._bounds.y + 28}" fill="var(--tuto-text, #ffffff)" font-size="12" font-weight="700" letter-spacing="0.05em" font-family="var(--tuto-font-sans, sans-serif)">${u(this._graph.title.toUpperCase())}</text>
+              ${this._graph.subtitle ? `<text x="${this._bounds.x + 20 + this._graph.title.length * 7.5 + 16}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-sans, sans-serif)">${u(this._graph.subtitle)}</text>` : ""}
+              <text x="${this._bounds.x + this._bounds.w - 20}" y="${this._bounds.y + 28}" fill="var(--tuto-muted, #64748b)" font-size="11" font-family="var(--tuto-font-mono, monospace)" text-anchor="end">${u(this._graph.version || "v1.0")}</text>
             </g>`
                 : ""
             }
@@ -2867,406 +3068,406 @@
               (f.addEventListener("wheel", this.handleWheel, { passive: !1 }),
               f.addEventListener("pointerdown", this.handlePointerDown));
             const h = this.shadowRootNode.getElementById("groups-group"),
-              v = this.shadowRootNode.getElementById("edges-paths-group"),
-              I = this.shadowRootNode.getElementById("edges-pills-group"),
-              N = this.shadowRootNode.getElementById("edges-handles-group"),
-              p = this.shadowRootNode.getElementById("nodes-group");
+              y = this.shadowRootNode.getElementById("edges-paths-group"),
+              $ = this.shadowRootNode.getElementById("edges-pills-group"),
+              P = this.shadowRootNode.getElementById("edges-handles-group"),
+              C = this.shadowRootNode.getElementById("nodes-group");
             if (this._graph.groups)
-              for (const a of this._graph.groups) {
-                const w = M("g", { class: "flow-group-container" }, h),
-                  y = a.accent || "#3b82f6";
-                (M(
+              for (const e of this._graph.groups) {
+                const m = S("g", { class: "flow-group-container" }, h),
+                  v = e.accent || "#3b82f6";
+                (S(
                   "rect",
                   {
-                    x: a.x,
-                    y: a.y,
-                    width: a.w,
-                    height: a.h,
+                    x: e.x,
+                    y: e.y,
+                    width: e.w,
+                    height: e.h,
                     rx: 14,
                     fill: "var(--tuto-card-bg, #12161c)",
                     "fill-opacity": "0.38",
-                    stroke: y,
+                    stroke: v,
                     "stroke-width": 1.2,
                     "stroke-opacity": "0.35",
                   },
-                  w,
+                  m,
                 ),
-                  M(
+                  S(
                     "path",
                     {
-                      d: `M ${a.x} ${a.y + 14} Q ${a.x} ${a.y} ${a.x + 14} ${a.y} L ${a.x + a.w - 14} ${a.y} Q ${a.x + a.w} ${a.y} ${a.x + a.w} ${a.y + 14} L ${a.x + a.w} ${a.y + 28} L ${a.x} ${a.y + 28} Z`,
-                      fill: y,
+                      d: `M ${e.x} ${e.y + 14} Q ${e.x} ${e.y} ${e.x + 14} ${e.y} L ${e.x + e.w - 14} ${e.y} Q ${e.x + e.w} ${e.y} ${e.x + e.w} ${e.y + 14} L ${e.x + e.w} ${e.y + 28} L ${e.x} ${e.y + 28} Z`,
+                      fill: v,
                       "fill-opacity": "0.12",
                     },
-                    w,
+                    m,
                   ));
-                const x = M(
+                const b = S(
                   "text",
                   {
-                    x: a.x + 14,
-                    y: a.y + 18,
-                    fill: y,
+                    x: e.x + 14,
+                    y: e.y + 18,
+                    fill: v,
                     "font-size": 10.5,
                     "font-weight": 800,
                     "letter-spacing": "0.08em",
                     "font-family": "var(--tuto-font-mono, monospace)",
                   },
-                  w,
+                  m,
                 );
-                x.textContent = a.label.toUpperCase();
+                b.textContent = e.label.toUpperCase();
               }
             if (this._graph.initial && t[this._graph.initial]) {
-              const a = t[this._graph.initial],
-                w = a.x - 14,
-                y = a.y + a.h / 2,
-                x = a.x,
-                z = a.y + a.h / 2,
-                k = M("g", { class: "flow-initial-indicator" }, v);
-              (M("circle", { cx: w - 4, cy: y, r: 4, fill: "#ffffff" }, k),
-                M(
+              const e = t[this._graph.initial],
+                m = e.x - 14,
+                v = e.y + e.h / 2,
+                b = e.x,
+                x = e.y + e.h / 2,
+                w = S("g", { class: "flow-initial-indicator" }, y);
+              (S("circle", { cx: m - 4, cy: v, r: 4, fill: "#ffffff" }, w),
+                S(
                   "path",
                   {
-                    d: `M ${w} ${y} L ${x} ${z}`,
+                    d: `M ${m} ${v} L ${b} ${x}`,
                     stroke: "#ffffff",
                     "stroke-width": 2,
                     fill: "none",
                     "marker-end": "url(#flow-arrow-init)",
                   },
-                  k,
+                  w,
                 ));
             }
-            for (const a of o) {
-              if (!a.route || !a.route.points || a.route.points.length < 2) continue;
-              const w = !!(this._selectedNodeId && a.from === this._selectedNodeId),
-                y = !!(this._selectedNodeId && a.to === this._selectedNodeId),
-                x = w || y;
-              if (this._selectedNodeId && !x) continue;
-              const z = a.id === this._selectedEdgeId;
-              (a.id, this._hoveredEdgeId);
-              const k = z || w,
-                tt = this._selectedNodeId ? y : !1,
-                At = !!((a.self || a.from === a.to) && (!a.waypoints || a.waypoints.length === 0)),
-                Tt = St(a.route.points, At, 12);
-              M(
+            for (const e of s) {
+              if (!e.route || !e.route.points || e.route.points.length < 2) continue;
+              const m = !!(this._selectedNodeId && e.from === this._selectedNodeId),
+                v = !!(this._selectedNodeId && e.to === this._selectedNodeId),
+                b = m || v;
+              if (this._selectedNodeId && !b) continue;
+              const x = e.id === this._selectedEdgeId;
+              (e.id, this._hoveredEdgeId);
+              const w = x || m,
+                A = this._selectedNodeId ? v : !1,
+                G = !!((e.self || e.from === e.to) && (!e.waypoints || e.waypoints.length === 0)),
+                E = Pt(e.route.points, G, 12);
+              S(
                 "path",
                 {
-                  d: Tt,
-                  class: `flow-edge-path ${k ? "hot available" : ""} ${tt ? "dimmed" : ""} ${z ? "selected" : ""}`,
-                  stroke: k ? "#38bdf8" : tt ? "#334155" : "#64748b",
-                  "stroke-width": k ? 2.8 : tt ? 1.4 : 1.8,
+                  d: E,
+                  class: `flow-edge-path ${w ? "hot available" : ""} ${A ? "dimmed" : ""} ${x ? "selected" : ""}`,
+                  stroke: w ? "#38bdf8" : A ? "#334155" : "#64748b",
+                  "stroke-width": w ? 2.8 : A ? 1.4 : 1.8,
                   fill: "none",
-                  "marker-end": k ? "url(#flow-arrow-hot)" : tt ? "url(#flow-arrow)" : "url(#flow-arrow-init)",
+                  "marker-end": w ? "url(#flow-arrow-hot)" : A ? "url(#flow-arrow)" : "url(#flow-arrow-init)",
                 },
-                v,
-              ).addEventListener("click", (E) => {
-                var L, U;
-                if ((E.stopPropagation(), !r)) {
+                y,
+              ).addEventListener("click", (_) => {
+                var I, U;
+                if ((_.stopPropagation(), !r)) {
                   if (d) {
-                    const B = E,
-                      G = this.getBoundingClientRect(),
-                      V = this._camera.scale || 1,
-                      ot = (B.clientX - G.left - this._camera.panX) / V,
-                      O = (B.clientY - G.top - this._camera.panY) / V;
+                    const B = _,
+                      st = this.getBoundingClientRect(),
+                      it = this._camera.scale || 1,
+                      dt = (B.clientX - st.left - this._camera.panX) / it,
+                      J = (B.clientY - st.top - this._camera.panY) / it;
                     ((this._activePopover = {
                       type: "edge",
-                      id: a.id,
-                      worldX: ((L = a.route) == null ? void 0 : L.seatX) || ot,
-                      worldY: ((U = a.route) == null ? void 0 : U.seatY) || O,
-                      label: et,
+                      id: e.id,
+                      worldX: ((I = e.route) == null ? void 0 : I.seatX) || dt,
+                      worldY: ((U = e.route) == null ? void 0 : U.seatY) || J,
+                      label: V,
                     }),
-                      (this._selectedEdgeId = a.id),
+                      (this._selectedEdgeId = e.id),
                       this.requestUpdate());
                     return;
                   }
-                  a.to
-                    ? ((this._activeStateId = a.to),
-                      (this._selectedNodeId = a.to),
-                      (this._selectedEdgeId = a.id),
-                      this.emit("flow:transition", { from: a.from, to: a.to, event: a.event }),
-                      t[a.to] && this.emit("flow:select-node", { node: t[a.to] }),
+                  e.to
+                    ? ((this._activeStateId = e.to),
+                      (this._selectedNodeId = e.to),
+                      (this._selectedEdgeId = e.id),
+                      this.emit("flow:transition", { from: e.from, to: e.to, event: e.event }),
+                      t[e.to] && this.emit("flow:select-node", { node: t[e.to] }),
                       this.requestUpdate())
-                    : ((this._selectedEdgeId = a.id), this.emit("flow:select-edge", { edge: a }), this.requestUpdate());
+                    : ((this._selectedEdgeId = e.id), this.emit("flow:select-edge", { edge: e }), this.requestUpdate());
                 }
               });
-              const et = a.event || a.label || "",
-                H = Math.max(76, Math.min(240, et.length * 8 + 28)),
-                F = 28,
-                gt = a.route.seatX - H / 2,
-                ut = a.route.seatY - F / 2,
-                Wt = ((P = this._draggedWaypoint) == null ? void 0 : P.edgeId) === a.id,
-                q = w || !this._selectedNodeId,
-                T = M(
+              const V = e.event || e.label || "",
+                q = Math.max(76, Math.min(240, V.length * 8 + 28)),
+                O = 28,
+                et = e.route.seatX - q / 2,
+                ot = e.route.seatY - O / 2,
+                wt = ((z = this._draggedWaypoint) == null ? void 0 : z.edgeId) === e.id,
+                W = m || !this._selectedNodeId,
+                Y = S(
                   "g",
                   {
-                    class: `flow-edge-pill ${q ? "available" : "dimmed"} ${Wt ? "dragging" : ""}`,
-                    transform: `translate(${gt}, ${ut})`,
+                    class: `flow-edge-pill ${W ? "available" : "dimmed"} ${wt ? "dragging" : ""}`,
+                    transform: `translate(${et}, ${ot})`,
                   },
-                  I,
+                  $,
                 );
-              M(
+              S(
                 "rect",
                 {
-                  width: H,
-                  height: F,
+                  width: q,
+                  height: O,
                   rx: 14,
-                  fill: q ? "#3b82f6" : "#202636",
-                  stroke: q ? "#93c5fd" : "rgba(255, 255, 255, 0.12)",
-                  "stroke-width": q ? 2 : 1,
-                  filter: q
+                  fill: W ? "#3b82f6" : "#202636",
+                  stroke: W ? "#93c5fd" : "rgba(255, 255, 255, 0.12)",
+                  "stroke-width": W ? 2 : 1,
+                  filter: W
                     ? "drop-shadow(0 4px 14px rgba(59, 130, 246, 0.55))"
                     : "drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4))",
                 },
-                T,
+                Y,
               );
-              const Xt = M(
+              const k = S(
                 "text",
                 {
-                  x: H / 2,
-                  y: F / 2,
+                  x: q / 2,
+                  y: O / 2,
                   "text-anchor": "middle",
                   "dominant-baseline": "central",
-                  fill: q ? "#ffffff" : "#94a3b8",
+                  fill: W ? "#ffffff" : "#94a3b8",
                   "font-size": 11,
                   "font-weight": 800,
                   "letter-spacing": "0.04em",
                   "font-family": "var(--tuto-font-sans, sans-serif)",
                 },
-                T,
+                Y,
               );
               if (
-                ((Xt.textContent = et),
+                ((k.textContent = V),
                 r
-                  ? T.addEventListener("pointerdown", (E) => {
-                      var V, ot;
-                      if (E.button !== 0) return;
-                      E.stopPropagation();
-                      let L = this._edgeWaypoints.get(a.id) ? [...this._edgeWaypoints.get(a.id)] : [],
+                  ? Y.addEventListener("pointerdown", (_) => {
+                      var it, dt;
+                      if (_.button !== 0) return;
+                      _.stopPropagation();
+                      let I = this._edgeWaypoints.get(e.id) ? [...this._edgeWaypoints.get(e.id)] : [],
                         U = 0;
-                      const B = ((V = a.route) == null ? void 0 : V.seatX) || gt + H / 2,
-                        G = ((ot = a.route) == null ? void 0 : ot.seatY) || ut + F / 2;
-                      if (L.length === 0) {
-                        const O = Math.round(B / 10) * 10,
-                          st = Math.round(G / 10) * 10;
-                        ((L = [[O, st]]),
-                          this._edgeWaypoints.set(a.id, L),
+                      const B = ((it = e.route) == null ? void 0 : it.seatX) || et + q / 2,
+                        st = ((dt = e.route) == null ? void 0 : dt.seatY) || ot + O / 2;
+                      if (I.length === 0) {
+                        const J = Math.round(B / 10) * 10,
+                          lt = Math.round(st / 10) * 10;
+                        ((I = [[J, lt]]),
+                          this._edgeWaypoints.set(e.id, I),
                           this._saveEdgeWaypoints(),
                           this.emit("flow:layout-change", { layout: this.exportLayoutSnapshot() }),
                           (U = 0));
                       } else {
-                        let O = 0,
-                          st = 1 / 0;
-                        for (let J = 0; J < L.length; J++) {
-                          const It = Math.hypot(L[J][0] - B, L[J][1] - G);
-                          It < st && ((st = It), (O = J));
+                        let J = 0,
+                          lt = 1 / 0;
+                        for (let at = 0; at < I.length; at++) {
+                          const Rt = Math.hypot(I[at][0] - B, I[at][1] - st);
+                          Rt < lt && ((lt = Rt), (J = at));
                         }
-                        U = O;
+                        U = J;
                       }
-                      this._startWaypointDrag(a.id, U, E);
+                      this._startWaypointDrag(e.id, U, _);
                     })
                   : d
-                    ? (T.addEventListener("pointerdown", (E) => E.stopPropagation()),
-                      T.addEventListener("click", (E) => {
-                        var L, U;
-                        (E.stopPropagation(),
+                    ? (Y.addEventListener("pointerdown", (_) => _.stopPropagation()),
+                      Y.addEventListener("click", (_) => {
+                        var I, U;
+                        (_.stopPropagation(),
                           (this._activePopover = {
                             type: "edge",
-                            id: a.id,
-                            worldX: ((L = a.route) == null ? void 0 : L.seatX) || gt + H / 2,
-                            worldY: ((U = a.route) == null ? void 0 : U.seatY) || ut + F / 2,
-                            label: et,
+                            id: e.id,
+                            worldX: ((I = e.route) == null ? void 0 : I.seatX) || et + q / 2,
+                            worldY: ((U = e.route) == null ? void 0 : U.seatY) || ot + O / 2,
+                            label: V,
                           }),
-                          (this._selectedEdgeId = a.id),
+                          (this._selectedEdgeId = e.id),
                           this.requestUpdate());
                       }))
-                    : (T.addEventListener("pointerdown", (E) => E.stopPropagation()),
-                      T.addEventListener("click", (E) => {
-                        (E.stopPropagation(),
-                          a.to &&
-                            ((this._activeStateId = a.to),
-                            (this._selectedNodeId = a.to),
-                            (this._selectedEdgeId = a.id),
-                            this.emit("flow:transition", { from: a.from, to: a.to, event: a.event }),
-                            t[a.to] && this.emit("flow:select-node", { node: t[a.to] }),
+                    : (Y.addEventListener("pointerdown", (_) => _.stopPropagation()),
+                      Y.addEventListener("click", (_) => {
+                        (_.stopPropagation(),
+                          e.to &&
+                            ((this._activeStateId = e.to),
+                            (this._selectedNodeId = e.to),
+                            (this._selectedEdgeId = e.id),
+                            this.emit("flow:transition", { from: e.from, to: e.to, event: e.event }),
+                            t[e.to] && this.emit("flow:select-node", { node: t[e.to] }),
                             this.requestUpdate()));
                       })),
-                T.addEventListener("dblclick", (E) => {
-                  (E.stopPropagation(),
-                    (this._selectedEdgeId = a.id),
+                Y.addEventListener("dblclick", (_) => {
+                  (_.stopPropagation(),
+                    (this._selectedEdgeId = e.id),
                     (this._showInspector = !0),
                     this.requestUpdate());
                 }),
-                c && a.waypoints && a.waypoints.length > 0)
+                c && e.waypoints && e.waypoints.length > 0)
               )
-                for (let E = 0; E < a.waypoints.length; E++) {
-                  const L = a.waypoints[E],
-                    U = M(
+                for (let _ = 0; _ < e.waypoints.length; _++) {
+                  const I = e.waypoints[_],
+                    U = S(
                       "circle",
                       {
-                        cx: L[0],
-                        cy: L[1],
+                        cx: I[0],
+                        cy: I[1],
                         r: 6,
                         class: "flow-waypoint-handle",
                         fill: "#ffffff",
                         stroke: "#0284c7",
                         "stroke-width": 2.2,
                       },
-                      N,
+                      P,
                     );
                   r
                     ? U.addEventListener("pointerdown", (B) => {
-                        B.button === 0 && (B.stopPropagation(), this._startWaypointDrag(a.id, E, B));
+                        B.button === 0 && (B.stopPropagation(), this._startWaypointDrag(e.id, _, B));
                       })
                     : d &&
                       (U.addEventListener("pointerdown", (B) => B.stopPropagation()),
                       U.addEventListener("click", (B) => {
                         (B.stopPropagation(),
-                          (this._activePopover = { type: "waypoint", id: a.id, index: E, worldX: L[0], worldY: L[1] }),
+                          (this._activePopover = { type: "waypoint", id: e.id, index: _, worldX: I[0], worldY: I[1] }),
                           this.requestUpdate());
                       }));
                 }
             }
-            for (const a of Object.values(t)) {
-              const w = M(
+            for (const e of Object.values(t)) {
+              const m = S(
                 "foreignObject",
-                { x: a.x, y: a.y, width: a.w, height: a.h, style: r ? "cursor: grab;" : "" },
-                p,
+                { x: e.x, y: e.y, width: e.w, height: e.h, style: r ? "cursor: grab;" : "" },
+                C,
               );
-              w.addEventListener("pointerdown", (x) => x.stopPropagation());
-              const y = document.createElement("tuto-flow-node");
+              m.addEventListener("pointerdown", (b) => b.stopPropagation());
+              const v = document.createElement("tuto-flow-node");
               if (
-                ((y.node = a),
-                (y.selected = s === a.id),
-                (y.draggableNode = r),
-                (y.isDragging = this._draggedNodeId === a.id),
+                ((v.node = e),
+                (v.selected = i === e.id),
+                (v.draggableNode = r),
+                (v.isDragging = this._draggedNodeId === e.id),
                 r)
               )
-                y.addEventListener("pointerdown", (x) => {
-                  x.button === 0 && (x.stopPropagation(), this._startNodeDrag(a.id, x));
+                v.addEventListener("pointerdown", (b) => {
+                  b.button === 0 && (b.stopPropagation(), this._startNodeDrag(e.id, b));
                 });
               else if (d)
-                (y.addEventListener("pointerdown", (x) => x.stopPropagation()),
-                  y.addEventListener("click", (x) => {
-                    (x.stopPropagation(),
+                (v.addEventListener("pointerdown", (b) => b.stopPropagation()),
+                  v.addEventListener("click", (b) => {
+                    (b.stopPropagation(),
                       (this._activePopover = {
                         type: "node",
-                        id: a.id,
-                        worldX: a.x + a.w / 2,
-                        worldY: a.y,
-                        label: a.label || a.id,
+                        id: e.id,
+                        worldX: e.x + e.w / 2,
+                        worldY: e.y,
+                        label: e.label || e.id,
                       }),
                       this.requestUpdate());
                   }));
               else {
-                y.addEventListener("pointerdown", (z) => {
-                  z.stopPropagation();
+                v.addEventListener("pointerdown", (x) => {
+                  x.stopPropagation();
                 });
-                const x = (z) => {
-                  z.stopPropagation();
-                  const k = a.id;
-                  (this._selectedNodeId === k
+                const b = (x) => {
+                  x.stopPropagation();
+                  const w = e.id;
+                  (this._selectedNodeId === w
                     ? ((this._selectedNodeId = null),
                       (this._activeStateId = null),
                       (this._selectedEdgeId = null),
                       this.emit("flow:select-node", { node: null }))
-                    : ((this._selectedNodeId = k),
-                      (this._activeStateId = k),
+                    : ((this._selectedNodeId = w),
+                      (this._activeStateId = w),
                       (this._selectedEdgeId = null),
-                      this.emit("flow:select-node", { node: a })),
+                      this.emit("flow:select-node", { node: e })),
                     this.requestUpdate());
                 };
-                (y.addEventListener("flow:select-node", x), y.addEventListener("click", x));
+                (v.addEventListener("flow:select-node", b), v.addEventListener("click", b));
               }
-              (y.addEventListener("dblclick", (x) => {
-                (x.stopPropagation(),
-                  (this._selectedNodeId = a.id),
-                  (this._activeStateId = a.id),
+              (v.addEventListener("dblclick", (b) => {
+                (b.stopPropagation(),
+                  (this._selectedNodeId = e.id),
+                  (this._activeStateId = e.id),
                   (this._selectedEdgeId = null),
                   (this._showInspector = !0),
                   this.requestUpdate());
               }),
-                w.appendChild(y));
+                m.appendChild(v));
             }
-            const _ = this.shadowRootNode.getElementById("action-popover");
-            if (_) {
-              _.addEventListener("pointerdown", (k) => k.stopPropagation());
-              const a = _.querySelector("[data-action='remove-waypoint']");
-              a &&
-                ((R = this._activePopover) == null ? void 0 : R.type) === "waypoint" &&
-                a.addEventListener("click", (k) => {
-                  (k.stopPropagation(), this._removeWaypoint(this._activePopover.id, this._activePopover.index));
+            const R = this.shadowRootNode.getElementById("action-popover");
+            if (R) {
+              R.addEventListener("pointerdown", (w) => w.stopPropagation());
+              const e = R.querySelector("[data-action='remove-waypoint']");
+              e &&
+                ((X = this._activePopover) == null ? void 0 : X.type) === "waypoint" &&
+                e.addEventListener("click", (w) => {
+                  (w.stopPropagation(), this._removeWaypoint(this._activePopover.id, this._activePopover.index));
                 });
-              const w = _.querySelector("[data-action='reset-edge']");
-              w &&
-                ((D = this._activePopover) == null ? void 0 : D.type) === "edge" &&
-                w.addEventListener("click", (k) => {
-                  (k.stopPropagation(), this._resetEdge(this._activePopover.id));
+              const m = R.querySelector("[data-action='reset-edge']");
+              m &&
+                ((Z = this._activePopover) == null ? void 0 : Z.type) === "edge" &&
+                m.addEventListener("click", (w) => {
+                  (w.stopPropagation(), this._resetEdge(this._activePopover.id));
                 });
-              const y = _.querySelector("[data-action='add-waypoint']");
-              y &&
+              const v = R.querySelector("[data-action='add-waypoint']");
+              v &&
                 ((Q = this._activePopover) == null ? void 0 : Q.type) === "edge" &&
-                y.addEventListener("click", (k) => {
-                  (k.stopPropagation(),
+                v.addEventListener("click", (w) => {
+                  (w.stopPropagation(),
                     this._addWaypointToEdge(
                       this._activePopover.id,
                       this._activePopover.worldX,
                       this._activePopover.worldY,
                     ));
                 });
-              const x = _.querySelector("[data-action='reset-node']");
-              x &&
-                ((C = this._activePopover) == null ? void 0 : C.type) === "node" &&
-                x.addEventListener("click", (k) => {
-                  (k.stopPropagation(), this._resetNode(this._activePopover.id));
+              const b = R.querySelector("[data-action='reset-node']");
+              b &&
+                ((tt = this._activePopover) == null ? void 0 : tt.type) === "node" &&
+                b.addEventListener("click", (w) => {
+                  (w.stopPropagation(), this._resetNode(this._activePopover.id));
                 });
-              const z = _.querySelector("[data-action='close-popover']");
-              z &&
-                z.addEventListener("click", (k) => {
-                  (k.stopPropagation(), (this._activePopover = null), this.requestUpdate());
+              const x = R.querySelector("[data-action='close-popover']");
+              x &&
+                x.addEventListener("click", (w) => {
+                  (w.stopPropagation(), (this._activePopover = null), this.requestUpdate());
                 });
             }
-            const b = this.shadowRootNode.getElementById("toolbar-el");
-            b &&
-              ((b.zoom = Math.round(this._camera.scale * 100)),
-              (b.isInspectorActive = this._showInspector),
-              (b.toolMode = this._toolMode),
-              b.addEventListener("flow:zoom-in", () => this.zoomBy(1.2)),
-              b.addEventListener("flow:zoom-out", () => this.zoomBy(0.8333333333333334)),
-              b.addEventListener("flow:fit", () => this.fitToViewport()),
-              b.addEventListener("flow:reset", () => {
+            const M = this.shadowRootNode.getElementById("toolbar-el");
+            M &&
+              ((M.zoom = Math.round(this._camera.scale * 100)),
+              (M.isInspectorActive = this._showInspector),
+              (M.toolMode = this._toolMode),
+              M.addEventListener("flow:zoom-in", () => this.zoomBy(1.2)),
+              M.addEventListener("flow:zoom-out", () => this.zoomBy(0.8333333333333334)),
+              M.addEventListener("flow:fit", () => this.fitToViewport()),
+              M.addEventListener("flow:reset", () => {
                 ((this._selectedNodeId = null),
                   (this._selectedEdgeId = null),
                   (this._showInspector = !1),
                   this.fitToViewport());
               }),
-              b.addEventListener("flow:toggle-move-mode", () => {
+              M.addEventListener("flow:toggle-move-mode", () => {
                 this.toolMode = this._toolMode === "move" ? "view" : "move";
               }),
-              b.addEventListener("flow:toggle-edit-mode", () => {
+              M.addEventListener("flow:toggle-edit-mode", () => {
                 this.toolMode = this._toolMode === "edit" ? "view" : "edit";
               }),
-              b.addEventListener("flow:snapshot-layout", () => {
+              M.addEventListener("flow:snapshot-layout", () => {
                 this.copyLayoutSnapshot();
               }),
-              b.addEventListener("flow:reset-layout", () => {
+              M.addEventListener("flow:reset-layout", () => {
                 this.resetLayout();
               }),
-              b.addEventListener("flow:toggle-inspector", () => {
+              M.addEventListener("flow:toggle-inspector", () => {
                 this._toggleInspector();
               }));
-            const S = this.shadowRootNode.getElementById("inspector-el");
-            if (S) {
+            const L = this.shadowRootNode.getElementById("inspector-el");
+            if (L) {
               if (
-                ((S.isOpen = this._showInspector),
-                (S.graph = this._graph),
-                (S.tools = this._graph.tools || []),
+                ((L.isOpen = this._showInspector),
+                (L.graph = this._graph),
+                (L.tools = this._graph.tools || []),
                 this._selectedNodeId && t[this._selectedNodeId])
               )
-                S.node = t[this._selectedNodeId];
+                L.node = t[this._selectedNodeId];
               else if (this._selectedEdgeId) {
-                const a = i.find((w) => w.id === this._selectedEdgeId) || o.find((w) => w.id === this._selectedEdgeId);
-                S.edge = a || null;
-              } else ((S.node = null), (S.edge = null));
-              S.addEventListener("flow:close-inspector", () => {
+                const e = a.find((m) => m.id === this._selectedEdgeId) || s.find((m) => m.id === this._selectedEdgeId);
+                L.edge = e || null;
+              } else ((L.node = null), (L.edge = null));
+              L.addEventListener("flow:close-inspector", () => {
                 this._closeInspector();
               });
             }
@@ -3274,7 +3475,7 @@
         }
         return (
           l(
-            pt,
+            vt,
             "styles",
             `
     :host {
@@ -3591,49 +3792,49 @@
     }
   `,
           ),
-          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", pt),
-          ft(),
-          (u.BaseElement = A),
-          (u.DEFAULT_CAMERA_PADDING = bt),
-          (u.MAX_CAMERA_SCALE = j),
-          (u.MIN_CAMERA_SCALE = X),
-          (u.PRIMARY_FORWARD_EVENTS = yt),
-          (u.SVG_NS = mt),
-          (u.TutoBadge = at),
-          (u.TutoButton = it),
-          (u.TutoFlowCanvas = pt),
-          (u.TutoFlowInspector = ht),
-          (u.TutoFlowMinimap = ct),
-          (u.TutoFlowNode = dt),
-          (u.TutoFlowToolbar = lt),
-          (u.assignLanes = Et),
-          (u.autoLayoutColumns = zt),
-          (u.bundleEdges = _t),
-          (u.centerOnNode = wt),
-          (u.clamp = K),
-          (u.colors = $),
-          (u.computeFitBounds = vt),
-          (u.computeGraphBounds = Z),
-          (u.computePolylineMidpoint = xt),
-          (u.escapeHtml = m),
-          (u.getBestPortPair = kt),
-          (u.getClosestPort = nt),
-          (u.getPort = Rt),
-          (u.htmlEl = $t),
-          (u.injectThemeTokens = ft),
-          (u.isEdgeHighlighted = Ut),
-          (u.pointsToSvgPath = St),
-          (u.resolvePillSeats = Ct),
-          (u.routeEdgeItem = Mt),
-          (u.screenToWorld = Nt),
-          (u.shouldShowPill = Bt),
-          (u.spacing = Lt),
-          (u.svgEl = M),
-          (u.typography = W),
-          (u.worldToScreen = Pt),
-          (u.zoomAtPoint = rt),
-          Object.defineProperty(u, Symbol.toStringTag, { value: "Module" }),
-          u
+          customElements.get("tuto-flow-canvas") || customElements.define("tuto-flow-canvas", vt),
+          yt(),
+          (g.BaseElement = T),
+          (g.DEFAULT_CAMERA_PADDING = xt),
+          (g.MAX_CAMERA_SCALE = K),
+          (g.MIN_CAMERA_SCALE = H),
+          (g.PRIMARY_FORWARD_EVENTS = Mt),
+          (g.SVG_NS = _t),
+          (g.TutoBadge = ht),
+          (g.TutoButton = ct),
+          (g.TutoFlowCanvas = vt),
+          (g.TutoFlowInspector = bt),
+          (g.TutoFlowMinimap = mt),
+          (g.TutoFlowNode = ut),
+          (g.TutoFlowToolbar = ft),
+          (g.assignLanes = Lt),
+          (g.autoLayoutColumns = Dt),
+          (g.bundleEdges = St),
+          (g.centerOnNode = Et),
+          (g.clamp = rt),
+          (g.colors = N),
+          (g.computeFitBounds = kt),
+          (g.computeGraphBounds = nt),
+          (g.computePolylineMidpoint = It),
+          (g.escapeHtml = u),
+          (g.getBestPortPair = $t),
+          (g.getClosestPort = gt),
+          (g.getPort = At),
+          (g.htmlEl = zt),
+          (g.injectThemeTokens = yt),
+          (g.isEdgeHighlighted = Wt),
+          (g.pointsToSvgPath = Pt),
+          (g.resolvePillSeats = Tt),
+          (g.routeEdgeItem = Nt),
+          (g.screenToWorld = Ut),
+          (g.shouldShowPill = Yt),
+          (g.spacing = Ct),
+          (g.svgEl = S),
+          (g.typography = j),
+          (g.worldToScreen = Bt),
+          (g.zoomAtPoint = pt),
+          Object.defineProperty(g, Symbol.toStringTag, { value: "Module" }),
+          g
         );
       })({});
     </script>
