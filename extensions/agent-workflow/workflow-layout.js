@@ -1,19 +1,19 @@
 window.WORKFLOW_LAYOUT = {
   nodes: {
     envision: {
-      x: 450,
+      x: 420,
       y: -160,
-      w: 200,
+      w: 210,
       h: 48,
     },
     evaluate: {
-      x: 440,
-      y: 10,
+      x: 420,
+      y: 0,
       w: 210,
       h: 48,
     },
     establish: {
-      x: 430,
+      x: 420,
       y: 160,
       w: 210,
       h: 48,
@@ -25,8 +25,8 @@ window.WORKFLOW_LAYOUT = {
       h: 48,
     },
     elaborate: {
-      x: 410,
-      y: 460,
+      x: 420,
+      y: 480,
       w: 210,
       h: 48,
     },
@@ -37,76 +37,64 @@ window.WORKFLOW_LAYOUT = {
       h: 48,
     },
     examine: {
-      x: 410,
-      y: 780,
+      x: 420,
+      y: 800,
       w: 210,
       h: 48,
     },
   },
   edges: {
     "envision-ask-route-spec": [
-      [750, 20],
-      [750, 280],
+      [760, 20],
+      [760, 280],
     ],
     "envision-ask-route-vibe": [
-      [770, 10],
-      [770, 540],
-    ],
-    "evaluate-ask-loop": [
-      [700, -10],
-      [580, -10],
+      [780, 0],
+      [780, 540],
     ],
     "evaluate-ask-route-spec": [
-      [690, 110],
+      [700, 100],
       [700, 280],
     ],
     "evaluate-ask-route-vibe": [
-      [710, 100],
-      [720, 510],
+      [720, 100],
+      [720, 520],
     ],
     "establish-next-vibe": [
-      [670, 270],
-      [670, 540],
+      [680, 260],
+      [680, 540],
     ],
     "establish-handoff": [
-      [390, 120],
-      [390, -20],
+      [380, 120],
+      [380, -20],
     ],
     "elaborate-next-align": [
-      [370, 390],
+      [380, 400],
       [380, 240],
     ],
     "elaborate-return-align": [
-      [360, 390],
+      [360, 400],
       [360, 100],
     ],
     "elaborate-handoff": [
-      [340, 390],
-      [340, -10],
+      [340, 400],
+      [340, -20],
     ],
     "examine-next-align": [
-      [280, 630],
+      [280, 640],
       [280, 240],
     ],
     "examine-return-align": [
-      [250, 630],
-      [250, 120],
+      [260, 640],
+      [260, 120],
     ],
     "examine-next-spec": [
-      [310, 620],
-      [310, 370],
+      [300, 620],
+      [300, 360],
     ],
     "examine-handoff": [
-      [220, 630],
-      [220, -10],
-    ],
-    "explore-decide-loop": [
-      [570, 290],
-      [650, 310],
-    ],
-    "execute-decide-loop": [
-      [550, 610],
-      [640, 610],
+      [220, 640],
+      [220, -20],
     ],
     "elaborate-next-vibe": [[520, 560]],
   },

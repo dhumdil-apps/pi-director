@@ -21,6 +21,15 @@ describe("workflow FSM graph", () => {
     assert.doesNotThrow(() => assertWorkflowFsm(WORKFLOW_FSM));
   });
 
+  it("keeps stay-on-primary tools off the transition table", () => {
+    const selfEdges = WORKFLOW_FSM.transitions.filter((edge) => edge.from === edge.to);
+    assert.deepEqual(selfEdges, []);
+    const loopEvents = WORKFLOW_FSM.transitions.filter(
+      (edge) => edge.event === "ASK_LOOP" || edge.event === "DECIDE_LOOP",
+    );
+    assert.deepEqual(loopEvents, []);
+  });
+
   it("rejects unknown transition endpoints", () => {
     const fsm = cloneFsm();
     fsm.transitions.push({

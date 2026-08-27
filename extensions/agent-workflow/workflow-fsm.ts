@@ -9,6 +9,7 @@
  * Runtime tool gates live in `workflow-machine.ts` and must stay aligned with
  * `tools.*.gate` and the transition table below.
  *
+ * v2.6.12 — drop primary self-loop transitions; in-mode loop is body ⇄ only (TO_GATE/TO_HOME). ask/decide stay procedure-on-primary.
  * v2.6.11 — Q/D/C ids are shared topic slugs (`D-tighten-writes`); Align evaluate rejects `D1`/`D-12`. Envision is one ask call that may batch.
  * v2.6.10 — ## Digest (Current / Desired) is the Show plan summary; Current work is the Progress Tracker working row.
  * v2.6.9 — primary self-loops: evaluate ASK_LOOP; explore/execute DECIDE_LOOP. Secondaries confirm and return vs next.
@@ -24,7 +25,7 @@
  * - Align dual landing: NEXT_ALIGN → establish (idle, no agent); RETURN_ALIGN → evaluate (D-review ask)
  */
 
-export const WORKFLOW_FSM_VERSION = "2.6.11";
+export const WORKFLOW_FSM_VERSION = "2.6.12";
 
 export type FsmStateId = "envision" | "establish" | "explore" | "elaborate" | "execute" | "examine" | "evaluate";
 
@@ -146,7 +147,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
   title: "Pi Director Agent Workflow",
   summary:
     "7-E Compound Lifecycle across user-owned modes: ALIGN (envision entry, evaluate primary, establish secondary), SPEC (explore primary, elaborate secondary), VIBE (execute primary, examine secondary). " +
-    "New interactive sessions and handoffs start at envision in ALIGN. Each mode has a primary home for active execution/self-loops and a secondary gate to capture/verify and CALL next. " +
+    "New interactive sessions and handoffs start at envision in ALIGN. Each mode has a primary home for active work (tools stay in-step) and a secondary gate to capture/verify and CALL next. " +
+    "In-mode loop is bidirectional body (TO_GATE primary→secondary, TO_HOME secondary→primary). " +
     "Runtime owns native UI, session identity, timing, persistence mechanics, and mode markers. " +
     "Agent owns judgment, artifact meaning, scope, decisions, and final output.",
   session: {
@@ -341,7 +343,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMode: "align",
       role: "primary",
       summary:
-        "Align primary home: artifact check and later asks (D-review, User-driven, reconcile); PWB routes; never CALL next.",
+        "Align primary home: artifact check and later asks via ask (D-review, User-driven, reconcile); PWB routes; never CALL next.",
       permission: "read",
       substates: ["artifactCheck", "askLoop", "synthesize"],
       procedure: [
@@ -353,7 +355,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "ELSE IF RECONCILE_SCOPE needs User keep/defer/replace/resolve options: CALL ask for that only.",
         "ELSE IF no User answers are required: do NOT CALL ask; summarize briefly and PROCEED to ESTABLISH, which CALLs next (never wait in editor without ask or next).",
         "NEVER re-fish entry goal-scope questions already captured in envision; NEVER invent fishing questions on entry.",
-        "ASK dependent follow-ups in a later CALL only when still required after answers (ASK_LOOP stays in EVALUATE).",
+        "Dependent follow-ups: CALL ask again while still in evaluate when still required after answers.",
         "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
         "SYNTHESIZE into Goal, Align, Decisions, and Checklist after answers.",
         "IF Ask routes directly to SPEC or VIBE THEN proceed to EXPLORE or EXECUTE.",
@@ -386,7 +388,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMode: "spec",
       role: "primary",
       summary:
-        "Spec primary home: codebase research and fact-finding; update the plan only — no project file mutations.",
+        "Spec primary home: codebase research and fact-finding; may CALL decide; update the plan only — no project file mutations.",
       permission: "read",
       substates: ["symbolSearch", "evidenceGathering"],
       procedure: [
@@ -395,7 +397,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "BROADEN only for a named unresolved reason and STOP when evidence answers it.",
         "EXCLUDE node_modules, generated, vendor, cache trees, and source maps unless explicitly targeted.",
         "RECORD findings in Evidence section; DO NOT mutate files outside .pi.",
-        "FOR material autonomous choices RUN RECORD_DECISION (decide) while researching when needed (DECIDE_LOOP stays in EXPLORE).",
+        "FOR material autonomous choices RUN RECORD_DECISION (decide) while researching when needed; stay in explore.",
         "NEVER CALL next from explore — WHEN ready to propose or route, PROCEED to ELABORATE.",
       ],
     },
@@ -423,13 +425,14 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       kind: "guided",
       userMode: "vibe",
       role: "primary",
-      summary: "Vibe primary home: implement approved scope; scoped autonomous decisions (D); project file mutations.",
+      summary:
+        "Vibe primary home: implement approved scope; may CALL decide for scoped autonomous decisions (D); project file mutations.",
       permission: "write",
       substates: ["codeMutation", "recordDecision"],
       procedure: [
         "Land here after next→Vibe, ask-route→Vibe, and after examine returns for more implementation.",
         "IMPLEMENT accepted scope in project files outside .pi.",
-        "FOR EACH material autonomous choice RUN RECORD_DECISION(choice) (DECIDE_LOOP stays in EXECUTE).",
+        "FOR EACH material autonomous choice RUN RECORD_DECISION(choice); stay in execute.",
         "UPDATE cumulative Checklist and append-only Work log throughout implementation.",
         "NEVER CALL next from execute — WHEN ready to verify or route, PROCEED to EXAMINE.",
       ],
@@ -481,14 +484,6 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       description: "The envision ask was answered and start/reuse has named the artifact; enter Align primary home.",
     },
     {
-      id: "evaluate-ask-loop",
-      from: "evaluate",
-      event: "ASK_LOOP",
-      to: "evaluate",
-      label: "Ask follow-up",
-      description: "Dependent follow-up questions stay in EVALUATE until answers are captured or ask routes away.",
-    },
-    {
       id: "evaluate-ask-route-spec",
       from: "evaluate",
       event: "PWB_SPEC",
@@ -513,7 +508,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       to: "establish",
       label: "ALIGN",
       description:
-        "Align body: evaluate ASK_LOOP stays on the primary; establish only confirms/summarizes then RETURN to evaluate or CALL next.",
+        "Align body ⇄: TO_GATE evaluate→establish (confirm/summarize); TO_HOME establish→evaluate when more primary/ask work; next only from establish.",
       bidirectional: true,
     },
     {
@@ -545,21 +540,13 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "explore-decide-loop",
-      from: "explore",
-      event: "DECIDE_LOOP",
-      to: "explore",
-      label: "Decide follow-up",
-      description: "Material autonomous choices stay in EXPLORE via decide until ready to propose.",
-    },
-    {
       id: "spec-body",
       from: "explore",
       event: "SPEC",
       to: "elaborate",
       label: "SPEC",
       description:
-        "Spec body: explore DECIDE_LOOP stays on the primary; elaborate only confirms/summarizes then RETURN to explore or CALL next.",
+        "Spec body ⇄: TO_GATE explore→elaborate (confirm/summarize); TO_HOME elaborate→explore when more research; next only from elaborate.",
       bidirectional: true,
     },
     {
@@ -600,21 +587,13 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
-      id: "execute-decide-loop",
-      from: "execute",
-      event: "DECIDE_LOOP",
-      to: "execute",
-      label: "Decide follow-up",
-      description: "Material autonomous choices stay in EXECUTE via decide until ready to verify.",
-    },
-    {
       id: "vibe-body",
       from: "execute",
       event: "VIBE",
       to: "examine",
       label: "VIBE",
       description:
-        "Vibe body: execute DECIDE_LOOP stays on the primary; examine only confirms/summarizes then RETURN to execute or CALL next.",
+        "Vibe body ⇄: TO_GATE execute→examine (confirm/summarize); TO_HOME examine→execute when more implementation; next only from examine.",
       bidirectional: true,
     },
     {
@@ -803,7 +782,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     "Project permission is read|write only (project-write boundary): read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact. Align’s pre-ask rule (Agent, not a runtime sandbox): no extra file reads before the first scope ask (harness-injected AGENTS.md only); after that ask and start, the session plan then `.pi` as needed.",
     "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask once for goal-scope (one CALL, batch independent questions; before start when no named artifact) then start/reuse then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
     "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-    "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Primaries self-loop: evaluate ASK_LOOP; explore and execute DECIDE_LOOP. Envision runs one ask CALL then start/reuse then ARTIFACT→evaluate (no ASK_LOOP). Secondaries only confirm/summarize then RETURN to the primary or CALL next. Manual /mode bypasses live under Exceptions.",
+    "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Stay-on-primary tool use (ask on evaluate; decide on explore/execute) is procedure, not a transition. In-mode loop is bidirectional body (ALIGN/SPEC/VIBE): TO_GATE primary→secondary, TO_HOME secondary→primary. Envision runs one ask CALL then start/reuse then ARTIFACT→evaluate. Secondaries only confirm/summarize then RETURN to the primary or CALL next. Manual /mode bypasses live under Exceptions.",
     "Substates on guided states are narrative procedure phases for agents and diagrams, not separate graph nodes.",
     "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next. Agent-driven Align ends via ask (envision/evaluate) or next (establish); silent idle is only runtime NEXT_ALIGN.",
     "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
