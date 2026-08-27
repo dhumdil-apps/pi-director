@@ -9,6 +9,9 @@
  * Runtime tool gates live in `workflow-machine.ts` and must stay aligned with
  * `tools.*.gate` and the transition table below.
  *
+ * v2.6.9 — primary self-loops: evaluate ASK_LOOP; explore/execute DECIDE_LOOP. Secondaries confirm and return vs next.
+ * v2.6.8 — drop envision ASK_LOOP; one envision ask CALL then start then evaluate.
+ * v2.6.7 — drop evaluate ASK_LOOP; Align loop-back is bidirectional ALIGN only.
  * v2.6.6 — primary homes + secondary gates:
  * - ALIGN: envision (entry: no extra reads, ask then start/reuse) → evaluate (primary, later asks) ⇄ establish (secondary / next; never ask)
  * - Agent-driven Align turns CALL ask or next; silent idle is runtime NEXT_ALIGN only (no agent)
@@ -19,7 +22,7 @@
  * - Align dual landing: NEXT_ALIGN → establish (idle, no agent); RETURN_ALIGN → evaluate (D-review ask)
  */
 
-export const WORKFLOW_FSM_VERSION = "2.6.6";
+export const WORKFLOW_FSM_VERSION = "2.6.9";
 
 export type FsmStateId = "envision" | "establish" | "explore" | "elaborate" | "execute" | "examine" | "evaluate";
 
@@ -202,7 +205,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "RUN evaluate (primary home): check artifact for unresolved D review, Checklist gaps, residuals; CALL ask for D-review, User-requested clarification, RECONCILE_SCOPE, or follow-ups — do not re-fish entry scope already captured in envision; NEVER CALL next from evaluate; NEVER explore the codebase in Align.",
         "IF evaluate Ask routes directly to SPEC or VIBE THEN settle into that mode's primary (explore or execute).",
         "WHEN ready to leave Align or to confirm routing after ask: RUN establish (secondary gate).",
-        "establish: NEVER CALL ask; either RETURN to evaluate (more primary/ask work) or CALL next with other modes + handoff only (never align). Agent-driven Align never ends a turn with neither ask nor next.",
+        "establish: confirm/summarize only — NEVER CALL ask; either RETURN to evaluate (more primary/ask work) or CALL next with other modes + handoff only (never align). Agent-driven Align never ends a turn with neither ask nor next.",
         "Same-mode stay: do not CALL next with align; User uses ESC/Return or /mode.",
         "Align reads: before the first scope ask, harness-injected AGENTS.md only (no extra file reads); after that ask and start, the session plan then `.pi` as needed — all codebase exploration is Spec (or Vibe when implementing).",
       ],
@@ -216,7 +219,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       steps: [
         "Land on and RUN explore (primary): bounded research into Evidence; decide for material autonomous choices when needed.",
         "WHEN ready to propose or route: RUN elaborate (secondary).",
-        'elaborate: draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT, then either RETURN to explore (more research) or CALL next with other modes only (never spec). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate (landing:"evaluate", prompt includes a standalone D id such as D1 or D-12, auto-start ask).',
+        'elaborate: confirm/summarize — draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT, then either RETURN to explore (more research) or CALL next with other modes only (never spec). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate (landing:"evaluate", prompt includes a standalone D id such as D1 or D-12, auto-start ask).',
       ],
     },
     {
@@ -228,7 +231,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       steps: [
         "Land on and RUN execute (primary): implement accepted scope; decide for material autonomous choices when needed.",
         "WHEN ready to verify or route: RUN examine (secondary).",
-        "examine: run checks, RECORD evidence, RUN CLOSE_OUT, then either RETURN to execute (more implementation) or CALL next with other modes only (never vibe). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate with a standalone D id (D1 or D-12) in prompt (auto-start ask).",
+        "examine: confirm/summarize — run checks, RECORD evidence, RUN CLOSE_OUT, then either RETURN to execute (more implementation) or CALL next with other modes only (never vibe). Do not recommend Align landing establish idle — static Return→ALIGN covers editor standby. Only when unresolved D ids exist: Align landing evaluate with a standalone D id (D1 or D-12) in prompt (auto-start ask).",
       ],
     },
   ],
@@ -322,7 +325,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "AFTER the first scope ask is answered (not routed): IF no named artifact exists THEN CALL start exactly once with a scope-informed 2–4 word name; the first write includes initial goal and settled scope. ELSE keep the existing named artifact.",
         "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
         "SYNTHESIZE into Goal, Align, Decisions, and Checklist after start (or into the reused artifact).",
-        "ASK dependent follow-ups in a later CALL only when still required before leaving envision; those later asks need a named plan.",
+        "Do not CALL ask again from envision; dependent follow-ups run in evaluate after ARTIFACT.",
         "IF Ask routes directly to SPEC or VIBE THEN: if no named artifact, the target CALL start first then synthesize; proceed to EXPLORE or EXECUTE (skip evaluate).",
         "WHEN ≥1 scope ask is answered and not routed: PROCEED to EVALUATE (Align primary home).",
       ],
@@ -346,7 +349,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "ELSE IF RECONCILE_SCOPE needs User keep/defer/replace/resolve options: CALL ask for that only.",
         "ELSE IF no User answers are required: do NOT CALL ask; summarize briefly and PROCEED to ESTABLISH, which CALLs next (never wait in editor without ask or next).",
         "NEVER re-fish entry goal-scope questions already captured in envision; NEVER invent fishing questions on entry.",
-        "ASK dependent follow-ups in a later CALL only when still required after answers.",
+        "ASK dependent follow-ups in a later CALL only when still required after answers (ASK_LOOP stays in EVALUATE).",
         "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
         "SYNTHESIZE into Goal, Align, Decisions, and Checklist after answers.",
         "IF Ask routes directly to SPEC or VIBE THEN proceed to EXPLORE or EXECUTE.",
@@ -360,14 +363,13 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       kind: "guided",
       userMode: "align",
       role: "secondary",
-      summary:
-        "Align secondary gate and idle landing from Spec/Vibe next (editor standby); return to evaluate or CALL next/handoff — never ask.",
+      summary: "Align secondary gate: confirm/summarize, then RETURN to evaluate or CALL next/handoff — never ask.",
       permission: "read",
       substates: ["gateCheck", "routeNext"],
       procedure: [
         "Land here after next Align idle (NEXT_ALIGN, landing establish, no auto-start) and after evaluate proceeds on the ALIGN body edge.",
         "NEVER CALL ask from establish — entry scope ask is envision; other Align asks run in evaluate.",
-        "No research in establish — gate and route only.",
+        "No research in establish — confirm/summarize and route only.",
         "IF more Align primary or ask work remains THEN RETURN to EVALUATE.",
         "ELSE CALL next with ranked other modes and handoff only — NEVER include align. Agent-driven establish never idles without next.",
         "Idle landing (runtime NEXT_ALIGN, no agent turn): wait for User message or /mode; do not invent ask or next.",
@@ -389,7 +391,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "BROADEN only for a named unresolved reason and STOP when evidence answers it.",
         "EXCLUDE node_modules, generated, vendor, cache trees, and source maps unless explicitly targeted.",
         "RECORD findings in Evidence section; DO NOT mutate files outside .pi.",
-        "FOR material autonomous choices RUN RECORD_DECISION (decide) while researching when needed.",
+        "FOR material autonomous choices RUN RECORD_DECISION (decide) while researching when needed (DECIDE_LOOP stays in EXPLORE).",
         "NEVER CALL next from explore — WHEN ready to propose or route, PROCEED to ELABORATE.",
       ],
     },
@@ -399,7 +401,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       kind: "guided",
       userMode: "spec",
       role: "secondary",
-      summary: "Spec secondary gate: synthesize proposal, CLOSE_OUT, return to explore or CALL next (not Spec).",
+      summary: "Spec secondary gate: confirm/summarize, CLOSE_OUT, RETURN to explore or CALL next (not Spec).",
       permission: "read",
       substates: ["draftProposal", "checklistSynthesis", "closeOut"],
       procedure: [
@@ -423,7 +425,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       procedure: [
         "Land here after next→Vibe, ask-route→Vibe, and after examine returns for more implementation.",
         "IMPLEMENT accepted scope in project files outside .pi.",
-        "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
+        "FOR EACH material autonomous choice RUN RECORD_DECISION(choice) (DECIDE_LOOP stays in EXECUTE).",
         "UPDATE cumulative Checklist and append-only Work log throughout implementation.",
         "NEVER CALL next from execute — WHEN ready to verify or route, PROCEED to EXAMINE.",
       ],
@@ -434,7 +436,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       kind: "guided",
       userMode: "vibe",
       role: "secondary",
-      summary: "Vibe secondary gate: checks, CLOSE_OUT, return to execute or CALL next (not Vibe).",
+      summary: "Vibe secondary gate: confirm/summarize, CLOSE_OUT, RETURN to execute or CALL next (not Vibe).",
       permission: "write",
       substates: ["runChecks", "recordEvidence", "closeOut"],
       procedure: [
@@ -448,15 +450,6 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     },
   },
   transitions: [
-    {
-      id: "envision-ask-loop",
-      from: "envision",
-      event: "ASK_LOOP",
-      to: "envision",
-      label: "Scope ask follow-up",
-      description:
-        "Dependent entry scope questions stay in ENVISION until ≥1 scope ask is answered or ask routes away.",
-    },
     {
       id: "envision-ask-route-spec",
       from: "envision",
@@ -516,7 +509,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       to: "establish",
       label: "ALIGN",
       description:
-        "Align mode body: primary ⇄ secondary gate — proceed to establish when ready for next/handoff; return to evaluate when more primary or ask work remains.",
+        "Align body: evaluate ASK_LOOP stays on the primary; establish only confirms/summarizes then RETURN to evaluate or CALL next.",
       bidirectional: true,
     },
     {
@@ -548,13 +541,21 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
+      id: "explore-decide-loop",
+      from: "explore",
+      event: "DECIDE_LOOP",
+      to: "explore",
+      label: "Decide follow-up",
+      description: "Material autonomous choices stay in EXPLORE via decide until ready to propose.",
+    },
+    {
       id: "spec-body",
       from: "explore",
       event: "SPEC",
       to: "elaborate",
       label: "SPEC",
       description:
-        "Spec mode body: primary ⇄ secondary gate — proceed to elaborate when ready to propose/close out/route; return to explore when more research remains.",
+        "Spec body: explore DECIDE_LOOP stays on the primary; elaborate only confirms/summarizes then RETURN to explore or CALL next.",
       bidirectional: true,
     },
     {
@@ -595,13 +596,21 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMediated: true,
     },
     {
+      id: "execute-decide-loop",
+      from: "execute",
+      event: "DECIDE_LOOP",
+      to: "execute",
+      label: "Decide follow-up",
+      description: "Material autonomous choices stay in EXECUTE via decide until ready to verify.",
+    },
+    {
       id: "vibe-body",
       from: "execute",
       event: "VIBE",
       to: "examine",
       label: "VIBE",
       description:
-        "Vibe mode body: primary ⇄ secondary gate — proceed to examine when ready for checks/close out/route; return to execute when more implementation or in-scope fixes remain.",
+        "Vibe body: execute DECIDE_LOOP stays on the primary; examine only confirms/summarizes then RETURN to execute or CALL next.",
       bidirectional: true,
     },
     {
@@ -716,14 +725,14 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       ],
       mechanics: [
         "Envision entry MAY CALL ask before start when no named artifact exists; evaluate asks require a named plan.",
-        "CALL ask from envision with ≥1 question about goal scope ahead; do not CREATE .pi/plan/* until that ask is answered; persist User-transcript meaning after start; on answered (not routed) CALL start if needed then PROCEED to evaluate; on cancel RETURN without start.",
+        "CALL ask from envision once with ≥1 independent question about goal scope ahead (one CALL, may batch); do not CREATE .pi/plan/* until that ask is answered; persist User-transcript meaning after start; on answered (not routed) CALL start if needed then PROCEED to evaluate; on cancel RETURN without start. Do not CALL ask again from envision.",
         "CALL ask from evaluate for D acceptance, User-requested clarification, RECONCILE_SCOPE, and follow-ups — not to re-fish entry scope.",
         "Answers stay in ALIGN; after evaluate capture continue evaluate or PROCEED to establish for next/handoff; NEVER CALL next from envision or evaluate.",
         "CALL ask without sibling tools so cancellation or a direct SPEC/VIBE route can settle cleanly.",
         "KEEP question identifiers, option values, and option labels distinct.",
         "NEVER imitate native action labels.",
         "NEVER customize the Write a custom answer row label — it is always plain Write a custom answer; put User-supplied detail in question context or real options; NEVER offer a selectable option that merely says specify.",
-        "BATCH only independent questions; dependent follow-ups in a later CALL.",
+        "BATCH only independent questions; dependent follow-ups in a later CALL from evaluate, not a second envision CALL.",
         "An optionless ask question offers custom input but no Proceed-with-best route.",
         "Proceed-with-best accepts prior answers plus remaining highest-confidence answers and starts fresh SPEC/VIBE at that mode's primary.",
         "On PWB route, runtime carries structured answers in the target kickoff; if no named artifact yet, the target CALL start first with a scope-informed name, then synthesizes User transcript / Goal / Align / Decisions / Checklist before other primary work (Align turn ends via terminate).",
@@ -808,7 +817,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     "Project permission is read|write only (project-write boundary): read may update `.pi` plan state; write may change project files. All modes may edit the plan artifact. Align’s pre-ask rule (Agent, not a runtime sandbox): no extra file reads before the first scope ask (harness-injected AGENTS.md only); after that ask and start, the session plan then `.pi` as needed.",
     "Only secondary gates establish/elaborate/examine CALL next. envision CALL ask ≥1 goal-scope (before start when no named artifact) then start/reuse then ARTIFACT→evaluate (or PWB); evaluate CALL later asks and PWB; establish never asks. Spec/Vibe→Align: NEXT_ALIGN→establish (idle editor), RETURN_ALIGN→evaluate (ask). next never recommends the current mode. NEXT_HANDOFF from establish, elaborate, and examine → envision (/handoff prep).",
     "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
-    "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
+    "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Primaries self-loop: evaluate ASK_LOOP; explore and execute DECIDE_LOOP. Envision runs one ask CALL then start/reuse then ARTIFACT→evaluate (no ASK_LOOP). Secondaries only confirm/summarize then RETURN to the primary or CALL next. Manual /align /spec /vibe /mode bypasses live under Exceptions.",
     "Substates on guided states are narrative procedure phases for agents and diagrams, not separate graph nodes.",
     "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next. Agent-driven Align ends via ask (envision/evaluate) or next (establish); silent idle is only runtime NEXT_ALIGN.",
     "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
