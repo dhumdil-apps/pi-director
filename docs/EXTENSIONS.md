@@ -15,7 +15,7 @@ extension.
 - **Usage History** — Historical token/cost reporting (`/usage`)
 - **Progress Tracker** — Persistent above-editor prompts and per-mode timing, plus the configurable Status Bar context segment. No tool or command: it observes.
 - **Pi Inspector Bridge** — Reports display-only Director mode and session status whenever a local Inspector is discoverable
-- **Session Dashboard** — Pi-glyph welcome, project-memory freshness notice, 30-day per-model spend chart, and initial context-source snapshot
+- **Session Dashboard** — Pi-glyph welcome, project-memory freshness notice, 30-day per-model spend chart, initial context-source snapshot, and host-loaded skill names
 
 ## Active skills
 

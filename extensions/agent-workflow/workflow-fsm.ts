@@ -959,6 +959,96 @@ export function formatWorkflowPrompt(fsm: WorkflowFsm = WORKFLOW_FSM): string {
   return lines.join("\n").trimEnd();
 }
 
+/** Compact all-mode contract injected each turn. Full booklet stays `formatWorkflowPrompt`. */
+export function formatRuntimeWorkflowPrompt(fsm: WorkflowFsm = WORKFLOW_FSM): string {
+  const lines: string[] = [
+    `# ${fsm.title} (FSM v${fsm.version})`,
+    "",
+    fsm.summary,
+    "",
+    "## Session state",
+    `- mode := ${fsm.session.mode}`,
+    `- artifact := ${fsm.session.artifact}`,
+    `- scope := ${fsm.session.scope}`,
+    `- review := ${fsm.session.review}`,
+    "",
+    "## Ownership",
+    ...fsm.ownership.map((item) => `- ${item}`),
+    "",
+    "## Invariants",
+    ...fsm.invariants.map((item) => `- ${item}`),
+    "",
+    "## Always",
+    ...fsm.always.map((item) => `- ${item}`),
+    "",
+    "## Turn",
+    ...fsm.turn.map((item) => `- ${item}`),
+    "",
+    "## Session entry",
+    `${fsm.sessionEntry.label} (${fsm.sessionEntry.state}) — outside mode bodies`,
+    fsm.sessionEntry.summary,
+    "",
+    ...fsm.sessionEntry.steps.map((step) => `- ${step}`),
+    "",
+    "## Mode bodies",
+    "Persisted User mode selects one body: primary ⇄ secondary judge; secondary may CALL next (shared procedure/tool, not a guided state).",
+  ];
+
+  for (const body of fsm.modeBodies) {
+    const roleBits = [
+      body.primary ? `primary=${body.primary}` : undefined,
+      body.secondary ? `secondary=${body.secondary}` : undefined,
+      body.exitTool ? `exitTool=${body.exitTool}` : undefined,
+    ]
+      .filter(Boolean)
+      .join(", ");
+    lines.push(
+      "",
+      `### ${body.label} (${body.mode})`,
+      `Guided states: ${body.states.join(" → ")}${roleBits ? ` (${roleBits})` : ""}`,
+      "",
+      ...body.steps.map((step) => `- ${step}`),
+    );
+  }
+
+  lines.push("", "## Shared procedures");
+  for (const [name, steps] of Object.entries(fsm.procedures)) {
+    const lead = steps[0];
+    lines.push("", `### ${name}`, ...(lead ? [`- ${lead}`] : []));
+  }
+
+  lines.push("", "## Transitions", "Canonical edges (visualizer and agent use this table):", "");
+  for (const edge of fsm.transitions) {
+    const who = edge.userMediated ? "user-mediated" : "agent/procedure";
+    const link = edge.bidirectional
+      ? `${edge.from} <--${edge.event}--> ${edge.to}`
+      : `${edge.from} --${edge.event}--> ${edge.to}`;
+    lines.push(`- ${link} [${who}]`);
+  }
+
+  lines.push("", "## Tools");
+  for (const tool of fsm.tools) {
+    lines.push("", `### ${tool.name}`, tool.summary, "", "Gate:", ...tool.gate.map((g) => `- ${g}`));
+  }
+
+  if (fsm.exceptions) {
+    lines.push("", "## Exceptions & Escape Hatches", fsm.exceptions.summary, "");
+    for (const cmd of fsm.exceptions.commands) {
+      lines.push(`### ${cmd.command} (${cmd.label})`, cmd.summary, "");
+    }
+  }
+
+  lines.push(
+    "",
+    "## Artifact",
+    `Sections: ${fsm.artifact.sections.join(", ")}.`,
+    `Identifiers: Q=${fsm.artifact.identifiers.Q}; D=${fsm.artifact.identifiers.D}; C=${fsm.artifact.identifiers.C}.`,
+    ...fsm.artifact.rules.map((rule) => `- ${rule}`),
+  );
+
+  return lines.join("\n").trimEnd();
+}
+
 export function workflowPrompt(): string {
-  return `<pi_workflow>\n${formatWorkflowPrompt()}\n</pi_workflow>`;
+  return `<pi_workflow>\n${formatRuntimeWorkflowPrompt()}\n</pi_workflow>`;
 }

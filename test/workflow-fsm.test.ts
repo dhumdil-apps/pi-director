@@ -5,7 +5,9 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   WORKFLOW_FSM,
+  formatRuntimeWorkflowPrompt,
   formatWorkflowPrompt,
+  workflowPrompt,
   type FsmStateId,
   type WorkflowFsm,
 } from "../extensions/agent-workflow/workflow-fsm.ts";
@@ -119,6 +121,23 @@ describe("workflow FSM graph", () => {
     const prompt = formatWorkflowPrompt();
     assert.match(prompt, /Q1-goal-scope/);
     assert.match(prompt, /runtime ensures named artifact|runtime settlement calls beginTask|ensure start/i);
+  });
+
+  it("injects a compact runtime booklet instead of the full FSM prompt", () => {
+    const full = formatWorkflowPrompt();
+    const runtime = formatRuntimeWorkflowPrompt();
+    assert.match(runtime, /## Mode bodies/);
+    assert.match(runtime, /NEVER add a todo tool/);
+    assert.match(runtime, /exitTool=next|CALL next/i);
+    assert.doesNotMatch(runtime, /## Notes/);
+    assert.doesNotMatch(runtime, /### ENVISION \(envision/);
+    assert.doesNotMatch(runtime, /\nMechanics:/);
+    assert.ok(runtime.length < full.length);
+    assert.ok(runtime.length < 28000);
+    const wrapped = workflowPrompt();
+    assert.match(wrapped, /<pi_workflow>/);
+    assert.ok(wrapped.includes(runtime));
+    assert.doesNotMatch(wrapped, /## Notes/);
   });
 
   it("does not shadow workflow-fsm.ts with a browser workflow-fsm.js", () => {

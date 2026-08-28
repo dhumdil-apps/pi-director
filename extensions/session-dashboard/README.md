@@ -30,7 +30,9 @@ de-emphasised), followed by the shortcuts and usage chart. A path-only list of
 the `AGENTS.md`/`CLAUDE.md` files Pi actually included follows the chart. It
 uses Pi's standard context-file resolver and confirms each non-empty file's
 content is present in the startup prompt, so discovery alone never claims a
-file was loaded. Git branch/status are intentionally not repeated here.
+file was loaded. A **Skills** name list follows when the project is trusted and Pi's skill loader
+finds any (global, package, and project `.pi/skills`, including `unslop`). Git
+branch/status are intentionally not repeated here.
 
 `❓ /help` remains the full reference for commands, shortcuts, and every active
 extension with its complete description.

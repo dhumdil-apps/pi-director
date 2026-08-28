@@ -6,4 +6,4 @@ The old v2.1.1 transition audit that previously lived here is retired. For the v
 
 `.pi/plan/2026-08-25T11:10:01-review-director-fsm.md`
 
-After FSM edits: `npm run build:content` and open `extensions/agent-workflow/workflow-fsm.html`. Residual optional work (not scheduled): executable `receive`/`dispatchSettlement` tests; prompt-size split.
+After FSM edits: `npm run build:content` and open `extensions/agent-workflow/workflow-fsm.html`. Residual optional work (not scheduled): executable `receive`/`dispatchSettlement` tests.

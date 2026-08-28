@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import {
   getAgentDir,
   loadProjectContextFiles,
+  loadSkills,
   type ContextUsage,
   type ExtensionAPI,
   type SessionEntry,
@@ -152,6 +153,13 @@ export function welcomeContextInfo(
     workingDirectory: `*${truncateLeft(tildify(cwd), 60)}*`,
     contextFiles: paths.length > 0 ? ["**📦 Context files**", ...paths].join("\n") : undefined,
   };
+}
+
+/** Path-free name list of skills the host already loaded for this session. */
+export function welcomeSkillsMarkdown(skills: { name: string }[] | undefined): string | undefined {
+  const names = [...new Set((skills ?? []).map((skill) => skill.name).filter(Boolean))].sort();
+  if (names.length === 0) return undefined;
+  return ["**Skills**", ...names.map((name) => `- \`${name}\``)].join("\n");
 }
 
 interface BundleResources {
@@ -420,12 +428,23 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
       // The standard resolver supplies only the files Pi would load; matching
       // their content against the assembled prompt confirms what it did load.
       const contextInfo = welcomeContextInfo(cwd, ctx.getSystemPrompt());
+      const skills = welcomeSkillsMarkdown(
+        ctx.isProjectTrusted()
+          ? loadSkills({
+              cwd,
+              agentDir: getAgentDir(),
+              skillPaths: [],
+              includeDefaults: true,
+            }).skills
+          : undefined,
+      );
 
       const showMemoryNotice = memoryStatus ? await claimProjectMemoryReminder(memoryStatus).catch(() => false) : false;
       const welcomeText = renderWelcomeText({
         usageChart,
         workingDirectory: contextInfo.workingDirectory,
         contextFiles: contextInfo.contextFiles,
+        skills,
         tip: "> 🧠 `/init` · 📊 `/usage` · 🧭 `/mode` · ⚙️ `/extension-settings` · ❓ `/help`",
         memoryNotice: showMemoryNotice ? `> ⚠️ ${memoryStatusNotice()}` : undefined,
       });

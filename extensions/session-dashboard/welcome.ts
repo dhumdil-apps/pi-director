@@ -9,6 +9,8 @@ export interface WelcomeParts {
   usageChart?: string;
   /** Loaded context-file paths, plain markdown. */
   contextFiles?: string;
+  /** Discovered skill names, plain markdown. */
+  skills?: string;
   /** Short de-emphasised hint, plain markdown. */
   tip?: string;
   /** Project-memory freshness warning, preformatted as a markdown quote. */
@@ -21,6 +23,7 @@ export function renderWelcomeText({
   welcome,
   usageChart,
   contextFiles,
+  skills,
   tip,
   memoryNotice,
 }: WelcomeParts): string {
@@ -29,6 +32,7 @@ export function renderWelcomeText({
   if (tip) sections.push(tip);
   if (usageChart) sections.push(`${USAGE_CHART_START}\n${usageChart}\n${USAGE_CHART_END}`);
   if (contextFiles) sections.push(contextFiles);
+  if (skills) sections.push(skills);
   if (welcome) sections.push(welcome);
   if (memoryNotice) sections.push(memoryNotice);
   return sections.join("\n\n").trim();

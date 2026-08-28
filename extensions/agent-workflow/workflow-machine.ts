@@ -17,6 +17,7 @@ export type { SettlementDispatch } from "./settlement.js";
 export {
   WORKFLOW_FSM,
   WORKFLOW_FSM_VERSION,
+  formatRuntimeWorkflowPrompt,
   formatWorkflowPrompt,
   serializeWorkflowFsm,
   toMermaid,
