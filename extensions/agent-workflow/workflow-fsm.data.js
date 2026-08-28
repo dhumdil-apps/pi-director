@@ -977,10 +977,10 @@ window.WORKFLOW_FLOW_GRAPH = {
     "envision": {
       "id": "envision",
       "label": "ENVISION",
-      "x": 80,
-      "y": 40,
-      "w": 260,
-      "h": 100,
+      "x": 445,
+      "y": -160,
+      "w": 210,
+      "h": 48,
       "kind": "mode",
       "summary": "Session entry only: capture goal, no extra file reads, CALL ask once about goal scope ahead (one CALL, batch independent questions), then start/reuse the named artifact before evaluate.",
       "permission": "planonly",
@@ -1011,8 +1011,8 @@ window.WORKFLOW_FLOW_GRAPH = {
     "align": {
       "id": "align",
       "label": "ALIGN",
-      "x": 80,
-      "y": 220,
+      "x": 420,
+      "y": -20,
       "w": 260,
       "h": 120,
       "kind": "mode",
@@ -1071,8 +1071,8 @@ window.WORKFLOW_FLOW_GRAPH = {
     "vibe": {
       "id": "vibe",
       "label": "VIBE",
-      "x": 760,
-      "y": 220,
+      "x": 420,
+      "y": 480,
       "w": 260,
       "h": 120,
       "kind": "mode",
@@ -1100,8 +1100,8 @@ window.WORKFLOW_FLOW_GRAPH = {
     "proc-start": {
       "id": "proc-start",
       "label": "START",
-      "x": 80,
-      "y": 420,
+      "x": 480,
+      "y": -400,
       "w": 140,
       "h": 56,
       "kind": "procedure",
@@ -1125,8 +1125,8 @@ window.WORKFLOW_FLOW_GRAPH = {
     "proc-ask": {
       "id": "proc-ask",
       "label": "ASK",
-      "x": 250,
-      "y": 420,
+      "x": 480,
+      "y": -320,
       "w": 140,
       "h": 56,
       "kind": "procedure",
@@ -1164,8 +1164,8 @@ window.WORKFLOW_FLOW_GRAPH = {
     "proc-decide": {
       "id": "proc-decide",
       "label": "DECIDE",
-      "x": 420,
-      "y": 420,
+      "x": 480,
+      "y": -240,
       "w": 140,
       "h": 56,
       "kind": "procedure",
@@ -1194,8 +1194,8 @@ window.WORKFLOW_FLOW_GRAPH = {
     "proc-next": {
       "id": "proc-next",
       "label": "NEXT",
-      "x": 590,
-      "y": 420,
+      "x": 480,
+      "y": -480,
       "w": 140,
       "h": 56,
       "kind": "procedure",
@@ -1244,7 +1244,17 @@ window.WORKFLOW_FLOW_GRAPH = {
         "sources": [
           "envision-ask-route-spec"
         ]
-      }
+      },
+      "waypoints": [
+        [
+          740,
+          -149
+        ],
+        [
+          740,
+          280
+        ]
+      ]
     },
     {
       "id": "envision-ask-route-vibe",
@@ -1259,7 +1269,17 @@ window.WORKFLOW_FLOW_GRAPH = {
         "sources": [
           "envision-ask-route-vibe"
         ]
-      }
+      },
+      "waypoints": [
+        [
+          836,
+          -123
+        ],
+        [
+          836,
+          574
+        ]
+      ]
     },
     {
       "id": "envision-to-evaluate",
@@ -1304,7 +1324,17 @@ window.WORKFLOW_FLOW_GRAPH = {
         "sources": [
           "evaluate-ask-route-vibe"
         ]
-      }
+      },
+      "waypoints": [
+        [
+          772,
+          6
+        ],
+        [
+          772,
+          506
+        ]
+      ]
     },
     {
       "id": "establish-next-spec",
@@ -1336,7 +1366,17 @@ window.WORKFLOW_FLOW_GRAPH = {
           "establish-next-vibe"
         ],
         "landing": "execute"
-      }
+      },
+      "waypoints": [
+        [
+          804,
+          74
+        ],
+        [
+          804,
+          540
+        ]
+      ]
     },
     {
       "id": "elaborate-next-align",
@@ -1352,7 +1392,17 @@ window.WORKFLOW_FLOW_GRAPH = {
           "elaborate-next-align"
         ],
         "landing": "establish"
-      }
+      },
+      "waypoints": [
+        [
+          360,
+          246
+        ],
+        [
+          360,
+          6
+        ]
+      ]
     },
     {
       "id": "elaborate-return-align",
@@ -1368,7 +1418,17 @@ window.WORKFLOW_FLOW_GRAPH = {
           "elaborate-return-align"
         ],
         "landing": "evaluate"
-      }
+      },
+      "waypoints": [
+        [
+          328,
+          280
+        ],
+        [
+          328,
+          29
+        ]
+      ]
     },
     {
       "id": "elaborate-next-vibe",
@@ -1400,7 +1460,17 @@ window.WORKFLOW_FLOW_GRAPH = {
           "elaborate-handoff"
         ],
         "landing": "envision"
-      }
+      },
+      "waypoints": [
+        [
+          264,
+          314
+        ],
+        [
+          264,
+          -149
+        ]
+      ]
     },
     {
       "id": "examine-next-align",
@@ -1416,7 +1486,17 @@ window.WORKFLOW_FLOW_GRAPH = {
           "examine-next-align"
         ],
         "landing": "establish"
-      }
+      },
+      "waypoints": [
+        [
+          232,
+          529
+        ],
+        [
+          232,
+          51
+        ]
+      ]
     },
     {
       "id": "examine-return-align",
@@ -1432,7 +1512,17 @@ window.WORKFLOW_FLOW_GRAPH = {
           "examine-return-align"
         ],
         "landing": "evaluate"
-      }
+      },
+      "waypoints": [
+        [
+          200,
+          551
+        ],
+        [
+          200,
+          74
+        ]
+      ]
     },
     {
       "id": "examine-next-spec",
@@ -1448,7 +1538,17 @@ window.WORKFLOW_FLOW_GRAPH = {
           "examine-next-spec"
         ],
         "landing": "explore"
-      }
+      },
+      "waypoints": [
+        [
+          296,
+          506
+        ],
+        [
+          296,
+          280
+        ]
+      ]
     },
     {
       "id": "examine-handoff",
@@ -1464,7 +1564,17 @@ window.WORKFLOW_FLOW_GRAPH = {
           "examine-handoff"
         ],
         "landing": "envision"
-      }
+      },
+      "waypoints": [
+        [
+          168,
+          574
+        ],
+        [
+          168,
+          -123
+        ]
+      ]
     }
   ],
   "subgraphs": {
@@ -1479,10 +1589,10 @@ window.WORKFLOW_FLOW_GRAPH = {
         "evaluate": {
           "id": "evaluate",
           "label": "EVALUATE",
-          "x": 200,
-          "y": 80,
-          "w": 280,
-          "h": 100,
+          "x": 420,
+          "y": 0,
+          "w": 210,
+          "h": 48,
           "kind": "mode",
           "summary": "Align primary home: artifact check and later asks via ask (D-review, User-driven, reconcile); PWB routes; never CALL next.",
           "permission": "planonly",
@@ -1515,10 +1625,10 @@ window.WORKFLOW_FLOW_GRAPH = {
         "establish": {
           "id": "establish",
           "label": "ESTABLISH",
-          "x": 200,
-          "y": 280,
-          "w": 280,
-          "h": 100,
+          "x": 420,
+          "y": 160,
+          "w": 210,
+          "h": 48,
           "kind": "mode",
           "summary": "Align secondary judge: confirm/summarize, RETURN to evaluate or CALL next — never ask.",
           "permission": "planonly",
@@ -1701,7 +1811,17 @@ window.WORKFLOW_FLOW_GRAPH = {
           "event": "NEXT_HANDOFF",
           "description": "Picker prepares /handoff; after the User runs it, a fresh session restarts at ENVISION on the same artifact.",
           "userMediated": true,
-          "bidirectional": false
+          "bidirectional": false,
+          "waypoints": [
+            [
+              360,
+              184
+            ],
+            [
+              360,
+              -149
+            ]
+          ]
         }
       ],
       "tools": [
@@ -1814,10 +1934,10 @@ window.WORKFLOW_FLOW_GRAPH = {
         "explore": {
           "id": "explore",
           "label": "EXPLORE",
-          "x": 200,
-          "y": 80,
-          "w": 280,
-          "h": 110,
+          "x": 420,
+          "y": 320,
+          "w": 210,
+          "h": 48,
           "kind": "mode",
           "summary": "Spec primary home: codebase research and fact-finding; may CALL decide; update the plan only — no project file mutations.",
           "permission": "planonly",
@@ -1842,10 +1962,10 @@ window.WORKFLOW_FLOW_GRAPH = {
         "elaborate": {
           "id": "elaborate",
           "label": "ELABORATE",
-          "x": 200,
-          "y": 300,
-          "w": 280,
-          "h": 110,
+          "x": 420,
+          "y": 480,
+          "w": 210,
+          "h": 48,
           "kind": "mode",
           "summary": "Spec secondary judge: CLOSE_OUT, RETURN to explore or CALL next.",
           "permission": "planonly",
@@ -2122,10 +2242,10 @@ window.WORKFLOW_FLOW_GRAPH = {
         "execute": {
           "id": "execute",
           "label": "EXECUTE",
-          "x": 200,
-          "y": 80,
-          "w": 280,
-          "h": 110,
+          "x": 420,
+          "y": 640,
+          "w": 210,
+          "h": 48,
           "kind": "mode",
           "summary": "Vibe primary home: implement approved scope; may CALL decide for scoped autonomous decisions (D); project file mutations.",
           "permission": "write",
@@ -2148,10 +2268,10 @@ window.WORKFLOW_FLOW_GRAPH = {
         "examine": {
           "id": "examine",
           "label": "EXAMINE",
-          "x": 200,
-          "y": 300,
-          "w": 280,
-          "h": 110,
+          "x": 420,
+          "y": 800,
+          "w": 210,
+          "h": 48,
           "kind": "mode",
           "summary": "Vibe secondary judge: CLOSE_OUT, RETURN to execute or CALL next.",
           "permission": "write",
@@ -2654,12 +2774,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          760,
-          20
+          722,
+          -149
         ],
         [
-          760,
-          280
+          722,
+          357
         ]
       ]
     },
@@ -2674,12 +2794,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          780,
-          0
+          818,
+          -123
         ],
         [
-          780,
-          540
+          818,
+          677
         ]
       ]
     },
@@ -2704,12 +2824,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          700,
-          100
+          690,
+          11
         ],
         [
-          700,
-          280
+          690,
+          331
         ]
       ]
     },
@@ -2724,12 +2844,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          720,
-          100
+          786,
+          37
         ],
         [
-          720,
-          520
+          786,
+          664
         ]
       ]
     },
@@ -2751,17 +2871,7 @@ window.WORKFLOW_FULL_GRAPH = {
       "event": "NEXT_SPEC",
       "description": "User chooses SPEC from establish gate; lands on explore (primary).",
       "userMediated": true,
-      "bidirectional": false,
-      "waypoints": [
-        [
-          680,
-          180
-        ],
-        [
-          680,
-          300
-        ]
-      ]
+      "bidirectional": false
     },
     {
       "id": "establish-next-vibe",
@@ -2774,12 +2884,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          680,
-          260
+          754,
+          184
         ],
         [
-          680,
-          540
+          754,
+          651
         ]
       ]
     },
@@ -2794,12 +2904,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          380,
-          120
+          360,
+          184
         ],
         [
-          380,
-          -20
+          360,
+          -149
         ]
       ]
     },
@@ -2824,12 +2934,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          380,
-          400
+          328,
+          491
         ],
         [
-          380,
-          240
+          328,
+          171
         ]
       ]
     },
@@ -2844,12 +2954,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          360,
-          400
+          296,
+          504
         ],
         [
-          360,
-          100
+          296,
+          11
         ]
       ]
     },
@@ -2861,13 +2971,7 @@ window.WORKFLOW_FULL_GRAPH = {
       "event": "NEXT_VIBE",
       "description": "User chooses VIBE after Spec proposal; lands on execute (primary).",
       "userMediated": true,
-      "bidirectional": false,
-      "waypoints": [
-        [
-          520,
-          560
-        ]
-      ]
+      "bidirectional": false
     },
     {
       "id": "elaborate-handoff",
@@ -2880,12 +2984,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          340,
-          400
+          232,
+          517
         ],
         [
-          340,
-          -20
+          232,
+          -136
         ]
       ]
     },
@@ -2910,12 +3014,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          280,
-          640
+          200,
+          820
         ],
         [
-          280,
-          240
+          200,
+          197
         ]
       ]
     },
@@ -2930,12 +3034,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          260,
-          640
+          168,
+          828
         ],
         [
-          260,
-          120
+          168,
+          37
         ]
       ]
     },
@@ -2950,12 +3054,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          300,
-          620
+          264,
+          811
         ],
         [
-          300,
-          360
+          264,
+          344
         ]
       ]
     },
@@ -2970,12 +3074,12 @@ window.WORKFLOW_FULL_GRAPH = {
       "bidirectional": false,
       "waypoints": [
         [
-          220,
-          640
+          136,
+          837
         ],
         [
-          220,
-          -20
+          136,
+          -123
         ]
       ]
     }

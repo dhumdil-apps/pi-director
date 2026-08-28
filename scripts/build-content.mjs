@@ -189,14 +189,32 @@ writeFileSync(
 
 // Generate external workflow-fsm.data.js for visualizer (file:// and server safe)
 const agentWorkflowDir = join(ROOT, "extensions/agent-workflow");
-const layoutJsPath = join(agentWorkflowDir, "workflow-layout.js");
-let layoutJson = {};
-if (existsSync(layoutJsPath)) {
-  const layoutJsContent = readFileSync(layoutJsPath, "utf-8");
-  const match = layoutJsContent.match(/window\.WORKFLOW_LAYOUT\s*=\s*(\{[\s\S]*\});?\s*$/);
+const multiJsPath = join(agentWorkflowDir, "workflow-layout-multi.js");
+const fullJsPath = join(agentWorkflowDir, "workflow-layout-full.js");
+let layoutJson = { diagrams: {} };
+
+if (existsSync(multiJsPath)) {
+  const content = readFileSync(multiJsPath, "utf-8");
+  const match = content.match(/window\.(?:WORKFLOW_LAYOUT|WORKFLOW_LAYOUT_MULTI)\s*=\s*(\{[\s\S]*\});?\s*$/);
   if (match) {
     try {
-      layoutJson = Function(`return (${match[1]});`)();
+      const parsed = Function(`return (${match[1]});`)();
+      if (parsed.diagrams) {
+        Object.assign(layoutJson.diagrams, parsed.diagrams);
+      } else {
+        Object.assign(layoutJson.diagrams, parsed);
+      }
+    } catch {}
+  }
+}
+
+if (existsSync(fullJsPath)) {
+  const content = readFileSync(fullJsPath, "utf-8");
+  const match = content.match(/window\.(?:WORKFLOW_LAYOUT|WORKFLOW_LAYOUT_FULL)\s*=\s*(\{[\s\S]*\});?\s*$/);
+  if (match) {
+    try {
+      const parsed = Function(`return (${match[1]});`)();
+      layoutJson.diagrams.full = parsed.full || parsed;
     } catch {}
   }
 }
@@ -226,7 +244,8 @@ const visualizerFiles = [
   "workflow-fsm.html",
   "workflow-fsm.css",
   "workflow-visualizer.js",
-  "workflow-layout.js",
+  "workflow-layout-multi.js",
+  "workflow-layout-full.js",
   "theme.css",
   "tuto-ui.iife.js",
 ];
@@ -256,7 +275,8 @@ const contentPkg = {
     "./workflow-fsm.html": "./workflow-fsm.html",
     "./workflow-fsm.css": "./workflow-fsm.css",
     "./workflow-visualizer.js": "./workflow-visualizer.js",
-    "./workflow-layout.js": "./workflow-layout.js",
+    "./workflow-layout-multi.js": "./workflow-layout-multi.js",
+    "./workflow-layout-full.js": "./workflow-layout-full.js",
     "./workflow-fsm.data.js": "./workflow-fsm.data.js",
     "./theme.css": "./theme.css",
     "./tuto-ui.iife.js": "./tuto-ui.iife.js",

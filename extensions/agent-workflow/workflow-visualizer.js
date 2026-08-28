@@ -136,12 +136,20 @@
   } catch {}
 
   function currentLayout() {
-    let layout = layoutConfig;
+    let layout = window.WORKFLOW_LAYOUT || layoutConfig;
+    if (viewMode === "full" && window.WORKFLOW_LAYOUT_FULL) {
+      layout = window.WORKFLOW_LAYOUT_FULL;
+    } else if (viewMode === "multi" && window.WORKFLOW_LAYOUT_MULTI) {
+      layout = window.WORKFLOW_LAYOUT_MULTI;
+    }
+
     try {
       const saved = localStorage.getItem("pi_workflow_layout_override");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.diagrams || (parsed.align && parsed.align.nodes)) {
+        if (viewMode === "full" && (parsed.nodes || parsed.edges)) {
+          layout = parsed;
+        } else if (viewMode === "multi" && (parsed.diagrams || parsed.overview || parsed.align)) {
           layout = { diagrams: parsed.diagrams || parsed };
         }
       }
