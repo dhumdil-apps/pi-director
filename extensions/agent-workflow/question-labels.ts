@@ -28,27 +28,14 @@ export function shortenDescription(description: string, max = DESC_ROW_MAX): str
   return `${text.slice(0, Math.max(0, max - 1)).trimEnd()}…`;
 }
 
-/**
- * User-facing option row: `A. label — description` when description is present.
- * Keeps scannable everyday wording visible in the native select list.
- */
+/** User-facing option row: `A. {value}` slug chrome. Description stays off the native select row. */
 export function pickerLabel(option: RankedOption, index = 0): string {
-  const head = `${optionLetter(index)}. ${option.label}`;
-  const desc = option.description?.trim();
-  if (!desc) return head;
-  return `${head} — ${shortenDescription(desc)}`;
+  return `${optionLetter(index)}. ${option.value}`;
 }
 
-/**
- * Picker title: plain prompt, with short context when provided (D6).
- * Multiline when context exists so the why-it-matters line is visible.
- */
-export function pickerTitle(prompt: string, context?: string): string {
-  const p = prompt.replace(/\s+/g, " ").trim();
-  const c = context?.replace(/\s+/g, " ").trim();
-  if (!c) return p;
-  const shortCtx = c.length > 120 ? `${c.slice(0, 119).trimEnd()}…` : c;
-  return `${p}\n${shortCtx}`;
+/** Native picker title: prompt only (context stays in chat renderCall). */
+export function pickerTitle(prompt: string, _context?: string): string {
+  return prompt.replace(/\s+/g, " ").trim();
 }
 
 /** Custom-answer footnotes: same A. chrome as picker rows (confidence stays internal). */

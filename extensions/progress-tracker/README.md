@@ -36,15 +36,9 @@ renders the one thing the transcript cannot show.
   read the latest entry. The large injected contract stays constant while only a
   tiny per-turn mode message varies.
 - Working state — while a run is in flight the idle prompt gives way to the
-  spinner and accent-colored active timing. The plan's `**Current work:**`
-  phrase is the working-row label (FSM): it follows the timer in dim
-  (`⠋ 12s C5 seed current-work line`) when non-empty, and is clipped so the
-  Align/Spec/Vibe times stay visible. Idle, waiting, missing plans, empty
-  lines, and HTML comments (including the `<!-- pi-director-plan:v2 -->`
-  marker) omit it. The tracker re-reads the named plan on adopt, `agent_start`,
-  `tool_execution_end`, and `agent_settled`; it does not parse Checklist or
-  Digest prose or expose a todo tool. Show plan on the mode picker displays
-  `## Digest` with a single Return, not this row.
+  spinner and accent-colored active timing. The tracker does not parse Checklist
+  or Digest prose or expose a todo tool. Show plan on the mode picker displays
+  `## Digest` with a single Return.
 - Work/cache timer — one compact accent-colored readout follows the active
   spinner and counts only the current work interval (`5s`, `1m 23s`, `1h 04m`). It resets whenever
   ALIGN, SPEC, or VIBE work begins rather than displaying grand-total task time.
@@ -89,9 +83,7 @@ The vendored `manage_todo_list` was removed on 2026-07-24. Pi ships no todo tool
 on purpose — its README states plainly that they confuse models — and the
 vendored one leaned on nagging to stay used: a `CRITICAL workflow` description,
 a "continue to use the todo list" line appended to every write, and a warning
-for lists under three items. The working row may show one Agent-owned
-`**Current work:**` phrase from the plan; that is display-only, not a list the
-model must keep in tool state.
+for lists under three items. The working row is spinner, interval timer, and mode buckets only — not a todo list.
 
 ## Origin
 

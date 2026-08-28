@@ -144,7 +144,7 @@
     }
 
     try {
-      const saved = localStorage.getItem("pi_workflow_layout_override");
+      const saved = localStorage.getItem("pi_workflow_layout_override_v28");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (viewMode === "full" && (parsed.nodes || parsed.edges)) {

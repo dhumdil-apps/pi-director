@@ -102,7 +102,7 @@ describe("workflow FSM graph", () => {
 
   it("lets envision ask before start without extra pre-ask file reads", () => {
     const prompt = formatWorkflowPrompt();
-    assert.match(prompt, /Progress Tracker working-row/);
+    assert.match(prompt, /NEVER add a todo tool/);
     assert.match(prompt, /Show plan displays only Digest/);
     assert.match(prompt, /MAY CALL ask before start|before start when no named artifact/);
     assert.match(prompt, /harness-injected AGENTS\.md/);
@@ -129,13 +129,15 @@ describe("workflow FSM graph", () => {
 });
 
 describe("ask/decide picker labels", () => {
-  it("puts description on the option row and context under the title", () => {
+  it("shows A. value slug rows and prompt-only title", () => {
     assert.equal(
-      pickerLabel({ value: "a", label: "keep scope", description: "Do not replace the goal", confidence: 5 }, 0),
-      "A. keep scope — Do not replace the goal",
+      pickerLabel(
+        { value: "keep-scope", label: "keep scope", description: "Do not replace the goal", confidence: 5 },
+        0,
+      ),
+      "A. keep-scope",
     );
-    assert.match(pickerTitle("Accept this decision?", "It changes who can write files."), /Accept this decision\?/);
-    assert.match(pickerTitle("Accept this decision?", "It changes who can write files."), /write files/);
+    assert.equal(pickerTitle("Accept this decision?", "It changes who can write files."), "Accept this decision?");
     assert.ok(shortenDescription("x".repeat(100)).endsWith("…"));
   });
 });
@@ -150,16 +152,24 @@ describe("workflow flow diagrams projection", () => {
     const graph = toFlowDiagrams(WORKFLOW_FSM);
     assert.ok(graph.states.envision);
     assert.ok(!("next" in graph.states));
-    assert.ok(graph.states["proc-next"]);
-    assert.ok(graph.states["proc-start"]);
+    assert.ok(!graph.states["proc-next"]);
+    assert.ok(!graph.states["proc-start"]);
     assert.ok(graph.subgraphs?.align);
     assert.ok(!("next" in (graph.subgraphs?.align.states || {})));
     assert.ok(graph.subgraphs?.align.states["proc-next"]);
+    assert.ok(graph.subgraphs?.align.states["proc-ask"]);
+    assert.ok(!graph.subgraphs?.align.states["proc-decide"]);
+    assert.ok(graph.subgraphs?.spec.states["proc-decide"]);
+    assert.ok(!graph.subgraphs?.spec.states["proc-ask"]);
     assert.ok(graph.subgraphs?.align.transitions.every((t) => t.event !== "TO_NEXT"));
+
+    assert.ok(graph.transitions.some((t) => t.event === "next"));
+    assert.ok(graph.transitions.every((t) => !String(t.event || "").startsWith("NEXT_")));
 
     const full = toFullFlowDiagram(WORKFLOW_FSM);
     assert.equal(Object.keys(full.states).length, Object.keys(WORKFLOW_FSM.states).length);
     assert.ok(!("next" in full.states));
     assert.equal(full.transitions.length, WORKFLOW_FSM.transitions.length);
+    assert.ok(full.transitions.some((t) => String(t.event || "").startsWith("NEXT_")));
   });
 });

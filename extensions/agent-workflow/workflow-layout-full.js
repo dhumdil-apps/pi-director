@@ -1,4 +1,4 @@
-window.WORKFLOW_LAYOUT = {
+window.WORKFLOW_LAYOUT_FULL = {
   "nodes": {
     "envision": {
       "x": 420,

@@ -6,7 +6,7 @@
  */
 
 import type { ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { truncateToWidth } from "@earendil-works/pi-tui";
 import { addModeTime, formatDuration, type PlanTime } from "../../agent-workflow/plan-time.js";
 import { MODE_LABEL, type WorkflowMode } from "../../agent-workflow/mode.js";
 
@@ -31,8 +31,6 @@ export interface IndicatorExtras {
   planTime?: PlanTime;
   /** When the latest provider response completed, as epoch ms, for cache age. */
   cacheStartedAt?: number;
-  /** Plan **Current work:** phrase; omitted while idle or when empty. */
-  currentWork?: string;
   /** Injectable clock, so the live counter is testable. */
   now?: () => number;
 }
@@ -85,21 +83,6 @@ const MODE_PROMPTS: Record<WorkflowMode, string> = {
   spec: "Reviewing the plan",
   vibe: "What’s up next?",
 };
-
-/** Keep mode buckets visible: cap Current work to the leftover width. */
-function workingStatus(
-  left: string,
-  currentWork: string | undefined,
-  buckets: string,
-  width: number,
-  theme: Theme,
-): string {
-  if (!currentWork) return `${left}${buckets}`;
-  const budget = width - visibleWidth(left) - visibleWidth(buckets) - 1;
-  if (budget <= 0) return `${left}${buckets}`;
-  const clipped = truncateToWidth(currentWork, budget, "…");
-  return clipped ? `${left}${theme.fg("dim", ` ${clipped}`)}${buckets}` : `${left}${buckets}`;
-}
 
 /** Dim while aligning, warning once executing. */
 function modeText(mode: WorkflowMode | undefined, theme: Theme): string {
@@ -155,10 +138,10 @@ export function updatePhaseIndicator(ctx: ExtensionContext, working: boolean, ex
                   ` ${!working && elapsed >= CACHE_ERROR_IDLE_MS ? "5m+" : formatDuration(elapsed)}`,
                 );
           const buckets = modeBuckets(working, extras, now, theme);
-          const currentWork = working ? extras?.currentWork?.trim() : undefined;
           const status = working
-            ? workingStatus(theme.fg("accent", marker) + timer, currentWork, buckets, width, theme)
+            ? `${theme.fg("accent", marker)}${timer}${buckets}`
             : `${theme.fg("accent", `${marker} `)}${modeText(extras?.mode, theme)}${timer}${buckets}`;
+
           return [truncateToWidth(status, width)];
         },
         invalidate: () => {},

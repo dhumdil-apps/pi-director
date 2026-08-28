@@ -570,7 +570,7 @@ var TutoUI=(function(x){"use strict";var ne=Object.defineProperty;var de=(x,q,st
                 </li>
               `).join("")}
             </ol>
-          </div>`:"",v=this._tools.filter(I=>(I.modes||[]).includes(g.id)||(I.modes||[]).includes("any")),M=v.length?`<div>
+          </div>`:"",v=this._tools.filter(I=>{const j=[g.id,(g.customData||{}).userMode,(g.customData||{}).procedureTool].filter(V=>typeof V=="string"&&V.length>0),V=I.modes||[];return V.includes("any")||j.some(K=>V.includes(K))}),M=v.length?`<div>
             <h4 class="section-title">Permitted Tools & Gates (${v.length})</h4>
             <div style="display: flex; flex-direction: column; gap: 0.6rem;">
               ${v.map(I=>{var j;return`

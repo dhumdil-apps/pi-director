@@ -187,22 +187,19 @@ describe("mode picker trailing rows", () => {
 });
 
 describe("ask picker labels", () => {
-  it("shows A. label chrome with description on the row", () => {
+  it("shows A. value slug chrome without description on the row", () => {
     const options = orderedOptions([
-      { value: "a", label: "Ask UI first, then Align duplicate", description: "C10 then C7", confidence: 5 },
-      { value: "b", label: "Align duplicate first", description: "C7 then C10", confidence: 4 },
+      { value: "ask-ui-first", label: "Ask UI first, then Align duplicate", description: "C10 then C7", confidence: 5 },
+      { value: "align-duplicate-first", label: "Align duplicate first", description: "C7 then C10", confidence: 4 },
     ]);
     assert.deepEqual(
       options.map((option, index) => pickerLabel(option, index)),
-      ["A. Ask UI first, then Align duplicate — C10 then C7", "B. Align duplicate first — C7 then C10"],
+      ["A. ask-ui-first", "B. align-duplicate-first"],
     );
     assert.equal(
       options.every((option, index) => !/confidence/i.test(pickerLabel(option, index))),
       true,
     );
-    assert.deepEqual(optionReferences(options), [
-      "A. Ask UI first, then Align duplicate — C10 then C7",
-      "B. Align duplicate first — C7 then C10",
-    ]);
+    assert.deepEqual(optionReferences(options), ["A. ask-ui-first", "B. align-duplicate-first"]);
   });
 });

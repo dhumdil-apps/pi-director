@@ -2,12 +2,12 @@
  * Pure multi-diagram projection of WORKFLOW_FSM for tuto-ui canvas.
  * Canonical source remains workflow-fsm.ts.
  *
- * Overview: envision + mode modules + shared procedure strip (start/ask/decide/next)
- * Mode diagrams: body states only (same-mode edges)
+ * Overview: envision + mode modules only (tools live on Align/Spec/Vibe details)
+ * Mode diagrams: body states + call-site procedure chips (same-mode edges)
  * Full: all guided states + all transitions (no procedure boxes)
  */
 
-import type { FsmState, FsmTransition, FsmUserMode, WorkflowFsm } from "./workflow-fsm.ts";
+import type { FsmState, FsmToolSpec, FsmTransition, FsmUserMode, WorkflowFsm } from "./workflow-fsm.ts";
 import { WORKFLOW_FSM } from "./workflow-fsm.ts";
 
 export type FlowNodePermission = "readonly" | "planonly" | "write" | "memory" | "standby" | "user-write";
@@ -88,26 +88,21 @@ const DEFAULT_MODE_LAYOUT: Record<FsmUserMode, Record<string, { x: number; y: nu
   align: {
     evaluate: { x: 200, y: 80, w: 280, h: 100 },
     establish: { x: 200, y: 280, w: 280, h: 100 },
-    "proc-start": { x: 560, y: 40, w: 140, h: 56 },
-    "proc-ask": { x: 720, y: 40, w: 140, h: 56 },
-    "proc-decide": { x: 560, y: 140, w: 140, h: 56 },
-    "proc-next": { x: 720, y: 140, w: 140, h: 56 },
+    "proc-start": { x: 680, y: -8, w: 140, h: 56 },
+    "proc-ask": { x: 680, y: 56, w: 140, h: 56 },
+    "proc-next": { x: 680, y: 160, w: 140, h: 56 },
   },
   spec: {
     explore: { x: 200, y: 80, w: 280, h: 110 },
     elaborate: { x: 200, y: 300, w: 280, h: 110 },
-    "proc-start": { x: 560, y: 40, w: 140, h: 56 },
-    "proc-ask": { x: 720, y: 40, w: 140, h: 56 },
-    "proc-decide": { x: 560, y: 160, w: 140, h: 56 },
-    "proc-next": { x: 720, y: 160, w: 140, h: 56 },
+    "proc-decide": { x: 680, y: 80, w: 140, h: 56 },
+    "proc-next": { x: 680, y: 300, w: 140, h: 56 },
   },
   vibe: {
     execute: { x: 200, y: 80, w: 280, h: 110 },
     examine: { x: 200, y: 300, w: 280, h: 110 },
-    "proc-start": { x: 560, y: 40, w: 140, h: 56 },
-    "proc-ask": { x: 720, y: 40, w: 140, h: 56 },
-    "proc-decide": { x: 560, y: 160, w: 140, h: 56 },
-    "proc-next": { x: 720, y: 160, w: 140, h: 56 },
+    "proc-decide": { x: 680, y: 80, w: 140, h: 56 },
+    "proc-next": { x: 680, y: 300, w: 140, h: 56 },
   },
 };
 
@@ -116,10 +111,10 @@ const DEFAULT_OVERVIEW_LAYOUT: Record<string, { x: number; y: number; w: number;
   align: { x: 80, y: 220, w: 260, h: 120 },
   spec: { x: 420, y: 220, w: 260, h: 120 },
   vibe: { x: 760, y: 220, w: 260, h: 120 },
-  "proc-start": { x: 80, y: 420, w: 140, h: 56 },
-  "proc-ask": { x: 250, y: 420, w: 140, h: 56 },
-  "proc-decide": { x: 420, y: 420, w: 140, h: 56 },
-  "proc-next": { x: 590, y: 420, w: 140, h: 56 },
+  "proc-start": { x: 720, y: -160, w: 140, h: 56 },
+  "proc-ask": { x: 720, y: -20, w: 140, h: 56 },
+  "proc-decide": { x: 720, y: 220, w: 140, h: 56 },
+  "proc-next": { x: 720, y: 480, w: 140, h: 56 },
 };
 
 /** Vertical spine — keep in sync with workflow-layout.js diagrams.full */
@@ -210,14 +205,24 @@ function transitionToEdge(t: FsmTransition, waypoints?: Array<[number, number]>)
 }
 
 /** Synthetic procedure chips — not FsmStateId, not transition endpoints. */
+const MODE_PROCEDURE_TOOLS: Record<FsmUserMode, Array<FsmToolSpec["name"]>> = {
+  align: ["start", "ask", "next"],
+  spec: ["decide", "next"],
+  vibe: ["decide", "next"],
+};
+
 export function buildProcedureStrip(
   fsm: WorkflowFsm,
   layoutNodes?: DiagramLayoutSlice["nodes"],
   defaults: Record<string, { x: number; y: number; w: number; h: number }> = DEFAULT_OVERVIEW_LAYOUT,
+  toolNames?: Array<FsmToolSpec["name"]>,
+  userMode?: FsmUserMode,
 ): Record<string, FlowDiagramNode> {
   const out: Record<string, FlowDiagramNode> = {};
   let index = 0;
+  const allowed = toolNames ? new Set(toolNames) : null;
   for (const tool of fsm.tools) {
+    if (allowed && !allowed.has(tool.name)) continue;
     const id = `proc-${tool.name}`;
     const pos = placeNode(
       id,
@@ -243,6 +248,7 @@ export function buildProcedureStrip(
         procedureTool: tool.name,
         modes: tool.modes,
         gate: tool.gate,
+        ...(userMode ? { userMode } : {}),
       },
     };
     index += 1;
@@ -265,7 +271,7 @@ function buildModeSubgraph(fsm: WorkflowFsm, mode: FsmUserMode, layout: DiagramL
     states[stateId] = stateToNode(st, pos);
   }
 
-  Object.assign(states, buildProcedureStrip(fsm, layout.nodes, defaults));
+  Object.assign(states, buildProcedureStrip(fsm, layout.nodes, defaults, MODE_PROCEDURE_TOOLS[mode], mode));
 
   const modeEdges = fsm.transitions.filter((t) => {
     const fromMode = fsm.states[t.from]?.userMode;
@@ -396,13 +402,15 @@ export function aggregateOverviewEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
     const to = toMode || landingMode(fsm, t.to);
     if (from === to && t.to !== "envision") continue;
 
+    const dest = t.to === "envision" ? "envision" : to;
+    const isNextTool = t.event.startsWith("NEXT_");
     pushAggregate({
-      id: t.id,
+      id: isNextTool ? `overview-next-${from}-${dest}` : t.id,
       sourceId: t.id,
       from,
-      to: t.to === "envision" ? "envision" : to,
-      label: t.label || t.event,
-      event: t.event,
+      to: dest,
+      label: isNextTool ? "next" : t.label || t.event,
+      event: isNextTool ? "next" : t.event,
       description: t.description,
       userMediated: Boolean(t.userMediated),
       customData: { landing: t.to },
@@ -467,6 +475,7 @@ export function toFlowDiagrams(fsm: WorkflowFsm = WORKFLOW_FSM, layout?: Workflo
       subgraphId: body.mode,
       customData: {
         modeBody: true,
+        userMode: body.mode,
         states: body.states,
         primary: body.primary,
         secondary: body.secondary,
@@ -474,8 +483,6 @@ export function toFlowDiagrams(fsm: WorkflowFsm = WORKFLOW_FSM, layout?: Workflo
       },
     };
   }
-
-  Object.assign(overviewStates, buildProcedureStrip(fsm, overviewLayout.nodes, DEFAULT_OVERVIEW_LAYOUT));
 
   const overviewTransitions = aggregateOverviewEdges(fsm).map((edge) => {
     const wps = overviewLayout.edges?.[edge.id];

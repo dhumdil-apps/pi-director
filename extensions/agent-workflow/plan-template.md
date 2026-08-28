@@ -5,8 +5,6 @@
 <!-- pi-director-plan:v2 -->
 <!-- task-name:temporary -->
 
-**Current work:**
-
 ## Digest
 
 - Current: <where we are>

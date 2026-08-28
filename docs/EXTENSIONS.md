@@ -69,9 +69,7 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
   agent; `/handoff` remains the human-controlled session boundary.
 - **No todo tool.** Pi ships none on purpose ("they confuse models"), and a
   structured list the agent must keep in sync is ceremony rather than progress.
-  Progress Tracker may show the plan's single `**Current work:**` line while a
-  run is in flight; that is display-only, not a todo list. Mode-picker Show plan
-  shows `## Digest` only and returns to the picker.
+  Mode-picker Show plan shows `## Digest` only and returns to the picker.
 - **No derived loop position in the prompt.** The large injected contract stays
   constant and cacheable. Only a tiny per-turn mode message varies; per-mode
   timing is display-only, and picker latency is not tracked at all.
