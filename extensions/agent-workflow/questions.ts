@@ -31,6 +31,8 @@ export function pickerLabel(option: QuestionOption, index?: number): string {
   return labelForOption(option, index);
 }
 
+export { pickerTitle } from "./question-labels.js";
+
 export function optionReferences(options: QuestionOption[]): string[] {
   return referencesForOptions(options);
 }

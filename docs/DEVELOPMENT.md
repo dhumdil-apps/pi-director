@@ -46,7 +46,7 @@ npm run verify
 `verify` runs formatting, TypeScript, and whitespace checks.
 Use `npm run format` to apply the repository style. `npm run typecheck` checks every vendored TypeScript extension and must exit zero.
 
-After Agent Workflow FSM changes, also run `npm run build:content` (Node strip-types). That refreshes `dist/workflow-fsm.json`, prompt/Mermaid exports, and embeds the live FSM into `extensions/agent-workflow/workflow-fsm.html`. Open that file (`file://` is enough) for the diagram-only flat XState-style viewer: full FSM states and transitions in a machine frame, event/DO edge pills, orthogonal routing, double-click sidebar for full instruction bodies, and machine INFO.
+After Agent Workflow FSM changes, also run `npm run build:content` (Node strip-types). That refreshes `dist/workflow-fsm.json`, prompt/Mermaid exports, multi-diagram `WORKFLOW_FLOW_GRAPH` and `WORKFLOW_FULL_GRAPH` (v2.8: session entry envision, mode bodies, secondaries CALL `next`; `start`/`ask`/`decide`/`next` are procedure chips not guided states; via `workflow-flow-diagrams.ts`), and embeds them into `workflow-fsm.data.js` / `workflow-fsm.html`. Open that file (`file://`) for the tuto-ui visualizer: Multi diagrams (Overview + Align/Spec/Vibe + procedure strip) or **Full FSM** toggle, Move/Edit layout (`S` snapshot, `Shift+S` FSM patch). Ask/decide picker rows show `A. label — description` with context under the prompt. Rebuild canvas from `~/Github/tuto-ui` with `pnpm build` when the IIFE changes.
 
 Interactive review still belongs to visual or lifecycle changes: Status Bar
 rendering, the above-editor indicator, the mode picker, session dashboard, and the workflow FSM HTML visualizer.

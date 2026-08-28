@@ -36,11 +36,11 @@ Stable value returned for this option.
 
 ## tool.ask.option.label
 
-Picker label shown for this option.
+Short everyday name for this option (2–5 words). Shown as the lead text on the picker row.
 
 ## tool.ask.option.description
 
-One-sentence consequence or trade-off shown for this option.
+One-sentence consequence or trade-off. Runtime shows it on the picker row after the label.
 
 ## tool.ask.option.confidence
 
@@ -48,15 +48,15 @@ Integer used to rank this option; 1 is lowest and 5 is highest.
 
 ## tool.ask.question.id
 
-Stable question slug returned with its answer (Q-goal-scope). User and Agent share this string.
+Stable question slug returned with its answer (Q1-goal-scope). User and Agent share this string.
 
 ## tool.ask.question.context
 
-Supporting context shown beneath the question.
+One short why-it-matters sentence. Runtime includes it under the prompt in the picker title.
 
 ## tool.ask.question.prompt
 
-Question shown in the picker title.
+Plain question for the picker title (keep it short).
 
 ## tool.ask.question.options
 
@@ -96,7 +96,7 @@ Required user-facing picker subtitle. Runtime rejects blank or whitespace-only v
 
 ## tool.next.action.prompt
 
-Follow-up instruction appended after the runtime transition. Required for Spec, Vibe, and Align review (landing evaluate). Align evaluate must include a standalone decision slug (D-tighten-writes). Optional for Align idle (landing establish). Forbidden for handoff.
+Follow-up instruction appended after the runtime transition. Required for Spec, Vibe, and Align review (landing evaluate). Align evaluate must include a standalone decision slug (D1-tighten-writes). Optional for Align idle (landing establish). Forbidden for handoff.
 
 ## tool.next.action.landing
 

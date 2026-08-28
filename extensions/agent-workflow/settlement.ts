@@ -43,3 +43,14 @@ export function dispatchSettlement<TAnswer>(input: SettlementDispatchInput<TAnsw
   if (mode === "align") return { action: "open_picker" };
   return { action: "none" };
 }
+
+/** Scope-informed start summary for PWB settlement when no named plan exists yet. */
+export function pwbRouteTaskSummary(answers?: Array<{ label?: string; value?: string }> | undefined): string {
+  const text = (answers ?? [])
+    .map((answer) => String(answer.label || answer.value || "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text || "proceed with best";
+}

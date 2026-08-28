@@ -4,7 +4,14 @@ import { Type, type Static } from "@sinclair/typebox";
 import { agentApiTemplate, agentApiText } from "./agent-api.js";
 import { openCheckpoint, resolveCheckpoint } from "./checkpoint.js";
 import { MODE_LABEL, type WorkflowMode } from "./mode.js";
-import { QuestionParams, optionReferences, orderedOptions, pickerLabel, type WorkflowQuestion } from "./questions.js";
+import {
+  QuestionParams,
+  optionReferences,
+  orderedOptions,
+  pickerLabel,
+  pickerTitle,
+  type WorkflowQuestion,
+} from "./questions.js";
 import { duringUserWait } from "./user-wait.js";
 import { ASK_SETTLEMENT_EVENT, formatGateText, planMissingMessage, receive, snapshot } from "./workflow-machine.js";
 
@@ -145,10 +152,9 @@ export function registerAsk(pi: ExtensionAPI): void {
           const remainingQuestions = params.questions.slice(index);
           const routes = canAcceptBest(remainingQuestions) ? ROUTE_OPTIONS : [];
           const labels = [...options.map(pickerLabel), WRITE_CUSTOM_ANSWER, ...routes];
+          const baseTitle = pickerTitle(question.prompt, question.context);
           const title =
-            params.questions.length === 1
-              ? question.prompt
-              : `${index + 1}/${params.questions.length} · ${question.prompt}`;
+            params.questions.length === 1 ? baseTitle : `${index + 1}/${params.questions.length} · ${baseTitle}`;
 
           let answered = false;
           while (!answered) {

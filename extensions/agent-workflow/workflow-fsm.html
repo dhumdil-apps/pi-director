@@ -90,6 +90,63 @@
 
     <footer id="bottombar">
       <div class="footer-left">
+        <div class="view-tablist" id="view-tablist" role="tablist" aria-label="Diagram view">
+          <button
+            type="button"
+            role="tab"
+            id="view-tab-multi"
+            class="view-tab"
+            data-view="multi"
+            aria-selected="true"
+            title="Overview and mode diagrams"
+          >
+            Multi
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="view-tab-full"
+            class="view-tab"
+            data-view="full"
+            aria-selected="false"
+            title="Flat full FSM"
+          >
+            Full
+          </button>
+        </div>
+
+        <button
+          type="button"
+          id="btn-shortcuts"
+          class="btn-icon"
+          title="Keyboard Shortcuts & Controls"
+          aria-label="Keyboard Shortcuts & Controls"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+            <line x1="6" y1="8" x2="6" y2="8"></line>
+            <line x1="10" y1="8" x2="10" y2="8"></line>
+            <line x1="14" y1="8" x2="14" y2="8"></line>
+            <line x1="18" y1="8" x2="18" y2="8"></line>
+            <line x1="6" y1="12" x2="6" y2="12"></line>
+            <line x1="10" y1="12" x2="10" y2="12"></line>
+            <line x1="14" y1="12" x2="14" y2="12"></line>
+            <line x1="18" y1="12" x2="18" y2="12"></line>
+            <line x1="7" y1="16" x2="17" y2="16"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="footer-right">
         <a
           href="https://github.com/dhumdil-apps/pi-director"
           target="_blank"
@@ -113,21 +170,95 @@
             ></path>
             <path d="M9 18c-4.51 2-5-2-7-2"></path>
           </svg>
-          <span class="version-tag" id="footer-version">v2.2.0</span>
+          <span class="version-tag" id="footer-version">v2.8.0</span>
         </a>
       </div>
-
-      <div class="footer-right">
-        <span class="kbd-hint"><kbd>Wheel</kbd> Zoom</span>
-        <span class="kbd-hint"><kbd>Drag</kbd> Pan</span>
-        <span class="kbd-hint"><kbd>M</kbd> Move Mode</span>
-        <span class="kbd-hint"><kbd>E</kbd> Edit Mode</span>
-        <span class="kbd-hint"><kbd>S</kbd> Snapshot</span>
-        <span class="kbd-hint"><kbd>F</kbd> Fit</span>
-        <span class="kbd-hint"><kbd>I</kbd> Inspector</span>
-        <span class="kbd-hint"><kbd>Esc</kbd> Normal</span>
-      </div>
     </footer>
+
+    <!-- Shortcuts & Controls Modal -->
+    <div id="modal-shortcuts" class="modal-backdrop" hidden>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-shortcuts-title">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+              <line x1="6" y1="8" x2="6" y2="8"></line>
+              <line x1="10" y1="8" x2="10" y2="8"></line>
+              <line x1="14" y1="8" x2="14" y2="8"></line>
+              <line x1="18" y1="8" x2="18" y2="8"></line>
+              <line x1="6" y1="12" x2="6" y2="12"></line>
+              <line x1="10" y1="12" x2="10" y2="12"></line>
+              <line x1="14" y1="12" x2="14" y2="12"></line>
+              <line x1="18" y1="12" x2="18" y2="12"></line>
+              <line x1="7" y1="16" x2="17" y2="16"></line>
+            </svg>
+            <h2 id="modal-shortcuts-title" class="modal-title">Keyboard Shortcuts & Legend</h2>
+          </div>
+          <button type="button" class="btn-modal-close" id="btn-close-shortcuts" aria-label="Close shortcuts dialog">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="shortcuts-section">
+            <div class="shortcuts-section-title">Navigation & Canvas</div>
+            <div class="shortcuts-grid">
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Zoom canvas</span>
+                <span class="shortcut-key"><kbd>Wheel</kbd> / <kbd>+</kbd> <kbd>-</kbd></span>
+              </div>
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Reset zoom to 100%</span>
+                <span class="shortcut-key">Click zoom %</span>
+              </div>
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Pan canvas</span>
+                <span class="shortcut-key"><kbd>Drag</kbd></span>
+              </div>
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Fit diagram to screen</span>
+                <span class="shortcut-key"><kbd>F</kbd> / <kbd>0</kbd></span>
+              </div>
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Toggle inspector drawer</span>
+                <span class="shortcut-key"><kbd>I</kbd></span>
+              </div>
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Reset selection / Dismiss</span>
+                <span class="shortcut-key"><kbd>Esc</kbd></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="shortcuts-section">
+            <div class="shortcuts-section-title">Editor & Modes</div>
+            <div class="shortcuts-grid">
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Move Mode (drag nodes & waypoints)</span>
+                <span class="shortcut-key"><kbd>M</kbd></span>
+              </div>
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Edit Actions Mode (inspect & remove)</span>
+                <span class="shortcut-key"><kbd>E</kbd></span>
+              </div>
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Copy layout snapshot JS</span>
+                <span class="shortcut-key"><kbd>S</kbd></span>
+              </div>
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Copy FSM patch</span>
+                <span class="shortcut-key"><kbd>⇧S</kbd></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <span class="modal-hint">Press <kbd>Esc</kbd> or click outside to close</span>
+        </div>
+      </div>
+    </div>
 
     <script src="./workflow-visualizer.js"></script>
   </body>

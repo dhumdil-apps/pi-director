@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { dispatchSettlement } from "../extensions/agent-workflow/settlement.ts";
+import { dispatchSettlement, pwbRouteTaskSummary } from "../extensions/agent-workflow/settlement.ts";
 
 describe("settlement dispatch", () => {
   it("routes ask PWB before any picker", () => {
@@ -79,5 +79,23 @@ describe("settlement dispatch", () => {
       }),
       { action: "open_picker" },
     );
+  });
+});
+
+describe("pwb route task summary", () => {
+  it("joins answer labels for a scope-informed start name", () => {
+    assert.equal(
+      pwbRouteTaskSummary([
+        { label: "diagnose and fix", value: "diagnose-and-fix" },
+        { label: "add full", value: "add-full" },
+      ]),
+      "diagnose and fix add full",
+    );
+  });
+
+  it("falls back when answers are empty", () => {
+    assert.equal(pwbRouteTaskSummary([]), "proceed with best");
+    assert.equal(pwbRouteTaskSummary(undefined), "proceed with best");
+    assert.equal(pwbRouteTaskSummary([{ value: "  scoped  " }]), "scoped");
   });
 });

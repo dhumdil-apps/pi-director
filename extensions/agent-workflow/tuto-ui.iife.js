@@ -1,4 +1,4 @@
-var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)=>B in f?Gt(f,B,{enumerable:!0,configurable:!0,writable:!0,value:J}):f[B]=J;var l=(f,B,J)=>Vt(f,typeof B!="symbol"?B+"":B,J);const B={dark:{bg:"#090a0f",grid:"rgba(255, 255, 255, 0.04)",text:"#f1f5f9",textMuted:"#94a3b8",muted:"#64748b",panelBg:"#10131d",panelHead:"#161b28",cardBg:"#12151f",cardSelectedBg:"#181d2c",headBg:"#161b28",headSelectedBg:"#1e263c",border:"#283044",borderSubtle:"#1c2232",edge:"#7a869e",edgeDim:"#1e2536",hot:"#3b82f6",toolBg:"#141a24",badgeBg:"#181e2e",highlight:"rgba(59, 130, 246, 0.18)",shadow:"0 12px 36px rgba(0, 0, 0, 0.55)"},light:{bg:"#f8fafc",grid:"rgba(100, 116, 139, 0.10)",text:"#0f172a",textMuted:"#475569",muted:"#64748b",panelBg:"#ffffff",panelHead:"#f1f5f9",cardBg:"#ffffff",cardSelectedBg:"#f8fafc",headBg:"#f1f5f9",headSelectedBg:"#e2e8f0",border:"#cbd5e1",borderSubtle:"#e2e8f0",edge:"#64748b",edgeDim:"#e2e8f0",hot:"#2563eb",toolBg:"#ffffff",badgeBg:"#f1f5f9",highlight:"rgba(37, 99, 235, 0.12)",shadow:"0 12px 36px rgba(0, 0, 0, 0.12)"},accents:{align:{accent:"#f59e0b",badge:"ALIGN",perm:"READ",permClass:"perm-read"},spec:{accent:"#38bdf8",badge:"SPEC",perm:"READ",permClass:"perm-read"},vibe:{accent:"#10b981",badge:"VIBE",perm:"WRITE",permClass:"perm-write"},envision:{accent:"#f59e0b",badge:"ALIGN",perm:"READ",permClass:"perm-read"},establish:{accent:"#f59e0b",badge:"ALIGN",perm:"READ",permClass:"perm-read"},evaluate:{accent:"#f59e0b",badge:"ALIGN",perm:"READ",permClass:"perm-read"},explore:{accent:"#38bdf8",badge:"SPEC",perm:"READ",permClass:"perm-read"},elaborate:{accent:"#38bdf8",badge:"SPEC",perm:"READ",permClass:"perm-read"},execute:{accent:"#10b981",badge:"VIBE",perm:"WRITE",permClass:"perm-write"},examine:{accent:"#10b981",badge:"VIBE",perm:"WRITE",permClass:"perm-write"},closeOut:{accent:"#8b5cf6",badge:"PROCEDURE",perm:"READ",permClass:"perm-read"},blocked:{accent:"#ef4444",badge:"PROCEDURE",perm:"READ",permClass:"perm-read"},handoff:{accent:"#64748b",badge:"PROCEDURE",perm:"STANDBY",permClass:"perm-standby"}}},J={fonts:{sans:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',mono:'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'},sizes:{xs:"0.68rem",sm:"0.75rem",base:"0.875rem",md:"0.95rem",lg:"1.125rem",xl:"1.25rem","2xl":"1.5rem"},weights:{normal:"400",medium:"500",semibold:"600",bold:"700",extrabold:"800"},lineHeights:{tight:"1.15",normal:"1.4",relaxed:"1.6"}},Dt={space:{1:"0.25rem",2:"0.5rem",3:"0.75rem",4:"1rem",5:"1.25rem",6:"1.5rem",8:"2rem",10:"2.5rem",12:"3rem"},radii:{none:"0",sm:"0.375rem",md:"0.5rem",lg:"0.75rem",xl:"1rem",full:"9999px"},shadows:{sm:"0 1px 2px 0 rgba(0, 0, 0, 0.05)",md:"0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",lg:"0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",xl:"0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",elevated:"0 12px 36px rgba(0, 0, 0, 0.45)",glow:"0 0 15px rgba(59, 130, 246, 0.35)"},transitions:{fast:"150ms ease",default:"200ms ease",smooth:"300ms cubic-bezier(0.4, 0, 0.2, 1)"},zIndex:{canvas:0,edge:1,node:5,overlay:10,drawer:20,tooltip:30}};function Et(){if(typeof document>"u"||document.getElementById("tuto-theme-tokens"))return;const e=document.createElement("style");e.id="tuto-theme-tokens",e.textContent=`
+var TutoUI=(function(m){"use strict";var se=Object.defineProperty;var ie=(m,q,tt)=>q in m?se(m,q,{enumerable:!0,configurable:!0,writable:!0,value:tt}):m[q]=tt;var h=(m,q,tt)=>ie(m,typeof q!="symbol"?q+"":q,tt);const q={dark:{bg:"#090a0f",grid:"rgba(255, 255, 255, 0.04)",text:"#f1f5f9",textMuted:"#94a3b8",muted:"#64748b",panelBg:"#10131d",panelHead:"#161b28",cardBg:"#12151f",cardSelectedBg:"#181d2c",headBg:"#161b28",headSelectedBg:"#1e263c",border:"#283044",borderSubtle:"#1c2232",edge:"#7a869e",edgeDim:"#1e2536",hot:"#3b82f6",toolBg:"#141a24",badgeBg:"#181e2e",highlight:"rgba(59, 130, 246, 0.18)",shadow:"0 12px 36px rgba(0, 0, 0, 0.55)"},light:{bg:"#f8fafc",grid:"rgba(100, 116, 139, 0.10)",text:"#0f172a",textMuted:"#475569",muted:"#64748b",panelBg:"#ffffff",panelHead:"#f1f5f9",cardBg:"#ffffff",cardSelectedBg:"#f8fafc",headBg:"#f1f5f9",headSelectedBg:"#e2e8f0",border:"#cbd5e1",borderSubtle:"#e2e8f0",edge:"#64748b",edgeDim:"#e2e8f0",hot:"#2563eb",toolBg:"#ffffff",badgeBg:"#f1f5f9",highlight:"rgba(37, 99, 235, 0.12)",shadow:"0 12px 36px rgba(0, 0, 0, 0.12)"},accents:{align:{accent:"#f59e0b",badge:"ALIGN",perm:"READ",permClass:"perm-read"},spec:{accent:"#38bdf8",badge:"SPEC",perm:"READ",permClass:"perm-read"},vibe:{accent:"#10b981",badge:"VIBE",perm:"WRITE",permClass:"perm-write"},envision:{accent:"#f59e0b",badge:"ALIGN",perm:"READ",permClass:"perm-read"},establish:{accent:"#f59e0b",badge:"ALIGN",perm:"READ",permClass:"perm-read"},evaluate:{accent:"#f59e0b",badge:"ALIGN",perm:"READ",permClass:"perm-read"},explore:{accent:"#38bdf8",badge:"SPEC",perm:"READ",permClass:"perm-read"},elaborate:{accent:"#38bdf8",badge:"SPEC",perm:"READ",permClass:"perm-read"},execute:{accent:"#10b981",badge:"VIBE",perm:"WRITE",permClass:"perm-write"},examine:{accent:"#10b981",badge:"VIBE",perm:"WRITE",permClass:"perm-write"},closeOut:{accent:"#8b5cf6",badge:"PROCEDURE",perm:"READ",permClass:"perm-read"},blocked:{accent:"#ef4444",badge:"PROCEDURE",perm:"READ",permClass:"perm-read"},handoff:{accent:"#64748b",badge:"PROCEDURE",perm:"STANDBY",permClass:"perm-standby"}}},tt={fonts:{sans:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',mono:'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'},sizes:{xs:"0.68rem",sm:"0.75rem",base:"0.875rem",md:"0.95rem",lg:"1.125rem",xl:"1.25rem","2xl":"1.5rem"},weights:{normal:"400",medium:"500",semibold:"600",bold:"700",extrabold:"800"},lineHeights:{tight:"1.15",normal:"1.4",relaxed:"1.6"}},Xt={space:{1:"0.25rem",2:"0.5rem",3:"0.75rem",4:"1rem",5:"1.25rem",6:"1.5rem",8:"2rem",10:"2.5rem",12:"3rem"},radii:{none:"0",sm:"0.375rem",md:"0.5rem",lg:"0.75rem",xl:"1rem",full:"9999px"},shadows:{sm:"0 1px 2px 0 rgba(0, 0, 0, 0.05)",md:"0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",lg:"0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",xl:"0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",elevated:"0 12px 36px rgba(0, 0, 0, 0.45)",glow:"0 0 15px rgba(59, 130, 246, 0.35)"},transitions:{fast:"150ms ease",default:"200ms ease",smooth:"300ms cubic-bezier(0.4, 0, 0.2, 1)"},zIndex:{canvas:0,edge:1,node:5,overlay:10,drawer:20,tooltip:30}};function Rt(){if(typeof document>"u"||document.getElementById("tuto-theme-tokens"))return;const o=document.createElement("style");o.id="tuto-theme-tokens",o.textContent=`
     :root {
       --tuto-bg: #0c0e12;
       --tuto-grid: color-mix(in srgb, #94a3b8 9%, transparent);
@@ -45,11 +45,11 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       --tuto-highlight: rgba(37, 99, 235, 0.1);
       --tuto-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
     }
-  `,document.head.appendChild(e)}const Z=class Z extends HTMLElement{constructor(t={}){super();l(this,"_isRenderPending",!1);l(this,"_hasRendered",!1);l(this,"_useShadow");l(this,"shadowRootNode",null);this._useShadow=t.useShadow!==!1,this._useShadow&&(this.shadowRootNode=this.attachShadow({mode:t.shadowMode||"open"}))}connectedCallback(){this.adoptStyles(),this.requestUpdate()}disconnectedCallback(){}adoptStyles(){const t=this.constructor,i=t.styles;if(!(!i||!this.shadowRootNode)){if("adoptedStyleSheets"in Document.prototype&&"adoptedStyleSheets"in ShadowRoot.prototype)try{let s=Z._styleSheetMap.get(t);s||(s=new CSSStyleSheet,s.replaceSync(i),Z._styleSheetMap.set(t,s)),this.shadowRootNode.adoptedStyleSheets.includes(s)||(this.shadowRootNode.adoptedStyleSheets=[...this.shadowRootNode.adoptedStyleSheets,s]);return}catch{}if(!this.shadowRootNode.querySelector("style[data-tuto-style]")){const s=document.createElement("style");s.setAttribute("data-tuto-style","true"),s.textContent=i,this.shadowRootNode.prepend(s)}}}requestUpdate(){this._isRenderPending||(this._isRenderPending=!0,requestAnimationFrame(()=>{this._isRenderPending=!1,this.render(),this._hasRendered||(this._hasRendered=!0,this.firstUpdated()),this.updated()}))}emit(t,i,s={}){const a=new CustomEvent(t,{bubbles:!0,composed:!0,cancelable:!0,detail:i,...s});return this.dispatchEvent(a)}get renderRoot(){return this.shadowRootNode||this}firstUpdated(){}updated(){}};l(Z,"styles",""),l(Z,"_styleSheetMap",new WeakMap);let Y=Z;const Mt="http://www.w3.org/2000/svg";function R(e,n={},t){const i=document.createElementNS(Mt,e);for(const[s,a]of Object.entries(n))a!=null&&a!==!1&&i.setAttribute(s,String(a));return t&&t.appendChild(i),i}function Wt(e,n={},t){const i=document.createElement(e);for(const[s,a]of Object.entries(n))a!=null&&a!==!1&&(s==="className"||s==="class"?i.className=String(a):i.setAttribute(s,String(a)));return t&&t.appendChild(i),i}function b(e){return e==null?"":String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function lt(e,n,t){return Math.max(n,Math.min(t,e))}class ut extends Y{static get observedAttributes(){return["variant","size","disabled"]}get variant(){return this.getAttribute("variant")||"secondary"}set variant(n){this.setAttribute("variant",n)}get size(){return this.getAttribute("size")||"md"}set size(n){this.setAttribute("size",n)}get disabled(){return this.hasAttribute("disabled")}set disabled(n){n?this.setAttribute("disabled",""):this.removeAttribute("disabled")}attributeChangedCallback(){this.requestUpdate()}render(){this.shadowRootNode&&(this.shadowRootNode.innerHTML=`
+  `,document.head.appendChild(o)}const ot=class ot extends HTMLElement{constructor(t={}){super();h(this,"_isRenderPending",!1);h(this,"_hasRendered",!1);h(this,"_useShadow");h(this,"shadowRootNode",null);this._useShadow=t.useShadow!==!1,this._useShadow&&(this.shadowRootNode=this.attachShadow({mode:t.shadowMode||"open"}))}connectedCallback(){this.adoptStyles(),this.requestUpdate()}disconnectedCallback(){}adoptStyles(){const t=this.constructor,s=t.styles;if(!(!s||!this.shadowRootNode)){if("adoptedStyleSheets"in Document.prototype&&"adoptedStyleSheets"in ShadowRoot.prototype)try{let e=ot._styleSheetMap.get(t);e||(e=new CSSStyleSheet,e.replaceSync(s),ot._styleSheetMap.set(t,e)),this.shadowRootNode.adoptedStyleSheets.includes(e)||(this.shadowRootNode.adoptedStyleSheets=[...this.shadowRootNode.adoptedStyleSheets,e]);return}catch{}if(!this.shadowRootNode.querySelector("style[data-tuto-style]")){const e=document.createElement("style");e.setAttribute("data-tuto-style","true"),e.textContent=s,this.shadowRootNode.prepend(e)}}}requestUpdate(){this._isRenderPending||(this._isRenderPending=!0,requestAnimationFrame(()=>{this._isRenderPending=!1,this.render(),this._hasRendered||(this._hasRendered=!0,this.firstUpdated()),this.updated()}))}emit(t,s,e={}){const a=new CustomEvent(t,{bubbles:!0,composed:!0,cancelable:!0,detail:s,...e});return this.dispatchEvent(a)}get renderRoot(){return this.shadowRootNode||this}firstUpdated(){}updated(){}};h(ot,"styles",""),h(ot,"_styleSheetMap",new WeakMap);let V=ot;const Pt="http://www.w3.org/2000/svg";function z(o,r={},t){const s=document.createElementNS(Pt,o);for(const[e,a]of Object.entries(r))a!=null&&a!==!1&&s.setAttribute(e,String(a));return t&&t.appendChild(s),s}function Ft(o,r={},t){const s=document.createElement(o);for(const[e,a]of Object.entries(r))a!=null&&a!==!1&&(e==="className"||e==="class"?s.className=String(a):s.setAttribute(e,String(a)));return t&&t.appendChild(s),s}function b(o){return o==null?"":String(o).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function ct(o,r,t){return Math.max(r,Math.min(t,o))}class wt extends V{static get observedAttributes(){return["variant","size","disabled"]}get variant(){return this.getAttribute("variant")||"secondary"}set variant(r){this.setAttribute("variant",r)}get size(){return this.getAttribute("size")||"md"}set size(r){this.setAttribute("size",r)}get disabled(){return this.hasAttribute("disabled")}set disabled(r){r?this.setAttribute("disabled",""):this.removeAttribute("disabled")}attributeChangedCallback(){this.requestUpdate()}render(){this.shadowRootNode&&(this.shadowRootNode.innerHTML=`
       <button class="variant-${this.variant} size-${this.size}" ${this.disabled?"disabled":""}>
         <slot></slot>
       </button>
-    `)}}l(ut,"styles",`
+    `)}}h(wt,"styles",`
     :host {
       display: inline-block;
       font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
@@ -143,11 +143,11 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       filter: brightness(1.1);
       box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
     }
-  `),customElements.get("tuto-button")||customElements.define("tuto-button",ut);class ft extends Y{static get observedAttributes(){return["variant"]}get variant(){return this.getAttribute("variant")||"default"}set variant(n){this.setAttribute("variant",n)}attributeChangedCallback(){this.requestUpdate()}render(){this.shadowRootNode&&(this.shadowRootNode.innerHTML=`
+  `),customElements.get("tuto-button")||customElements.define("tuto-button",wt);class yt extends V{static get observedAttributes(){return["variant"]}get variant(){return this.getAttribute("variant")||"default"}set variant(r){this.setAttribute("variant",r)}attributeChangedCallback(){this.requestUpdate()}render(){this.shadowRootNode&&(this.shadowRootNode.innerHTML=`
       <span class="badge variant-${this.variant}">
         <slot></slot>
       </span>
-    `)}}l(ft,"styles",`
+    `)}}h(yt,"styles",`
     :host {
       display: inline-block;
       font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
@@ -197,8 +197,8 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       border-color: var(--tuto-border, #30363d);
       font-family: var(--tuto-font-mono, monospace);
     }
-  `),customElements.get("tuto-badge")||customElements.define("tuto-badge",ft);const K=.2,tt=3.5,St=44;function It(e,n,t=St,i=1.25){const s=e.width||900,a=e.height||700,r=n.w||2e3,d=n.h||1e3,h=lt(Math.min((s-t*2)/r,(a-t*2)/d),K,i),g=(s-r*h)/2-n.x*h,u=(a-d*h)/2-n.y*h;return{panX:g,panY:u,scale:h}}function mt(e,n,t,i,s=K,a=tt){const r=lt(e.scale*i,s,a);if(r===e.scale)return e;const d=n-(n-e.panX)*r/e.scale,h=t-(t-e.panY)*r/e.scale;return{panX:d,panY:h,scale:r}}function $t(e,n,t=1.05){const i=e.width||900,s=e.height||700,a=lt(t,K,tt),r=n.x+n.w/2,d=n.y+n.h/2,h=i/2-r*a,g=s/2-d*a;return{panX:h,panY:g,scale:a}}function qt(e,n){return{x:(e.x-n.panX)/n.scale,y:(e.y-n.panY)/n.scale}}function Ot(e,n){return{x:e.x*n.scale+n.panX,y:e.y*n.scale+n.panY}}const Lt=new Set(["GOAL_SET","ASK_ROUTED_SPEC","ASK_ROUTED_VIBE","RESEARCH_DONE","NEXT_VIBE","NEXT_SPEC","NEXT_ALIGN","RUN_CHECKS","CLOSE_OUT","NEXT_HANDOFF"]);function Nt(e){return e.map((n,t)=>({id:n.id||`${n.from}->${n.to}-${t}`,from:n.from,to:n.to,self:n.from===n.to,label:n.label||n.event||"",event:n.event||n.label||"",events:n.event?[n.event]:[],description:n.description||"",descriptions:n.description?[n.description]:[],userMediated:!!n.userMediated,bidirectional:!!n.bidirectional,waypoints:n.waypoints?[...n.waypoints]:void 0}))}function Yt(e,n,t=.5){const i=Math.min(.9,Math.max(.1,t));return n==="left"?{x:e.x,y:e.y+e.h*i}:n==="right"?{x:e.x+e.w,y:e.y+e.h*i}:n==="top"?{x:e.x+e.w*i,y:e.y}:{x:e.x+e.w*i,y:e.y+e.h}}function bt(e,n){const t=[{point:[e.x,e.y+e.h/2],side:"left"},{point:[e.x+e.w,e.y+e.h/2],side:"right"},{point:[e.x+e.w/2,e.y],side:"top"},{point:[e.x+e.w/2,e.y+e.h],side:"bottom"}];let i=t[0],s=1/0;for(const a of t){const r=Math.hypot(a.point[0]-n[0],a.point[1]-n[1]);r<s&&(s=r,i=a)}return i}function Pt(e,n=!0){if(!e||e.length===0)return[0,0];if(e.length===1)return e[0];if(e.length===2)return[(e[0][0]+e[1][0])/2,(e[0][1]+e[1][1])/2];if(n&&e.length===3)return e[1];let t=0;const i=[];for(let r=0;r<e.length-1;r++){const d=Math.hypot(e[r+1][0]-e[r][0],e[r+1][1]-e[r][1]);i.push(d),t+=d}if(t===0)return e[0];const s=t/2;let a=0;for(let r=0;r<i.length;r++){const d=i[r];if(a+d>=s){const h=s-a,g=d>0?h/d:.5,u=e[r],p=e[r+1];return[u[0]+(p[0]-u[0])*g,u[1]+(p[1]-u[1])*g]}a+=d}return e[Math.floor(e.length/2)]}function Rt(e,n){const t=[[e.x,e.y+e.h/2],[e.x+e.w,e.y+e.h/2],[e.x+e.w/2,e.y],[e.x+e.w/2,e.y+e.h]],i=[[n.x,n.y+n.h/2],[n.x+n.w,n.y+n.h/2],[n.x+n.w/2,n.y],[n.x+n.w/2,n.y+n.h]];let s=t[0],a=i[0],r=1/0;for(const d of t)for(const h of i){const g=Math.hypot(h[0]-d[0],h[1]-d[1]);g<r&&(r=g,s=d,a=h)}return{p1:s,p2:a}}function Ct(e,n){return e}function zt(e,n){const t=n[e.from],i=n[e.to];if(!t||!i)return null;if(e.waypoints&&e.waypoints.length>0){const r=e.self||e.from===e.to,d=e.waypoints[0],h=e.waypoints[e.waypoints.length-1];let g=bt(t,d),u=bt(i,h),p=g.point,_=u.point;r&&Math.hypot(p[0]-_[0],p[1]-_[1])<8&&(g.side==="right"||g.side==="left"?(p=[p[0],p[1]-12],_=[_[0],_[1]+12]):(p=[p[0]-16,p[1]],_=[_[0]+16,_[1]]));const I=[p,...e.waypoints,_],[N,M]=Pt(I,!0);return{points:I,seatX:N,seatY:M,seatSide:"h"}}if(e.self||e.from===e.to){const r=t.x+t.w,d=t.y+t.h/2,h=38;return{points:[[r,d-10],[r+h,d-18],[r+h,d+18],[r,d+10]],seatX:r+h+24,seatY:d,seatSide:"h"}}const{p1:s,p2:a}=Rt(t,i);return{points:[s,a],seatX:(s[0]+a[0])/2,seatY:(s[1]+a[1])/2,seatSide:"h"}}function Xt(e){}function Ut(e,n=!1,t=10){if(!e||e.length===0)return"";if(e.length===1)return`M ${e[0][0]} ${e[0][1]}`;if(n&&e.length===4)return`M ${e[0][0]} ${e[0][1]} C ${e[1][0]} ${e[1][1]}, ${e[2][0]} ${e[2][1]}, ${e[3][0]} ${e[3][1]}`;if(e.length===2)return`M ${e[0][0]} ${e[0][1]} L ${e[1][0]} ${e[1][1]}`;if(t<=0)return e.map((a,r)=>`${r===0?"M":"L"} ${a[0]} ${a[1]}`).join(" ");let i=`M ${e[0][0]} ${e[0][1]}`;for(let a=1;a<e.length-1;a++){const r=e[a-1],d=e[a],h=e[a+1],g=d[0]-r[0],u=d[1]-r[1],p=Math.hypot(g,u),_=h[0]-d[0],I=h[1]-d[1],N=Math.hypot(_,I);if(p<1||N<1){i+=` L ${d[0]} ${d[1]}`;continue}const M=Math.min(t,p/2,N/2),S=d[0]-g/p*M,C=d[1]-u/p*M,w=d[0]+_/N*M,x=d[1]+I/N*M;i+=` L ${S} ${C}`,i+=` Q ${d[0]} ${d[1]} ${w} ${x}`}const s=e[e.length-1];return i+=` L ${s[0]} ${s[1]}`,i}function jt(e,n,t,i){return t===e.id||i===e.id?!0:n?e.from===n||e.to===n:!1}function Ht(e,n,t,i,s=Lt){return!0}function ct(e,n=64,t=56,i=46,s){let a=1/0,r=1/0,d=-1/0,h=-1/0;const g=Object.values(e);if(g.length===0&&(!s||s.length===0))return{x:0,y:0,w:1e3,h:600};for(const p of g)a=Math.min(a,p.x),r=Math.min(r,p.y),d=Math.max(d,p.x+p.w),h=Math.max(h,p.y+p.h);if(s)for(const p of s)a=Math.min(a,p.x),r=Math.min(r,p.y),d=Math.max(d,p.x+p.w),h=Math.max(h,p.y+p.h);const u=i>0;return{x:a-n,y:r-t-(u?i:0),w:d-a+n*2,h:h-r+t*2+(u?i+80:0)}}function Ft(e,n={}){const t=n.colWidth||420,i=n.colGap||180,s=n.rowGap||40,a=n.startX||120,r=n.startY||120,d={};let h=a,g=r;return e.forEach((u,p)=>{d[u.id]={...u,x:u.x??h,y:u.y??g,w:u.w||t,h:u.h||280},(p+1)%3===0?(h+=t+i,g=r):g+=(u.h||280)+s}),d}const G=20,vt=8;function At(e,n,t,i,s,a,r=G,d=vt){const h=[],g=n,u=n+i/2,p=n+i,_=t,I=t+s/2,N=t+s;let M=null,S=d+1,C=[],w=null,x=d+1,T=[];for(const[L,c]of Object.entries(a)){if(L===e)continue;const o=c.x,y=c.x+c.w/2,m=c.x+c.w,v=c.y,U=c.y+c.h/2,k=c.y+c.h,D=Math.abs(u-y);D<S?(S=D,M=y-i/2,C=[{type:"vertical",pos:y,start:Math.min(t,v)-30,end:Math.max(t+s,k)+30,kind:"center",sourceNodeId:e,targetNodeId:L}]):M!==null&&Math.abs(D-S)<.5&&C.push({type:"vertical",pos:y,start:Math.min(t,v)-30,end:Math.max(t+s,k)+30,kind:"center",sourceNodeId:e,targetNodeId:L});const P=Math.abs(g-o);P<S&&(S=P,M=o,C=[{type:"vertical",pos:o,start:Math.min(t,v)-30,end:Math.max(t+s,k)+30,kind:"edge",sourceNodeId:e,targetNodeId:L}]);const W=Math.abs(p-m);W<S&&(S=W,M=m-i,C=[{type:"vertical",pos:m,start:Math.min(t,v)-30,end:Math.max(t+s,k)+30,kind:"edge",sourceNodeId:e,targetNodeId:L}]);const Q=Math.abs(I-U);Q<x?(x=Q,w=U-s/2,T=[{type:"horizontal",pos:U,start:Math.min(n,o)-30,end:Math.max(n+i,m)+30,kind:"center",sourceNodeId:e,targetNodeId:L}]):w!==null&&Math.abs(Q-x)<.5&&T.push({type:"horizontal",pos:U,start:Math.min(n,o)-30,end:Math.max(n+i,m)+30,kind:"center",sourceNodeId:e,targetNodeId:L});const H=Math.abs(_-v);H<x&&(x=H,w=v,T=[{type:"horizontal",pos:v,start:Math.min(n,o)-30,end:Math.max(n+i,m)+30,kind:"edge",sourceNodeId:e,targetNodeId:L}]);const X=Math.abs(N-k);X<x&&(x=X,w=k-s,T=[{type:"horizontal",pos:k,start:Math.min(n,o)-30,end:Math.max(n+i,m)+30,kind:"edge",sourceNodeId:e,targetNodeId:L}])}const j=M!==null?Math.round(M):Math.round(n/r)*r,$=w!==null?Math.round(w):Math.round(t/r)*r;return M!==null&&h.push(...C),w!==null&&h.push(...T),{x:j,y:$,guides:h}}function ht(e,n,t,i,s,a,r,d=G,h=vt){const g=[];let u=null,p=h+1,_=[],I=null,N=h+1,M=[];const S=a.find($=>$.id===t),C=r.get(t)||[],w=i>0?C[i-1]:S&&s[S.from]?[s[S.from].x+s[S.from].w/2,s[S.from].y+s[S.from].h/2]:null,x=i<C.length-1?C[i+1]:S&&s[S.to]?[s[S.to].x+s[S.to].w/2,s[S.to].y+s[S.to].h/2]:null;if(w){const $=Math.abs(e-w[0]);$<p&&(p=$,u=w[0],_=[{type:"vertical",pos:w[0],start:Math.min(n,w[1])-20,end:Math.max(n,w[1])+20,kind:"axis"}]);const L=Math.abs(n-w[1]);L<N&&(N=L,I=w[1],M=[{type:"horizontal",pos:w[1],start:Math.min(e,w[0])-20,end:Math.max(e,w[0])+20,kind:"axis"}])}if(x){const $=Math.abs(e-x[0]);$<p&&(p=$,u=x[0],_=[{type:"vertical",pos:x[0],start:Math.min(n,x[1])-20,end:Math.max(n,x[1])+20,kind:"axis"}]);const L=Math.abs(n-x[1]);L<N&&(N=L,I=x[1],M=[{type:"horizontal",pos:x[1],start:Math.min(e,x[0])-20,end:Math.max(e,x[0])+20,kind:"axis"}])}for(const[$,L]of r.entries())L&&L.forEach((c,o)=>{if($===t&&o===i)return;const y=Math.abs(e-c[0]);y<p&&(p=y,u=c[0],_=[{type:"vertical",pos:c[0],start:Math.min(n,c[1])-20,end:Math.max(n,c[1])+20,kind:"edge"}]);const m=Math.abs(n-c[1]);m<N&&(N=m,I=c[1],M=[{type:"horizontal",pos:c[1],start:Math.min(e,c[0])-20,end:Math.max(e,c[0])+20,kind:"edge"}])});for(const $ of Object.values(s)){const L=$.x+$.w/2,c=$.y+$.h/2,o=Math.abs(e-L);o<p&&(p=o,u=L,_=[{type:"vertical",pos:L,start:Math.min(n,$.y)-20,end:Math.max(n,$.y+$.h)+20,kind:"center"}]);const y=Math.abs(n-c);y<N&&(N=y,I=c,M=[{type:"horizontal",pos:c,start:Math.min(e,$.x)-20,end:Math.max(e,$.x+$.w)+20,kind:"center"}])}const T=u!==null?Math.round(u):Math.round(e/d)*d,j=I!==null?Math.round(I):Math.round(n/d)*d;return u!==null&&g.push(..._),I!==null&&g.push(...M),{x:T,y:j,guides:g}}class yt extends Y{constructor(){super(...arguments);l(this,"_node",null);l(this,"_selected",!1);l(this,"_draggableNode",!1);l(this,"_isDragging",!1)}get node(){return this._node}set node(t){this._node=t,this.requestUpdate()}get selected(){return this._selected}set selected(t){this._selected=!!t,this.requestUpdate()}get draggableNode(){return this._draggableNode}set draggableNode(t){this._draggableNode=!!t,this.requestUpdate()}get isDragging(){return this._isDragging}set isDragging(t){this._isDragging=!!t,this.requestUpdate()}render(){if(!this.shadowRootNode||!this._node)return;const t=this._node,i=B.accents[t.id]||(t.permission?B.accents[t.permission]:null)||B.accents.spec;this.style.setProperty("--node-accent",i.accent);const s=["node-card","compact",this._selected?"selected":"",this._draggableNode?"draggable":"",this._isDragging?"dragging":""].filter(Boolean).join(" ");this.shadowRootNode.innerHTML=`
-      <div class="${s}" role="button" tabindex="0">
+  `),customElements.get("tuto-badge")||customElements.define("tuto-badge",yt);const Z=.2,et=3.5,Ct=44;function zt(o,r,t=Ct,s=1.25){const e=o.width||900,a=o.height||700,n=r.w||2e3,d=r.h||1e3,l=ct(Math.min((e-t*2)/n,(a-t*2)/d),Z,s),g=(e-n*l)/2-r.x*l,p=(a-d*l)/2-r.y*l;return{panX:g,panY:p,scale:l}}function ht(o,r,t,s,e=Z,a=et){const n=ct(o.scale*s,e,a);if(n===o.scale)return o;const d=r-(r-o.panX)*n/o.scale,l=t-(t-o.panY)*n/o.scale;return{panX:d,panY:l,scale:n}}function Bt(o,r,t=1.05){const s=o.width||900,e=o.height||700,a=ct(t,Z,et),n=r.x+r.w/2,d=r.y+r.h/2,l=s/2-n*a,g=e/2-d*a;return{panX:l,panY:g,scale:a}}function Ht(o,r){return{x:(o.x-r.panX)/r.scale,y:(o.y-r.panY)/r.scale}}function Vt(o,r){return{x:o.x*r.scale+r.panX,y:o.y*r.scale+r.panY}}const At=new Set(["GOAL_SET","ASK_ROUTED_SPEC","ASK_ROUTED_VIBE","RESEARCH_DONE","NEXT_VIBE","NEXT_SPEC","NEXT_ALIGN","RUN_CHECKS","CLOSE_OUT","NEXT_HANDOFF"]);function Ut(o){return o.map((r,t)=>({id:r.id||`${r.from}->${r.to}-${t}`,from:r.from,to:r.to,self:r.from===r.to,label:r.label||r.event||"",event:r.event||r.label||"",events:r.event?[r.event]:r.events?[...r.events]:[],description:r.description||"",descriptions:r.descriptions?[...r.descriptions]:r.description?[r.description]:[],userMediated:!!r.userMediated,bidirectional:!!r.bidirectional,waypoints:r.waypoints?[...r.waypoints]:void 0,customData:r.customData?{...r.customData}:void 0}))}function Jt(o,r,t=.5){const s=Math.min(.9,Math.max(.1,t));return r==="left"?{x:o.x,y:o.y+o.h*s}:r==="right"?{x:o.x+o.w,y:o.y+o.h*s}:r==="top"?{x:o.x+o.w*s,y:o.y}:{x:o.x+o.w*s,y:o.y+o.h}}function _t(o,r){const t=[{point:[o.x,o.y+o.h/2],side:"left"},{point:[o.x+o.w,o.y+o.h/2],side:"right"},{point:[o.x+o.w/2,o.y],side:"top"},{point:[o.x+o.w/2,o.y+o.h],side:"bottom"}];let s=t[0],e=1/0;for(const a of t){const n=Math.hypot(a.point[0]-r[0],a.point[1]-r[1]);n<e&&(e=n,s=a)}return s}function Tt(o,r=!0){if(!o||o.length===0)return[0,0];if(o.length===1)return o[0];if(o.length===2)return[(o[0][0]+o[1][0])/2,(o[0][1]+o[1][1])/2];if(r&&o.length===3)return o[1];let t=0;const s=[];for(let n=0;n<o.length-1;n++){const d=Math.hypot(o[n+1][0]-o[n][0],o[n+1][1]-o[n][1]);s.push(d),t+=d}if(t===0)return o[0];const e=t/2;let a=0;for(let n=0;n<s.length;n++){const d=s[n];if(a+d>=e){const l=e-a,g=d>0?l/d:.5,p=o[n],c=o[n+1];return[p[0]+(c[0]-p[0])*g,p[1]+(c[1]-p[1])*g]}a+=d}return o[Math.floor(o.length/2)]}function Dt(o,r){const t=[[o.x,o.y+o.h/2],[o.x+o.w,o.y+o.h/2],[o.x+o.w/2,o.y],[o.x+o.w/2,o.y+o.h]],s=[[r.x,r.y+r.h/2],[r.x+r.w,r.y+r.h/2],[r.x+r.w/2,r.y],[r.x+r.w/2,r.y+r.h]];let e=t[0],a=s[0],n=1/0;for(const d of t)for(const l of s){const g=Math.hypot(l[0]-d[0],l[1]-d[1]);g<n&&(n=g,e=d,a=l)}return{p1:e,p2:a}}function Wt(o,r){return o}function Ot(o,r){const t=r[o.from],s=r[o.to];if(!t||!s)return null;if(o.waypoints&&o.waypoints.length>0){const n=o.self||o.from===o.to,d=o.waypoints[0],l=o.waypoints[o.waypoints.length-1];let g=_t(t,d),p=_t(s,l),c=g.point,k=p.point;n&&Math.hypot(c[0]-k[0],c[1]-k[1])<8&&(g.side==="right"||g.side==="left"?(c=[c[0],c[1]-12],k=[k[0],k[1]+12]):(c=[c[0]-16,c[1]],k=[k[0]+16,k[1]]));const E=[c,...o.waypoints,k],[L,S]=Tt(E,!0);return{points:E,seatX:L,seatY:S,seatSide:"h"}}if(o.self||o.from===o.to){const n=t.x+t.w,d=t.y+t.h/2,l=38;return{points:[[n,d-10],[n+l,d-18],[n+l,d+18],[n,d+10]],seatX:n+l+24,seatY:d,seatSide:"h"}}const{p1:e,p2:a}=Dt(t,s);return{points:[e,a],seatX:(e[0]+a[0])/2,seatY:(e[1]+a[1])/2,seatSide:"h"}}function Kt(o){}function qt(o,r=!1,t=10){if(!o||o.length===0)return"";if(o.length===1)return`M ${o[0][0]} ${o[0][1]}`;if(r&&o.length===4)return`M ${o[0][0]} ${o[0][1]} C ${o[1][0]} ${o[1][1]}, ${o[2][0]} ${o[2][1]}, ${o[3][0]} ${o[3][1]}`;if(o.length===2)return`M ${o[0][0]} ${o[0][1]} L ${o[1][0]} ${o[1][1]}`;if(t<=0)return o.map((a,n)=>`${n===0?"M":"L"} ${a[0]} ${a[1]}`).join(" ");let s=`M ${o[0][0]} ${o[0][1]}`;for(let a=1;a<o.length-1;a++){const n=o[a-1],d=o[a],l=o[a+1],g=d[0]-n[0],p=d[1]-n[1],c=Math.hypot(g,p),k=l[0]-d[0],E=l[1]-d[1],L=Math.hypot(k,E);if(c<1||L<1){s+=` L ${d[0]} ${d[1]}`;continue}const S=Math.min(t,c/2,L/2),N=d[0]-g/c*S,T=d[1]-p/c*S,M=d[0]+k/L*S,_=d[1]+E/L*S;s+=` L ${N} ${T}`,s+=` Q ${d[0]} ${d[1]} ${M} ${_}`}const e=o[o.length-1];return s+=` L ${e[0]} ${e[1]}`,s}function Zt(o,r,t,s){return t===o.id||s===o.id?!0:r?o.from===r||o.to===r:!1}function Qt(o,r,t,s,e=At){return!0}function pt(o,r=64,t=56,s=46,e){let a=1/0,n=1/0,d=-1/0,l=-1/0;const g=Object.values(o);if(g.length===0&&(!e||e.length===0))return{x:0,y:0,w:1e3,h:600};for(const c of g)a=Math.min(a,c.x),n=Math.min(n,c.y),d=Math.max(d,c.x+c.w),l=Math.max(l,c.y+c.h);if(e)for(const c of e)a=Math.min(a,c.x),n=Math.min(n,c.y),d=Math.max(d,c.x+c.w),l=Math.max(l,c.y+c.h);const p=s>0;return{x:a-r,y:n-t-(p?s:0),w:d-a+r*2,h:l-n+t*2+(p?s+80:0)}}function te(o,r={}){const t=r.colWidth||420,s=r.colGap||180,e=r.rowGap||40,a=r.startX||120,n=r.startY||120,d={};let l=a,g=n;return o.forEach((p,c)=>{d[p.id]={...p,x:p.x??l,y:p.y??g,w:p.w||t,h:p.h||280},(c+1)%3===0?(l+=t+s,g=n):g+=(p.h||280)+e}),d}const Q=20,xt=8;function Gt(o,r,t,s,e,a,n=Q,d=xt){const l=[],g=r,p=r+s/2,c=r+s,k=t,E=t+e/2,L=t+e;let S=null,N=d+1,T=[],M=null,_=d+1,P=[];for(const[C,I]of Object.entries(a)){if(C===o)continue;const W=I.x,G=I.x+I.w/2,f=I.x+I.w,A=I.y,j=I.y+I.h/2,i=I.y+I.h,u=Math.abs(p-G);u<N?(N=u,S=G-s/2,T=[{type:"vertical",pos:G,start:Math.min(t,A)-30,end:Math.max(t+e,i)+30,kind:"center",sourceNodeId:o,targetNodeId:C}]):S!==null&&Math.abs(u-N)<.5&&T.push({type:"vertical",pos:G,start:Math.min(t,A)-30,end:Math.max(t+e,i)+30,kind:"center",sourceNodeId:o,targetNodeId:C});const v=Math.abs(g-W);v<N&&(N=v,S=W,T=[{type:"vertical",pos:W,start:Math.min(t,A)-30,end:Math.max(t+e,i)+30,kind:"edge",sourceNodeId:o,targetNodeId:C}]);const y=Math.abs(c-f);y<N&&(N=y,S=f-s,T=[{type:"vertical",pos:f,start:Math.min(t,A)-30,end:Math.max(t+e,i)+30,kind:"edge",sourceNodeId:o,targetNodeId:C}]);const $=Math.abs(E-j);$<_?(_=$,M=j-e/2,P=[{type:"horizontal",pos:j,start:Math.min(r,W)-30,end:Math.max(r+s,f)+30,kind:"center",sourceNodeId:o,targetNodeId:C}]):M!==null&&Math.abs($-_)<.5&&P.push({type:"horizontal",pos:j,start:Math.min(r,W)-30,end:Math.max(r+s,f)+30,kind:"center",sourceNodeId:o,targetNodeId:C});const w=Math.abs(k-A);w<_&&(_=w,M=A,P=[{type:"horizontal",pos:A,start:Math.min(r,W)-30,end:Math.max(r+s,f)+30,kind:"edge",sourceNodeId:o,targetNodeId:C}]);const D=Math.abs(L-i);D<_&&(_=D,M=i-e,P=[{type:"horizontal",pos:i,start:Math.min(r,W)-30,end:Math.max(r+s,f)+30,kind:"edge",sourceNodeId:o,targetNodeId:C}])}const Y=S!==null?Math.round(S):Math.round(r/n)*n,x=M!==null?Math.round(M):Math.round(t/n)*n;return S!==null&&l.push(...T),M!==null&&l.push(...P),{x:Y,y:x,guides:l}}function gt(o,r,t,s,e,a,n,d=Q,l=xt){const g=[];let p=null,c=l+1,k=[],E=null,L=l+1,S=[];const N=a.find(x=>x.id===t),T=n.get(t)||[],M=s>0?T[s-1]:N&&e[N.from]?[e[N.from].x+e[N.from].w/2,e[N.from].y+e[N.from].h/2]:null,_=s<T.length-1?T[s+1]:N&&e[N.to]?[e[N.to].x+e[N.to].w/2,e[N.to].y+e[N.to].h/2]:null;if(M){const x=Math.abs(o-M[0]);x<c&&(c=x,p=M[0],k=[{type:"vertical",pos:M[0],start:Math.min(r,M[1])-20,end:Math.max(r,M[1])+20,kind:"axis"}]);const C=Math.abs(r-M[1]);C<L&&(L=C,E=M[1],S=[{type:"horizontal",pos:M[1],start:Math.min(o,M[0])-20,end:Math.max(o,M[0])+20,kind:"axis"}])}if(_){const x=Math.abs(o-_[0]);x<c&&(c=x,p=_[0],k=[{type:"vertical",pos:_[0],start:Math.min(r,_[1])-20,end:Math.max(r,_[1])+20,kind:"axis"}]);const C=Math.abs(r-_[1]);C<L&&(L=C,E=_[1],S=[{type:"horizontal",pos:_[1],start:Math.min(o,_[0])-20,end:Math.max(o,_[0])+20,kind:"axis"}])}for(const[x,C]of n.entries())C&&C.forEach((I,W)=>{if(x===t&&W===s)return;const G=Math.abs(o-I[0]);G<c&&(c=G,p=I[0],k=[{type:"vertical",pos:I[0],start:Math.min(r,I[1])-20,end:Math.max(r,I[1])+20,kind:"edge"}]);const f=Math.abs(r-I[1]);f<L&&(L=f,E=I[1],S=[{type:"horizontal",pos:I[1],start:Math.min(o,I[0])-20,end:Math.max(o,I[0])+20,kind:"edge"}])});for(const x of Object.values(e)){const C=x.x+x.w/2,I=x.y+x.h/2,W=Math.abs(o-C);W<c&&(c=W,p=C,k=[{type:"vertical",pos:C,start:Math.min(r,x.y)-20,end:Math.max(r,x.y+x.h)+20,kind:"center"}]);const G=Math.abs(r-I);G<L&&(L=G,E=I,S=[{type:"horizontal",pos:I,start:Math.min(o,x.x)-20,end:Math.max(o,x.x+x.w)+20,kind:"center"}])}const P=p!==null?Math.round(p):Math.round(o/d)*d,Y=E!==null?Math.round(E):Math.round(r/d)*d;return p!==null&&g.push(...k),E!==null&&g.push(...S),{x:P,y:Y,guides:g}}class kt extends V{constructor(){super(...arguments);h(this,"_node",null);h(this,"_selected",!1);h(this,"_draggableNode",!1);h(this,"_isDragging",!1)}get node(){return this._node}set node(t){this._node=t,this.requestUpdate()}get selected(){return this._selected}set selected(t){this._selected=!!t,this.requestUpdate()}get draggableNode(){return this._draggableNode}set draggableNode(t){this._draggableNode=!!t,this.requestUpdate()}get isDragging(){return this._isDragging}set isDragging(t){this._isDragging=!!t,this.requestUpdate()}render(){if(!this.shadowRootNode||!this._node)return;const t=this._node,s=q.accents[t.id]||(t.permission?q.accents[t.permission]:null)||q.accents.spec;this.style.setProperty("--node-accent",s.accent);const e=["node-card","compact",this._selected?"selected":"",this._draggableNode?"draggable":"",this._isDragging?"dragging":""].filter(Boolean).join(" ");this.shadowRootNode.innerHTML=`
+      <div class="${e}" role="button" tabindex="0">
         <div class="node-head">
           <div class="node-head-left">
             <span class="state-dot"></span>
@@ -206,7 +206,7 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
           </div>
         </div>
       </div>
-    `;const a=this.shadowRootNode.querySelector(".node-card");a&&a.addEventListener("click",r=>{r.stopPropagation(),this.emit("flow:select-node",{node:this._node})})}}l(yt,"styles",`
+    `;const a=this.shadowRootNode.querySelector(".node-card");a&&a.addEventListener("click",n=>{n.stopPropagation(),this.emit("flow:select-node",{node:this._node})})}}h(kt,"styles",`
     :host {
       display: block;
       width: 100%;
@@ -329,15 +329,15 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       color: #94a3b8;
       border: 1px solid rgba(148, 163, 184, 0.25);
     }
-  `),customElements.get("tuto-flow-node")||customElements.define("tuto-flow-node",yt);class wt extends Y{constructor(){super(...arguments);l(this,"_zoom",100);l(this,"_isMinimapActive",!1);l(this,"_isInspectorActive",!1);l(this,"_toolMode","view")}get zoom(){return this._zoom}set zoom(t){this._zoom=Math.round(t),this.requestUpdate()}get isMinimapActive(){return this._isMinimapActive}set isMinimapActive(t){this._isMinimapActive=!!t,this.requestUpdate()}get isInspectorActive(){return this._isInspectorActive}set isInspectorActive(t){this._isInspectorActive=!!t,this.requestUpdate()}get toolMode(){return this._toolMode}set toolMode(t){this._toolMode=t,this.requestUpdate()}get isEditModeActive(){return this._toolMode==="edit"}set isEditModeActive(t){this._toolMode=t?"edit":"view",this.requestUpdate()}render(){var a,r,d,h,g,u,p,_,I;if(!this.shadowRootNode)return;const t=this._toolMode==="move",i=this._toolMode==="edit",s=t||i;this.shadowRootNode.innerHTML=`
-      <div class="toolbar-container">
-        <!-- Camera Controls -->
+  `),customElements.get("tuto-flow-node")||customElements.define("tuto-flow-node",kt);class Et extends V{constructor(){super(...arguments);h(this,"_zoom",100);h(this,"_isMinimapActive",!1);h(this,"_isInspectorActive",!1);h(this,"_toolMode","view")}get zoom(){return this._zoom}set zoom(t){this._zoom=Math.round(t),this.requestUpdate()}get isMinimapActive(){return this._isMinimapActive}set isMinimapActive(t){this._isMinimapActive=!!t,this.requestUpdate()}get isInspectorActive(){return this._isInspectorActive}set isInspectorActive(t){this._isInspectorActive=!!t,this.requestUpdate()}get toolMode(){return this._toolMode}set toolMode(t){this._toolMode=t,this.requestUpdate()}get isEditModeActive(){return this._toolMode==="edit"}set isEditModeActive(t){this._toolMode=t?"edit":"view",this.requestUpdate()}render(){var a,n,d,l,g,p,c,k,E,L;if(!this.shadowRootNode)return;const t=this._toolMode==="move",s=this._toolMode==="edit",e=t||s;this.shadowRootNode.innerHTML=`
+      <!-- Left part: Zoom & View Controls -->
+      <div class="toolbar-group toolbar-zoom-group">
         <button class="tool-btn" id="btn-zoom-out" title="Zoom Out" aria-label="Zoom Out">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
         </button>
-        <span class="zoom-text">${this._zoom}%</span>
+        <button class="zoom-text" id="btn-zoom-reset" title="Set zoom to 100%" aria-label="Set zoom to 100%">${this._zoom}%</button>
         <button class="tool-btn" id="btn-zoom-in" title="Zoom In" aria-label="Zoom In">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -358,9 +358,10 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
             <path d="M3 3v5h5"></path>
           </svg>
         </button>
+      </div>
 
-        <div class="divider"></div>
-
+      <!-- Right part: Modes & Tools -->
+      <div class="toolbar-group toolbar-actions-group">
         <!-- Move / Reposition Layout Mode -->
         <button class="tool-btn ${t?"active":""}" id="btn-move-mode" title="Move Mode (M) — Drag nodes, labels & lines to reposition" aria-label="Move Mode">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -374,13 +375,13 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
         </button>
 
         <!-- Edit Actions Mode -->
-        <button class="tool-btn ${i?"active":""}" id="btn-edit-mode" title="Edit Actions Mode (E) — Click labels & nodes for actions/removal" aria-label="Edit Actions Mode">
+        <button class="tool-btn ${s?"active":""}" id="btn-edit-mode" title="Edit Actions Mode (E) — Click labels & nodes for actions/removal" aria-label="Edit Actions Mode">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9"></path>
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
           </svg>
         </button>
-        ${s?`
+        ${e?`
         <button class="tool-btn" id="btn-snapshot" title="Snapshot Layout JS to Clipboard (S)" aria-label="Snapshot Layout">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -405,15 +406,21 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
           </svg>
         </button>
       </div>
-    `,(a=this.shadowRootNode.getElementById("btn-zoom-in"))==null||a.addEventListener("click",()=>{this.emit("flow:zoom-in")}),(r=this.shadowRootNode.getElementById("btn-zoom-out"))==null||r.addEventListener("click",()=>{this.emit("flow:zoom-out")}),(d=this.shadowRootNode.getElementById("btn-fit"))==null||d.addEventListener("click",()=>{this.emit("flow:fit")}),(h=this.shadowRootNode.getElementById("btn-reset"))==null||h.addEventListener("click",()=>{this.emit("flow:reset")}),(g=this.shadowRootNode.getElementById("btn-move-mode"))==null||g.addEventListener("click",()=>{this.emit("flow:toggle-move-mode")}),(u=this.shadowRootNode.getElementById("btn-edit-mode"))==null||u.addEventListener("click",()=>{this.emit("flow:toggle-edit-mode")}),(p=this.shadowRootNode.getElementById("btn-snapshot"))==null||p.addEventListener("click",()=>{this.emit("flow:snapshot-layout")}),(_=this.shadowRootNode.getElementById("btn-reset-layout"))==null||_.addEventListener("click",()=>{this.emit("flow:reset-layout")}),(I=this.shadowRootNode.getElementById("btn-inspector"))==null||I.addEventListener("click",()=>{this.emit("flow:toggle-inspector")})}}l(wt,"styles",`
+    `,(a=this.shadowRootNode.getElementById("btn-zoom-in"))==null||a.addEventListener("click",()=>{this.emit("flow:zoom-in")}),(n=this.shadowRootNode.getElementById("btn-zoom-out"))==null||n.addEventListener("click",()=>{this.emit("flow:zoom-out")}),(d=this.shadowRootNode.getElementById("btn-zoom-reset"))==null||d.addEventListener("click",()=>{this.emit("flow:zoom-reset")}),(l=this.shadowRootNode.getElementById("btn-fit"))==null||l.addEventListener("click",()=>{this.emit("flow:fit")}),(g=this.shadowRootNode.getElementById("btn-reset"))==null||g.addEventListener("click",()=>{this.emit("flow:reset")}),(p=this.shadowRootNode.getElementById("btn-move-mode"))==null||p.addEventListener("click",()=>{this.emit("flow:toggle-move-mode")}),(c=this.shadowRootNode.getElementById("btn-edit-mode"))==null||c.addEventListener("click",()=>{this.emit("flow:toggle-edit-mode")}),(k=this.shadowRootNode.getElementById("btn-snapshot"))==null||k.addEventListener("click",()=>{this.emit("flow:snapshot-layout")}),(E=this.shadowRootNode.getElementById("btn-reset-layout"))==null||E.addEventListener("click",()=>{this.emit("flow:reset-layout")}),(L=this.shadowRootNode.getElementById("btn-inspector"))==null||L.addEventListener("click",()=>{this.emit("flow:toggle-inspector")})}}h(Et,"styles",`
     :host {
-      display: block;
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
       font-family: var(--tuto-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
       color: var(--tuto-text, #e8eaed);
       user-select: none;
+      box-sizing: border-box;
     }
+    .toolbar-group,
     .toolbar-container {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 0.25rem;
       padding: 0.25rem;
@@ -423,6 +430,7 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       border: 1px solid var(--tuto-border, #30363d);
       border-radius: 0.75rem;
       box-shadow: var(--tuto-shadow, 0 12px 36px rgba(0, 0, 0, 0.45));
+      pointer-events: auto;
     }
     .divider {
       width: 1px;
@@ -454,16 +462,34 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       border-color: var(--tuto-hot, #3b82f6);
       color: var(--tuto-hot, #3b82f6);
     }
-    .zoom-text {
+    button.zoom-text {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-family: var(--tuto-font-mono, monospace);
       font-size: 0.7rem;
       font-weight: 600;
-      padding: 0 0.4rem;
+      padding: 0 0.35rem;
+      height: 2rem;
       color: var(--tuto-muted, #64748b);
-      min-width: 2.6rem;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 0.5rem;
+      min-width: 2.75rem;
       text-align: center;
+      cursor: pointer;
+      transition: all 120ms ease;
+      font-variant-numeric: tabular-nums;
     }
-  `),customElements.get("tuto-flow-toolbar")||customElements.define("tuto-flow-toolbar",wt);class _t extends Y{constructor(){super(...arguments);l(this,"_bounds",{x:0,y:0,w:2e3,h:1e3});l(this,"_camera",{panX:0,panY:0,scale:1});l(this,"_viewportSize",{width:900,height:700});l(this,"_nodes",{});l(this,"_selectedNodeId",null);l(this,"_isDragging",!1);l(this,"handlePointerDown",t=>{t.button===0&&(t.preventDefault(),this._isDragging=!0,this.panToEvent(t))});l(this,"handlePointerMove",t=>{this._isDragging&&this.panToEvent(t)});l(this,"handlePointerUp",()=>{this._isDragging=!1})}get bounds(){return this._bounds}set bounds(t){this._bounds=t,this.requestUpdate()}get camera(){return this._camera}set camera(t){this._camera=t,this.requestUpdate()}get viewportSize(){return this._viewportSize}set viewportSize(t){this._viewportSize=t,this.requestUpdate()}get nodes(){return this._nodes}set nodes(t){this._nodes=t,this.requestUpdate()}get selectedNodeId(){return this._selectedNodeId}set selectedNodeId(t){this._selectedNodeId=t,this.requestUpdate()}connectedCallback(){super.connectedCallback(),this.addEventListener("pointerdown",this.handlePointerDown),window.addEventListener("pointermove",this.handlePointerMove),window.addEventListener("pointerup",this.handlePointerUp)}disconnectedCallback(){super.disconnectedCallback(),this.removeEventListener("pointerdown",this.handlePointerDown),window.removeEventListener("pointermove",this.handlePointerMove),window.removeEventListener("pointerup",this.handlePointerUp)}panToEvent(t){const i=this.getBoundingClientRect(),s=t.clientX-i.left,a=t.clientY-i.top,r=i.width||170,d=i.height||120,h=this._bounds.w||2e3,g=this._bounds.h||1e3,u=Math.min(r/h,d/g),p=s/u+this._bounds.x,_=a/u+this._bounds.y;this.emit("flow:pan-to",{worldX:p,worldY:_})}render(){var S,C;if(!this.shadowRootNode)return;this.shadowRootNode.innerHTML="";const t=R("svg",{viewBox:"0 0 170 120",preserveAspectRatio:"xMidYMid meet"},this.shadowRootNode),i=170,s=120,a=this._bounds.w||2e3,r=this._bounds.h||1e3,d=Math.min(i/a,s/r),h=R("g",{transform:`scale(${d}) translate(${-this._bounds.x}, ${-this._bounds.y})`},t);R("rect",{x:this._bounds.x,y:this._bounds.y,width:this._bounds.w,height:this._bounds.h,rx:16,fill:"rgba(59, 130, 246, 0.04)",stroke:"var(--tuto-border, #30363d)","stroke-width":2},h);for(const[w,x]of Object.entries(this._nodes)){const T=((S=B.accents[w])==null?void 0:S.accent)||((C=B.accents[x.kind])==null?void 0:C.accent)||"#3b82f6";R("rect",{x:x.x,y:x.y,width:x.w,height:x.h,rx:10,fill:w===this._selectedNodeId?T:"var(--tuto-head-bg, #1a2030)",stroke:T,"stroke-width":2},h)}const g=this._viewportSize.width||900,u=this._viewportSize.height||700,p=this._camera.scale||1,_=(-this._camera.panX/p-this._bounds.x)*d,I=(-this._camera.panY/p-this._bounds.y)*d,N=g/p*d,M=u/p*d;R("rect",{x:Math.max(0,Math.min(i,_)),y:Math.max(0,Math.min(s,I)),width:Math.max(4,Math.min(i,N)),height:Math.max(4,Math.min(s,M)),fill:"rgba(59, 130, 246, 0.15)",stroke:"var(--tuto-hot, #3b82f6)","stroke-width":1.5,rx:3},t)}}l(_t,"styles",`
+    button.zoom-text:hover {
+      background: var(--tuto-panel-head, #1c2128);
+      border-color: var(--tuto-border, #30363d);
+      color: var(--tuto-text, #e8eaed);
+    }
+    button.zoom-text:active {
+      transform: scale(0.96);
+    }
+  `),customElements.get("tuto-flow-toolbar")||customElements.define("tuto-flow-toolbar",Et);class Mt extends V{constructor(){super(...arguments);h(this,"_bounds",{x:0,y:0,w:2e3,h:1e3});h(this,"_camera",{panX:0,panY:0,scale:1});h(this,"_viewportSize",{width:900,height:700});h(this,"_nodes",{});h(this,"_selectedNodeId",null);h(this,"_isDragging",!1);h(this,"handlePointerDown",t=>{t.button===0&&(t.preventDefault(),this._isDragging=!0,this.panToEvent(t))});h(this,"handlePointerMove",t=>{this._isDragging&&this.panToEvent(t)});h(this,"handlePointerUp",()=>{this._isDragging=!1})}get bounds(){return this._bounds}set bounds(t){this._bounds=t,this.requestUpdate()}get camera(){return this._camera}set camera(t){this._camera=t,this.requestUpdate()}get viewportSize(){return this._viewportSize}set viewportSize(t){this._viewportSize=t,this.requestUpdate()}get nodes(){return this._nodes}set nodes(t){this._nodes=t,this.requestUpdate()}get selectedNodeId(){return this._selectedNodeId}set selectedNodeId(t){this._selectedNodeId=t,this.requestUpdate()}connectedCallback(){super.connectedCallback(),this.addEventListener("pointerdown",this.handlePointerDown),window.addEventListener("pointermove",this.handlePointerMove),window.addEventListener("pointerup",this.handlePointerUp)}disconnectedCallback(){super.disconnectedCallback(),this.removeEventListener("pointerdown",this.handlePointerDown),window.removeEventListener("pointermove",this.handlePointerMove),window.removeEventListener("pointerup",this.handlePointerUp)}panToEvent(t){const s=this.getBoundingClientRect(),e=t.clientX-s.left,a=t.clientY-s.top,n=s.width||170,d=s.height||120,l=this._bounds.w||2e3,g=this._bounds.h||1e3,p=Math.min(n/l,d/g),c=e/p+this._bounds.x,k=a/p+this._bounds.y;this.emit("flow:pan-to",{worldX:c,worldY:k})}render(){var N,T;if(!this.shadowRootNode)return;this.shadowRootNode.innerHTML="";const t=z("svg",{viewBox:"0 0 170 120",preserveAspectRatio:"xMidYMid meet"},this.shadowRootNode),s=170,e=120,a=this._bounds.w||2e3,n=this._bounds.h||1e3,d=Math.min(s/a,e/n),l=z("g",{transform:`scale(${d}) translate(${-this._bounds.x}, ${-this._bounds.y})`},t);z("rect",{x:this._bounds.x,y:this._bounds.y,width:this._bounds.w,height:this._bounds.h,rx:16,fill:"rgba(59, 130, 246, 0.04)",stroke:"var(--tuto-border, #30363d)","stroke-width":2},l);for(const[M,_]of Object.entries(this._nodes)){const P=((N=q.accents[M])==null?void 0:N.accent)||((T=q.accents[_.kind])==null?void 0:T.accent)||"#3b82f6";z("rect",{x:_.x,y:_.y,width:_.w,height:_.h,rx:10,fill:M===this._selectedNodeId?P:"var(--tuto-head-bg, #1a2030)",stroke:P,"stroke-width":2},l)}const g=this._viewportSize.width||900,p=this._viewportSize.height||700,c=this._camera.scale||1,k=(-this._camera.panX/c-this._bounds.x)*d,E=(-this._camera.panY/c-this._bounds.y)*d,L=g/c*d,S=p/c*d;z("rect",{x:Math.max(0,Math.min(s,k)),y:Math.max(0,Math.min(e,E)),width:Math.max(4,Math.min(s,L)),height:Math.max(4,Math.min(e,S)),fill:"rgba(59, 130, 246, 0.15)",stroke:"var(--tuto-hot, #3b82f6)","stroke-width":1.5,rx:3},t)}}h(Mt,"styles",`
     :host {
       display: block;
       width: 170px;
@@ -483,193 +509,200 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       height: 100%;
       display: block;
     }
-  `),customElements.get("tuto-flow-minimap")||customElements.define("tuto-flow-minimap",_t);class xt extends Y{constructor(){super(...arguments);l(this,"_isOpen",!1);l(this,"_node",null);l(this,"_edge",null);l(this,"_graph",null);l(this,"_tools",[])}get graph(){return this._graph}set graph(t){this._graph=t,this.requestUpdate()}get isOpen(){return this._isOpen}set isOpen(t){this._isOpen=!!t,this.requestUpdate()}get node(){return this._node}set node(t){this._node=t,t&&(this._edge=null),this.requestUpdate()}get edge(){return this._edge}set edge(t){this._edge=t,t&&(this._node=null),this.requestUpdate()}get tools(){return this._tools}set tools(t){this._tools=t,this.requestUpdate()}render(){var a,r,d,h,g,u,p,_,I,N,M,S,C,w,x,T,j,$,L;if(!this.shadowRootNode)return;let t="",i="";if(this._node){const c=this._node,o=B.accents[c.id]||B.accents[c.kind]||{accent:"#3b82f6",badge:(c.kind||"MODE").toUpperCase(),perm:(c.permission||"READ-ONLY").toUpperCase(),permClass:`perm-${c.permission||"readonly"}`},m=o.perm==="WRITE"?'<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>':'<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';this.style.setProperty("--drawer-accent",o.accent),t=`
+  `),customElements.get("tuto-flow-minimap")||customElements.define("tuto-flow-minimap",Mt);class St extends V{constructor(){super(...arguments);h(this,"_isOpen",!1);h(this,"_node",null);h(this,"_edge",null);h(this,"_graph",null);h(this,"_tools",[])}get graph(){return this._graph}set graph(t){this._graph=t,this.requestUpdate()}get isOpen(){return this._isOpen}set isOpen(t){this._isOpen=!!t,this.requestUpdate()}get node(){return this._node}set node(t){this._node=t,t&&(this._edge=null),this.requestUpdate()}get edge(){return this._edge}set edge(t){this._edge=t,t&&(this._node=null),this.requestUpdate()}get tools(){return this._tools}set tools(t){this._tools=t,this.requestUpdate()}render(){var n,d,l,g,p,c,k,E,L,S,N,T,M,_,P,Y,x,C,I,W,G;if(!this.shadowRootNode)return;let t="",s="";if(this._node){const f=this._node,A=q.accents[f.id]||q.accents[f.kind]||{accent:"#3b82f6",badge:(f.kind||"MODE").toUpperCase(),perm:(f.permission||"READ-ONLY").toUpperCase(),permClass:`perm-${f.permission||"readonly"}`},i=A.perm==="WRITE"?'<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M11 2l3 3-8.5 8.5H2.5v-3z"/></svg>':'<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; display: inline-block; vertical-align: -1px;"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>';this.style.setProperty("--drawer-accent",A.accent),t=`
         <div class="header-titles">
-          <h2>${b(c.label||c.id)}</h2>
+          <h2>${b(f.label||f.id)}</h2>
           <div class="header-badges">
-            <span class="badge badge-accent">${b(o.badge)}</span>
-            <span class="badge badge-perm ${o.permClass}">${m}${b(o.perm)}</span>
+            <span class="badge badge-accent">${b(A.badge)}</span>
+            <span class="badge badge-perm ${A.permClass}">${i}${b(A.perm)}</span>
           </div>
         </div>
-      `;const v=(c.substates||[]).length?`<div>
+      `;const u=(f.substates||[]).length?`<div>
             <h4 class="section-title">Substates</h4>
             <div class="chip-group">
-              ${c.substates.map(P=>`<span class="chip">${b(P)}</span>`).join("")}
+              ${f.substates.map(B=>`<span class="chip">${b(B)}</span>`).join("")}
             </div>
-          </div>`:"",U=(c.procedure||[]).length?`<div>
-            <h4 class="section-title">Ordered Instructions (${c.procedure.length})</h4>
+          </div>`:"",v=(f.procedure||[]).length?`<div>
+            <h4 class="section-title">Ordered Instructions (${f.procedure.length})</h4>
             <ol class="instruction-list">
-              ${c.procedure.map((P,W)=>`
+              ${f.procedure.map((B,X)=>`
                 <li class="instruction-item">
-                  <span class="instruction-idx">${W+1}.</span>
-                  <span>${b(P)}</span>
+                  <span class="instruction-idx">${X+1}.</span>
+                  <span>${b(B)}</span>
                 </li>
               `).join("")}
             </ol>
-          </div>`:"",k=this._tools.filter(P=>(P.modes||[]).includes(c.id)||(P.modes||[]).includes("any")),D=k.length?`<div>
-            <h4 class="section-title">Permitted Tools & Gates (${k.length})</h4>
+          </div>`:"",y=this._tools.filter(B=>(B.modes||[]).includes(f.id)||(B.modes||[]).includes("any")),$=y.length?`<div>
+            <h4 class="section-title">Permitted Tools & Gates (${y.length})</h4>
             <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-              ${k.map(P=>{var W;return`
+              ${y.map(B=>{var X;return`
                 <div class="tool-card">
                   <div class="tool-title">
-                    <span>${b(P.name)}</span>
+                    <span>${b(B.name)}</span>
                     <span class="chip">TOOL</span>
                   </div>
-                  <p class="section-text" style="font-size: 0.78rem;">${b(P.summary)}</p>
-                  ${(W=P.gate)!=null&&W.length?`<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${b(P.gate.join(" · "))}</div>`:""}
+                  <p class="section-text" style="font-size: 0.78rem;">${b(B.summary)}</p>
+                  ${(X=B.gate)!=null&&X.length?`<div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b);"><strong>Gate:</strong> ${b(B.gate.join(" · "))}</div>`:""}
                 </div>
               `}).join("")}
             </div>
-          </div>`:"";i=`
-        ${c.summary?`<div><h4 class="section-title">Summary</h4><p class="section-text">${b(c.summary)}</p></div>`:""}
+          </div>`:"",w=f.targetSubgraph||f.subgraphId||((d=(n=this._graph)==null?void 0:n.subgraphs)!=null&&d[f.id]?f.id:null);s=`
+        ${w?`<div style="margin-bottom: 0.5rem;">
+            <button class="btn-subgraph-drill" id="btn-subgraph-drill" data-subgraph="${b(w)}">
+              <span>Drill into <strong>${b(w)}</strong> Subgraph</span>
+              <span>➔</span>
+            </button>
+          </div>`:""}
+        ${f.summary?`<div><h4 class="section-title">Summary</h4><p class="section-text">${b(f.summary)}</p></div>`:""}
+        ${u}
         ${v}
-        ${U}
-        ${D}
-      `}else if(this._edge){const c=this._edge;this.style.setProperty("--drawer-accent","#3b82f6");const o=c.event||c.label||"Transition";t=`
+        ${$}
+      `}else if(this._edge){const f=this._edge;this.style.setProperty("--drawer-accent","#3b82f6");const A=f.event||f.label||"Transition";t=`
         <div class="header-titles">
-          <h2>${b(o)}</h2>
+          <h2>${b(A)}</h2>
           <div class="header-badges">
             <span class="badge badge-accent">TRANSITION</span>
-            ${c.userMediated?'<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>':'<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
+            ${f.userMediated?'<span class="badge badge-perm perm-readonly">USER-MEDIATED</span>':'<span class="badge badge-perm perm-write">PROCEDURAL</span>'}
+            ${f.bidirectional?'<span class="badge badge-perm perm-write">BIDIRECTIONAL</span>':""}
           </div>
         </div>
-      `,i=`
+      `,s=`
         <div>
           <h4 class="section-title">Route Connection</h4>
           <p class="section-text" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${b(c.from.toUpperCase())}</span>
-            <span style="color: var(--tuto-muted);">──►</span>
-            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${b(c.to.toUpperCase())}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${b(f.from.toUpperCase())}</span>
+            <span style="color: var(--tuto-muted);">${f.bidirectional?"◄──►":"──►"}</span>
+            <span class="chip" style="font-size: 0.82rem; font-weight: 700; padding: 0.2rem 0.6rem;">${b(f.to.toUpperCase())}</span>
           </p>
         </div>
-        ${c.label&&c.label!==o?`<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${b(c.label)}</p></div>`:""}
-        ${c.description?`<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${b(c.description)}</p></div>`:""}
-        ${(a=c.events)!=null&&a.length?`<div>
-                <h4 class="section-title">Trigger Events (${c.events.length})</h4>
+        ${f.label&&f.label!==A?`<div><h4 class="section-title">Action / Intention</h4><p class="section-text" style="color: var(--tuto-text); font-weight: 600;">${b(f.label)}</p></div>`:""}
+        ${f.description?`<div><h4 class="section-title">Description & Rules</h4><p class="section-text" style="line-height: 1.6;">${b(f.description)}</p></div>`:""}
+        ${(l=f.events)!=null&&l.length?`<div>
+                <h4 class="section-title">Trigger Events (${f.events.length})</h4>
                 <div class="chip-group">
-                  ${c.events.map(y=>`<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${b(y)}</span>`).join("")}
+                  ${f.events.map(j=>`<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${b(j)}</span>`).join("")}
                 </div>
               </div>`:""}
-        ${(r=c.descriptions)!=null&&r.length&&c.descriptions.length>1?`<div>
+        ${(g=f.descriptions)!=null&&g.length&&f.descriptions.length>1?`<div>
                 <h4 class="section-title">Bundled Paths</h4>
                 <ul class="instruction-list">
-                  ${c.descriptions.map(y=>`
+                  ${f.descriptions.map(j=>`
                     <li class="instruction-item">
-                      <span>${b(y)}</span>
+                      <span>${b(j)}</span>
                     </li>
                   `).join("")}
                 </ul>
               </div>`:""}
-      `}else{this.style.setProperty("--drawer-accent","#f97316");const c=((d=this._graph)==null?void 0:d.title)||"Workflow Overview",o=((h=this._graph)==null?void 0:h.version)||"",y=((g=this._graph)==null?void 0:g.description)||((u=this._graph)==null?void 0:u.summary)||"",m=(p=this._graph)==null?void 0:p.session,v=(_=this._graph)==null?void 0:_.exceptions,U=((I=this._graph)==null?void 0:I.invariants)||((N=this._graph)==null?void 0:N.rules)||(v==null?void 0:v.rules)||[],k=((M=this._graph)==null?void 0:M.ownership)||[],D=((S=this._graph)==null?void 0:S.always)||[],P=(C=this._graph)==null?void 0:C.artifact,W=((w=this._graph)==null?void 0:w.procedures)||{};t=`
+      `}else{this.style.setProperty("--drawer-accent","#f97316");const f=((p=this._graph)==null?void 0:p.title)||"Workflow Overview",A=((c=this._graph)==null?void 0:c.version)||"",j=((k=this._graph)==null?void 0:k.description)||((E=this._graph)==null?void 0:E.summary)||"",i=(L=this._graph)==null?void 0:L.session,u=(S=this._graph)==null?void 0:S.exceptions,v=((N=this._graph)==null?void 0:N.invariants)||((T=this._graph)==null?void 0:T.rules)||(u==null?void 0:u.rules)||[],y=((M=this._graph)==null?void 0:M.ownership)||[],$=((_=this._graph)==null?void 0:_.always)||[],w=(P=this._graph)==null?void 0:P.artifact,D=((Y=this._graph)==null?void 0:Y.procedures)||{};t=`
         <div class="header-titles">
-          <h2>${b(c)}</h2>
+          <h2>${b(f)}</h2>
           <div class="header-badges">
             <span class="badge badge-accent" style="background: #f97316;">OVERVIEW</span>
-            ${o?`<span class="badge badge-perm perm-standby">${b(o)}</span>`:""}
+            ${A?`<span class="badge badge-perm perm-standby">${b(A)}</span>`:""}
           </div>
         </div>
-      `;const Q=m?`<div>
+      `;const B=i?`<div>
             <h4 class="section-title" style="color: var(--tuto-accent, #38bdf8);">Session Model & Artifact Contract</h4>
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-              ${m.mode?`<div class="info-card"><span class="info-card-label">Session Mode</span><span class="info-card-value">${b(m.mode)}</span></div>`:""}
-              ${m.artifact?`<div class="info-card"><span class="info-card-label">Plan Artifact</span><span class="info-card-value">${b(m.artifact)}</span></div>`:""}
-              ${m.scope?`<div class="info-card"><span class="info-card-label">Session Scope</span><span class="info-card-value">${b(m.scope)}</span></div>`:""}
-              ${m.review?`<div class="info-card"><span class="info-card-label">Review State</span><span class="info-card-value">${b(m.review)}</span></div>`:""}
+              ${i.mode?`<div class="info-card"><span class="info-card-label">Session Mode</span><span class="info-card-value">${b(i.mode)}</span></div>`:""}
+              ${i.artifact?`<div class="info-card"><span class="info-card-label">Plan Artifact</span><span class="info-card-value">${b(i.artifact)}</span></div>`:""}
+              ${i.scope?`<div class="info-card"><span class="info-card-label">Session Scope</span><span class="info-card-value">${b(i.scope)}</span></div>`:""}
+              ${i.review?`<div class="info-card"><span class="info-card-label">Review State</span><span class="info-card-value">${b(i.review)}</span></div>`:""}
             </div>
-          </div>`:"",H=v?`<div>
-            <h4 class="section-title" style="color: #f97316;">${b(v.title||"Exceptions & Escape Hatches")}</h4>
-            ${v.summary?`<p class="section-text" style="line-height: 1.55; margin-bottom: 0.75rem; font-size: 0.82rem;">${b(v.summary)}</p>`:""}
-            ${(x=v.commands)!=null&&x.length?`<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    ${v.commands.map(E=>`
+          </div>`:"",X=u?`<div>
+            <h4 class="section-title" style="color: #f97316;">${b(u.title||"Exceptions & Escape Hatches")}</h4>
+            ${u.summary?`<p class="section-text" style="line-height: 1.55; margin-bottom: 0.75rem; font-size: 0.82rem;">${b(u.summary)}</p>`:""}
+            ${(x=u.commands)!=null&&x.length?`<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    ${u.commands.map(R=>`
                       <div class="tool-card" style="border-left: 3px solid #f97316; padding: 0.65rem 0.8rem;">
                         <div class="tool-title" style="margin-bottom: 0.25rem;">
-                          <span style="color: #f97316; font-size: 0.84rem; font-weight: 700;">${b(E.command)}</span>
-                          ${E.label?`<span class="chip" style="color: #fdba74; border-color: rgba(249, 115, 22, 0.3); font-size: 0.68rem;">${b(E.label)}</span>`:""}
+                          <span style="color: #f97316; font-size: 0.84rem; font-weight: 700;">${b(R.command)}</span>
+                          ${R.label?`<span class="chip" style="color: #fdba74; border-color: rgba(249, 115, 22, 0.3); font-size: 0.68rem;">${b(R.label)}</span>`:""}
                         </div>
-                        <p class="section-text" style="font-size: 0.78rem; line-height: 1.45;">${b(E.summary||E.description||"")}</p>
+                        <p class="section-text" style="font-size: 0.78rem; line-height: 1.45;">${b(R.summary||R.description||"")}</p>
                       </div>
                     `).join("")}
                   </div>`:""}
-            ${(T=v.rules)!=null&&T.length?`<ul class="instruction-list">
-                    ${v.rules.map(E=>`
+            ${(C=u.rules)!=null&&C.length?`<ul class="instruction-list">
+                    ${u.rules.map(R=>`
                       <li class="instruction-item">
                         <span class="instruction-idx" style="color: #f97316;">•</span>
-                        <span style="font-size: 0.8rem; line-height: 1.45;">${b(E)}</span>
+                        <span style="font-size: 0.8rem; line-height: 1.45;">${b(R)}</span>
                       </li>
                     `).join("")}
                   </ul>`:""}
-          </div>`:"",X=U.length?`<div>
+          </div>`:"",$t=v.length?`<div>
             <h4 class="section-title">Workflow Invariants & Boundaries</h4>
             <ul class="instruction-list">
-              ${U.map(E=>`
+              ${v.map(R=>`
                 <li class="instruction-item">
                   <span class="instruction-idx" style="color: #f97316;">•</span>
-                  <span style="font-size: 0.8rem; line-height: 1.45;">${b(E)}</span>
+                  <span style="font-size: 0.8rem; line-height: 1.45;">${b(R)}</span>
                 </li>
               `).join("")}
             </ul>
-          </div>`:"",V=k.length?`<div>
+          </div>`:"",Lt=y.length?`<div>
             <h4 class="section-title">Ownership & Roles</h4>
             <ul class="instruction-list">
-              ${k.map(E=>`
+              ${y.map(R=>`
                 <li class="instruction-item">
                   <span class="instruction-idx" style="color: #3b82f6;">•</span>
-                  <span style="font-size: 0.8rem; line-height: 1.45;">${b(E)}</span>
+                  <span style="font-size: 0.8rem; line-height: 1.45;">${b(R)}</span>
                 </li>
               `).join("")}
             </ul>
-          </div>`:"",et=P?`<div>
+          </div>`:"",ut=w?`<div>
             <h4 class="section-title">Artifact Sections & Identifiers</h4>
-            ${(j=P.sections)!=null&&j.length?`<div style="margin-bottom: 0.6rem;">
-                    <div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b); margin-bottom: 0.35rem; font-weight: 700;">REQUIRED SECTIONS (${P.sections.length})</div>
+            ${(I=w.sections)!=null&&I.length?`<div style="margin-bottom: 0.6rem;">
+                    <div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b); margin-bottom: 0.35rem; font-weight: 700;">REQUIRED SECTIONS (${w.sections.length})</div>
                     <div class="chip-group">
-                      ${P.sections.map(E=>`<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${b(E)}</span>`).join("")}
+                      ${w.sections.map(R=>`<span class="chip" style="color: var(--tuto-accent, #38bdf8);">${b(R)}</span>`).join("")}
                     </div>
                   </div>`:""}
-            ${P.identifiers&&Object.keys(P.identifiers).length?`<div style="margin-bottom: 0.6rem;">
+            ${w.identifiers&&Object.keys(w.identifiers).length?`<div style="margin-bottom: 0.6rem;">
                     <div style="font-size: 0.72rem; color: var(--tuto-muted, #64748b); margin-bottom: 0.35rem; font-weight: 700;">STABLE LIFECYCLE IDENTIFIERS</div>
                     <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                      ${Object.entries(P.identifiers).map(([E,it])=>`
+                      ${Object.entries(w.identifiers).map(([R,J])=>`
                         <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem;">
-                          <span class="chip" style="font-weight: 700; color: #f97316;">${b(E)}</span>
-                          <span style="color: var(--tuto-text-muted, #94a3b8);">${b(it)}</span>
+                          <span class="chip" style="font-weight: 700; color: #f97316;">${b(R)}</span>
+                          <span style="color: var(--tuto-text-muted, #94a3b8);">${b(J)}</span>
                         </div>
                       `).join("")}
                     </div>
                   </div>`:""}
-            ${($=P.rules)!=null&&$.length?`<ul class="instruction-list">
-                    ${P.rules.map(E=>`
+            ${(W=w.rules)!=null&&W.length?`<ul class="instruction-list">
+                    ${w.rules.map(R=>`
                       <li class="instruction-item">
                         <span class="instruction-idx" style="color: #38bdf8;">•</span>
-                        <span style="font-size: 0.8rem; line-height: 1.45;">${b(E)}</span>
+                        <span style="font-size: 0.8rem; line-height: 1.45;">${b(R)}</span>
                       </li>
                     `).join("")}
                   </ul>`:""}
-          </div>`:"",ot=D.length?`<div>
+          </div>`:"",ft=$.length?`<div>
             <h4 class="section-title">Execution Principles (ALWAYS)</h4>
             <ul class="instruction-list">
-              ${D.map(E=>`
+              ${$.map(R=>`
                 <li class="instruction-item">
                   <span class="instruction-idx" style="color: #22c55e;">•</span>
-                  <span style="font-size: 0.8rem; line-height: 1.45;">${b(E)}</span>
+                  <span style="font-size: 0.8rem; line-height: 1.45;">${b(R)}</span>
                 </li>
               `).join("")}
             </ul>
-          </div>`:"",st=Object.keys(W),F=st.length?`<div>
-            <h4 class="section-title">Global Procedures (${st.length})</h4>
+          </div>`:"",mt=Object.keys(D),st=mt.length?`<div>
+            <h4 class="section-title">Global Procedures (${mt.length})</h4>
             <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-              ${st.map(E=>`
+              ${mt.map(R=>`
                 <details class="spec-details">
                   <summary>
-                    <span>${b(E)}</span>
-                    <span class="chip" style="font-size: 0.68rem;">${(W[E]||[]).length} steps</span>
+                    <span>${b(R)}</span>
+                    <span class="chip" style="font-size: 0.68rem;">${(D[R]||[]).length} steps</span>
                   </summary>
                   <div class="spec-details-content">
                     <ol class="instruction-list" style="gap: 0.4rem;">
-                      ${(W[E]||[]).map((it,z)=>`
+                      ${(D[R]||[]).map((J,at)=>`
                         <li class="instruction-item" style="padding: 0.45rem 0.6rem; font-size: 0.78rem;">
-                          <span class="instruction-idx">${z+1}.</span>
-                          <span>${b(it)}</span>
+                          <span class="instruction-idx">${at+1}.</span>
+                          <span>${b(J)}</span>
                         </li>
                       `).join("")}
                     </ol>
@@ -677,18 +710,18 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
                 </details>
               `).join("")}
             </div>
-          </div>`:"";i=`
-        ${y?`<div>
+          </div>`:"";s=`
+        ${j?`<div>
                 <h4 class="section-title">Big Picture & Architecture</h4>
-                <p class="section-text" style="line-height: 1.6; color: var(--tuto-text, #e8eaed); font-size: 0.84rem;">${b(y)}</p>
+                <p class="section-text" style="line-height: 1.6; color: var(--tuto-text, #e8eaed); font-size: 0.84rem;">${b(j)}</p>
               </div>`:""}
-        ${Q}
-        ${H}
+        ${B}
         ${X}
-        ${V}
-        ${et}
-        ${ot}
-        ${F}
+        ${$t}
+        ${Lt}
+        ${ut}
+        ${ft}
+        ${st}
 
         <div>
           <h4 class="section-title" style="color: var(--tuto-muted, #64748b);">Interactive Inspection</h4>
@@ -703,10 +736,10 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
           <button class="btn-close" id="btn-close" title="Close Drawer">×</button>
         </div>
         <div class="drawer-body">
-          ${i}
+          ${s}
         </div>
       </aside>
-    `;const s=this.shadowRootNode.querySelector(".drawer");s&&(s.addEventListener("pointerdown",c=>c.stopPropagation()),s.addEventListener("mousedown",c=>c.stopPropagation())),(L=this.shadowRootNode.getElementById("btn-close"))==null||L.addEventListener("click",()=>{this.emit("flow:close-inspector")})}}l(xt,"styles",`
+    `;const e=this.shadowRootNode.querySelector(".drawer");e&&(e.addEventListener("pointerdown",f=>f.stopPropagation()),e.addEventListener("mousedown",f=>f.stopPropagation())),(G=this.shadowRootNode.getElementById("btn-close"))==null||G.addEventListener("click",()=>{this.emit("flow:close-inspector")});const a=this.shadowRootNode.getElementById("btn-subgraph-drill");a&&a.addEventListener("click",()=>{const f=a.getAttribute("data-subgraph");f&&this.emit("flow:select-subgraph",{subgraphId:f})})}}h(St,"styles",`
     :host {
       display: block;
       position: absolute;
@@ -878,6 +911,28 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       flex-wrap: wrap;
       gap: 0.4rem;
     }
+    .btn-subgraph-drill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(59, 130, 246, 0.15));
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+      border-radius: 8px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+      font-family: inherit;
+    }
+    .btn-subgraph-drill:hover {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(59, 130, 246, 0.3));
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+    }
     .chip {
       font-size: 0.72rem;
       font-family: var(--tuto-font-mono, monospace);
@@ -944,7 +999,7 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       padding: 3rem 1rem;
       font-size: 0.88rem;
     }
-  `),customElements.get("tuto-flow-inspector")||customElements.define("tuto-flow-inspector",xt);class kt extends Y{constructor(){super(...arguments);l(this,"_graph",null);l(this,"_camera",{panX:0,panY:0,scale:1});l(this,"_bounds",{x:0,y:0,w:2e3,h:1e3});l(this,"_activeStateId",null);l(this,"_selectedNodeId",null);l(this,"_selectedEdgeId",null);l(this,"_hoveredEdgeId",null);l(this,"_showMinimap",!1);l(this,"_showInspector",!0);l(this,"_hasRestoredCamera",!1);l(this,"_theme","dark");l(this,"_toolMode","view");l(this,"_isDragging",!1);l(this,"_dragStart",{x:0,y:0,panX:0,panY:0});l(this,"_draggedNodeId",null);l(this,"_dragNodeStart",null);l(this,"_nodeDragMoved",!1);l(this,"_edgeWaypoints",new Map);l(this,"_draggedWaypoint",null);l(this,"_activeGuides",[]);l(this,"_defaultLayout",null);l(this,"_toastMessage",null);l(this,"_toastTimeout",null);l(this,"_activePopover",null);l(this,"handleKeyDown",t=>{var i;t.target instanceof HTMLInputElement||t.target instanceof HTMLTextAreaElement||(t.key==="+"||t.key==="="?this.zoomBy(1.2):t.key==="-"?this.zoomBy(.8333333333333334):t.key==="0"||t.key==="f"||t.key==="F"?this.fitToViewport():t.key==="r"||t.key==="R"?(i=this._graph)!=null&&i.initial&&(this._activeStateId=this._graph.initial,this._selectedNodeId=this._graph.initial,this._selectedEdgeId=null,this.requestUpdate()):t.key==="i"||t.key==="I"?this._toggleInspector():t.key==="m"||t.key==="M"?this.toolMode=this._toolMode==="move"?"view":"move":t.key==="e"||t.key==="E"?this.toolMode=this._toolMode==="edit"?"view":"edit":(t.key==="s"||t.key==="S")&&this._toolMode!=="view"?this.copyLayoutSnapshot():t.key==="Escape"&&(this._activePopover?(this._activePopover=null,this.requestUpdate()):this._selectedNodeId||this._selectedEdgeId?(this._selectedNodeId=null,this._activeStateId=null,this._selectedEdgeId=null,this.requestUpdate()):this._toolMode!=="view"?this.toolMode="view":this._closeInspector()))});l(this,"handleResize",()=>{this.requestUpdate()});l(this,"handleWheel",t=>{t.preventDefault();const i=this.getBoundingClientRect(),s=t.clientX-i.left,a=t.clientY-i.top,r=t.deltaY<0?1.12:.89;this._camera=mt(this._camera,s,a,r,K,tt),this._saveCamera(),this.requestUpdate()});l(this,"handlePointerDown",t=>{var a;if(t.button!==0||t.target.closest(".flow-edge-pill, tuto-flow-node, .floating-toolbar, .floating-minimap, tuto-flow-inspector, .flow-waypoint-handle, .flow-waypoint-split"))return;this._isDragging=!0,this._dragStart={x:t.clientX,y:t.clientY,panX:this._camera.panX,panY:this._camera.panY};const s=(a=this.shadowRootNode)==null?void 0:a.querySelector("svg.flow-svg");s==null||s.classList.add("grabbing"),window.addEventListener("pointermove",this.handlePointerMove),window.addEventListener("pointerup",this.handlePointerUp)});l(this,"handlePointerMove",t=>{this._isDragging&&(this._camera={...this._camera,panX:this._dragStart.panX+(t.clientX-this._dragStart.x),panY:this._dragStart.panY+(t.clientY-this._dragStart.y)},this.requestUpdate())});l(this,"handlePointerUp",()=>{var i;this._isDragging&&(Math.hypot(this._camera.panX-this._dragStart.panX,this._camera.panY-this._dragStart.panY)<4&&(this._selectedNodeId=null,this._activeStateId=null,this._selectedEdgeId=null),this._saveCamera()),this._isDragging=!1;const t=(i=this.shadowRootNode)==null?void 0:i.querySelector("svg.flow-svg");t==null||t.classList.remove("grabbing"),window.removeEventListener("pointermove",this.handlePointerMove),window.removeEventListener("pointerup",this.handlePointerUp),this.requestUpdate()});l(this,"handleNodePointerMove",t=>{if(!this._draggedNodeId||!this._dragNodeStart||!this._graph)return;const i=this._graph.states[this._draggedNodeId];if(!i)return;const s=this._camera.scale||1,a=(t.clientX-this._dragNodeStart.startX)/s,r=(t.clientY-this._dragNodeStart.startY)/s;Math.hypot(a,r)>4&&(this._nodeDragMoved=!0);const d=this._dragNodeStart.nodeOrigX+a,h=this._dragNodeStart.nodeOrigY+r,g=At(this._draggedNodeId,d,h,i.w,i.h,this._graph.states,G,10);i.x=g.x,i.y=g.y,this._activeGuides=g.guides;const u=this._graph.framing!==!1;this._bounds=ct(this._graph.states,u?64:40,u?56:30,u?46:0,this._graph.groups),this.requestUpdate()});l(this,"handleNodePointerUp",()=>{var i;if(!this._draggedNodeId)return;const t=this._draggedNodeId;this._draggedNodeId=null,this._dragNodeStart=null,this._activeGuides=[],window.removeEventListener("pointermove",this.handleNodePointerMove),window.removeEventListener("pointerup",this.handleNodePointerUp),this._nodeDragMoved?this.emit("flow:layout-change",{nodeId:t,layout:this.exportLayoutSnapshot()}):this._selectedNodeId===t?(this._selectedNodeId=null,this._activeStateId=null,this.emit("flow:select-node",{node:null})):(this._selectedNodeId=t,this._activeStateId=t,(i=this._graph)!=null&&i.states[t]&&this.emit("flow:select-node",{node:this._graph.states[t]})),this.requestUpdate()});l(this,"handleWaypointPointerMove",t=>{if(!this._draggedWaypoint||!this._graph)return;const{edgeId:i,waypointIndex:s,startX:a,startY:r,origX:d,origY:h}=this._draggedWaypoint,g=this._edgeWaypoints.get(i);if(!g||!g[s])return;const u=this._camera.scale||1,p=(t.clientX-a)/u,_=(t.clientY-r)/u,I=d+p,N=h+_,M=ht(I,N,i,s,this._graph.states,this._graph.transitions||[],this._edgeWaypoints,G,10);g[s]=[M.x,M.y],this._activeGuides=M.guides,this.requestUpdate()});l(this,"handleWaypointPointerUp",()=>{this._draggedWaypoint&&(this._draggedWaypoint=null,this._activeGuides=[],window.removeEventListener("pointermove",this.handleWaypointPointerMove),window.removeEventListener("pointerup",this.handleWaypointPointerUp),this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),this.requestUpdate())})}get graph(){return this._graph}set graph(t){if(this._graph=t,t){if(!this._defaultLayout&&t.states){this._defaultLayout={};for(const[s,a]of Object.entries(t.states))this._defaultLayout[s]={x:a.x,y:a.y,w:a.w,h:a.h}}if(this._edgeWaypoints.clear(),t.transitions)for(const s of t.transitions)s.waypoints&&s.waypoints.length>0&&this._edgeWaypoints.set(s.id,s.waypoints.map(a=>[...a]));try{const s=localStorage.getItem("pi_workflow_edge_override");if(s!==null){const a=JSON.parse(s);this._edgeWaypoints.clear();for(const[r,d]of Object.entries(a))Array.isArray(d)&&d.length>0&&this._edgeWaypoints.set(r,d)}}catch{}this._activeStateId||(this._activeStateId=t.initial||Object.keys(t.states||{})[0]||null);const i=t.framing!==!1;if(this._bounds=ct(t.states,i?64:40,i?56:30,i?46:0,t.groups),!this._hasRestoredCamera)try{const s=localStorage.getItem("pi_workflow_camera");if(s){const a=JSON.parse(s);a&&typeof a.scale=="number"&&typeof a.panX=="number"&&(this._camera=a,this._hasRestoredCamera=!0)}}catch{}this._hasRestoredCamera||requestAnimationFrame(()=>this.fitToViewport())}this.requestUpdate()}_removeWaypoint(t,i){const s=[...this._edgeWaypoints.get(t)||[]];i>=0&&i<s.length&&s.splice(i,1),s.length===0?(this._edgeWaypoints.delete(t),this.showToast("✓ Straightened edge (0 breakpoints)")):(this._edgeWaypoints.set(t,s),this.showToast(`✓ Removed breakpoint (${s.length}/2 remaining)`)),this._activePopover=null,this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),this.requestUpdate()}_resetEdge(t){this._edgeWaypoints.delete(t),this._activePopover=null,this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),this.showToast("✓ Reset edge to straight line (0 breakpoints)"),this.requestUpdate()}_addWaypointToEdge(t,i,s){var g,u;const a=this._edgeWaypoints.get(t)?[...this._edgeWaypoints.get(t)]:[];if(a.length>=2){this.showToast("Maximum 2 breakpoints per line");return}const r=ht(i,s,t,a.length,((g=this._graph)==null?void 0:g.states)||{},((u=this._graph)==null?void 0:u.transitions)||[],this._edgeWaypoints,G,10),d=r.x,h=r.y;a.push([d,h]),this._edgeWaypoints.set(t,a),this._activePopover={type:"waypoint",id:t,index:a.length-1,worldX:d,worldY:h},this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),this.showToast(`✓ Added breakpoint (${a.length}/2)`),this.requestUpdate()}_resetNode(t){var i,s;if(this._defaultLayout&&this._defaultLayout[t]&&((s=(i=this._graph)==null?void 0:i.states)!=null&&s[t])){const a=this._defaultLayout[t];this._graph.states[t].x=a.x,this._graph.states[t].y=a.y,this._graph.states[t].w=a.w,this._graph.states[t].h=a.h;try{const r=localStorage.getItem("pi_workflow_layout_override");if(r){const d=JSON.parse(r);delete d[t],localStorage.setItem("pi_workflow_layout_override",JSON.stringify(d))}}catch{}this._activePopover=null,this.emit("flow:layout-change",{nodeId:t,layout:this.exportLayoutSnapshot()}),this.showToast(`✓ Reset ${t} position`),this.requestUpdate()}}_renderPopoverContent(){var t,i;if(!this._activePopover)return"";if(this._activePopover.type==="waypoint"){const s=this._activePopover.id,a=this._edgeWaypoints.get(s)||[];return`
+  `),customElements.get("tuto-flow-inspector")||customElements.define("tuto-flow-inspector",St);class It extends V{constructor(){super(...arguments);h(this,"_rootGraph",null);h(this,"_graph",null);h(this,"_activeSubgraphId",null);h(this,"_showSubgraphNav",!0);h(this,"_camera",{panX:0,panY:0,scale:1});h(this,"_bounds",{x:0,y:0,w:2e3,h:1e3});h(this,"_activeStateId",null);h(this,"_selectedNodeId",null);h(this,"_selectedEdgeId",null);h(this,"_hoveredEdgeId",null);h(this,"_showMinimap",!0);h(this,"_showInspector",!0);h(this,"_hasRestoredCamera",!1);h(this,"_theme","dark");h(this,"_toolMode","view");h(this,"_isDragging",!1);h(this,"_dragStart",{x:0,y:0,panX:0,panY:0});h(this,"_draggedNodeId",null);h(this,"_dragNodeStart",null);h(this,"_nodeDragMoved",!1);h(this,"_edgeWaypoints",new Map);h(this,"_draggedWaypoint",null);h(this,"_activeGuides",[]);h(this,"_defaultLayout",null);h(this,"_toastMessage",null);h(this,"_toastTimeout",null);h(this,"_activePopover",null);h(this,"handleKeyDown",t=>{var s;t.target instanceof HTMLInputElement||t.target instanceof HTMLTextAreaElement||(t.key==="+"||t.key==="="?this.zoomBy(1.2):t.key==="-"?this.zoomBy(.8333333333333334):t.key==="0"||t.key==="f"||t.key==="F"?this.fitToViewport():t.key==="r"||t.key==="R"?(s=this._graph)!=null&&s.initial&&(this._activeStateId=this._graph.initial,this._selectedNodeId=this._graph.initial,this._selectedEdgeId=null,this.requestUpdate()):t.key==="i"||t.key==="I"?this._toggleInspector():t.key==="m"||t.key==="M"?this.toolMode=this._toolMode==="move"?"view":"move":t.key==="e"||t.key==="E"?this.toolMode=this._toolMode==="edit"?"view":"edit":(t.key==="s"||t.key==="S")&&this._toolMode!=="view"?t.shiftKey?this.copyFsmPatch():this.copyLayoutSnapshot():t.key==="Escape"&&(this._activePopover?(this._activePopover=null,this.requestUpdate()):this._selectedNodeId||this._selectedEdgeId?(this._selectedNodeId=null,this._activeStateId=null,this._selectedEdgeId=null,this.requestUpdate()):this._toolMode!=="view"?this.toolMode="view":this._closeInspector()))});h(this,"handleResize",()=>{this.requestUpdate()});h(this,"handleWheel",t=>{t.preventDefault();const s=this.getBoundingClientRect(),e=t.clientX-s.left,a=t.clientY-s.top,n=t.deltaY<0?1.12:.89;this._camera=ht(this._camera,e,a,n,Z,et),this._saveCamera(),this.requestUpdate()});h(this,"handlePointerDown",t=>{var a;if(t.button!==0||t.target.closest(".flow-edge-pill, tuto-flow-node, .floating-toolbar, .floating-minimap, tuto-flow-inspector, .flow-waypoint-handle, .flow-waypoint-split"))return;this._isDragging=!0,this._dragStart={x:t.clientX,y:t.clientY,panX:this._camera.panX,panY:this._camera.panY};const e=(a=this.shadowRootNode)==null?void 0:a.querySelector("svg.flow-svg");e==null||e.classList.add("grabbing"),window.addEventListener("pointermove",this.handlePointerMove),window.addEventListener("pointerup",this.handlePointerUp)});h(this,"handlePointerMove",t=>{this._isDragging&&(this._camera={...this._camera,panX:this._dragStart.panX+(t.clientX-this._dragStart.x),panY:this._dragStart.panY+(t.clientY-this._dragStart.y)},this.requestUpdate())});h(this,"handlePointerUp",()=>{var s;this._isDragging&&(Math.hypot(this._camera.panX-this._dragStart.panX,this._camera.panY-this._dragStart.panY)<4&&(this._selectedNodeId=null,this._activeStateId=null,this._selectedEdgeId=null),this._saveCamera()),this._isDragging=!1;const t=(s=this.shadowRootNode)==null?void 0:s.querySelector("svg.flow-svg");t==null||t.classList.remove("grabbing"),window.removeEventListener("pointermove",this.handlePointerMove),window.removeEventListener("pointerup",this.handlePointerUp),this.requestUpdate()});h(this,"handleNodePointerMove",t=>{if(!this._draggedNodeId||!this._dragNodeStart||!this._graph)return;const s=this._graph.states[this._draggedNodeId];if(!s)return;const e=this._camera.scale||1,a=(t.clientX-this._dragNodeStart.startX)/e,n=(t.clientY-this._dragNodeStart.startY)/e;Math.hypot(a,n)>4&&(this._nodeDragMoved=!0);const d=this._dragNodeStart.nodeOrigX+a,l=this._dragNodeStart.nodeOrigY+n,g=Gt(this._draggedNodeId,d,l,s.w,s.h,this._graph.states,Q,10);s.x=g.x,s.y=g.y,this._activeGuides=g.guides;const p=this._graph.framing!==!1;this._bounds=pt(this._graph.states,p?64:40,p?56:30,p?46:0,this._graph.groups),this.requestUpdate()});h(this,"handleNodePointerUp",()=>{var s;if(!this._draggedNodeId)return;const t=this._draggedNodeId;this._draggedNodeId=null,this._dragNodeStart=null,this._activeGuides=[],window.removeEventListener("pointermove",this.handleNodePointerMove),window.removeEventListener("pointerup",this.handleNodePointerUp),this._nodeDragMoved?this.emit("flow:layout-change",{nodeId:t,layout:this.exportLayoutSnapshot()}):this._selectedNodeId===t?(this._selectedNodeId=null,this._activeStateId=null,this.emit("flow:select-node",{node:null})):(this._selectedNodeId=t,this._activeStateId=t,(s=this._graph)!=null&&s.states[t]&&this.emit("flow:select-node",{node:this._graph.states[t]})),this.requestUpdate()});h(this,"handleWaypointPointerMove",t=>{if(!this._draggedWaypoint||!this._graph)return;const{edgeId:s,waypointIndex:e,startX:a,startY:n,origX:d,origY:l}=this._draggedWaypoint,g=this._edgeWaypoints.get(s);if(!g||!g[e])return;const p=this._camera.scale||1,c=(t.clientX-a)/p,k=(t.clientY-n)/p,E=d+c,L=l+k,S=gt(E,L,s,e,this._graph.states,this._graph.transitions||[],this._edgeWaypoints,Q,10);g[e]=[S.x,S.y],this._activeGuides=S.guides,this.requestUpdate()});h(this,"handleWaypointPointerUp",()=>{this._draggedWaypoint&&(this._draggedWaypoint=null,this._activeGuides=[],window.removeEventListener("pointermove",this.handleWaypointPointerMove),window.removeEventListener("pointerup",this.handleWaypointPointerUp),this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),this.requestUpdate())})}get graph(){return this._graph}set graph(t){var e;this._rootGraph=t,this._activeSubgraphId=(t==null?void 0:t.activeSubgraphId)||null;const s=this._activeSubgraphId&&((e=t==null?void 0:t.subgraphs)!=null&&e[this._activeSubgraphId])?t.subgraphs[this._activeSubgraphId]:t;this._applyGraph(s),this.requestUpdate()}get rootGraph(){return this._rootGraph}get activeSubgraphId(){return this._activeSubgraphId}set activeSubgraphId(t){this.selectSubgraph(t)}get subgraphs(){var t;return(t=this._rootGraph)==null?void 0:t.subgraphs}get showSubgraphNav(){return this._showSubgraphNav}set showSubgraphNav(t){this._showSubgraphNav=t,this.requestUpdate()}selectSubgraph(t){var s;if(this._rootGraph){if(this._syncWaypointsToGraph(),!t||t==="__root__"||t==="overview")this._activeSubgraphId=null,this._applyGraph(this._rootGraph);else if((s=this._rootGraph.subgraphs)!=null&&s[t])this._activeSubgraphId=t,this._applyGraph(this._rootGraph.subgraphs[t]);else return;this._selectedNodeId=null,this._selectedEdgeId=null,requestAnimationFrame(()=>this.fitToViewport()),this.emit("flow:subgraph-change",{subgraphId:this._activeSubgraphId,graph:this._graph}),this.requestUpdate()}}_applyGraph(t){if(this._graph=t,t){if(this._defaultLayout=null,t.states){this._defaultLayout={};for(const[e,a]of Object.entries(t.states))this._defaultLayout[e]={x:a.x,y:a.y,w:a.w,h:a.h}}if(this._edgeWaypoints.clear(),t.transitions)for(const e of t.transitions)e.waypoints&&e.waypoints.length>0&&this._edgeWaypoints.set(e.id,e.waypoints.map(a=>[...a]));try{const e=localStorage.getItem("pi_workflow_edge_override");if(e!==null){const a=JSON.parse(e),n=this._activeSubgraphId||"overview";let d=null;if(a!=null&&a.diagrams&&typeof a.diagrams=="object"?d=a.diagrams[n]||null:a&&typeof a=="object"&&(d=a),d)for(const[l,g]of Object.entries(d))Array.isArray(g)&&g.length>0&&this._edgeWaypoints.set(l,g)}}catch{}this._activeStateId=t.initial||Object.keys(t.states||{})[0]||null;const s=t.framing!==!1;if(this._bounds=pt(t.states,s?64:40,s?56:30,s?46:0,t.groups),!this._hasRestoredCamera)try{const e=localStorage.getItem("pi_workflow_camera");if(e){const a=JSON.parse(e);a&&typeof a.scale=="number"&&typeof a.panX=="number"&&(this._camera=a,this._hasRestoredCamera=!0)}}catch{}this._hasRestoredCamera||requestAnimationFrame(()=>this.fitToViewport())}}_removeWaypoint(t,s){const e=[...this._edgeWaypoints.get(t)||[]];s>=0&&s<e.length&&e.splice(s,1),e.length===0?(this._edgeWaypoints.delete(t),this.showToast("✓ Straightened edge (0 breakpoints)")):(this._edgeWaypoints.set(t,e),this.showToast(`✓ Removed breakpoint (${e.length}/2 remaining)`)),this._activePopover=null,this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),this.requestUpdate()}_resetEdge(t){this._edgeWaypoints.delete(t),this._activePopover=null,this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),this.showToast("✓ Reset edge to straight line (0 breakpoints)"),this.requestUpdate()}_addWaypointToEdge(t,s,e){var g,p;const a=this._edgeWaypoints.get(t)?[...this._edgeWaypoints.get(t)]:[];if(a.length>=2){this.showToast("Maximum 2 breakpoints per line");return}const n=gt(s,e,t,a.length,((g=this._graph)==null?void 0:g.states)||{},((p=this._graph)==null?void 0:p.transitions)||[],this._edgeWaypoints,Q,10),d=n.x,l=n.y;a.push([d,l]),this._edgeWaypoints.set(t,a),this._activePopover={type:"waypoint",id:t,index:a.length-1,worldX:d,worldY:l},this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),this.showToast(`✓ Added breakpoint (${a.length}/2)`),this.requestUpdate()}_resetNode(t){var s,e;if(this._defaultLayout&&this._defaultLayout[t]&&((e=(s=this._graph)==null?void 0:s.states)!=null&&e[t])){const a=this._defaultLayout[t];this._graph.states[t].x=a.x,this._graph.states[t].y=a.y,this._graph.states[t].w=a.w,this._graph.states[t].h=a.h;try{const n=localStorage.getItem("pi_workflow_layout_override");if(n){const d=JSON.parse(n);delete d[t],localStorage.setItem("pi_workflow_layout_override",JSON.stringify(d))}}catch{}this._activePopover=null,this.emit("flow:layout-change",{nodeId:t,layout:this.exportLayoutSnapshot()}),this.showToast(`✓ Reset ${t} position`),this.requestUpdate()}}_renderPopoverContent(){var t,s;if(!this._activePopover)return"";if(this._activePopover.type==="waypoint"){const e=this._activePopover.id,a=this._edgeWaypoints.get(e)||[];return`
         <span class="flow-fab-label">
           Breakpoint #${(this._activePopover.index??0)+1} of ${a.length}
           <span class="flow-fab-badge">${Math.round(this._activePopover.worldX)}, ${Math.round(this._activePopover.worldY)}</span>
@@ -956,12 +1011,12 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
         <button type="button" class="flow-fab-close" data-action="close-popover" title="Close">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
-      `}if(this._activePopover.type==="edge"){const s=this._activePopover.id,a=this._edgeWaypoints.get(s)||[],r=a.length>0,d=a.length<2;return`
+      `}if(this._activePopover.type==="edge"){const e=this._activePopover.id,a=this._edgeWaypoints.get(e)||[],n=a.length>0,d=a.length<2;return`
         <span class="flow-fab-label">
-          ${b(this._activePopover.label||s)}
-          <span class="flow-fab-badge">${r?`${a.length}/2 bp`:"Straight (0 bp)"}</span>
+          ${b(this._activePopover.label||e)}
+          <span class="flow-fab-badge">${n?`${a.length}/2 bp`:"Straight (0 bp)"}</span>
         </span>
-        ${r?`<button type="button" class="flow-fab-btn warning" data-action="reset-edge" title="Straighten line (remove all breakpoints)">
+        ${n?`<button type="button" class="flow-fab-btn warning" data-action="reset-edge" title="Straighten line (remove all breakpoints)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
                 Straighten
               </button>`:""}
@@ -972,9 +1027,9 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
         <button type="button" class="flow-fab-close" data-action="close-popover" title="Close">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
-      `}if(this._activePopover.type==="node"){const s=this._activePopover.id,a=(i=(t=this._graph)==null?void 0:t.states)==null?void 0:i[s];return`
+      `}if(this._activePopover.type==="node"){const e=this._activePopover.id,a=(s=(t=this._graph)==null?void 0:t.states)==null?void 0:s[e];return`
         <span class="flow-fab-label">
-          ${b(this._activePopover.label||s)}
+          ${b(this._activePopover.label||e)}
           <span class="flow-fab-badge">${Math.round((a==null?void 0:a.x)||0)}, ${Math.round((a==null?void 0:a.y)||0)}</span>
         </span>
         <button type="button" class="flow-fab-btn warning" data-action="reset-node" title="Reset node position to default">
@@ -984,20 +1039,33 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
         <button type="button" class="flow-fab-close" data-action="close-popover" title="Close">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
-      `}return""}get toolMode(){return this._toolMode}set toolMode(t){this._toolMode=t,this._activePopover=null,this.emit("flow:tool-mode-change",{toolMode:this._toolMode}),this._toolMode==="move"?this.showToast("Move Mode Active (Drag nodes, labels & lines to reposition · M to exit)"):this._toolMode==="edit"&&this.showToast("Edit Mode Active (Click labels, waypoints & nodes for actions · E to exit)"),this.requestUpdate()}get isEditMode(){return this._toolMode==="edit"}set isEditMode(t){this.toolMode=t?"edit":"view"}get isMoveMode(){return this._toolMode==="move"}set isMoveMode(t){this.toolMode=t?"move":"view"}get activeStateId(){return this._activeStateId}set activeStateId(t){this._activeStateId=t,this.requestUpdate()}get selectedNodeId(){return this._selectedNodeId}set selectedNodeId(t){this._selectedNodeId=t,this.requestUpdate()}get selectedEdgeId(){return this._selectedEdgeId}set selectedEdgeId(t){this._selectedEdgeId=t,this.requestUpdate()}get showMinimap(){return this._showMinimap}set showMinimap(t){this._showMinimap=!!t,this.requestUpdate()}get showInspector(){return this._showInspector}set showInspector(t){this._showInspector=!!t,this.requestUpdate()}get theme(){return this._theme}set theme(t){this._theme=t,this.setAttribute("data-theme",t),this.requestUpdate()}connectedCallback(){super.connectedCallback();try{const t=localStorage.getItem("pi_workflow_inspector_open");t!==null?this._showInspector=JSON.parse(t):this._showInspector=!0;const i=localStorage.getItem("pi_workflow_camera");if(i!==null){const s=JSON.parse(i);s&&typeof s.scale=="number"&&typeof s.panX=="number"&&(this._camera=s,this._hasRestoredCamera=!0)}}catch{}window.addEventListener("keydown",this.handleKeyDown),window.addEventListener("resize",this.handleResize)}disconnectedCallback(){super.disconnectedCallback(),window.removeEventListener("keydown",this.handleKeyDown),window.removeEventListener("resize",this.handleResize),window.removeEventListener("pointermove",this.handlePointerMove),window.removeEventListener("pointerup",this.handlePointerUp),window.removeEventListener("pointermove",this.handleNodePointerMove),window.removeEventListener("pointerup",this.handleNodePointerUp),window.removeEventListener("pointermove",this.handleWaypointPointerMove),window.removeEventListener("pointerup",this.handleWaypointPointerUp)}_saveCamera(){try{localStorage.setItem("pi_workflow_camera",JSON.stringify(this._camera))}catch{}}_toggleInspector(){this._showInspector=!this._showInspector;try{localStorage.setItem("pi_workflow_inspector_open",JSON.stringify(this._showInspector))}catch{}this.requestUpdate()}_closeInspector(){this._showInspector=!1;try{localStorage.setItem("pi_workflow_inspector_open",JSON.stringify(!1))}catch{}this.requestUpdate()}fitToViewport(){const t=this.getBoundingClientRect(),i=t.width||900,s=t.height||700,a=this._showInspector?Math.min(420,i*.45):0,r=i-a,d=It({width:r,height:s},this._bounds);this._camera={scale:d.scale,panX:d.panX,panY:d.panY},this._saveCamera(),this.requestUpdate()}centerOnState(t){var g;if(!((g=this._graph)!=null&&g.states[t]))return;const i=this._graph.states[t],s=this.getBoundingClientRect(),a=s.width||900,r=s.height||700,d=this._showInspector?Math.min(420,a*.45):0,h=a-d;this._camera=$t({width:h,height:r},i),this._activeStateId=t,this._selectedNodeId=t,this._selectedEdgeId=null,this._saveCamera(),this.requestUpdate()}showToast(t){this._toastMessage=t,this._toastTimeout&&clearTimeout(this._toastTimeout),this.requestUpdate(),this._toastTimeout=setTimeout(()=>{this._toastMessage=null,this.requestUpdate()},2500)}exportLayoutSnapshot(){var s;const t={};if((s=this._graph)!=null&&s.states)for(const[a,r]of Object.entries(this._graph.states))t[a]={x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.w),h:Math.round(r.h)};const i={};for(const[a,r]of this._edgeWaypoints.entries())r&&r.length>0&&(i[a]=r.map(([d,h])=>[Math.round(d),Math.round(h)]));return{...t,nodes:t,edges:i}}async copyLayoutSnapshot(){const t=this.exportLayoutSnapshot(),i=t.nodes||{},s=t.edges||{},a={nodes:i,edges:s},r=`window.WORKFLOW_LAYOUT = ${JSON.stringify(a,null,2)};
-`;try{typeof navigator<"u"&&navigator.clipboard&&navigator.clipboard.writeText&&await navigator.clipboard.writeText(r)}catch{}try{localStorage.setItem("pi_workflow_layout_override",JSON.stringify(i)),this._saveEdgeWaypoints()}catch{}return console.log(`Exported layout JS:
-`+r),this.showToast("✓ Layout JS copied to clipboard!"),this.emit("flow:snapshot-layout",{snapshot:t,code:r,json:a}),r}resetLayout(){var i;if(!this._defaultLayout||!((i=this._graph)!=null&&i.states))return;for(const[s,a]of Object.entries(this._defaultLayout))this._graph.states[s]&&(this._graph.states[s].x=a.x,this._graph.states[s].y=a.y,this._graph.states[s].w=a.w,this._graph.states[s].h=a.h);this._edgeWaypoints.clear();try{localStorage.removeItem("pi_workflow_layout_override"),localStorage.removeItem("pi_workflow_edge_override")}catch{}const t=this._graph.framing!==!1;this._bounds=ct(this._graph.states,t?64:40,t?56:30,t?46:0,this._graph.groups),this.showToast("✓ Reset layout to default"),this.emit("flow:reset-layout"),this.requestUpdate()}zoomBy(t){const i=this.getBoundingClientRect(),s=i.width/2,a=i.height/2;this._camera=mt(this._camera,s,a,t,K,tt),this._saveCamera(),this.requestUpdate()}_startNodeDrag(t,i){var a;const s=(a=this._graph)==null?void 0:a.states[t];s&&(this._draggedNodeId=t,this._nodeDragMoved=!1,this._activeGuides=[],this._dragNodeStart={startX:i.clientX,startY:i.clientY,nodeOrigX:s.x,nodeOrigY:s.y},window.addEventListener("pointermove",this.handleNodePointerMove),window.addEventListener("pointerup",this.handleNodePointerUp),this.requestUpdate())}_startWaypointDrag(t,i,s){const a=this._edgeWaypoints.get(t);if(!a||!a[i])return;const r=a[i];this._draggedWaypoint={edgeId:t,waypointIndex:i,startX:s.clientX,startY:s.clientY,origX:r[0],origY:r[1]},this._activeGuides=[],window.addEventListener("pointermove",this.handleWaypointPointerMove),window.addEventListener("pointerup",this.handleWaypointPointerUp),this.requestUpdate()}_saveEdgeWaypoints(){try{const t={};for(const[i,s]of this._edgeWaypoints.entries())s&&s.length>0&&(t[i]=s);localStorage.setItem("pi_workflow_edge_override",JSON.stringify(t))}catch{}}render(){var T,j,$,L,c;if(!this.shadowRootNode)return;if(!this._graph){this.shadowRootNode.innerHTML=`
+      `}return""}get toolMode(){return this._toolMode}set toolMode(t){this._toolMode=t,this._activePopover=null,this.emit("flow:tool-mode-change",{toolMode:this._toolMode}),this._toolMode==="move"?this.showToast("Move Mode Active (Drag nodes, labels & lines to reposition · M to exit)"):this._toolMode==="edit"&&this.showToast("Edit Mode Active (Click labels, waypoints & nodes for actions · E to exit)"),this.requestUpdate()}get isEditMode(){return this._toolMode==="edit"}set isEditMode(t){this.toolMode=t?"edit":"view"}get isMoveMode(){return this._toolMode==="move"}set isMoveMode(t){this.toolMode=t?"move":"view"}get activeStateId(){return this._activeStateId}set activeStateId(t){this._activeStateId=t,this.requestUpdate()}get selectedNodeId(){return this._selectedNodeId}set selectedNodeId(t){this._selectedNodeId=t,this.requestUpdate()}get selectedEdgeId(){return this._selectedEdgeId}set selectedEdgeId(t){this._selectedEdgeId=t,this.requestUpdate()}get showMinimap(){return this._showMinimap}set showMinimap(t){this._showMinimap=!!t,this.requestUpdate()}get showInspector(){return this._showInspector}set showInspector(t){this._showInspector=!!t,this.requestUpdate()}get theme(){return this._theme}set theme(t){this._theme=t,this.setAttribute("data-theme",t),this.requestUpdate()}get camera(){return this._camera}set camera(t){this._camera=t,this._saveCamera(),this.requestUpdate()}connectedCallback(){super.connectedCallback();try{const t=localStorage.getItem("pi_workflow_inspector_open");t!==null?this._showInspector=JSON.parse(t):this._showInspector=!0;const s=localStorage.getItem("pi_workflow_camera");if(s!==null){const e=JSON.parse(s);e&&typeof e.scale=="number"&&typeof e.panX=="number"&&(this._camera=e,this._hasRestoredCamera=!0)}}catch{}window.addEventListener("keydown",this.handleKeyDown),window.addEventListener("resize",this.handleResize)}disconnectedCallback(){super.disconnectedCallback(),window.removeEventListener("keydown",this.handleKeyDown),window.removeEventListener("resize",this.handleResize),window.removeEventListener("pointermove",this.handlePointerMove),window.removeEventListener("pointerup",this.handlePointerUp),window.removeEventListener("pointermove",this.handleNodePointerMove),window.removeEventListener("pointerup",this.handleNodePointerUp),window.removeEventListener("pointermove",this.handleWaypointPointerMove),window.removeEventListener("pointerup",this.handleWaypointPointerUp)}_saveCamera(){try{localStorage.setItem("pi_workflow_camera",JSON.stringify(this._camera))}catch{}}_toggleInspector(){this._showInspector=!this._showInspector;try{localStorage.setItem("pi_workflow_inspector_open",JSON.stringify(this._showInspector))}catch{}this.requestUpdate()}_closeInspector(){this._showInspector=!1;try{localStorage.setItem("pi_workflow_inspector_open",JSON.stringify(!1))}catch{}this.requestUpdate()}fitToViewport(){const t=this.getBoundingClientRect(),s=t.width||900,e=t.height||700,a=this._showInspector?Math.min(420,s*.45):0,n=s-a,d=zt({width:n,height:e},this._bounds);this._camera={scale:d.scale,panX:d.panX,panY:d.panY},this._saveCamera(),this.requestUpdate()}centerOnState(t){var g;if(!((g=this._graph)!=null&&g.states[t]))return;const s=this._graph.states[t],e=this.getBoundingClientRect(),a=e.width||900,n=e.height||700,d=this._showInspector?Math.min(420,a*.45):0,l=a-d;this._camera=Bt({width:l,height:n},s),this._activeStateId=t,this._selectedNodeId=t,this._selectedEdgeId=null,this._saveCamera(),this.requestUpdate()}showToast(t){this._toastMessage=t,this._toastTimeout&&clearTimeout(this._toastTimeout),this.requestUpdate(),this._toastTimeout=setTimeout(()=>{this._toastMessage=null,this.requestUpdate()},2500)}exportLayoutSnapshot(){var e;this._syncWaypointsToGraph();const t=this._snapshotGraphLayout(this._graph),s={...t.nodes,nodes:t.nodes,edges:t.edges,activeDiagramId:this._activeSubgraphId};if((e=this._rootGraph)!=null&&e.subgraphs&&Object.keys(this._rootGraph.subgraphs).length>0){const a={overview:this._snapshotGraphLayout(this._rootGraph)};for(const[n,d]of Object.entries(this._rootGraph.subgraphs))a[n]=this._snapshotGraphLayout(d);a[this._diagramIdForActive()]=t,s.diagrams=a}return s}async copyLayoutSnapshot(){const t=this.exportLayoutSnapshot(),s=t.diagrams?{diagrams:t.diagrams}:{nodes:t.nodes||{},edges:t.edges||{}},e=`window.WORKFLOW_LAYOUT = ${JSON.stringify(s,null,2)};
+`;try{typeof navigator<"u"&&navigator.clipboard&&navigator.clipboard.writeText&&await navigator.clipboard.writeText(e)}catch{}try{t.diagrams?localStorage.setItem("pi_workflow_layout_override",JSON.stringify(t.diagrams)):localStorage.setItem("pi_workflow_layout_override",JSON.stringify(t.nodes||{})),this._saveEdgeWaypoints()}catch{}return console.log(`Exported layout JS:
+`+e),this.showToast(t.diagrams?"✓ Multi-diagram layout JS copied to clipboard!":"✓ Layout JS copied to clipboard!"),this.emit("flow:snapshot-layout",{snapshot:t,code:e,json:s}),e}updateNode(t,s){var a,n;const e=(n=(a=this._graph)==null?void 0:a.states)==null?void 0:n[t];return e?(Object.assign(e,s,{id:t}),this.emit("flow:graph-change",{op:"update-node",nodeId:t,node:e,diagramId:this._diagramIdForActive(),graph:this._graph,rootGraph:this._rootGraph}),this.requestUpdate(),e):null}updateEdge(t,s){var a,n;const e=(n=(a=this._graph)==null?void 0:a.transitions)==null?void 0:n.find(d=>d.id===t);return e?(Object.assign(e,s,{id:t}),this.emit("flow:graph-change",{op:"update-edge",edgeId:t,edge:e,diagramId:this._diagramIdForActive(),graph:this._graph,rootGraph:this._rootGraph}),this.requestUpdate(),e):null}exportFsmPatch(){this._syncWaypointsToGraph();const t=this._rootGraph||this._graph,s={},e=[],a=["overview"],n=(l,g)=>{if(l){if(l.states)for(const[p,c]of Object.entries(l.states))g&&c.targetSubgraph||(s[p]={id:p,label:c.label,summary:c.summary,procedure:c.procedure?[...c.procedure]:void 0,substates:c.substates?[...c.substates]:void 0,kind:c.kind,permission:c.permission,targetSubgraph:c.targetSubgraph});if(l.transitions)for(const p of l.transitions)p.customData&&p.customData.aggregate||e.some(c=>c.id===p.id)||e.push({id:p.id,from:p.from,to:p.to,label:p.label,event:p.event,description:p.description,userMediated:p.userMediated,bidirectional:p.bidirectional})}};if(n(t,!!(t!=null&&t.subgraphs&&Object.keys(t.subgraphs).length>0)),t!=null&&t.subgraphs)for(const[l,g]of Object.entries(t.subgraphs))a.push(l),n(g,!1);const d={version:t==null?void 0:t.version,states:s,transitions:e,diagrams:a};return this.emit("flow:export-fsm-patch",{patch:d}),d}async copyFsmPatch(){var e;const t=this.exportFsmPatch(),s=JSON.stringify(t,null,2)+`
+`;try{typeof navigator<"u"&&((e=navigator.clipboard)!=null&&e.writeText)&&await navigator.clipboard.writeText(s)}catch{}return console.log(`Exported FSM patch:
+`+s),this.showToast("✓ FSM patch JSON copied to clipboard!"),s}resetLayout(){var s;if(!this._defaultLayout||!((s=this._graph)!=null&&s.states))return;for(const[e,a]of Object.entries(this._defaultLayout))this._graph.states[e]&&(this._graph.states[e].x=a.x,this._graph.states[e].y=a.y,this._graph.states[e].w=a.w,this._graph.states[e].h=a.h);this._edgeWaypoints.clear();try{localStorage.removeItem("pi_workflow_layout_override"),localStorage.removeItem("pi_workflow_edge_override")}catch{}const t=this._graph.framing!==!1;this._bounds=pt(this._graph.states,t?64:40,t?56:30,t?46:0,this._graph.groups),this.showToast("✓ Reset layout to default"),this.emit("flow:reset-layout"),this.requestUpdate()}zoomBy(t){const s=this.getBoundingClientRect(),e=s.width/2,a=s.height/2;this._camera=ht(this._camera,e,a,t,Z,et),this._saveCamera(),this.requestUpdate()}zoomTo(t=1){const s=this.getBoundingClientRect(),e=s.width/2,a=s.height/2,n=this._camera.scale||1,d=t/n;this._camera=ht(this._camera,e,a,d,Z,et),this._saveCamera(),this.requestUpdate()}resetZoom(){this.zoomTo(1)}_startNodeDrag(t,s){var a;const e=(a=this._graph)==null?void 0:a.states[t];e&&(this._draggedNodeId=t,this._nodeDragMoved=!1,this._activeGuides=[],this._dragNodeStart={startX:s.clientX,startY:s.clientY,nodeOrigX:e.x,nodeOrigY:e.y},window.addEventListener("pointermove",this.handleNodePointerMove),window.addEventListener("pointerup",this.handleNodePointerUp),this.requestUpdate())}_startWaypointDrag(t,s,e){const a=this._edgeWaypoints.get(t);if(!a||!a[s])return;const n=a[s];this._draggedWaypoint={edgeId:t,waypointIndex:s,startX:e.clientX,startY:e.clientY,origX:n[0],origY:n[1]},this._activeGuides=[],window.addEventListener("pointermove",this.handleWaypointPointerMove),window.addEventListener("pointerup",this.handleWaypointPointerUp),this.requestUpdate()}_syncWaypointsToGraph(){var t;if((t=this._graph)!=null&&t.transitions)for(const s of this._graph.transitions){const e=this._edgeWaypoints.get(s.id);e&&e.length>0?s.waypoints=e.map(([a,n])=>[a,n]):delete s.waypoints}}_diagramIdForActive(){return this._activeSubgraphId||"overview"}_snapshotGraphLayout(t){const s={};if(t!=null&&t.states)for(const[a,n]of Object.entries(t.states))s[a]={x:Math.round(n.x),y:Math.round(n.y),w:Math.round(n.w),h:Math.round(n.h)};const e={};if(t!=null&&t.transitions)for(const a of t.transitions)a.waypoints&&a.waypoints.length>0&&(e[a.id]=a.waypoints.map(([n,d])=>[Math.round(n),Math.round(d)]));return{nodes:s,edges:e}}_saveEdgeWaypoints(){this._syncWaypointsToGraph();try{const t={};for(const[d,l]of this._edgeWaypoints.entries())l&&l.length>0&&(t[d]=l);const s=this._diagramIdForActive();let e={};try{const d=localStorage.getItem("pi_workflow_edge_override");d&&(e=JSON.parse(d)||{})}catch{e={}}const a=e.diagrams&&typeof e.diagrams=="object"?{...e.diagrams}:{};!e.diagrams&&Object.keys(e).length>0&&Object.values(e).every(d=>Array.isArray(d))&&(a.overview=e),a[s]=t,localStorage.setItem("pi_workflow_edge_override",JSON.stringify({diagrams:a}))}catch{}}render(){var C,I,W,G,f,A,j;if(!this.shadowRootNode)return;if(!this._graph){this.shadowRootNode.innerHTML=`
         <div class="canvas-root" style="display:flex;align-items:center;justify-content:center;color:var(--tuto-muted);">
           No flow graph loaded
         </div>
-      `;return}const t=this._graph.states,i=this._graph.transitions||[],s=Ct(Nt(i));for(const o of s){this._edgeWaypoints.has(o.id)?o.waypoints=this._edgeWaypoints.get(o.id):o.waypoints=void 0;const y=zt(o,t);y&&(o.route=y)}const a=this._selectedNodeId||this._activeStateId||null,r=this._toolMode==="move",d=this._toolMode==="edit",h=r||d;let g="";if(d&&this._activePopover){const o=this._camera.panX+this._activePopover.worldX*this._camera.scale,y=this._camera.panY+this._activePopover.worldY*this._camera.scale;g=`
-        <div class="flow-fab-popover" id="action-popover" style="left: ${o}px; top: ${y}px;">
+      `;return}const t=this._graph.states,s=this._graph.transitions||[],e=Wt(Ut(s));for(const i of e){this._edgeWaypoints.has(i.id)?i.waypoints=this._edgeWaypoints.get(i.id):i.waypoints=void 0;const u=Ot(i,t);u&&(i.route=u)}const a=this._selectedNodeId||this._activeStateId||null,n=this._toolMode==="move",d=this._toolMode==="edit",l=n||d;let g="";if(d&&this._activePopover){const i=this._camera.panX+this._activePopover.worldX*this._camera.scale,u=this._camera.panY+this._activePopover.worldY*this._camera.scale;g=`
+        <div class="flow-fab-popover" id="action-popover" style="left: ${i}px; top: ${u}px;">
           ${this._renderPopoverContent()}
         </div>
+      `}let p="";if((C=this._rootGraph)!=null&&C.subgraphs&&Object.keys(this._rootGraph.subgraphs).length>0&&this._showSubgraphNav){const i=(u,v)=>{var w;const y=(v||u||"").trim(),$=((w=y.split(/[·•|]/)[0])==null?void 0:w.trim())||y;return/^align$/i.test(u)||/^align\b/i.test($)?"Align":/^spec$/i.test(u)||/^spec\b/i.test($)?"Spec":/^vibe$/i.test(u)||/^vibe\b/i.test($)?"Vibe":$.length<=12?$:u};p=`
+        <div class="flow-subgraph-bar" id="subgraph-bar" role="tablist" aria-label="Diagram">
+          <div class="flow-subgraph-tabs">
+            <button type="button" role="tab" class="flow-subgraph-tab ${this._activeSubgraphId?"":"active"}" data-subgraph="__root__" aria-selected="${!this._activeSubgraphId}">Overview</button>
+            ${Object.entries(this._rootGraph.subgraphs).map(([u,v])=>{const y=this._activeSubgraphId===u;return`
+              <button type="button" role="tab" class="flow-subgraph-tab ${y?"active":""}" data-subgraph="${b(u)}" aria-selected="${y}">
+                ${b(i(u,v.title))}
+              </button>`}).join("")}
+          </div>
+        </div>
       `}this.shadowRootNode.innerHTML=`
-      <div class="canvas-root ${r?"move-mode edit-mode":d?"edit-mode":""}">
+      <div class="canvas-root ${n?"move-mode edit-mode":d?"edit-mode":""}">
         ${this._toastMessage?`<div class="flow-toast">${b(this._toastMessage)}</div>`:""}
         ${g}
+        ${p}
 
         <svg class="flow-svg" id="flow-svg">
           <defs>
@@ -1010,13 +1078,23 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
             >
               <circle cx="10" cy="10" r="1.2" fill="var(--tuto-grid, rgba(255, 255, 255, 0.05))" />
             </pattern>
-            <marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <!-- End markers: tip at +X. Start markers: same geometry + auto-start-reverse (do not pre-flip path or the reverse tip vanishes into the node). -->
+            <marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse" markerUnits="strokeWidth">
               <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--tuto-edge, #5b6477)" />
             </marker>
-            <marker id="flow-arrow-hot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <marker id="flow-arrow-hot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse" markerUnits="strokeWidth">
               <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
             </marker>
-            <marker id="flow-arrow-init" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <marker id="flow-arrow-init" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse" markerUnits="strokeWidth">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#ffffff" />
+            </marker>
+            <marker id="flow-arrow-start" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse" markerUnits="strokeWidth">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--tuto-edge, #5b6477)" />
+            </marker>
+            <marker id="flow-arrow-start-hot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse" markerUnits="strokeWidth">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+            </marker>
+            <marker id="flow-arrow-start-init" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse" markerUnits="strokeWidth">
               <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#ffffff" />
             </marker>
           </defs>
@@ -1069,10 +1147,14 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
           <tuto-flow-toolbar id="toolbar-el"></tuto-flow-toolbar>
         </div>
 
+        <div class="floating-minimap ${this._showMinimap?"":"hidden"}">
+          <tuto-flow-minimap id="minimap-el"></tuto-flow-minimap>
+        </div>
+
         <!-- Inspector Drawer Sidebar -->
         <tuto-flow-inspector id="inspector-el"></tuto-flow-inspector>
       </div>
-    `;const u=this.shadowRootNode.querySelector("svg.flow-svg");u&&(u.addEventListener("wheel",this.handleWheel,{passive:!1}),u.addEventListener("pointerdown",this.handlePointerDown));const p=this.shadowRootNode.getElementById("groups-group"),_=this.shadowRootNode.getElementById("guidelines-group"),I=this.shadowRootNode.getElementById("edges-paths-group"),N=this.shadowRootNode.getElementById("edges-pills-group"),M=this.shadowRootNode.getElementById("edges-handles-group"),S=this.shadowRootNode.getElementById("nodes-group");if(_&&this._activeGuides.length>0)for(const o of this._activeGuides)o.type==="vertical"?(R("line",{x1:o.pos,y1:o.start,x2:o.pos,y2:o.end,class:"flow-guideline"},_),R("circle",{cx:o.pos,cy:o.start+12,r:2.5,class:"flow-guideline-dot"},_),R("circle",{cx:o.pos,cy:o.end-12,r:2.5,class:"flow-guideline-dot"},_)):(R("line",{x1:o.start,y1:o.pos,x2:o.end,y2:o.pos,class:"flow-guideline"},_),R("circle",{cx:o.start+12,cy:o.pos,r:2.5,class:"flow-guideline-dot"},_),R("circle",{cx:o.end-12,cy:o.pos,r:2.5,class:"flow-guideline-dot"},_));if(this._graph.groups)for(const o of this._graph.groups){const y=R("g",{class:"flow-group-container"},p),m=o.accent||"#3b82f6";R("rect",{x:o.x,y:o.y,width:o.w,height:o.h,rx:14,fill:"var(--tuto-card-bg, #12161c)","fill-opacity":"0.38",stroke:m,"stroke-width":1.2,"stroke-opacity":"0.35"},y),R("path",{d:`M ${o.x} ${o.y+14} Q ${o.x} ${o.y} ${o.x+14} ${o.y} L ${o.x+o.w-14} ${o.y} Q ${o.x+o.w} ${o.y} ${o.x+o.w} ${o.y+14} L ${o.x+o.w} ${o.y+28} L ${o.x} ${o.y+28} Z`,fill:m,"fill-opacity":"0.12"},y);const v=R("text",{x:o.x+14,y:o.y+18,fill:m,"font-size":10.5,"font-weight":800,"letter-spacing":"0.08em","font-family":"var(--tuto-font-mono, monospace)"},y);v.textContent=o.label.toUpperCase()}if(this._graph.initial&&t[this._graph.initial]){const o=t[this._graph.initial],y=o.x-14,m=o.y+o.h/2,v=o.x,U=o.y+o.h/2,k=R("g",{class:"flow-initial-indicator"},I);R("circle",{cx:y-4,cy:m,r:4,fill:"#ffffff"},k),R("path",{d:`M ${y} ${m} L ${v} ${U}`,stroke:"#ffffff","stroke-width":2,fill:"none","marker-end":"url(#flow-arrow-init)"},k)}for(const o of s){if(!o.route||!o.route.points||o.route.points.length<2)continue;const y=!!(this._selectedNodeId&&o.from===this._selectedNodeId),m=!!(this._selectedNodeId&&o.to===this._selectedNodeId),v=y||m;if(this._selectedNodeId&&!v)continue;const U=o.id===this._selectedEdgeId;o.id,this._hoveredEdgeId;const k=U||y||!!(o.bidirectional&&m),D=this._selectedNodeId?m&&!k:!1,P=!!((o.self||o.from===o.to)&&(!o.waypoints||o.waypoints.length===0)),W=Ut(o.route.points,P,12);R("path",{d:W,class:`flow-edge-path ${k?"hot available":""} ${D?"dimmed":""} ${U?"selected":""}`,stroke:k?"#38bdf8":D?"#334155":"#64748b","stroke-width":k?2.8:D?1.4:1.8,fill:"none","marker-end":k?"url(#flow-arrow-hot)":D?"url(#flow-arrow)":"url(#flow-arrow-init)","marker-start":o.bidirectional?(k?"url(#flow-arrow-hot)":D?"url(#flow-arrow)":"url(#flow-arrow-init)"):null},I).addEventListener("click",z=>{var A,q;if(z.stopPropagation(),!r){if(d){const O=z,at=this.getBoundingClientRect(),nt=this._camera.scale||1,pt=(O.clientX-at.left-this._camera.panX)/nt,gt=(O.clientY-at.top-this._camera.panY)/nt;this._activePopover={type:"edge",id:o.id,worldX:((A=o.route)==null?void 0:A.seatX)||pt,worldY:((q=o.route)==null?void 0:q.seatY)||gt,label:H},this._selectedEdgeId=o.id,this.requestUpdate();return}o.to?(this._activeStateId=o.to,this._selectedNodeId=o.to,this._selectedEdgeId=o.id,this.emit("flow:transition",{from:o.from,to:o.to,event:o.event}),t[o.to]&&this.emit("flow:select-node",{node:t[o.to]}),this.requestUpdate()):(this._selectedEdgeId=o.id,this.emit("flow:select-edge",{edge:o}),this.requestUpdate())}});const H=o.event||o.label||"",X=Math.max(76,Math.min(240,H.length*8+28)),V=28,et=o.route.seatX-X/2,ot=o.route.seatY-V/2,st=((T=this._draggedWaypoint)==null?void 0:T.edgeId)===o.id,F=!this._selectedNodeId||k,E=R("g",{class:`flow-edge-pill ${F?"available":"dimmed"} ${st?"dragging":""}`,transform:`translate(${et}, ${ot})`},N);R("rect",{width:X,height:V,rx:14,fill:F?"#3b82f6":"#202636",stroke:F?"#93c5fd":"rgba(255, 255, 255, 0.12)","stroke-width":F?2:1,filter:F?"drop-shadow(0 4px 14px rgba(59, 130, 246, 0.55))":"drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4))"},E);const it=R("text",{x:X/2,y:V/2,"text-anchor":"middle","dominant-baseline":"central",fill:F?"#ffffff":"#94a3b8","font-size":11,"font-weight":800,"letter-spacing":"0.04em","font-family":"var(--tuto-font-sans, sans-serif)"},E);if(it.textContent=H,r?E.addEventListener("pointerdown",z=>{var nt,pt,gt;if(z.button!==0)return;z.stopPropagation();let A=this._edgeWaypoints.get(o.id)?[...this._edgeWaypoints.get(o.id)]:[],q=0;const O=((nt=o.route)==null?void 0:nt.seatX)||et+X/2,at=((pt=o.route)==null?void 0:pt.seatY)||ot+V/2;if(A.length===0){const rt=ht(O,at,o.id,0,t,((gt=this._graph)==null?void 0:gt.transitions)||[],this._edgeWaypoints,G,10);A=[[rt.x,rt.y]],this._edgeWaypoints.set(o.id,A),this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),q=0}else{let rt=0,Bt=1/0;for(let dt=0;dt<A.length;dt++){const Tt=Math.hypot(A[dt][0]-O,A[dt][1]-at);Tt<Bt&&(Bt=Tt,rt=dt)}q=rt}this._startWaypointDrag(o.id,q,z)}):d?(E.addEventListener("pointerdown",z=>z.stopPropagation()),E.addEventListener("click",z=>{var A,q;z.stopPropagation(),this._activePopover={type:"edge",id:o.id,worldX:((A=o.route)==null?void 0:A.seatX)||et+X/2,worldY:((q=o.route)==null?void 0:q.seatY)||ot+V/2,label:H},this._selectedEdgeId=o.id,this.requestUpdate()})):(E.addEventListener("pointerdown",z=>z.stopPropagation()),E.addEventListener("click",z=>{z.stopPropagation(),o.to&&(this._activeStateId=o.to,this._selectedNodeId=o.to,this._selectedEdgeId=o.id,this.emit("flow:transition",{from:o.from,to:o.to,event:o.event}),t[o.to]&&this.emit("flow:select-node",{node:t[o.to]}),this.requestUpdate())})),E.addEventListener("dblclick",z=>{z.stopPropagation(),this._selectedEdgeId=o.id,this._showInspector=!0,this.requestUpdate()}),h&&o.waypoints&&o.waypoints.length>0)for(let z=0;z<o.waypoints.length;z++){const A=o.waypoints[z],q=R("circle",{cx:A[0],cy:A[1],r:6,class:"flow-waypoint-handle",fill:"#ffffff",stroke:"#0284c7","stroke-width":2.2},M);r?q.addEventListener("pointerdown",O=>{O.button===0&&(O.stopPropagation(),this._startWaypointDrag(o.id,z,O))}):d&&(q.addEventListener("pointerdown",O=>O.stopPropagation()),q.addEventListener("click",O=>{O.stopPropagation(),this._activePopover={type:"waypoint",id:o.id,index:z,worldX:A[0],worldY:A[1]},this.requestUpdate()}))}}for(const o of Object.values(t)){const y=R("foreignObject",{x:o.x,y:o.y,width:o.w,height:o.h,style:r?"cursor: grab;":""},S);y.addEventListener("pointerdown",v=>v.stopPropagation());const m=document.createElement("tuto-flow-node");if(m.node=o,m.selected=a===o.id,m.draggableNode=r,m.isDragging=this._draggedNodeId===o.id,r)m.addEventListener("pointerdown",v=>{v.button===0&&(v.stopPropagation(),this._startNodeDrag(o.id,v))});else if(d)m.addEventListener("pointerdown",v=>v.stopPropagation()),m.addEventListener("click",v=>{v.stopPropagation(),this._activePopover={type:"node",id:o.id,worldX:o.x+o.w/2,worldY:o.y,label:o.label||o.id},this.requestUpdate()});else{m.addEventListener("pointerdown",U=>{U.stopPropagation()});const v=U=>{U.stopPropagation();const k=o.id;this._selectedNodeId===k?(this._selectedNodeId=null,this._activeStateId=null,this._selectedEdgeId=null,this.emit("flow:select-node",{node:null})):(this._selectedNodeId=k,this._activeStateId=k,this._selectedEdgeId=null,this.emit("flow:select-node",{node:o})),this.requestUpdate()};m.addEventListener("flow:select-node",v),m.addEventListener("click",v)}m.addEventListener("dblclick",v=>{v.stopPropagation(),this._selectedNodeId=o.id,this._activeStateId=o.id,this._selectedEdgeId=null,this._showInspector=!0,this.requestUpdate()}),y.appendChild(m)}const C=this.shadowRootNode.getElementById("action-popover");if(C){C.addEventListener("pointerdown",k=>k.stopPropagation());const o=C.querySelector("[data-action='remove-waypoint']");o&&((j=this._activePopover)==null?void 0:j.type)==="waypoint"&&o.addEventListener("click",k=>{k.stopPropagation(),this._removeWaypoint(this._activePopover.id,this._activePopover.index)});const y=C.querySelector("[data-action='reset-edge']");y&&(($=this._activePopover)==null?void 0:$.type)==="edge"&&y.addEventListener("click",k=>{k.stopPropagation(),this._resetEdge(this._activePopover.id)});const m=C.querySelector("[data-action='add-waypoint']");m&&((L=this._activePopover)==null?void 0:L.type)==="edge"&&m.addEventListener("click",k=>{k.stopPropagation(),this._addWaypointToEdge(this._activePopover.id,this._activePopover.worldX,this._activePopover.worldY)});const v=C.querySelector("[data-action='reset-node']");v&&((c=this._activePopover)==null?void 0:c.type)==="node"&&v.addEventListener("click",k=>{k.stopPropagation(),this._resetNode(this._activePopover.id)});const U=C.querySelector("[data-action='close-popover']");U&&U.addEventListener("click",k=>{k.stopPropagation(),this._activePopover=null,this.requestUpdate()})}const w=this.shadowRootNode.getElementById("toolbar-el");w&&(w.zoom=Math.round(this._camera.scale*100),w.isInspectorActive=this._showInspector,w.toolMode=this._toolMode,w.addEventListener("flow:zoom-in",()=>this.zoomBy(1.2)),w.addEventListener("flow:zoom-out",()=>this.zoomBy(.8333333333333334)),w.addEventListener("flow:fit",()=>this.fitToViewport()),w.addEventListener("flow:reset",()=>{this._selectedNodeId=null,this._selectedEdgeId=null,this._showInspector=!1,this.fitToViewport()}),w.addEventListener("flow:toggle-move-mode",()=>{this.toolMode=this._toolMode==="move"?"view":"move"}),w.addEventListener("flow:toggle-edit-mode",()=>{this.toolMode=this._toolMode==="edit"?"view":"edit"}),w.addEventListener("flow:snapshot-layout",()=>{this.copyLayoutSnapshot()}),w.addEventListener("flow:reset-layout",()=>{this.resetLayout()}),w.addEventListener("flow:toggle-inspector",()=>{this._toggleInspector()}));const x=this.shadowRootNode.getElementById("inspector-el");if(x){if(x.isOpen=this._showInspector,x.graph=this._graph,x.tools=this._graph.tools||[],this._selectedNodeId&&t[this._selectedNodeId])x.node=t[this._selectedNodeId];else if(this._selectedEdgeId){const o=i.find(y=>y.id===this._selectedEdgeId)||s.find(y=>y.id===this._selectedEdgeId);x.edge=o||null}else x.node=null,x.edge=null;x.addEventListener("flow:close-inspector",()=>{this._closeInspector()})}}}return l(kt,"styles",`
+    `;const c=this.shadowRootNode.querySelector("svg.flow-svg");c&&(c.addEventListener("wheel",this.handleWheel,{passive:!1}),c.addEventListener("pointerdown",this.handlePointerDown));const k=this.shadowRootNode.getElementById("groups-group"),E=this.shadowRootNode.getElementById("guidelines-group"),L=this.shadowRootNode.getElementById("edges-paths-group"),S=this.shadowRootNode.getElementById("edges-pills-group"),N=this.shadowRootNode.getElementById("edges-handles-group"),T=this.shadowRootNode.getElementById("nodes-group");if(E&&this._activeGuides.length>0)for(const i of this._activeGuides)i.type==="vertical"?(z("line",{x1:i.pos,y1:i.start,x2:i.pos,y2:i.end,class:"flow-guideline"},E),z("circle",{cx:i.pos,cy:i.start+12,r:2.5,class:"flow-guideline-dot"},E),z("circle",{cx:i.pos,cy:i.end-12,r:2.5,class:"flow-guideline-dot"},E)):(z("line",{x1:i.start,y1:i.pos,x2:i.end,y2:i.pos,class:"flow-guideline"},E),z("circle",{cx:i.start+12,cy:i.pos,r:2.5,class:"flow-guideline-dot"},E),z("circle",{cx:i.end-12,cy:i.pos,r:2.5,class:"flow-guideline-dot"},E));if(this._graph.groups)for(const i of this._graph.groups){const u=z("g",{class:"flow-group-container"},k),v=i.accent||"#3b82f6";z("rect",{x:i.x,y:i.y,width:i.w,height:i.h,rx:14,fill:"var(--tuto-card-bg, #12161c)","fill-opacity":"0.38",stroke:v,"stroke-width":1.2,"stroke-opacity":"0.35"},u),z("path",{d:`M ${i.x} ${i.y+14} Q ${i.x} ${i.y} ${i.x+14} ${i.y} L ${i.x+i.w-14} ${i.y} Q ${i.x+i.w} ${i.y} ${i.x+i.w} ${i.y+14} L ${i.x+i.w} ${i.y+28} L ${i.x} ${i.y+28} Z`,fill:v,"fill-opacity":"0.12"},u);const y=z("text",{x:i.x+14,y:i.y+18,fill:v,"font-size":10.5,"font-weight":800,"letter-spacing":"0.08em","font-family":"var(--tuto-font-mono, monospace)"},u);y.textContent=i.label.toUpperCase()}if(this._graph.initial&&t[this._graph.initial]){const i=t[this._graph.initial],u=i.x-14,v=i.y+i.h/2,y=i.x,$=i.y+i.h/2,w=z("g",{class:"flow-initial-indicator"},L);z("circle",{cx:u-4,cy:v,r:4,fill:"#ffffff"},w),z("path",{d:`M ${u} ${v} L ${y} ${$}`,stroke:"#ffffff","stroke-width":2,fill:"none","marker-end":"url(#flow-arrow-init)"},w)}for(const i of e){if(!i.route||!i.route.points||i.route.points.length<2)continue;const u=!!(this._selectedNodeId&&i.from===this._selectedNodeId),v=!!(this._selectedNodeId&&i.to===this._selectedNodeId),y=!!i.bidirectional,$=u||v;if(this._selectedNodeId&&!$)continue;const w=i.id===this._selectedEdgeId;i.id,this._hoveredEdgeId;const D=w||u||y&&v,B=this._selectedNodeId?v&&!y&&!D:!1,X=!!((i.self||i.from===i.to)&&(!i.waypoints||i.waypoints.length===0)),$t=qt(i.route.points,X,12),Lt=D?"url(#flow-arrow-hot)":B?"url(#flow-arrow)":"url(#flow-arrow-init)",ut=y?D?"url(#flow-arrow-start-hot)":B?"url(#flow-arrow-start)":"url(#flow-arrow-start-init)":void 0,ft={d:$t,class:`flow-edge-path ${D?"hot available":""} ${B?"dimmed":""} ${w?"selected":""}`,stroke:D?"#38bdf8":B?"#334155":"#64748b","stroke-width":D?2.8:B?1.4:1.8,fill:"none","marker-end":Lt};ut&&(ft["marker-start"]=ut),z("path",ft,L).addEventListener("click",U=>{var O,F;if(U.stopPropagation(),!n){if(d){const H=U,rt=this.getBoundingClientRect(),nt=this._camera.scale||1,bt=(H.clientX-rt.left-this._camera.panX)/nt,vt=(H.clientY-rt.top-this._camera.panY)/nt;this._activePopover={type:"edge",id:i.id,worldX:((O=i.route)==null?void 0:O.seatX)||bt,worldY:((F=i.route)==null?void 0:F.seatY)||vt,label:st},this._selectedEdgeId=i.id,this.requestUpdate();return}i.to?(this._activeStateId=i.to,this._selectedNodeId=i.to,this._selectedEdgeId=i.id,this.emit("flow:transition",{from:i.from,to:i.to,event:i.event}),t[i.to]&&this.emit("flow:select-node",{node:t[i.to]}),this.requestUpdate()):(this._selectedEdgeId=i.id,this.emit("flow:select-edge",{edge:i}),this.requestUpdate())}});const st=i.event||i.label||"",R=Math.max(76,Math.min(240,st.length*8+28)),J=28,at=i.route.seatX-R/2,Nt=i.route.seatY-J/2,ee=((I=this._draggedWaypoint)==null?void 0:I.edgeId)===i.id,it=u||y&&v||!this._selectedNodeId,K=z("g",{class:`flow-edge-pill ${it?"available":"dimmed"} ${ee?"dragging":""}`,transform:`translate(${at}, ${Nt})`},S);z("rect",{width:R,height:J,rx:14,fill:it?"#3b82f6":"#202636",stroke:it?"#93c5fd":"rgba(255, 255, 255, 0.12)","stroke-width":it?2:1,filter:it?"drop-shadow(0 4px 14px rgba(59, 130, 246, 0.55))":"drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4))"},K);const oe=z("text",{x:R/2,y:J/2,"text-anchor":"middle","dominant-baseline":"central",fill:it?"#ffffff":"#94a3b8","font-size":11,"font-weight":800,"letter-spacing":"0.04em","font-family":"var(--tuto-font-sans, sans-serif)"},K);if(oe.textContent=st,n?K.addEventListener("pointerdown",U=>{var nt,bt,vt;if(U.button!==0)return;U.stopPropagation();let O=this._edgeWaypoints.get(i.id)?[...this._edgeWaypoints.get(i.id)]:[],F=0;const H=((nt=i.route)==null?void 0:nt.seatX)||at+R/2,rt=((bt=i.route)==null?void 0:bt.seatY)||Nt+J/2;if(O.length===0){const dt=gt(H,rt,i.id,0,t,((vt=this._graph)==null?void 0:vt.transitions)||[],this._edgeWaypoints,Q,10);O=[[dt.x,dt.y]],this._edgeWaypoints.set(i.id,O),this._saveEdgeWaypoints(),this.emit("flow:layout-change",{layout:this.exportLayoutSnapshot()}),F=0}else{let dt=0,jt=1/0;for(let lt=0;lt<O.length;lt++){const Yt=Math.hypot(O[lt][0]-H,O[lt][1]-rt);Yt<jt&&(jt=Yt,dt=lt)}F=dt}this._startWaypointDrag(i.id,F,U)}):d?(K.addEventListener("pointerdown",U=>U.stopPropagation()),K.addEventListener("click",U=>{var O,F;U.stopPropagation(),this._activePopover={type:"edge",id:i.id,worldX:((O=i.route)==null?void 0:O.seatX)||at+R/2,worldY:((F=i.route)==null?void 0:F.seatY)||Nt+J/2,label:st},this._selectedEdgeId=i.id,this.requestUpdate()})):(K.addEventListener("pointerdown",U=>U.stopPropagation()),K.addEventListener("click",U=>{U.stopPropagation(),i.to&&(this._activeStateId=i.to,this._selectedNodeId=i.to,this._selectedEdgeId=i.id,this.emit("flow:transition",{from:i.from,to:i.to,event:i.event}),t[i.to]&&this.emit("flow:select-node",{node:t[i.to]}),this.requestUpdate())})),K.addEventListener("dblclick",U=>{U.stopPropagation(),this._selectedEdgeId=i.id,this._showInspector=!0,this.requestUpdate()}),l&&i.waypoints&&i.waypoints.length>0)for(let U=0;U<i.waypoints.length;U++){const O=i.waypoints[U],F=z("circle",{cx:O[0],cy:O[1],r:6,class:"flow-waypoint-handle",fill:"#ffffff",stroke:"#0284c7","stroke-width":2.2},N);n?F.addEventListener("pointerdown",H=>{H.button===0&&(H.stopPropagation(),this._startWaypointDrag(i.id,U,H))}):d&&(F.addEventListener("pointerdown",H=>H.stopPropagation()),F.addEventListener("click",H=>{H.stopPropagation(),this._activePopover={type:"waypoint",id:i.id,index:U,worldX:O[0],worldY:O[1]},this.requestUpdate()}))}}for(const i of Object.values(t)){const u=z("foreignObject",{x:i.x,y:i.y,width:i.w,height:i.h,style:n?"cursor: grab;":""},T);u.addEventListener("pointerdown",y=>y.stopPropagation());const v=document.createElement("tuto-flow-node");if(v.node=i,v.selected=a===i.id,v.draggableNode=n,v.isDragging=this._draggedNodeId===i.id,n)v.addEventListener("pointerdown",y=>{y.button===0&&(y.stopPropagation(),this._startNodeDrag(i.id,y))});else if(d)v.addEventListener("pointerdown",y=>y.stopPropagation()),v.addEventListener("click",y=>{y.stopPropagation(),this._activePopover={type:"node",id:i.id,worldX:i.x+i.w/2,worldY:i.y,label:i.label||i.id},this.requestUpdate()});else{v.addEventListener("pointerdown",$=>{$.stopPropagation()});const y=$=>{$.stopPropagation();const w=i.id;this._selectedNodeId===w?(this._selectedNodeId=null,this._activeStateId=null,this._selectedEdgeId=null,this.emit("flow:select-node",{node:null})):(this._selectedNodeId=w,this._activeStateId=w,this._selectedEdgeId=null,this.emit("flow:select-node",{node:i})),this.requestUpdate()};v.addEventListener("flow:select-node",y),v.addEventListener("click",y)}v.addEventListener("dblclick",y=>{var w,D,B,X;y.stopPropagation();const $=i.targetSubgraph||i.subgraphId||((D=(w=this._rootGraph)==null?void 0:w.subgraphs)!=null&&D[i.id]?i.id:null);if($&&((X=(B=this._rootGraph)==null?void 0:B.subgraphs)!=null&&X[$])){this.selectSubgraph($);return}this._selectedNodeId=i.id,this._activeStateId=i.id,this._selectedEdgeId=null,this._showInspector=!0,this.requestUpdate()}),u.appendChild(v)}const M=this.shadowRootNode.getElementById("subgraph-bar");M&&(M.addEventListener("pointerdown",u=>u.stopPropagation()),M.addEventListener("mousedown",u=>u.stopPropagation()),M.querySelectorAll("[data-subgraph]").forEach(u=>{u.addEventListener("click",v=>{v.stopPropagation();const y=u.getAttribute("data-subgraph");this.selectSubgraph(y)})}));const _=this.shadowRootNode.getElementById("action-popover");if(_){_.addEventListener("pointerdown",w=>w.stopPropagation());const i=_.querySelector("[data-action='remove-waypoint']");i&&((W=this._activePopover)==null?void 0:W.type)==="waypoint"&&i.addEventListener("click",w=>{w.stopPropagation(),this._removeWaypoint(this._activePopover.id,this._activePopover.index)});const u=_.querySelector("[data-action='reset-edge']");u&&((G=this._activePopover)==null?void 0:G.type)==="edge"&&u.addEventListener("click",w=>{w.stopPropagation(),this._resetEdge(this._activePopover.id)});const v=_.querySelector("[data-action='add-waypoint']");v&&((f=this._activePopover)==null?void 0:f.type)==="edge"&&v.addEventListener("click",w=>{w.stopPropagation(),this._addWaypointToEdge(this._activePopover.id,this._activePopover.worldX,this._activePopover.worldY)});const y=_.querySelector("[data-action='reset-node']");y&&((A=this._activePopover)==null?void 0:A.type)==="node"&&y.addEventListener("click",w=>{w.stopPropagation(),this._resetNode(this._activePopover.id)});const $=_.querySelector("[data-action='close-popover']");$&&$.addEventListener("click",w=>{w.stopPropagation(),this._activePopover=null,this.requestUpdate()})}const P=this.shadowRootNode.getElementById("toolbar-el");P&&(P.zoom=Math.round(this._camera.scale*100),P.isInspectorActive=this._showInspector,P.toolMode=this._toolMode,P.addEventListener("flow:zoom-in",()=>this.zoomBy(1.2)),P.addEventListener("flow:zoom-out",()=>this.zoomBy(.8333333333333334)),P.addEventListener("flow:zoom-reset",()=>this.zoomTo(1)),P.addEventListener("flow:fit",()=>this.fitToViewport()),P.addEventListener("flow:reset",()=>{this._selectedNodeId=null,this._selectedEdgeId=null,this._showInspector=!1,this.fitToViewport()}),P.addEventListener("flow:toggle-move-mode",()=>{this.toolMode=this._toolMode==="move"?"view":"move"}),P.addEventListener("flow:toggle-edit-mode",()=>{this.toolMode=this._toolMode==="edit"?"view":"edit"}),P.addEventListener("flow:snapshot-layout",()=>{this.copyLayoutSnapshot()}),P.addEventListener("flow:reset-layout",()=>{this.resetLayout()}),P.addEventListener("flow:toggle-inspector",()=>{this._toggleInspector()}));const Y=this.shadowRootNode.getElementById("minimap-el");if(Y){const i=this.getBoundingClientRect();Y.bounds=this._bounds,Y.camera=this._camera,Y.viewportSize={width:i.width||900,height:i.height||700},Y.nodes=((j=this._graph)==null?void 0:j.states)||{},Y.selectedNodeId=this._selectedNodeId,Y.addEventListener("flow:pan-to",u=>{const v=u;if(v.detail){const{worldX:y,worldY:$}=v.detail,w=this.getBoundingClientRect(),D=w.width||900,B=w.height||700,X=this._camera.scale||1;this._camera={...this._camera,panX:D/2-y*X,panY:B/2-$*X},this._saveCamera(),this.requestUpdate()}})}const x=this.shadowRootNode.getElementById("inspector-el");if(x){if(x.isOpen=this._showInspector,x.graph=this._graph,x.tools=this._graph.tools||[],this._selectedNodeId&&t[this._selectedNodeId])x.node=t[this._selectedNodeId];else if(this._selectedEdgeId){const i=s.find(u=>u.id===this._selectedEdgeId)||e.find(u=>u.id===this._selectedEdgeId);x.edge=i||null}else x.node=null,x.edge=null;x.addEventListener("flow:close-inspector",()=>{this._closeInspector()}),x.addEventListener("flow:select-subgraph",i=>{var v;const u=i;(v=u.detail)!=null&&v.subgraphId&&this.selectSubgraph(u.detail.subgraphId)})}}}return h(It,"styles",`
     :host {
       display: block;
       position: relative;
@@ -1228,20 +1310,23 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
     .floating-toolbar {
       position: absolute;
       left: 1rem;
+      right: 1rem;
       bottom: 1rem;
       z-index: 20;
+      pointer-events: none;
+      display: flex;
     }
     .floating-minimap {
       position: absolute;
+      top: 1rem;
       right: 1rem;
-      bottom: 1rem;
       z-index: 20;
       transition: opacity 200ms ease, transform 200ms ease;
     }
     .floating-minimap.hidden {
       opacity: 0;
       pointer-events: none;
-      transform: translateY(10px);
+      transform: translateY(-10px);
     }
     .flow-toast {
       position: absolute;
@@ -1400,4 +1485,60 @@ var TutoUI=(function(f){"use strict";var Gt=Object.defineProperty;var Vt=(f,B,J)
       background: rgba(255, 255, 255, 0.2);
       color: #ffffff;
     }
-  `),customElements.get("tuto-flow-canvas")||customElements.define("tuto-flow-canvas",kt),Et(),f.BaseElement=Y,f.DEFAULT_CAMERA_PADDING=St,f.DEFAULT_GRID_SIZE=G,f.DEFAULT_SNAP_THRESHOLD=vt,f.MAX_CAMERA_SCALE=tt,f.MIN_CAMERA_SCALE=K,f.PRIMARY_FORWARD_EVENTS=Lt,f.SVG_NS=Mt,f.TutoBadge=ft,f.TutoButton=ut,f.TutoFlowCanvas=kt,f.TutoFlowInspector=xt,f.TutoFlowMinimap=_t,f.TutoFlowNode=yt,f.TutoFlowToolbar=wt,f.assignLanes=Ct,f.autoLayoutColumns=Ft,f.bundleEdges=Nt,f.centerOnNode=$t,f.clamp=lt,f.colors=B,f.computeFitBounds=It,f.computeGraphBounds=ct,f.computePolylineMidpoint=Pt,f.escapeHtml=b,f.getBestPortPair=Rt,f.getClosestPort=bt,f.getPort=Yt,f.htmlEl=Wt,f.injectThemeTokens=Et,f.isEdgeHighlighted=jt,f.pointsToSvgPath=Ut,f.resolvePillSeats=Xt,f.routeEdgeItem=zt,f.screenToWorld=qt,f.shouldShowPill=Ht,f.snapNode=At,f.snapWaypoint=ht,f.spacing=Dt,f.svgEl=R,f.typography=J,f.worldToScreen=Ot,f.zoomAtPoint=mt,Object.defineProperty(f,Symbol.toStringTag,{value:"Module"}),f})({});
+
+    /* Subgraph tab bar — minimal pills only (no long title breadcrumb) */
+    .flow-subgraph-bar {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 24;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      background: color-mix(in srgb, var(--tuto-panel-bg, #10131d) 72%, transparent);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid color-mix(in srgb, var(--tuto-border, #30363d) 70%, transparent);
+      border-radius: 999px;
+      padding: 0.18rem;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+      user-select: none;
+      opacity: 0.92;
+    }
+    .flow-subgraph-bar:hover {
+      opacity: 1;
+    }
+    .flow-subgraph-tabs {
+      display: flex;
+      align-items: center;
+      gap: 0.15rem;
+    }
+    .flow-subgraph-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--tuto-text-muted, #94a3b8);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 0.18rem 0.5rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 120ms ease;
+      font-family: inherit;
+      line-height: 1.2;
+    }
+    .flow-subgraph-tab:hover {
+      color: #ffffff;
+      border-color: color-mix(in srgb, #3b82f6 50%, transparent);
+    }
+    .flow-subgraph-tab.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    .flow-subgraph-tab:focus-visible {
+      outline: 2px solid #93c5fd;
+      outline-offset: 1px;
+    }
+  `),customElements.get("tuto-flow-canvas")||customElements.define("tuto-flow-canvas",It),Rt(),m.BaseElement=V,m.DEFAULT_CAMERA_PADDING=Ct,m.DEFAULT_GRID_SIZE=Q,m.DEFAULT_SNAP_THRESHOLD=xt,m.MAX_CAMERA_SCALE=et,m.MIN_CAMERA_SCALE=Z,m.PRIMARY_FORWARD_EVENTS=At,m.SVG_NS=Pt,m.TutoBadge=yt,m.TutoButton=wt,m.TutoFlowCanvas=It,m.TutoFlowInspector=St,m.TutoFlowMinimap=Mt,m.TutoFlowNode=kt,m.TutoFlowToolbar=Et,m.assignLanes=Wt,m.autoLayoutColumns=te,m.bundleEdges=Ut,m.centerOnNode=Bt,m.clamp=ct,m.colors=q,m.computeFitBounds=zt,m.computeGraphBounds=pt,m.computePolylineMidpoint=Tt,m.escapeHtml=b,m.getBestPortPair=Dt,m.getClosestPort=_t,m.getPort=Jt,m.htmlEl=Ft,m.injectThemeTokens=Rt,m.isEdgeHighlighted=Zt,m.pointsToSvgPath=qt,m.resolvePillSeats=Kt,m.routeEdgeItem=Ot,m.screenToWorld=Ht,m.shouldShowPill=Qt,m.snapNode=Gt,m.snapWaypoint=gt,m.spacing=Xt,m.svgEl=z,m.typography=tt,m.worldToScreen=Vt,m.zoomAtPoint=ht,Object.defineProperty(m,Symbol.toStringTag,{value:"Module"}),m})({});

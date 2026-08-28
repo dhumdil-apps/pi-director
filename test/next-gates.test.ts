@@ -97,6 +97,7 @@ describe("next action inspection", () => {
   it("accepts standalone D-topic review prompts", () => {
     assert.equal(hasStandaloneDecisionId("Accept or change D-split-flags."), true);
     assert.equal(hasStandaloneDecisionId("Review D-id-shape only."), true);
+    assert.equal(hasStandaloneDecisionId("Accept D1-pwb-start-mechanism."), true);
     assert.equal(hasStandaloneDecisionId("Accept D1."), false);
     assert.equal(hasStandaloneDecisionId("Review D-12 only."), false);
     const slug = [
@@ -105,10 +106,20 @@ describe("next action inspection", () => {
     const hyphenSlug = [
       { mode: "align", reason: "Review hyphen ids", prompt: "Accept D-id-shape.", landing: "evaluate" },
     ];
+    const ordinalSlug = [
+      {
+        mode: "align",
+        reason: "Review PWB start",
+        prompt: "Accept D1-pwb-start-mechanism.",
+        landing: "evaluate",
+      },
+    ];
     assert.equal(inspectNextActions(slug).reviewPromptsValid, true);
     assert.equal(inspectNextActions(hyphenSlug).reviewPromptsValid, true);
+    assert.equal(inspectNextActions(ordinalSlug).reviewPromptsValid, true);
     assert.deepEqual(evaluateNextGate(nextEvent(slug), "named", PLAN_ERROR), { ok: true });
     assert.deepEqual(evaluateNextGate(nextEvent(hyphenSlug), "named", PLAN_ERROR), { ok: true });
+    assert.deepEqual(evaluateNextGate(nextEvent(ordinalSlug), "named", PLAN_ERROR), { ok: true });
   });
 
   it("rejects Align evaluate prompts without a standalone decision id", () => {
@@ -176,19 +187,22 @@ describe("mode picker trailing rows", () => {
 });
 
 describe("ask picker labels", () => {
-  it("shows short slugs without letter prefixes or confidence chrome", () => {
+  it("shows A. label chrome with description on the row", () => {
     const options = orderedOptions([
       { value: "a", label: "Ask UI first, then Align duplicate", description: "C10 then C7", confidence: 5 },
       { value: "b", label: "Align duplicate first", description: "C7 then C10", confidence: 4 },
     ]);
     assert.deepEqual(
       options.map((option, index) => pickerLabel(option, index)),
-      ["Ask UI first, then Align duplicate", "Align duplicate first"],
+      ["A. Ask UI first, then Align duplicate — C10 then C7", "B. Align duplicate first — C7 then C10"],
     );
     assert.equal(
-      options.every((option, index) => !/confidence|\b[A-Z]\. /.test(pickerLabel(option, index))),
+      options.every((option, index) => !/confidence/i.test(pickerLabel(option, index))),
       true,
     );
-    assert.deepEqual(optionReferences(options), ["Ask UI first, then Align duplicate", "Align duplicate first"]);
+    assert.deepEqual(optionReferences(options), [
+      "A. Ask UI first, then Align duplicate — C10 then C7",
+      "B. Align duplicate first — C7 then C10",
+    ]);
   });
 });

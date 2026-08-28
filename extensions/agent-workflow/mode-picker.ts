@@ -23,7 +23,8 @@ import {
   withoutRedundantAlignEstablish,
 } from "./picker-meta.js";
 import { duringUserWait } from "./user-wait.js";
-import { missingSessionPlan, planPath } from "./task.js";
+import { pwbRouteTaskSummary } from "./settlement.js";
+import { beginTask, missingSessionPlan, planPath } from "./task.js";
 import {
   ASK_SETTLEMENT_EVENT,
   currentTurnSignal,
@@ -407,6 +408,16 @@ export function registerModePicker(pi: ExtensionAPI): void {
     const snap = snapshot(branch, ctx.cwd, pi.getSessionName());
     const dispatch = dispatchSettlement(snap);
     if (dispatch.action === "route") {
+      // Leave-envision / PWB invariant: named artifact before Spec/Vibe kickoff.
+      if (missingSessionPlan(ctx.cwd, pi.getSessionName())) {
+        try {
+          const started = await beginTask(ctx.cwd, pi.getSessionName(), pwbRouteTaskSummary(dispatch.answers));
+          pi.setSessionName(started.name);
+        } catch (error) {
+          ctx.ui.notify(`Could not start plan before Proceed-with-best route: ${(error as Error).message}`, "error");
+          return;
+        }
+      }
       await applyMode(pi, ctx, dispatch.target, mode);
       startModeContinuation(pi, dispatch.target, mode, formatRoutedAnswersPrompt(dispatch.answers));
       return;

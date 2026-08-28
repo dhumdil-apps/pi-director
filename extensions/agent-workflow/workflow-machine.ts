@@ -130,7 +130,7 @@ export function formatRoutedAnswersPrompt(answers: AskSettlementAnswer[] | undef
     return `- ${answer.id}: ${via} ${answer.label}`;
   });
   return [
-    "If no named artifact exists, CALL start first with a scope-informed name. Then synthesize these Proceed-with-best answers into the plan User transcript, Goal, Align, Decisions, and Checklist before other primary work:",
+    "Named artifact is already ensured (envision start/reuse, or runtime PWB settlement start). Synthesize these Proceed-with-best answers into the plan User transcript, Goal, Align, Decisions, and Checklist before other primary work:",
     ...lines,
   ].join("\n");
 }

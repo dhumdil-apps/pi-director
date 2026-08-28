@@ -13,8 +13,8 @@ export interface NextStepAction {
 
 export const NEXT_ACTION_MODES = ["align", "spec", "vibe", "handoff"] as const;
 
-/** Standalone decision slugs: `D-tighten-writes` — not `D1`, `D-12`, or `QD-topic`. */
-export const STANDALONE_DECISION_ID = /\bD-[a-z][a-z0-9]*(?:-[a-z0-9]+)*\b/;
+/** Standalone decision slugs: `D1-tighten-writes` or legacy `D-tighten-writes` — not bare `D1`, `D-12`, or `QD-topic`. */
+export const STANDALONE_DECISION_ID = /\bD(?:\d+)?-[a-z][a-z0-9]*(?:-[a-z0-9]+)*\b/;
 
 export function hasStandaloneDecisionId(prompt: string): boolean {
   return STANDALONE_DECISION_ID.test(prompt);
