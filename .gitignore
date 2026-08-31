@@ -27,3 +27,4 @@ coverage/
 # Pi runtime state
 .pi
 .ua/
+docs/architecture.html

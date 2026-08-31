@@ -244,6 +244,46 @@ function windowsForSegments(windows: RateWindow[]): { hourly?: RateWindow; weekl
   };
 }
 
+/** Remaining working-day slices in this weekly window, always 1..allocationDays. */
+function remainingAllocationDays(
+  window: RateWindow,
+  now: Date,
+  allocationDays: number,
+): number | undefined {
+  const duration = countdownMs(window, now);
+  if (duration === undefined || duration <= 0) return undefined;
+
+  const includeWeekends = allocationDays > WEEKDAYS_PER_WEEK;
+  const countedMs = window.resetAt ? countedDayMsBetween(now, new Date(window.resetAt), includeWeekends) : undefined;
+  const remaining =
+    countedMs !== undefined ? Math.ceil(countedMs / DAY_MS) : Math.ceil(duration / DAY_MS);
+  if (!Number.isFinite(remaining) || remaining < 1) return 1;
+  return Math.min(allocationDays, remaining);
+}
+
+function isPastReset(window: RateWindow, now: Date): boolean {
+  const duration = countdownMs(window, now);
+  return duration !== undefined && duration <= 0;
+}
+
+function weeklyPaceColor(
+  window: RateWindow,
+  now: Date,
+  workingDaysPerWeek: number,
+): DailyPacing["color"] | undefined {
+  const allocationDays = parseWorkingDaysPerWeek(String(workingDaysPerWeek));
+  if (!isWeeklyCadence(window.label) || isPastReset(window, now)) return undefined;
+  const remaining = remainingAllocationDays(window, now, allocationDays);
+  if (remaining === undefined) return undefined;
+  const usedPercent = Math.max(0, Math.min(100, window.usedPercent));
+  const dailyAllocation = 100 / allocationDays;
+  const completedAllocation = (allocationDays - remaining) * dailyAllocation;
+  const todayLimit = completedAllocation + dailyAllocation;
+  if (usedPercent < completedAllocation) return "success";
+  if (usedPercent > todayLimit) return "error";
+  return "accent";
+}
+
 /**
  * Rebase total weekly utilization onto the configured daily allocations that
  * remain visible. This is cumulative budget position, not usage recorded today.
@@ -345,7 +385,12 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow, wor
     suffix: pacing?.suffix ?? `${pct}%`,
     bar: pacing?.bar ?? hoursBar?.bar ?? pct,
     barSegments: pacing?.barSegments ?? hoursBar?.barSegments ?? segmentsForWindow(resolved, now, workingDaysPerWeek),
-    color: pacing?.color ?? getColor(pct),
+    color:
+      segmentId === "sub-weekly"
+        ? isPastReset(resolved, now)
+          ? "dim"
+          : (pacing?.color ?? weeklyPaceColor(resolved, now, workingDaysPerWeek) ?? getColor(pct))
+        : getColor(pct),
     row: 3,
   });
 }
