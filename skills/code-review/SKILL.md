@@ -1,6 +1,6 @@
 ---
-name: thermo-nuclear-code-quality-review
-description: Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth, plus a Standards vs Spec check on a pinned git range. Use for a thermo-nuclear code quality review, thermonuclear review, deep code quality audit, or especially harsh maintainability review.
+name: code-review
+description: Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth, plus a two-axis Standards vs Spec review of the diff since a pinned commit, branch, tag, or merge-base. Use for a thermo-nuclear code quality review, thermonuclear review, deep code quality audit, harsh maintainability review, or code review of a git range.
 disable-model-invocation: true
 ---
 
@@ -12,14 +12,54 @@ Above all, this skill should push the reviewer to be **ambitious** about code st
 
 ## Spec and standards axes
 
-Pin a git range first (`git diff <fixed-point>...HEAD` three-dot; confirm the ref and a non-empty diff). Then report two axes without merging them. This repo has no subagents: run both axes in this session, sequentially.
+Two-axis review of the diff between `HEAD` and a fixed point the user supplies. Run both axes in this session, sequentially (no subagents). Do not merge or rerank findings across axes. A change can pass one axis and fail the other.
 
-- **Standards**: documented rules in `AGENTS.md`, `docs/DEVELOPMENT.md`, `docs/EXTENSIONS.md`, plus the smell list below. Repo docs win. Smells are judgement calls; skip what tooling already enforces.
-- **Spec**: the originating issue or plan. Missing, partial, extra, or wrong against that text.
+### 1. Pin the fixed point
 
-Smell list (what it is -> how to fix): Mysterious Name -> rename; Duplicated Code -> extract; Feature Envy -> move the method; Data Clumps -> one type; Primitive Obsession -> a small domain type; Repeated Switches -> polymorphism or one shared map; Shotgun Surgery -> gather the change; Divergent Change -> split the module; Speculative Generality -> delete until needed; Message Chains -> hide the walk; Middle Man -> call through; Refused Bequest -> composition.
+Use the commit SHA, branch, tag, `main`, `HEAD~n`, or other ref the user gave. If they did not specify one, ask.
 
-If the user gave no spec, say so under Spec and continue. End the axes with counts per heading, then continue with the maintainability rules below.
+Capture `git diff <fixed-point>...HEAD` (three-dot, merge-base) and `git log <fixed-point>..HEAD --oneline`. Confirm the ref with `git rev-parse <fixed-point>` and that the diff is non-empty before either axis.
+
+### 2. Identify the spec source
+
+Look in this order:
+
+1. Issue references in the commit messages (`#123`, `Closes #45`, etc.).
+2. A path the user passed as an argument.
+3. A spec file under `docs/`, `.pi/plan/`, or `.kiro/specs/` matching the branch name or feature.
+4. If nothing is found, ask. If they say there is none, skip Spec findings and report "no spec available".
+
+### 3. Identify the standards sources
+
+Check `AGENTS.md`, `docs/DEVELOPMENT.md`, and `docs/EXTENSIONS.md`. The smell baseline below applies on top of whatever the repo documents.
+
+- The repo overrides. A documented repo standard always wins.
+- Always a judgement call. Each smell is a labelled heuristic, never a hard violation. Skip anything tooling already enforces.
+
+Each smell reads _what it is_ -> _how to fix_:
+
+- **Mysterious Name**: a function, variable, or type whose name doesn't reveal what it does or holds. -> rename it; if no honest name comes, the design's murky.
+- **Duplicated Code**: the same logic shape appears in more than one hunk or file. -> extract the shared shape, call it from both.
+- **Feature Envy**: a method that reaches into another object's data more than its own. -> move the method onto the data it envies.
+- **Data Clumps**: the same few fields or params keep travelling together. -> bundle them into one type.
+- **Primitive Obsession**: a primitive or string standing in for a domain concept that deserves its own type. -> give the concept its own small type.
+- **Repeated Switches**: the same `switch`/`if`-cascade on the same type recurs across the change. -> replace with polymorphism, or one map both sites share.
+- **Shotgun Surgery**: one logical change forces scattered edits across many files. -> gather what changes together into one module.
+- **Divergent Change**: one file or module is edited for several unrelated reasons. -> split so each module changes for one reason.
+- **Speculative Generality**: abstraction, parameters, or hooks added for needs the spec doesn't have. -> delete it; inline back until a real need shows.
+- **Message Chains**: long `a.b().c().d()` navigation the caller shouldn't depend on. -> hide the walk behind one method on the first object.
+- **Middle Man**: a class or function that mostly just delegates onward. -> cut it, call the real target direct.
+- **Refused Bequest**: a subclass or implementer that ignores or overrides most of what it inherits. -> drop the inheritance, use composition.
+
+### 4. Run both axes
+
+**Standards.** Per file/hunk where relevant: (a) every place the diff violates a documented standard: cite the standard (file + the rule); (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls. Skip anything tooling enforces. Under 400 words.
+
+**Spec.** Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Under 400 words. If the spec is missing, skip this axis and note it.
+
+### 5. Aggregate
+
+Present the two reports under `## Standards` and `## Spec`. Do not merge or rerank findings. End with a one-line summary: total findings per axis, and the worst issue within each axis (if any). Then continue with the maintainability rules below.
 
 ## Core Prompt
 

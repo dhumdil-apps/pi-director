@@ -21,7 +21,7 @@ extension.
 
 - **atomic-design** (`skills/atomic-design/SKILL.md`) — Methodology and mental model for constructing, auditing, and maintaining modular UI component systems across the 5-tier hierarchy (atoms, molecules, organisms, templates, pages).
 - **codebase-design** (`skills/codebase-design/SKILL.md`) — Vocabulary for deep modules (interface, seam, adapter, leverage) used when shaping or reviewing module boundaries.
-- **thermo-nuclear-code-quality-review** (`skills/thermo-nuclear-code-quality-review/SKILL.md`) — Manual-invocation review skill for unusually strict maintainability audits, plus Standards vs Spec axes on a pinned git range.
+- **code-review** (`skills/code-review/SKILL.md`) — Manual-invocation review skill for unusually strict maintainability audits, plus Standards vs Spec axes on a pinned git range.
 
 ## Supporting resources
 

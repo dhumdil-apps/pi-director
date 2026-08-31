@@ -159,7 +159,7 @@ export function welcomeContextInfo(
 export function welcomeSkillsMarkdown(skills: { name: string }[] | undefined): string | undefined {
   const names = [...new Set((skills ?? []).map((skill) => skill.name).filter(Boolean))].sort();
   if (names.length === 0) return undefined;
-  return ["**Skills**", ...names.map((name) => `- \`${name}\``)].join("\n");
+  return ["**🧩 Skills**", ...names.map((name) => `- \`${name}\``)].join("\n");
 }
 
 interface BundleResources {
