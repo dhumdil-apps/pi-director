@@ -187,6 +187,7 @@
     try {
       localStorage.setItem("pi_workflow_view", viewMode);
     } catch {}
+    document.body.setAttribute("data-view", viewMode);
     syncViewTabs();
     paint();
   }
@@ -224,6 +225,7 @@
     });
   }
 
+  document.body.setAttribute("data-view", viewMode);
   syncViewTabs();
   paint();
 
@@ -305,6 +307,25 @@
     });
   }
 
+  var refSidebar = document.getElementById("reference");
+  var btnRefToggle = document.getElementById("btn-reference-toggle");
+
+  function toggleReferenceSidebar(open) {
+    if (!refSidebar) return;
+    var isOpen = typeof open === "boolean" ? open : !refSidebar.classList.contains("is-open");
+    refSidebar.classList.toggle("is-open", isOpen);
+    if (btnRefToggle) {
+      btnRefToggle.classList.toggle("active", isOpen);
+      btnRefToggle.setAttribute("aria-expanded", String(isOpen));
+    }
+  }
+
+  if (btnRefToggle) {
+    btnRefToggle.addEventListener("click", function () {
+      toggleReferenceSidebar();
+    });
+  }
+
   window.addEventListener("keydown", function (ev) {
     if (ev.key === "?" && !(ev.target instanceof HTMLInputElement || ev.target instanceof HTMLTextAreaElement)) {
       if (modalShortcuts && modalShortcuts.hasAttribute("hidden")) {
@@ -312,9 +333,363 @@
       } else {
         closeShortcutsModal();
       }
-    } else if (ev.key === "Escape" && modalShortcuts && !modalShortcuts.hasAttribute("hidden")) {
-      closeShortcutsModal();
-      ev.stopPropagation();
+    } else if (
+      (ev.key === "r" || ev.key === "R") &&
+      !ev.ctrlKey &&
+      !ev.metaKey &&
+      !ev.altKey &&
+      !(ev.target instanceof HTMLInputElement || ev.target instanceof HTMLTextAreaElement)
+    ) {
+      toggleReferenceSidebar();
+      ev.preventDefault();
+    } else if (ev.key === "Escape") {
+      if (modalShortcuts && !modalShortcuts.hasAttribute("hidden")) {
+        closeShortcutsModal();
+        ev.stopPropagation();
+      } else if (refSidebar && refSidebar.classList.contains("is-open")) {
+        toggleReferenceSidebar(false);
+        ev.stopPropagation();
+      }
     }
   });
+
+  // ================================================================
+  // Reference Panel — populates #reference from WORKFLOW_FSM_DATA
+  // ================================================================
+
+  function refEl(tag, className, text) {
+    var e = document.createElement(tag);
+    if (className) e.className = className;
+    if (text != null) e.textContent = String(text);
+    return e;
+  }
+
+  function refEsc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  var CHEVRON_SVG =
+    '<svg class="ref-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+    '<polyline points="9 18 15 12 9 6"></polyline></svg>';
+
+  function makeAccordion(title, count) {
+    var section = refEl("div", "ref-section");
+    var toggle = refEl("button", "ref-toggle");
+    toggle.type = "button";
+    toggle.innerHTML =
+      CHEVRON_SVG +
+      '<span class="ref-title">' +
+      refEsc(title) +
+      "</span>" +
+      (count != null ? '<span class="ref-count">' + refEsc(String(count)) + "</span>" : "");
+    toggle.addEventListener("click", function () {
+      section.classList.toggle("open");
+    });
+    var body = refEl("div", "ref-body");
+    section.appendChild(toggle);
+    section.appendChild(body);
+    return { section: section, body: body };
+  }
+
+  function renderList(items, ordered) {
+    var tag = ordered ? "ol" : "ul";
+    var list = refEl(tag, "ref-list");
+    for (var i = 0; i < items.length; i++) {
+      list.appendChild(refEl("li", null, items[i]));
+    }
+    return list;
+  }
+
+  function renderKV(obj) {
+    var dl = refEl("dl", "ref-kv");
+    var keys = Object.keys(obj);
+    for (var i = 0; i < keys.length; i++) {
+      dl.appendChild(refEl("dt", null, keys[i]));
+      dl.appendChild(refEl("dd", null, obj[keys[i]]));
+    }
+    return dl;
+  }
+
+  function addListSection(container, title, data, ordered) {
+    if (!data) return;
+    if (Array.isArray(data)) {
+      if (!data.length) return;
+      var acc = makeAccordion(title, data.length);
+      acc.body.appendChild(renderList(data, ordered));
+      container.appendChild(acc.section);
+    } else if (typeof data === "object") {
+      var keys = Object.keys(data);
+      if (!keys.length) return;
+      var acc2 = makeAccordion(title, keys.length);
+      acc2.body.appendChild(renderKV(data));
+      container.appendChild(acc2.section);
+    }
+  }
+
+  function addSessionEntry(container, entry) {
+    if (!entry) return;
+    var acc = makeAccordion(
+      "Session Entry · " + (entry.label || entry.state || "envision"),
+      entry.steps ? entry.steps.length + " steps" : null,
+    );
+    if (entry.summary) acc.body.appendChild(refEl("p", "ref-summary", entry.summary));
+    var meta = refEl("div", "ref-meta");
+    meta.innerHTML = '<span class="ref-badge ref-badge-hot">state: ' + refEsc(entry.state) + "</span>";
+    acc.body.appendChild(meta);
+    if (entry.steps && entry.steps.length) acc.body.appendChild(renderList(entry.steps));
+    container.appendChild(acc.section);
+  }
+
+  function addModeBodies(container, bodies) {
+    if (!bodies || !bodies.length) return;
+    var acc = makeAccordion("Mode Bodies", bodies.length + " modes");
+    for (var i = 0; i < bodies.length; i++) {
+      var b = bodies[i];
+      var sub = refEl("div", "ref-sub");
+
+      var title = refEl("div", "ref-sub-title");
+      title.innerHTML = "<strong>" + refEsc(b.label || b.mode) + "</strong>";
+      sub.appendChild(title);
+
+      var meta = refEl("div", "ref-meta");
+      meta.innerHTML =
+        '<span class="ref-badge">mode: ' +
+        refEsc(b.mode) +
+        "</span>" +
+        '<span class="ref-badge">states: ' +
+        refEsc((b.states || []).join(", ")) +
+        "</span>" +
+        '<span class="ref-badge ref-badge-hot">primary: ' +
+        refEsc(b.primary || "—") +
+        "</span>" +
+        '<span class="ref-badge ref-badge-hot">secondary: ' +
+        refEsc(b.secondary || "—") +
+        "</span>" +
+        '<span class="ref-badge">exitTool: ' +
+        refEsc(b.exitTool || "—") +
+        "</span>";
+      sub.appendChild(meta);
+
+      if (b.steps && b.steps.length) sub.appendChild(renderList(b.steps));
+      acc.body.appendChild(sub);
+    }
+    container.appendChild(acc.section);
+  }
+
+  function addProcedures(container, procs) {
+    if (!procs) return;
+    var keys = Object.keys(procs);
+    if (!keys.length) return;
+    var acc = makeAccordion("Shared Procedures", keys.length);
+    for (var i = 0; i < keys.length; i++) {
+      var name = keys[i];
+      var steps = procs[name];
+      var sub = refEl("div", "ref-sub");
+
+      var title = refEl("div", "ref-sub-title");
+      title.innerHTML =
+        "<strong>" + refEsc(name) + "</strong> " + '<span class="ref-count">' + steps.length + "</span>";
+      sub.appendChild(title);
+      sub.appendChild(renderList(steps));
+      acc.body.appendChild(sub);
+    }
+    container.appendChild(acc.section);
+  }
+
+  function addTools(container, tools) {
+    if (!tools || !tools.length) return;
+    var acc = makeAccordion("Tools", tools.length);
+    for (var i = 0; i < tools.length; i++) {
+      var t = tools[i];
+      var card = refEl("div", "ref-tool-card");
+
+      var header = refEl("div", "ref-tool-header");
+      header.innerHTML =
+        '<span class="ref-tool-name">' +
+        refEsc(t.name.toUpperCase()) +
+        "</span>" +
+        '<span class="ref-badge">' +
+        refEsc((t.modes || []).join(", ")) +
+        "</span>";
+      card.appendChild(header);
+
+      if (t.summary) card.appendChild(refEl("p", "ref-tool-summary", t.summary));
+
+      if (t.gate && t.gate.length) {
+        card.appendChild(refEl("div", "ref-tool-section-title", "Gate"));
+        card.appendChild(renderList(t.gate));
+      }
+      if (t.mechanics && t.mechanics.length) {
+        card.appendChild(refEl("div", "ref-tool-section-title", "Mechanics"));
+        card.appendChild(renderList(t.mechanics));
+      }
+
+      acc.body.appendChild(card);
+    }
+    container.appendChild(acc.section);
+  }
+
+  function addExceptions(container, exc) {
+    if (!exc) return;
+    var cmdCount = exc.commands ? exc.commands.length : 0;
+    var ruleCount = exc.rules ? exc.rules.length : 0;
+    var acc = makeAccordion(
+      "Exceptions" + (exc.title ? " · " + exc.title : ""),
+      cmdCount + " commands, " + ruleCount + " rules",
+    );
+
+    if (exc.summary) acc.body.appendChild(refEl("p", "ref-summary", exc.summary));
+
+    if (exc.commands && exc.commands.length) {
+      for (var i = 0; i < exc.commands.length; i++) {
+        var cmd = exc.commands[i];
+        var card = refEl("div", "ref-cmd-card");
+
+        var hdr = refEl("div", "ref-cmd-header");
+        hdr.innerHTML =
+          '<span class="ref-cmd-name">' +
+          refEsc(cmd.command) +
+          "</span>" +
+          '<span class="ref-cmd-label">' +
+          refEsc(cmd.label) +
+          "</span>";
+        card.appendChild(hdr);
+
+        if (cmd.summary) card.appendChild(refEl("p", "ref-summary", cmd.summary));
+        if (cmd.description) card.appendChild(refEl("p", "ref-cmd-desc", cmd.description));
+        acc.body.appendChild(card);
+      }
+    }
+
+    if (exc.rules && exc.rules.length) {
+      acc.body.appendChild(refEl("div", "ref-sub-title", "Rules"));
+      acc.body.appendChild(renderList(exc.rules));
+    }
+
+    container.appendChild(acc.section);
+  }
+
+  function addArtifact(container, art) {
+    if (!art) return;
+    var acc = makeAccordion("Artifact");
+
+    if (art.sections && art.sections.length) {
+      var sub1 = refEl("div", "ref-sub");
+      sub1.appendChild(refEl("div", "ref-sub-title", "Sections"));
+      sub1.appendChild(renderList(art.sections));
+      acc.body.appendChild(sub1);
+    }
+
+    if (art.identifiers) {
+      var sub2 = refEl("div", "ref-sub");
+      sub2.appendChild(refEl("div", "ref-sub-title", "Identifiers"));
+      sub2.appendChild(renderKV(art.identifiers));
+      acc.body.appendChild(sub2);
+    }
+
+    if (art.rules && art.rules.length) {
+      var sub3 = refEl("div", "ref-sub");
+      sub3.appendChild(refEl("div", "ref-sub-title", "Rules"));
+      sub3.appendChild(renderList(art.rules));
+      acc.body.appendChild(sub3);
+    }
+
+    container.appendChild(acc.section);
+  }
+
+  function buildReference() {
+    var data = window.WORKFLOW_FSM_DATA;
+    var ref = document.getElementById("reference");
+    if (!ref || !data) return;
+    ref.innerHTML = "";
+
+    // Sticky header
+    var header = refEl("div", "ref-header");
+    header.innerHTML =
+      '<span class="ref-header-title">FSM Reference</span>' +
+      '<span class="ref-header-version">v' +
+      refEsc(data.version || "?") +
+      "</span>";
+    var btnAll = refEl("button", "ref-header-btn", "Expand All");
+    btnAll.type = "button";
+    btnAll.id = "btn-ref-toggle-all";
+    btnAll.addEventListener("click", function () {
+      var sections = ref.querySelectorAll(".ref-section");
+      var allOpen = true;
+      for (var i = 0; i < sections.length; i++) {
+        if (!sections[i].classList.contains("open")) {
+          allOpen = false;
+          break;
+        }
+      }
+      for (var j = 0; j < sections.length; j++) {
+        if (allOpen) sections[j].classList.remove("open");
+        else sections[j].classList.add("open");
+      }
+      btnAll.textContent = allOpen ? "Expand All" : "Collapse All";
+    });
+    header.appendChild(btnAll);
+
+    var btnCloseRef = refEl("button", "ref-close-btn", "×");
+    btnCloseRef.type = "button";
+    btnCloseRef.title = "Close Reference Sidebar (Esc)";
+    btnCloseRef.setAttribute("aria-label", "Close Reference Sidebar");
+    btnCloseRef.addEventListener("click", function () {
+      toggleReferenceSidebar(false);
+    });
+    header.appendChild(btnCloseRef);
+
+    ref.appendChild(header);
+
+    // Content area
+    var content = refEl("div", "ref-content");
+
+    // Summary
+    if (data.summary) {
+      var sumAcc = makeAccordion("Summary");
+      sumAcc.body.appendChild(refEl("p", "ref-summary", data.summary));
+      content.appendChild(sumAcc.section);
+    }
+
+    // Session State
+    if (data.session) addListSection(content, "Session State", data.session);
+
+    // Turn
+    if (data.turn) addListSection(content, "Turn", data.turn, true);
+
+    // Session Entry
+    addSessionEntry(content, data.sessionEntry);
+
+    // Mode Bodies
+    addModeBodies(content, data.modeBodies);
+
+    // Shared Procedures
+    addProcedures(content, data.procedures);
+
+    // Tools
+    addTools(content, data.tools);
+
+    // Ownership
+    addListSection(content, "Ownership", data.ownership);
+
+    // Invariants
+    addListSection(content, "Invariants", data.invariants);
+
+    // Always
+    addListSection(content, "Always", data.always);
+
+    // Exceptions
+    addExceptions(content, data.exceptions);
+
+    // Artifact
+    addArtifact(content, data.artifact);
+
+    // Notes
+    addListSection(content, "Notes", data.notes);
+
+    ref.appendChild(content);
+  }
+
+  buildReference();
 })();

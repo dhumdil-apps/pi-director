@@ -285,7 +285,7 @@ export async function openModePicker(
   const current = resolveWorkflowMode(branch);
   const explicit = deriveNextStepSignal(branch, current);
   // next-driven: explicit is [] | non-empty array; /mode force: explicit may be undefined.
-  // allowEmpty: Align silent-idle fallback opens fill-ins with no NEXT_STEP_EVENT.
+  // allowEmpty: omitted-next fallback opens fill-ins with no NEXT_STEP_EVENT.
   if (!force && explicit === undefined && !allowEmpty) return;
 
   // next-driven pickers omit current mode; /mode force keeps full escape-hatch list (D4).
@@ -328,11 +328,16 @@ export async function openModePicker(
       }
       resolveCheckpoint(pi, checkpoint.id, action.mode);
       await applyMode(pi, ctx, action.mode, current);
-      // Align establish/idle never kickoff; Align evaluate/review and Spec/Vibe kickoff when autostart.
-      if (action.autostart && action.prompt) {
+      // Align establish/idle never kickoff; Align evaluate kickoff when autostart+prompt.
+      // Spec/Vibe switches always kickoff (agent prompt or default switch line).
+      if (action.mode === "align") {
+        if (action.autostart && action.prompt) {
+          sendContinueKickoff(pi, action.mode, action.prompt, "start", current);
+        } else if (ctx.hasUI) {
+          ctx.ui.notify(`${MODE_LABEL.align} ready in editor (establish). No agent start.`, "info");
+        }
+      } else {
         sendContinueKickoff(pi, action.mode, action.prompt, "start", current);
-      } else if (action.mode === "align" && ctx.hasUI) {
-        ctx.ui.notify(`${MODE_LABEL.align} ready in editor (establish). No agent start.`, "info");
       }
       return;
     }

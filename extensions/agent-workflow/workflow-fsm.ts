@@ -9,6 +9,7 @@
  * Runtime tool gates live in `workflow-machine.ts` and must stay aligned with
  * `tools.*.gate` and the transition table below.
  *
+ * v2.8.1 — omitted next opens fill-in picker in every mode; Spec/Vibe switches always kickoff; empty next still skips.
  * v2.8.0 — start/ask/decide/next are tools/procedures not guided states; secondaries CALL next (NEXT_* from establish/elaborate/examine); sessionEntry envision outside Align body; ask/decide plain-language picker rules.
  * v2.7.0 — (superseded) shared switch state next + TO_NEXT.
  * v2.6.13 — CONTINUE envision→evaluate; PWB settlement ensures start; Q{n}-/D{n}-/C{n}- ids; A. label chrome.
@@ -16,7 +17,7 @@
  * v2.6.6+ — primary homes + secondary gates; bi-body ALIGN/SPEC/VIBE; Align dual landing NEXT_ALIGN/RETURN_ALIGN.
  */
 
-export const WORKFLOW_FSM_VERSION = "2.8.0";
+export const WORKFLOW_FSM_VERSION = "2.8.1";
 
 export type FsmStateId = "envision" | "establish" | "explore" | "elaborate" | "execute" | "examine" | "evaluate";
 
@@ -311,7 +312,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       "next reason MUST be a short plain-English phrase; plan slugs only as optional trailing [] or (). Spec/Vibe need prompt; Align evaluate needs D-topic slug; handoff omits prompt.",
       "ELSE IF more work remains in the current mode THEN RETURN to the mode primary (do not CALL next).",
       "ELSE IF persisted mode is align and the body is done THEN CALL next from establish. Runtime NEXT_ALIGN establish landing is not an agent turn.",
-      "ELSE DO NOT CALL next.",
+      "ELSE CALL empty next only to skip the picker; omitting next still opens fill-in follow-ups.",
       "ENSURE artifact is resumable and final output is truthful and concise.",
     ],
     HANDOFF: [
@@ -399,7 +400,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "NEVER CALL ask from establish — entry scope ask is envision; other Align asks run in evaluate.",
         "No research — confirm/summarize only.",
         "IF more Align primary or ask work remains THEN RETURN to EVALUATE.",
-        "ELSE CALL next with ranked other modes and handoff only — NEVER include align.",
+        "ELSE CALL next with ranked other modes and handoff only — NEVER include align. Do not end the turn without next unless empty next is an intentional skip.",
         "Idle landing (runtime NEXT_ALIGN, no agent turn): wait for User message or /mode; do not invent ask or next.",
       ],
     },
@@ -437,7 +438,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
         "RUN CLOSE_OUT.",
         "IF more research is required THEN RETURN to EXPLORE (do not CALL next with spec).",
-        "ELSE CALL next with other modes only (never spec); prefer Align evaluate when unresolved D ids; include handoff when useful.",
+        "ELSE CALL next with other modes only (never spec); prefer Align evaluate when unresolved D ids; include handoff when useful. Do not omit next; empty next only to skip the picker.",
         "RETURN a concise proposal summary with artifact path.",
       ],
     },
@@ -474,7 +475,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "RECORD check evidence in Work log.",
         "RUN CLOSE_OUT.",
         "IF more implementation remains THEN RETURN to EXECUTE (do not CALL next with vibe).",
-        "ELSE CALL next with other modes only (never vibe); prefer Align evaluate when unresolved D ids; include handoff when useful.",
+        "ELSE CALL next with other modes only (never vibe); prefer Align evaluate when unresolved D ids; include handoff when useful. Do not omit next; empty next only to skip the picker.",
       ],
     },
   },
@@ -755,7 +756,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "Queue ranked post-turn actions from a secondary gate; user chooses another mode or handoff (never the current mode). Shared procedure/tool — not a guided state.",
       modes: ["any"],
       gate: [
-        "Empty next records no recommendation and opens no picker.",
+        "Empty next records no recommendation and skips the picker. Omitting next still opens fill-in follow-ups.",
         "Non-empty next requires valid targets and a non-empty user-facing reason on every action; requires named session plan.",
         "Spec/Vibe actions need contextual prompt; Align evaluate/review needs a prompt with a standalone D-topic slug (D1-tighten-writes); Align establish/idle prompt optional; handoff must omit prompt.",
       ],
@@ -773,7 +774,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "ESC dismisses the mode picker with no change. Mode pickers end with Return to editor (same as ESC), then Return → ALIGN when not already in Align (static establish, no agent start), then Show plan (## Digest only; returns to the picker). /mode lists the same trailing rows.",
         "/mode force picker still lists all modes including the current mode (bypass).",
         "Manual ALIGN/SPEC/VIBE commands return to the editor without auto-start.",
-        "Only recommended actions with autostart (prompt + non-idle Align) start the agent.",
+        "Spec/Vibe picker switches always send continueKickoff (agent prompt or default). Align establish never auto-starts; Align evaluate auto-starts only with prompt.",
         "Picker-selected handoff prepares /handoff for explicit User execution.",
         "Ask-routed SPEC/VIBE and /handoff still auto-start.",
       ],
@@ -813,7 +814,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     "session.scope and session.review are Agent-tracked meaning, not runtime-parsed fields.",
     "Transition table is the guided graph only. Stay-in-mode via mode-body edges (ALIGN/SPEC/VIBE), ESC, Return to editor, ask cancel, and /mode are not same-mode NEXT edges. Stay-on-primary tool use (ask on evaluate; decide on explore/execute) is procedure, not a transition. In-mode loop is bidirectional body (ALIGN/SPEC/VIBE): TO_GATE primary→secondary, TO_HOME secondary→primary. Envision runs one ask CALL then start/reuse then CONTINUE→evaluate (PWB ensures start then primary). Secondaries only confirm/summarize then RETURN to the primary or CALL next. Manual /mode bypasses live under Exceptions.",
     "Substates on guided states are narrative procedure phases for agents and diagrams, not separate graph nodes.",
-    "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next. Agent-driven Align ends via ask (envision/evaluate) or next (establish); silent idle is only runtime NEXT_ALIGN.",
+    "Preferred agent path ends SPEC/VIBE via CLOSE_OUT on the secondary before CALL next. Omitting next still opens a fill-in picker; empty next skips it. Agent-driven Align ends via ask (envision/evaluate) or next (establish); Align establish idle is only runtime NEXT_ALIGN.",
     "Counts, confidence, uniqueness, concise text, identifiers, and naming quality are Agent responsibilities.",
     "IF a tool call is rejected THEN CORRECT it, RETRY once, and NEVER claim the rejected action succeeded.",
     "tools validate required shapes and protocol enums, not workflow quality.",

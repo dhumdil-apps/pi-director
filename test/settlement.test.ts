@@ -42,18 +42,15 @@ describe("settlement dispatch", () => {
     });
   });
 
-  it("opens the picker on Align when ask and next are both absent", () => {
+  it("opens a fill-in picker in every mode when ask and next are both absent", () => {
     assert.deepEqual(dispatchSettlement({ mode: "align", nextQueued: false, nextSkip: false }), {
       action: "open_picker",
     });
-  });
-
-  it("leaves Spec and Vibe silent when ask and next are both absent", () => {
     assert.deepEqual(dispatchSettlement({ mode: "spec", nextQueued: false, nextSkip: false }), {
-      action: "none",
+      action: "open_picker",
     });
     assert.deepEqual(dispatchSettlement({ mode: "vibe", nextQueued: false, nextSkip: false }), {
-      action: "none",
+      action: "open_picker",
     });
   });
 

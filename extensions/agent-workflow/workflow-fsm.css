@@ -596,3 +596,439 @@ footer#bottombar {
     max-width: 280px;
   }
 }
+
+/* ================================================================
+   Reference Panel — Multi view only
+   ================================================================ */
+
+/* Full-screen stage canvas by default */
+main#stage {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  position: relative;
+}
+
+body[data-view="full"] main#stage,
+body[data-view="multi"] main#stage {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+
+/* Reference Panel as Slide-out Sidebar Drawer */
+#reference {
+  position: fixed;
+  top: 3.2rem;
+  right: 0;
+  bottom: 2.5rem;
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  z-index: 25;
+  background: var(--tuto-panel-bg, #10131d);
+  border-left: 1px solid var(--tuto-border, #283044);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+#reference.is-open {
+  transform: translateX(0);
+}
+
+.ref-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5rem 0.75rem 1.5rem;
+}
+
+.btn-icon.active {
+  background: var(--tuto-head-selected-bg, #1e263c);
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+.ref-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--tuto-text-muted, #9ba3b5);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 4px;
+  transition: color 120ms ease;
+}
+.ref-close-btn:hover {
+  color: var(--tuto-text, #f1f5f9);
+}
+
+/* Sticky header */
+.ref-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.85rem;
+  background: var(--tuto-panel-head, #1c202b);
+  border-bottom: 1px solid var(--tuto-border-subtle, #1e2330);
+}
+
+.ref-header-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tuto-text-muted, #9ba3b5);
+}
+
+.ref-header-version {
+  font-family: var(--tuto-font-mono, monospace);
+  font-size: 0.62rem;
+  padding: 1px 5px;
+  background: var(--tuto-badge-bg, #252b3a);
+  border: 1px solid var(--tuto-border-subtle, #1e2330);
+  border-radius: 3px;
+  color: #38bdf8;
+  line-height: 1.3;
+}
+
+.ref-header-btn {
+  margin-left: auto;
+  appearance: none;
+  border: 1px solid var(--tuto-border, #2c3242);
+  background: var(--tuto-panel-bg, #14171f);
+  color: var(--tuto-text-muted, #9ba3b5);
+  font-family: var(--tuto-font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.ref-header-btn:hover {
+  border-color: var(--tuto-hot, #3b82f6);
+  color: var(--tuto-text, #ffffff);
+}
+
+/* Scroll area (no wrapper — reference itself scrolls) */
+.ref-content {
+  padding: 0.5rem 0.75rem 2rem;
+}
+
+/* Accordion section */
+.ref-section {
+  border: 1px solid var(--tuto-border-subtle, #1e2330);
+  border-radius: 6px;
+  margin-bottom: 0.35rem;
+  overflow: hidden;
+  background: var(--tuto-panel-bg, #14171f);
+}
+
+.ref-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: none;
+  background: transparent;
+  color: var(--tuto-text, #ffffff);
+  cursor: pointer;
+  font-family: var(--tuto-font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-align: left;
+  transition: background 120ms ease;
+  line-height: 1.3;
+}
+.ref-toggle:hover {
+  background: var(--tuto-highlight, rgba(59, 130, 246, 0.2));
+}
+
+.ref-chevron {
+  flex-shrink: 0;
+  color: var(--tuto-muted, #647087);
+  transition: transform 200ms ease;
+}
+.ref-section.open .ref-chevron {
+  transform: rotate(90deg);
+}
+
+/* Count badge on accordion header */
+.ref-count {
+  font-family: var(--tuto-font-mono, monospace);
+  font-size: 0.58rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  background: var(--tuto-badge-bg, #252b3a);
+  border: 1px solid var(--tuto-border-subtle, #1e2330);
+  border-radius: 3px;
+  color: var(--tuto-muted, #647087);
+  line-height: 1.3;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Collapsible body */
+.ref-body {
+  display: none;
+  padding: 0.35rem 0.7rem 0.55rem;
+  border-top: 1px solid var(--tuto-border-subtle, #1e2330);
+}
+.ref-section.open .ref-body {
+  display: block;
+}
+
+/* ---- Content styles ---- */
+
+/* Bullet list */
+.ref-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.ref-list > li {
+  padding: 0.28rem 0.45rem;
+  font-size: 0.73rem;
+  line-height: 1.5;
+  color: var(--tuto-text, #ffffff);
+  border-bottom: 1px solid var(--tuto-border-subtle, #1e2330);
+  word-break: break-word;
+}
+.ref-list > li:last-child {
+  border-bottom: none;
+}
+.ref-list > li::before {
+  content: "•";
+  color: var(--tuto-muted, #647087);
+  margin-right: 0.4rem;
+  font-weight: 700;
+}
+
+/* Ordered list variant */
+ol.ref-list {
+  counter-reset: ref-ol;
+}
+ol.ref-list > li {
+  counter-increment: ref-ol;
+}
+ol.ref-list > li::before {
+  content: counter(ref-ol) ".";
+  font-family: var(--tuto-font-mono, monospace);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--tuto-hot, #3b82f6);
+  margin-right: 0.4rem;
+  min-width: 1.2em;
+  display: inline-block;
+}
+
+/* Key-value definition list */
+.ref-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+}
+.ref-kv dt {
+  font-family: var(--tuto-font-mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #38bdf8;
+  padding: 0.3rem 0.6rem 0.3rem 0.45rem;
+  border-bottom: 1px solid var(--tuto-border-subtle, #1e2330);
+  white-space: nowrap;
+}
+.ref-kv dd {
+  font-size: 0.73rem;
+  color: var(--tuto-text, #ffffff);
+  padding: 0.3rem 0.45rem;
+  margin: 0;
+  border-bottom: 1px solid var(--tuto-border-subtle, #1e2330);
+  word-break: break-word;
+}
+.ref-kv dt:last-of-type,
+.ref-kv dd:last-of-type {
+  border-bottom: none;
+}
+
+/* Summary text block */
+.ref-summary {
+  font-size: 0.73rem;
+  line-height: 1.55;
+  color: var(--tuto-text-muted, #9ba3b5);
+  padding: 0.25rem 0.45rem 0.4rem;
+  word-break: break-word;
+}
+
+/* Sub-section (nested heading in body) */
+.ref-sub {
+  border: 1px solid var(--tuto-border-subtle, #1e2330);
+  border-radius: 5px;
+  margin-bottom: 0.35rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--tuto-card-bg, #1c202a) 60%, transparent);
+}
+.ref-sub:last-child {
+  margin-bottom: 0;
+}
+
+.ref-sub-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tuto-text-muted, #9ba3b5);
+  padding: 0.35rem 0.6rem;
+  background: color-mix(in srgb, var(--tuto-panel-head, #1c202b) 50%, transparent);
+  border-bottom: 1px solid var(--tuto-border-subtle, #1e2330);
+}
+.ref-sub-title:last-child {
+  border-bottom: none;
+}
+
+/* Metadata badges row */
+.ref-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.ref-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--tuto-font-mono, monospace);
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  background: var(--tuto-badge-bg, #252b3a);
+  border: 1px solid var(--tuto-border-subtle, #1e2330);
+  border-radius: 3px;
+  color: var(--tuto-muted, #647087);
+  white-space: nowrap;
+}
+.ref-badge-hot {
+  color: #38bdf8;
+  border-color: color-mix(in srgb, #38bdf8 30%, transparent);
+}
+
+/* Tool card */
+.ref-tool-card {
+  border: 1px solid var(--tuto-border, #2c3242);
+  border-radius: 6px;
+  margin-bottom: 0.4rem;
+  overflow: hidden;
+  background: var(--tuto-card-bg, #1c202a);
+}
+.ref-tool-card:last-child {
+  margin-bottom: 0;
+}
+
+.ref-tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  background: var(--tuto-head-bg, #1c202a);
+  border-bottom: 1px solid var(--tuto-border-subtle, #1e2330);
+}
+
+.ref-tool-name {
+  font-family: var(--tuto-font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #a78bfa;
+  letter-spacing: 0.02em;
+}
+
+.ref-tool-summary {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--tuto-text-muted, #9ba3b5);
+  padding: 0.3rem 0.65rem 0.35rem;
+  word-break: break-word;
+}
+
+.ref-tool-section-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tuto-muted, #647087);
+  padding: 0.25rem 0.65rem 0.1rem;
+}
+
+/* Exception command card */
+.ref-cmd-card {
+  border: 1px solid var(--tuto-border-subtle, #1e2330);
+  border-radius: 5px;
+  margin-bottom: 0.35rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--tuto-card-bg, #1c202a) 70%, transparent);
+}
+
+.ref-cmd-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--tuto-border-subtle, #1e2330);
+}
+
+.ref-cmd-name {
+  font-family: var(--tuto-font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.ref-cmd-label {
+  font-size: 0.68rem;
+  color: var(--tuto-text-muted, #9ba3b5);
+}
+
+.ref-cmd-desc {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--tuto-text, #ffffff);
+  padding: 0.3rem 0.6rem;
+  word-break: break-word;
+}
+
+/* Light theme overrides (leverage theme.css variables mostly) */
+[data-theme="light"] .ref-header-version {
+  color: #0284c7;
+}
+[data-theme="light"] .ref-kv dt {
+  color: #0284c7;
+}
+[data-theme="light"] .ref-tool-name {
+  color: #7c3aed;
+}
+[data-theme="light"] .ref-cmd-name {
+  color: #d97706;
+}
+
+@media (max-width: 600px) {
+  #reference {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}

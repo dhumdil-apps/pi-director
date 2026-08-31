@@ -245,7 +245,7 @@ export function receive(snap: WorkflowSnapshot, event: MachineEvent, planError: 
 }
 
 /**
- * Post-turn UI dispatch. See settlement.ts for priority, including Align fallback.
+ * Post-turn UI dispatch. See settlement.ts for priority, including omitted-next fill-in fallback.
  */
 export function dispatchSettlement(snap: WorkflowSnapshot) {
   return dispatchSettlementFromSignals({

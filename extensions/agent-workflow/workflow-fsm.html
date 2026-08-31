@@ -60,6 +60,29 @@
           </button>
         </div>
 
+        <button
+          type="button"
+          id="btn-reference-toggle"
+          class="btn-icon"
+          title="Toggle Reference Sidebar (R)"
+          aria-label="Toggle Reference Sidebar"
+          aria-expanded="false"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </button>
+
         <button type="button" id="btn-theme" class="btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
           <svg
             width="14"
@@ -88,6 +111,8 @@
     <main id="stage">
       <tuto-flow-canvas id="flow-canvas"></tuto-flow-canvas>
     </main>
+
+    <section id="reference"></section>
 
     <footer id="bottombar">
       <div class="footer-left">
@@ -243,6 +268,10 @@
               <div class="shortcut-row">
                 <span class="shortcut-desc">Toggle inspector drawer</span>
                 <span class="shortcut-key"><kbd>I</kbd></span>
+              </div>
+              <div class="shortcut-row">
+                <span class="shortcut-desc">Toggle reference sidebar</span>
+                <span class="shortcut-key"><kbd>R</kbd></span>
               </div>
               <div class="shortcut-row">
                 <span class="shortcut-desc">Reset selection / Dismiss</span>

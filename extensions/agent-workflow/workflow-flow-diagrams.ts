@@ -83,38 +83,48 @@ export type WorkflowLayoutInput =
 const DEFAULT_NODE = { w: 210, h: 48 } as const;
 const DEFAULT_MODULE = { w: 260, h: 120 } as const;
 const DEFAULT_PROC = { w: 140, h: 56 } as const;
+const DEFAULT_SHARED_PROC = { w: 160, h: 56 } as const;
 
 const DEFAULT_MODE_LAYOUT: Record<FsmUserMode, Record<string, { x: number; y: number; w: number; h: number }>> = {
   align: {
-    evaluate: { x: 200, y: 80, w: 280, h: 100 },
-    establish: { x: 200, y: 280, w: 280, h: 100 },
+    evaluate: { x: 420, y: 0, w: 210, h: 48 },
+    establish: { x: 420, y: 160, w: 210, h: 48 },
     "proc-start": { x: 680, y: -8, w: 140, h: 56 },
     "proc-ask": { x: 680, y: 56, w: 140, h: 56 },
     "proc-next": { x: 680, y: 160, w: 140, h: 56 },
+    "proc-capture-turn": { x: 160, y: -8, w: 160, h: 56 },
+    "proc-reconcile-scope": { x: 160, y: 56, w: 160, h: 56 },
+    "proc-proceed-with-best": { x: 160, y: 160, w: 160, h: 56 },
   },
   spec: {
-    explore: { x: 200, y: 80, w: 280, h: 110 },
-    elaborate: { x: 200, y: 300, w: 280, h: 110 },
-    "proc-decide": { x: 680, y: 80, w: 140, h: 56 },
-    "proc-next": { x: 680, y: 300, w: 140, h: 56 },
+    explore: { x: 420, y: 320, w: 210, h: 48 },
+    elaborate: { x: 420, y: 480, w: 210, h: 48 },
+    "proc-decide": { x: 680, y: 320, w: 140, h: 56 },
+    "proc-next": { x: 680, y: 480, w: 140, h: 56 },
+    "proc-capture-turn": { x: 160, y: 320, w: 160, h: 56 },
+    "proc-record-decision": { x: 160, y: 400, w: 160, h: 56 },
+    "proc-close-out": { x: 160, y: 480, w: 160, h: 56 },
   },
   vibe: {
-    execute: { x: 200, y: 80, w: 280, h: 110 },
-    examine: { x: 200, y: 300, w: 280, h: 110 },
-    "proc-decide": { x: 680, y: 80, w: 140, h: 56 },
-    "proc-next": { x: 680, y: 300, w: 140, h: 56 },
+    execute: { x: 420, y: 640, w: 210, h: 48 },
+    examine: { x: 420, y: 800, w: 210, h: 48 },
+    "proc-decide": { x: 680, y: 640, w: 140, h: 56 },
+    "proc-next": { x: 680, y: 800, w: 140, h: 56 },
+    "proc-capture-turn": { x: 160, y: 640, w: 160, h: 56 },
+    "proc-record-decision": { x: 160, y: 720, w: 160, h: 56 },
+    "proc-close-out": { x: 160, y: 800, w: 160, h: 56 },
   },
 };
 
 const DEFAULT_OVERVIEW_LAYOUT: Record<string, { x: number; y: number; w: number; h: number }> = {
-  envision: { x: 80, y: 40, w: 260, h: 100 },
-  align: { x: 80, y: 220, w: 260, h: 120 },
+  envision: { x: 445, y: -160, w: 210, h: 48 },
+  align: { x: 420, y: -20, w: 260, h: 120 },
   spec: { x: 420, y: 220, w: 260, h: 120 },
-  vibe: { x: 760, y: 220, w: 260, h: 120 },
-  "proc-start": { x: 720, y: -160, w: 140, h: 56 },
-  "proc-ask": { x: 720, y: -20, w: 140, h: 56 },
-  "proc-decide": { x: 720, y: 220, w: 140, h: 56 },
-  "proc-next": { x: 720, y: 480, w: 140, h: 56 },
+  vibe: { x: 420, y: 480, w: 260, h: 120 },
+  "proc-start": { x: 740, y: -160, w: 140, h: 56 },
+  "proc-ask": { x: 740, y: -20, w: 140, h: 56 },
+  "proc-decide": { x: 740, y: 220, w: 140, h: 56 },
+  "proc-next": { x: 740, y: 480, w: 140, h: 56 },
 };
 
 /** Vertical spine — keep in sync with workflow-layout.js diagrams.full */
@@ -211,6 +221,84 @@ const MODE_PROCEDURE_TOOLS: Record<FsmUserMode, Array<FsmToolSpec["name"]>> = {
   vibe: ["decide", "next"],
 };
 
+const MODE_SHARED_PROCEDURES: Record<FsmUserMode, string[]> = {
+  align: ["CAPTURE_TURN", "RECONCILE_SCOPE", "PROCEED_WITH_BEST"],
+  spec: ["CAPTURE_TURN", "RECORD_DECISION", "CLOSE_OUT"],
+  vibe: ["CAPTURE_TURN", "RECORD_DECISION", "CLOSE_OUT"],
+};
+
+const MODE_SYNTHETIC_CALLS: Record<
+  FsmUserMode,
+  Array<{ from: string; to: string; label: string; event?: string; description?: string }>
+> = {
+  align: [
+    { from: "evaluate", to: "proc-ask", label: "CALL ask", description: "Envision/evaluate prompts question picker" },
+    {
+      from: "evaluate",
+      to: "proc-reconcile-scope",
+      label: "RECONCILE_SCOPE",
+      description: "Reconciles scope and active Ds",
+    },
+    {
+      from: "evaluate",
+      to: "proc-proceed-with-best",
+      label: "PWB",
+      description: "Proceed-with-best settlement shortcut",
+    },
+    {
+      from: "evaluate",
+      to: "proc-capture-turn",
+      label: "CAPTURE_TURN",
+      description: "Turn intake and transcript recording",
+    },
+    { from: "establish", to: "proc-next", label: "CALL next", description: "Establish secondary gate queues exit" },
+  ],
+  spec: [
+    { from: "explore", to: "proc-decide", label: "CALL decide", description: "Autonomous rationale logger" },
+    {
+      from: "explore",
+      to: "proc-record-decision",
+      label: "RECORD_DECISION",
+      description: "Records decision artifact and tags D review",
+    },
+    {
+      from: "explore",
+      to: "proc-capture-turn",
+      label: "CAPTURE_TURN",
+      description: "Turn intake and transcript recording",
+    },
+    {
+      from: "elaborate",
+      to: "proc-close-out",
+      label: "CLOSE_OUT",
+      description: "Spec close-out checklist audit before next",
+    },
+    { from: "elaborate", to: "proc-next", label: "CALL next", description: "Spec secondary gate queues next actions" },
+  ],
+  vibe: [
+    { from: "execute", to: "proc-decide", label: "CALL decide", description: "Autonomous rationale logger" },
+    {
+      from: "execute",
+      to: "proc-record-decision",
+      label: "RECORD_DECISION",
+      description: "Records decision artifact and tags D review",
+    },
+    {
+      from: "execute",
+      to: "proc-capture-turn",
+      label: "CAPTURE_TURN",
+      description: "Turn intake and transcript recording",
+    },
+    {
+      from: "examine",
+      to: "proc-close-out",
+      label: "CLOSE_OUT",
+      description: "Vibe close-out verification audit before next",
+    },
+    { from: "examine", to: "proc-next", label: "CALL next", description: "Vibe secondary gate queues next actions" },
+  ],
+};
+
 export function buildProcedureStrip(
   fsm: WorkflowFsm,
   layoutNodes?: DiagramLayoutSlice["nodes"],
@@ -256,6 +344,51 @@ export function buildProcedureStrip(
   return out;
 }
 
+export function buildSharedProcedureStrip(
+  fsm: WorkflowFsm,
+  layoutNodes?: DiagramLayoutSlice["nodes"],
+  defaults: Record<string, { x: number; y: number; w: number; h: number }> = {},
+  procedureNames?: string[],
+  userMode?: FsmUserMode,
+): Record<string, FlowDiagramNode> {
+  const out: Record<string, FlowDiagramNode> = {};
+  if (!procedureNames) return out;
+  let index = 0;
+  for (const name of procedureNames) {
+    const steps = fsm.procedures[name];
+    if (!steps) continue;
+    const slug = name.toLowerCase().replace(/_/g, "-");
+    const id = `proc-${slug}`;
+    const pos = placeNode(
+      id,
+      defaults[id] || {
+        x: 160,
+        y: 80 + index * 100,
+        w: DEFAULT_SHARED_PROC.w,
+        h: DEFAULT_SHARED_PROC.h,
+      },
+      layoutNodes,
+    );
+    out[id] = {
+      id,
+      label: name,
+      x: pos.x,
+      y: pos.y,
+      w: pos.w,
+      h: pos.h,
+      kind: "procedure",
+      summary: steps[0] || name,
+      procedure: [...steps],
+      customData: {
+        sharedProcedure: name,
+        ...(userMode ? { userMode } : {}),
+      },
+    };
+    index += 1;
+  }
+  return out;
+}
+
 function buildModeSubgraph(fsm: WorkflowFsm, mode: FsmUserMode, layout: DiagramLayoutSlice): FlowDiagramGraph {
   const body = fsm.modeBodies.find((b) => b.mode === mode);
   if (!body) throw new Error(`Missing modeBody for ${mode}`);
@@ -272,6 +405,7 @@ function buildModeSubgraph(fsm: WorkflowFsm, mode: FsmUserMode, layout: DiagramL
   }
 
   Object.assign(states, buildProcedureStrip(fsm, layout.nodes, defaults, MODE_PROCEDURE_TOOLS[mode], mode));
+  Object.assign(states, buildSharedProcedureStrip(fsm, layout.nodes, defaults, MODE_SHARED_PROCEDURES[mode], mode));
 
   const modeEdges = fsm.transitions.filter((t) => {
     const fromMode = fsm.states[t.from]?.userMode;
@@ -280,6 +414,22 @@ function buildModeSubgraph(fsm: WorkflowFsm, mode: FsmUserMode, layout: DiagramL
   });
 
   const transitions = modeEdges.map((t) => transitionToEdge(t, layout.edges?.[t.id]));
+
+  const syntheticCalls = (MODE_SYNTHETIC_CALLS[mode] || []).map((call) => {
+    const edgeId = `${mode}-${call.from}->${call.to}`;
+    return {
+      id: edgeId,
+      from: call.from,
+      to: call.to,
+      label: call.label,
+      event: call.event || call.label,
+      description: call.description,
+      customData: { synthetic: true, procedureEdge: true },
+      waypoints: layout.edges?.[edgeId],
+    };
+  });
+
+  transitions.push(...syntheticCalls);
 
   return {
     id: mode,
@@ -335,6 +485,8 @@ export function aggregateOverviewEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
         aggregate: true,
         sources: [partial.sourceId],
         landing: partial.customData?.landing,
+        exception: partial.customData?.exception,
+        exceptionCommand: partial.customData?.exceptionCommand,
       },
     });
   }
@@ -404,6 +556,7 @@ export function aggregateOverviewEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
 
     const dest = t.to === "envision" ? "envision" : to;
     const isNextTool = t.event.startsWith("NEXT_");
+    const isHandoff = t.event === "NEXT_HANDOFF" || t.to === "envision";
     pushAggregate({
       id: isNextTool ? `overview-next-${from}-${dest}` : t.id,
       sourceId: t.id,
@@ -413,7 +566,10 @@ export function aggregateOverviewEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
       event: isNextTool ? "next" : t.event,
       description: t.description,
       userMediated: Boolean(t.userMediated),
-      customData: { landing: t.to },
+      customData: {
+        landing: t.to,
+        ...(isHandoff ? { exception: true, exceptionCommand: "/handoff" } : {}),
+      },
     });
   }
 
@@ -484,10 +640,123 @@ export function toFlowDiagrams(fsm: WorkflowFsm = WORKFLOW_FSM, layout?: Workflo
     };
   }
 
+  // Tool strip on overview (Concept A)
+  Object.assign(overviewStates, buildProcedureStrip(fsm, overviewLayout.nodes, DEFAULT_OVERVIEW_LAYOUT));
+
   const overviewTransitions = aggregateOverviewEdges(fsm).map((edge) => {
     const wps = overviewLayout.edges?.[edge.id];
     return wps ? { ...edge, waypoints: wps } : edge;
   });
+
+  // Overview tool gating edges (Concept A)
+  const overviewToolGates: FlowDiagramEdge[] = [
+    {
+      id: "overview-gate-start",
+      from: "proc-start",
+      to: "align",
+      label: "start",
+      event: "start",
+      description: "Initialize or reuse named artifact (Align session entry)",
+      customData: { synthetic: true, toolGate: true },
+      waypoints: overviewLayout.edges?.["overview-gate-start"],
+    },
+    {
+      id: "overview-gate-ask",
+      from: "proc-ask",
+      to: "align",
+      label: "ask",
+      event: "ask",
+      description: "User question and scope reconciliation (Align only)",
+      customData: { synthetic: true, toolGate: true },
+      waypoints: overviewLayout.edges?.["overview-gate-ask"],
+    },
+    {
+      id: "overview-gate-decide-spec",
+      from: "proc-decide",
+      to: "spec",
+      label: "decide",
+      event: "decide",
+      description: "Autonomous decision logging (Spec)",
+      customData: { synthetic: true, toolGate: true },
+      waypoints: overviewLayout.edges?.["overview-gate-decide-spec"],
+    },
+    {
+      id: "overview-gate-decide-vibe",
+      from: "proc-decide",
+      to: "vibe",
+      label: "decide",
+      event: "decide",
+      description: "Autonomous decision logging (Vibe)",
+      customData: { synthetic: true, toolGate: true },
+      waypoints: overviewLayout.edges?.["overview-gate-decide-vibe"],
+    },
+    {
+      id: "overview-gate-next-align",
+      from: "proc-next",
+      to: "align",
+      label: "next",
+      event: "next",
+      description: "Exit recommendation from secondary gate",
+      customData: { synthetic: true, toolGate: true },
+      waypoints: overviewLayout.edges?.["overview-gate-next-align"],
+    },
+    {
+      id: "overview-gate-next-spec",
+      from: "proc-next",
+      to: "spec",
+      label: "next",
+      event: "next",
+      description: "Exit recommendation from secondary gate",
+      customData: { synthetic: true, toolGate: true },
+      waypoints: overviewLayout.edges?.["overview-gate-next-spec"],
+    },
+    {
+      id: "overview-gate-next-vibe",
+      from: "proc-next",
+      to: "vibe",
+      label: "next",
+      event: "next",
+      description: "Exit recommendation from secondary gate",
+      customData: { synthetic: true, toolGate: true },
+      waypoints: overviewLayout.edges?.["overview-gate-next-vibe"],
+    },
+  ];
+
+  // Concept C: /mode exception bypass edges
+  const overviewExceptionBypasses: FlowDiagramEdge[] = [
+    {
+      id: "overview-mode-bypass-align",
+      from: "align",
+      to: "align",
+      label: "/mode",
+      event: "/mode",
+      description: "Manual mode switch escape hatch (/mode)",
+      customData: { synthetic: true, exception: true, exceptionCommand: "/mode" },
+      waypoints: overviewLayout.edges?.["overview-mode-bypass-align"],
+    },
+    {
+      id: "overview-mode-bypass-spec",
+      from: "spec",
+      to: "spec",
+      label: "/mode",
+      event: "/mode",
+      description: "Manual mode switch escape hatch (/mode)",
+      customData: { synthetic: true, exception: true, exceptionCommand: "/mode" },
+      waypoints: overviewLayout.edges?.["overview-mode-bypass-spec"],
+    },
+    {
+      id: "overview-mode-bypass-vibe",
+      from: "vibe",
+      to: "vibe",
+      label: "/mode",
+      event: "/mode",
+      description: "Manual mode switch escape hatch (/mode)",
+      customData: { synthetic: true, exception: true, exceptionCommand: "/mode" },
+      waypoints: overviewLayout.edges?.["overview-mode-bypass-vibe"],
+    },
+  ];
+
+  overviewTransitions.push(...overviewToolGates, ...overviewExceptionBypasses);
 
   return {
     id: fsm.id,

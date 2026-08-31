@@ -245,18 +245,13 @@ function windowsForSegments(windows: RateWindow[]): { hourly?: RateWindow; weekl
 }
 
 /** Remaining working-day slices in this weekly window, always 1..allocationDays. */
-function remainingAllocationDays(
-  window: RateWindow,
-  now: Date,
-  allocationDays: number,
-): number | undefined {
+function remainingAllocationDays(window: RateWindow, now: Date, allocationDays: number): number | undefined {
   const duration = countdownMs(window, now);
   if (duration === undefined || duration <= 0) return undefined;
 
   const includeWeekends = allocationDays > WEEKDAYS_PER_WEEK;
   const countedMs = window.resetAt ? countedDayMsBetween(now, new Date(window.resetAt), includeWeekends) : undefined;
-  const remaining =
-    countedMs !== undefined ? Math.ceil(countedMs / DAY_MS) : Math.ceil(duration / DAY_MS);
+  const remaining = countedMs !== undefined ? Math.ceil(countedMs / DAY_MS) : Math.ceil(duration / DAY_MS);
   if (!Number.isFinite(remaining) || remaining < 1) return 1;
   return Math.min(allocationDays, remaining);
 }
@@ -266,11 +261,7 @@ function isPastReset(window: RateWindow, now: Date): boolean {
   return duration !== undefined && duration <= 0;
 }
 
-function weeklyPaceColor(
-  window: RateWindow,
-  now: Date,
-  workingDaysPerWeek: number,
-): DailyPacing["color"] | undefined {
+function weeklyPaceColor(window: RateWindow, now: Date, workingDaysPerWeek: number): DailyPacing["color"] | undefined {
   const allocationDays = parseWorkingDaysPerWeek(String(workingDaysPerWeek));
   if (!isWeeklyCadence(window.label) || isPastReset(window, now)) return undefined;
   const remaining = remainingAllocationDays(window, now, allocationDays);

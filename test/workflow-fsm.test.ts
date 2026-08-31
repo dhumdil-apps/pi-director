@@ -25,7 +25,7 @@ describe("workflow FSM graph", () => {
   });
 
   it("is v2.8 with sessionEntry and no guided next state", () => {
-    assert.equal(WORKFLOW_FSM.version, "2.8.0");
+    assert.equal(WORKFLOW_FSM.version, "2.8.1");
     assert.equal(WORKFLOW_FSM.sessionEntry.state, "envision");
     assert.ok(!("next" in WORKFLOW_FSM.states));
     assert.ok(!WORKFLOW_FSM.modeBodies.some((b) => b.states.includes("envision")));
@@ -171,19 +171,24 @@ describe("workflow flow diagrams projection", () => {
     const graph = toFlowDiagrams(WORKFLOW_FSM);
     assert.ok(graph.states.envision);
     assert.ok(!("next" in graph.states));
-    assert.ok(!graph.states["proc-next"]);
-    assert.ok(!graph.states["proc-start"]);
+    assert.ok(graph.states["proc-next"]);
+    assert.ok(graph.states["proc-start"]);
+    assert.ok(graph.states["proc-ask"]);
+    assert.ok(graph.states["proc-decide"]);
     assert.ok(graph.subgraphs?.align);
     assert.ok(!("next" in (graph.subgraphs?.align.states || {})));
     assert.ok(graph.subgraphs?.align.states["proc-next"]);
     assert.ok(graph.subgraphs?.align.states["proc-ask"]);
+    assert.ok(graph.subgraphs?.align.states["proc-capture-turn"]);
+    assert.ok(graph.subgraphs?.align.states["proc-reconcile-scope"]);
     assert.ok(!graph.subgraphs?.align.states["proc-decide"]);
     assert.ok(graph.subgraphs?.spec.states["proc-decide"]);
+    assert.ok(graph.subgraphs?.spec.states["proc-close-out"]);
     assert.ok(!graph.subgraphs?.spec.states["proc-ask"]);
     assert.ok(graph.subgraphs?.align.transitions.every((t) => t.event !== "TO_NEXT"));
 
     assert.ok(graph.transitions.some((t) => t.event === "next"));
-    assert.ok(graph.transitions.every((t) => !String(t.event || "").startsWith("NEXT_")));
+    assert.ok(graph.transitions.some((t) => t.event === "/mode"));
 
     const full = toFullFlowDiagram(WORKFLOW_FSM);
     assert.equal(Object.keys(full.states).length, Object.keys(WORKFLOW_FSM.states).length);

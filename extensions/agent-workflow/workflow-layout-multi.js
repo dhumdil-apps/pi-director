@@ -26,6 +26,30 @@ window.WORKFLOW_LAYOUT_MULTI = {
           w: 260,
           h: 120,
         },
+        "proc-start": {
+          x: 740,
+          y: -160,
+          w: 140,
+          h: 56,
+        },
+        "proc-ask": {
+          x: 740,
+          y: -20,
+          w: 140,
+          h: 56,
+        },
+        "proc-decide": {
+          x: 740,
+          y: 220,
+          w: 140,
+          h: 56,
+        },
+        "proc-next": {
+          x: 740,
+          y: 480,
+          w: 140,
+          h: 56,
+        },
       },
       edges: {
         "envision-ask-route-spec": [
@@ -106,6 +130,24 @@ window.WORKFLOW_LAYOUT_MULTI = {
           w: 140,
           h: 56,
         },
+        "proc-capture-turn": {
+          x: 160,
+          y: -8,
+          w: 160,
+          h: 56,
+        },
+        "proc-reconcile-scope": {
+          x: 160,
+          y: 56,
+          w: 160,
+          h: 56,
+        },
+        "proc-proceed-with-best": {
+          x: 160,
+          y: 160,
+          w: 160,
+          h: 56,
+        },
       },
       edges: {
         "establish-handoff": [
@@ -140,6 +182,24 @@ window.WORKFLOW_LAYOUT_MULTI = {
           w: 140,
           h: 56,
         },
+        "proc-capture-turn": {
+          x: 160,
+          y: 320,
+          w: 160,
+          h: 56,
+        },
+        "proc-record-decision": {
+          x: 160,
+          y: 400,
+          w: 160,
+          h: 56,
+        },
+        "proc-close-out": {
+          x: 160,
+          y: 480,
+          w: 160,
+          h: 56,
+        },
       },
       edges: {},
     },
@@ -167,6 +227,24 @@ window.WORKFLOW_LAYOUT_MULTI = {
           x: 680,
           y: 800,
           w: 140,
+          h: 56,
+        },
+        "proc-capture-turn": {
+          x: 160,
+          y: 640,
+          w: 160,
+          h: 56,
+        },
+        "proc-record-decision": {
+          x: 160,
+          y: 720,
+          w: 160,
+          h: 56,
+        },
+        "proc-close-out": {
+          x: 160,
+          y: 800,
+          w: 160,
           h: 56,
         },
       },
