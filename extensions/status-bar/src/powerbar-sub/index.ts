@@ -388,7 +388,13 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow, wor
   const reset = resolved.resetDescription || "";
   const pacing = segmentId === "sub-weekly" ? dailyPacingForWindow(resolved, now, workingDaysPerWeek) : undefined;
   // Hours horizon (both slots): remaining-hour blocks; Weeks/Days keep usage/pacing bars.
+  // Hourly only: suffix is quota left; Hours fill is used (100 − remaining), matching weekly.
+  const hourly = segmentId === "sub-hourly";
   const hoursBar = !pacing ? remainingHoursBar(resolved, now, workingDaysPerWeek) : undefined;
+  const hourlyHoursBar =
+    hourly && hoursBar
+      ? { bar: Math.min(100, Math.max(0, 100 - hoursBar.bar)), barSegments: hoursBar.barSegments }
+      : hoursBar;
 
   const textParts: string[] = [];
   if (label) textParts.push(label);
@@ -397,9 +403,10 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow, wor
   pi.events.emit("powerbar:update", {
     id: segmentId,
     text: textParts.join(" "),
-    suffix: pacing?.suffix ?? `${pct}%`,
-    bar: pacing?.bar ?? hoursBar?.bar ?? pct,
-    barSegments: pacing?.barSegments ?? hoursBar?.barSegments ?? segmentsForWindow(resolved, now, workingDaysPerWeek),
+    suffix: pacing?.suffix ?? (hourly ? `${Math.round(100 - resolved.usedPercent)}% left` : `${pct}%`),
+    bar: pacing?.bar ?? hourlyHoursBar?.bar ?? pct,
+    barSegments:
+      pacing?.barSegments ?? hourlyHoursBar?.barSegments ?? segmentsForWindow(resolved, now, workingDaysPerWeek),
     color: isPastReset(resolved, now)
       ? "dim"
       : (pacing?.color ??

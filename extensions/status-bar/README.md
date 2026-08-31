@@ -35,10 +35,11 @@ labels (`Week`, `5h`, `3d`, …) the text prefix uses the same remaining horizon
 `Weeks 7d1h`; named windows (Credits, Extra, model names) keep their provider
 label. Provider cadence strings stay on the window for routing and daily pacing.
 Under the Hours horizon on both hourly and weekly slots, the blocks track
-remaining time (one block per whole or partial hour left) and fill by how much
-of that remaining-hour capacity is still open — so `Hours 2m` is one thin
-last-hour block, not several usage-filled bars. The suffix still shows window
-usage percent (or weekly pacing left); bar color still follows usage thresholds.
+remaining time (one block per whole or partial hour left). Weekly Hours fill
+by how much of that remaining-hour capacity is still open, so `Hours 2m` is one
+thin last-hour block. Hourly Hours fill is used (the inverse) and the hourly
+suffix is quota left, same copy as weekly pacing. Bar color still follows usage
+thresholds.
 For a weekly window with between one day and eight days left, the remaining-day
 blocks show position against the configured daily allocations: green before
 completed-day allocation is consumed, blue while consuming today's allocation,

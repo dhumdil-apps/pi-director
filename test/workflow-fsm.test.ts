@@ -170,11 +170,21 @@ describe("workflow flow diagrams projection", () => {
 
     const graph = toFlowDiagrams(WORKFLOW_FSM);
     assert.ok(graph.states.envision);
+    assert.ok(graph.states.align);
+    assert.ok(graph.states.spec);
+    assert.ok(graph.states.vibe);
     assert.ok(!("next" in graph.states));
-    assert.ok(graph.states["proc-next"]);
-    assert.ok(graph.states["proc-start"]);
-    assert.ok(graph.states["proc-ask"]);
-    assert.ok(graph.states["proc-decide"]);
+    assert.ok(!("proc-next" in graph.states));
+    assert.ok(!("proc-ask" in graph.states));
+
+    assert.ok(graph.subgraphs?.tools);
+    assert.ok(graph.subgraphs?.tools.states["tool-start"]);
+    assert.ok(graph.subgraphs?.tools.states["tool-ask"]);
+    assert.ok(graph.subgraphs?.tools.states["tool-decide"]);
+    assert.ok(graph.subgraphs?.tools.states["tool-next"]);
+    assert.ok(graph.subgraphs?.tools.states["cmd-mode"]);
+    assert.ok(graph.subgraphs?.tools.states["cmd-handoff"]);
+
     assert.ok(graph.subgraphs?.align);
     assert.ok(!("next" in (graph.subgraphs?.align.states || {})));
     assert.ok(graph.subgraphs?.align.states["proc-next"]);
@@ -188,7 +198,7 @@ describe("workflow flow diagrams projection", () => {
     assert.ok(graph.subgraphs?.align.transitions.every((t) => t.event !== "TO_NEXT"));
 
     assert.ok(graph.transitions.some((t) => t.event === "next"));
-    assert.ok(graph.transitions.some((t) => t.event === "/mode"));
+    assert.ok(graph.transitions.some((t) => t.event === "/handoff"));
 
     const full = toFullFlowDiagram(WORKFLOW_FSM);
     assert.equal(Object.keys(full.states).length, Object.keys(WORKFLOW_FSM.states).length);

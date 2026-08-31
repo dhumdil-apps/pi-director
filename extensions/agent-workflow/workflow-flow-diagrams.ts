@@ -454,13 +454,12 @@ function landingMode(fsm: WorkflowFsm, stateId: string): string {
   return stateId;
 }
 
-/** Overview edges: entry hops + cross-mode from secondaries (aggregated). */
+/** Overview edges: entry hops + cross-mode from secondaries (clean aggregated pairs). */
 export function aggregateOverviewEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
-  const edges: FlowDiagramEdge[] = [];
   const bucket = new Map<string, FlowDiagramEdge>();
 
   function pushAggregate(partial: FlowDiagramEdge & { sourceId: string }) {
-    const key = `${partial.from}|${partial.to}|${partial.event || partial.label}`;
+    const key = `${partial.from}->${partial.to}`;
     const existing = bucket.get(key);
     if (existing) {
       const sources = (existing.customData?.sources as string[]) || [];
@@ -495,34 +494,34 @@ export function aggregateOverviewEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
     if (t.from === "envision") {
       if (t.event === "CONTINUE") {
         pushAggregate({
-          id: t.id,
+          id: "overview-envision-align",
           sourceId: t.id,
           from: "envision",
           to: "align",
-          label: t.label || t.event,
-          event: t.event,
+          label: "CONTINUE",
+          event: "CONTINUE",
           description: t.description,
           customData: { landing: "evaluate" },
         });
       } else if (t.event === "PWB_SPEC") {
         pushAggregate({
-          id: t.id,
+          id: "overview-envision-spec",
           sourceId: t.id,
           from: "envision",
           to: "spec",
-          label: t.label || t.event,
-          event: t.event,
+          label: "PWB_SPEC",
+          event: "PWB_SPEC",
           description: t.description,
           userMediated: true,
         });
       } else if (t.event === "PWB_VIBE") {
         pushAggregate({
-          id: t.id,
+          id: "overview-envision-vibe",
           sourceId: t.id,
           from: "envision",
           to: "vibe",
-          label: t.label || t.event,
-          event: t.event,
+          label: "PWB_VIBE",
+          event: "PWB_VIBE",
           description: t.description,
           userMediated: true,
         });
@@ -531,13 +530,14 @@ export function aggregateOverviewEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
     }
 
     if (t.from === "evaluate" && (t.event === "PWB_SPEC" || t.event === "PWB_VIBE")) {
+      const dest = t.event === "PWB_SPEC" ? "spec" : "vibe";
       pushAggregate({
-        id: t.id,
+        id: `overview-align-${dest}`,
         sourceId: t.id,
         from: "align",
-        to: t.event === "PWB_SPEC" ? "spec" : "vibe",
-        label: t.label || t.event,
-        event: t.event,
+        to: dest,
+        label: t.event === "PWB_SPEC" ? "next" : "next / PWB",
+        event: "next",
         description: t.description,
         userMediated: true,
       });
@@ -546,24 +546,23 @@ export function aggregateOverviewEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
 
     const fromMode = fsm.states[t.from]?.userMode;
     const toMode = fsm.states[t.to]?.userMode;
-    // Same-mode body edges stay on mode diagrams only
     if (fromMode && toMode && fromMode === toMode) continue;
 
-    // Cross-mode (including handoff to envision)
     const from = fromMode || landingMode(fsm, t.from);
     const to = toMode || landingMode(fsm, t.to);
     if (from === to && t.to !== "envision") continue;
 
     const dest = t.to === "envision" ? "envision" : to;
-    const isNextTool = t.event.startsWith("NEXT_");
     const isHandoff = t.event === "NEXT_HANDOFF" || t.to === "envision";
+    const isReturn = t.event === "RETURN_ALIGN" || (dest === "align" && (from === "spec" || from === "vibe"));
+
     pushAggregate({
-      id: isNextTool ? `overview-next-${from}-${dest}` : t.id,
+      id: `overview-${from}-${dest}`,
       sourceId: t.id,
       from,
       to: dest,
-      label: isNextTool ? "next" : t.label || t.event,
-      event: isNextTool ? "next" : t.event,
+      label: isHandoff ? "/handoff" : isReturn ? "return" : "next",
+      event: isHandoff ? "/handoff" : isReturn ? "return" : "next",
       description: t.description,
       userMediated: Boolean(t.userMediated),
       customData: {
@@ -573,8 +572,7 @@ export function aggregateOverviewEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
     });
   }
 
-  edges.push(...bucket.values());
-  return edges;
+  return Array.from(bucket.values());
 }
 
 /** @deprecated kept for callers expecting next-filtered aggregates */
@@ -586,6 +584,204 @@ export function aggregateCrossModeEdges(fsm: WorkflowFsm): FlowDiagramEdge[] {
       return t && fsm.states[t.from]?.role === "secondary";
     });
   });
+}
+
+export function buildToolsSubgraph(fsm: WorkflowFsm, layout: DiagramLayoutSlice): FlowDiagramGraph {
+  const defaults: Record<string, { x: number; y: number; w: number; h: number }> = {
+    "tool-start": { x: 180, y: -60, w: 160, h: 52 },
+    "tool-ask": { x: 180, y: 30, w: 160, h: 52 },
+    "tool-decide": { x: 180, y: 120, w: 160, h: 52 },
+    "tool-next": { x: 180, y: 210, w: 160, h: 52 },
+    "cmd-mode": { x: 180, y: 300, w: 160, h: 52 },
+    "cmd-handoff": { x: 180, y: 390, w: 160, h: 52 },
+    "target-envision": { x: 560, y: -60, w: 260, h: 52 },
+    "target-align": { x: 560, y: 30, w: 260, h: 68 },
+    "target-spec": { x: 560, y: 130, w: 260, h: 68 },
+    "target-vibe": { x: 560, y: 230, w: 260, h: 68 },
+  };
+
+  const states: Record<string, FlowDiagramNode> = {};
+
+  for (const tool of fsm.tools) {
+    const id = `tool-${tool.name}`;
+    const pos = placeNode(id, defaults[id] || { x: 180, y: 100, w: 160, h: 52 }, layout.nodes);
+    states[id] = {
+      id,
+      label: `CALL ${tool.name.toUpperCase()}`,
+      x: pos.x,
+      y: pos.y,
+      w: pos.w,
+      h: pos.h,
+      kind: "procedure",
+      summary: tool.summary,
+      procedure: [...tool.mechanics],
+      customData: { procedureTool: tool.name, modes: tool.modes, gate: tool.gate },
+    };
+  }
+
+  states["cmd-mode"] = {
+    id: "cmd-mode",
+    label: "/mode",
+    x: placeNode("cmd-mode", defaults["cmd-mode"] || { x: 180, y: 300, w: 160, h: 52 }, layout.nodes).x,
+    y: placeNode("cmd-mode", defaults["cmd-mode"] || { x: 180, y: 300, w: 160, h: 52 }, layout.nodes).y,
+    w: 160,
+    h: 52,
+    kind: "procedure",
+    summary: "Universal manual mode switch option picker",
+    procedure: ["Escape hatch: opens the mode picker anywhere, without completing current steps."],
+  };
+
+  states["cmd-handoff"] = {
+    id: "cmd-handoff",
+    label: "/handoff",
+    x: placeNode("cmd-handoff", defaults["cmd-handoff"] || { x: 180, y: 390, w: 160, h: 52 }, layout.nodes).x,
+    y: placeNode("cmd-handoff", defaults["cmd-handoff"] || { x: 180, y: 390, w: 160, h: 52 }, layout.nodes).y,
+    w: 160,
+    h: 52,
+    kind: "procedure",
+    summary: "Session restart continue into fresh Align",
+    procedure: ["Leaves current format artifact intact and starts fresh session at envision."],
+  };
+
+  states["target-envision"] = {
+    id: "target-envision",
+    label: "ENVISION (entry)",
+    x: placeNode("target-envision", defaults["target-envision"] || { x: 560, y: -60, w: 260, h: 52 }, layout.nodes).x,
+    y: placeNode("target-envision", defaults["target-envision"] || { x: 560, y: -60, w: 260, h: 52 }, layout.nodes).y,
+    w: 260,
+    h: 52,
+    kind: "mode",
+    summary: "Session entry: initial scope ask + artifact start",
+  };
+
+  states["target-align"] = {
+    id: "target-align",
+    label: "ALIGN",
+    x: placeNode("target-align", defaults["target-align"] || { x: 560, y: 30, w: 260, h: 68 }, layout.nodes).x,
+    y: placeNode("target-align", defaults["target-align"] || { x: 560, y: 30, w: 260, h: 68 }, layout.nodes).y,
+    w: 260,
+    h: 68,
+    kind: "mode",
+    summary: "evaluate (primary, CALL ask) ⇄ establish (secondary, CALL next)",
+  };
+
+  states["target-spec"] = {
+    id: "target-spec",
+    label: "SPEC",
+    x: placeNode("target-spec", defaults["target-spec"] || { x: 560, y: 130, w: 260, h: 68 }, layout.nodes).x,
+    y: placeNode("target-spec", defaults["target-spec"] || { x: 560, y: 130, w: 260, h: 68 }, layout.nodes).y,
+    w: 260,
+    h: 68,
+    kind: "mode",
+    summary: "explore (primary, CALL decide) ⇄ elaborate (secondary, CALL next)",
+  };
+
+  states["target-vibe"] = {
+    id: "target-vibe",
+    label: "VIBE",
+    x: placeNode("target-vibe", defaults["target-vibe"] || { x: 560, y: 230, w: 260, h: 68 }, layout.nodes).x,
+    y: placeNode("target-vibe", defaults["target-vibe"] || { x: 560, y: 230, w: 260, h: 68 }, layout.nodes).y,
+    w: 260,
+    h: 68,
+    kind: "mode",
+    summary: "execute (primary, CALL decide) ⇄ examine (secondary, CALL next)",
+  };
+
+  const transitions: FlowDiagramEdge[] = [
+    {
+      id: "tools-start-envision",
+      from: "tool-start",
+      to: "target-envision",
+      label: "entry start",
+      description: "Creates/names artifact on session entry after first scope ask",
+      waypoints: layout.edges?.["tools-start-envision"],
+    },
+    {
+      id: "tools-ask-envision",
+      from: "tool-ask",
+      to: "target-envision",
+      label: "goal-scope",
+      description: "One batch scope ask on session entry before start",
+      waypoints: layout.edges?.["tools-ask-envision"],
+    },
+    {
+      id: "tools-ask-align",
+      from: "tool-ask",
+      to: "target-align",
+      label: "evaluate only",
+      description: "User clarification, D-review, and RECONCILE_SCOPE (never from establish)",
+      waypoints: layout.edges?.["tools-ask-align"],
+    },
+    {
+      id: "tools-decide-spec",
+      from: "tool-decide",
+      to: "target-spec",
+      label: "explore",
+      description: "Autonomous decision logging during research (RECORD_DECISION)",
+      waypoints: layout.edges?.["tools-decide-spec"],
+    },
+    {
+      id: "tools-decide-vibe",
+      from: "tool-decide",
+      to: "target-vibe",
+      label: "execute",
+      description: "Autonomous decision logging during implementation (RECORD_DECISION)",
+      waypoints: layout.edges?.["tools-decide-vibe"],
+    },
+    {
+      id: "tools-next-align",
+      from: "tool-next",
+      to: "target-align",
+      label: "establish only",
+      description: "Secondary gate exit recommendation (never from evaluate)",
+      waypoints: layout.edges?.["tools-next-align"],
+    },
+    {
+      id: "tools-next-spec",
+      from: "tool-next",
+      to: "target-spec",
+      label: "elaborate only",
+      description: "Secondary gate exit recommendation (never from explore)",
+      waypoints: layout.edges?.["tools-next-spec"],
+    },
+    {
+      id: "tools-next-vibe",
+      from: "tool-next",
+      to: "target-vibe",
+      label: "examine only",
+      description: "Secondary gate exit recommendation (never from execute)",
+      waypoints: layout.edges?.["tools-next-vibe"],
+    },
+    {
+      id: "tools-mode-bypass",
+      from: "cmd-mode",
+      to: "target-align",
+      label: "bypass all",
+      description: "Manual escape hatch available across all modes without gate conditions",
+      waypoints: layout.edges?.["tools-mode-bypass"],
+    },
+    {
+      id: "tools-handoff-envision",
+      from: "cmd-handoff",
+      to: "target-envision",
+      label: "restart",
+      description: "Restarts session in fresh ALIGN keeping existing plan intact",
+      waypoints: layout.edges?.["tools-handoff-envision"],
+    },
+  ];
+
+  return {
+    id: "tools",
+    title: "Tools & Gates",
+    version: fsm.version,
+    summary:
+      "Procedure tools (start, ask, decide, next) and manual command bypasses (/mode, /handoff) mapped to caller mode permissions and primary/secondary gate rules.",
+    framing: false,
+    initial: "tool-start",
+    states,
+    transitions,
+    tools: fsm.tools,
+  };
 }
 
 export function toFlowDiagrams(fsm: WorkflowFsm = WORKFLOW_FSM, layout?: WorkflowLayoutInput): FlowDiagramGraph {
@@ -600,6 +796,7 @@ export function toFlowDiagrams(fsm: WorkflowFsm = WORKFLOW_FSM, layout?: Workflo
     align: buildModeSubgraph(fsm, "align", mergeLegacy(resolveDiagramLayout(layout, "align"))),
     spec: buildModeSubgraph(fsm, "spec", mergeLegacy(resolveDiagramLayout(layout, "spec"))),
     vibe: buildModeSubgraph(fsm, "vibe", mergeLegacy(resolveDiagramLayout(layout, "vibe"))),
+    tools: buildToolsSubgraph(fsm, mergeLegacy(resolveDiagramLayout(layout, "tools"))),
   };
 
   const overviewStates: Record<string, FlowDiagramNode> = {};
@@ -640,123 +837,10 @@ export function toFlowDiagrams(fsm: WorkflowFsm = WORKFLOW_FSM, layout?: Workflo
     };
   }
 
-  // Tool strip on overview (Concept A)
-  Object.assign(overviewStates, buildProcedureStrip(fsm, overviewLayout.nodes, DEFAULT_OVERVIEW_LAYOUT));
-
   const overviewTransitions = aggregateOverviewEdges(fsm).map((edge) => {
     const wps = overviewLayout.edges?.[edge.id];
     return wps ? { ...edge, waypoints: wps } : edge;
   });
-
-  // Overview tool gating edges (Concept A)
-  const overviewToolGates: FlowDiagramEdge[] = [
-    {
-      id: "overview-gate-start",
-      from: "proc-start",
-      to: "align",
-      label: "start",
-      event: "start",
-      description: "Initialize or reuse named artifact (Align session entry)",
-      customData: { synthetic: true, toolGate: true },
-      waypoints: overviewLayout.edges?.["overview-gate-start"],
-    },
-    {
-      id: "overview-gate-ask",
-      from: "proc-ask",
-      to: "align",
-      label: "ask",
-      event: "ask",
-      description: "User question and scope reconciliation (Align only)",
-      customData: { synthetic: true, toolGate: true },
-      waypoints: overviewLayout.edges?.["overview-gate-ask"],
-    },
-    {
-      id: "overview-gate-decide-spec",
-      from: "proc-decide",
-      to: "spec",
-      label: "decide",
-      event: "decide",
-      description: "Autonomous decision logging (Spec)",
-      customData: { synthetic: true, toolGate: true },
-      waypoints: overviewLayout.edges?.["overview-gate-decide-spec"],
-    },
-    {
-      id: "overview-gate-decide-vibe",
-      from: "proc-decide",
-      to: "vibe",
-      label: "decide",
-      event: "decide",
-      description: "Autonomous decision logging (Vibe)",
-      customData: { synthetic: true, toolGate: true },
-      waypoints: overviewLayout.edges?.["overview-gate-decide-vibe"],
-    },
-    {
-      id: "overview-gate-next-align",
-      from: "proc-next",
-      to: "align",
-      label: "next",
-      event: "next",
-      description: "Exit recommendation from secondary gate",
-      customData: { synthetic: true, toolGate: true },
-      waypoints: overviewLayout.edges?.["overview-gate-next-align"],
-    },
-    {
-      id: "overview-gate-next-spec",
-      from: "proc-next",
-      to: "spec",
-      label: "next",
-      event: "next",
-      description: "Exit recommendation from secondary gate",
-      customData: { synthetic: true, toolGate: true },
-      waypoints: overviewLayout.edges?.["overview-gate-next-spec"],
-    },
-    {
-      id: "overview-gate-next-vibe",
-      from: "proc-next",
-      to: "vibe",
-      label: "next",
-      event: "next",
-      description: "Exit recommendation from secondary gate",
-      customData: { synthetic: true, toolGate: true },
-      waypoints: overviewLayout.edges?.["overview-gate-next-vibe"],
-    },
-  ];
-
-  // Concept C: /mode exception bypass edges
-  const overviewExceptionBypasses: FlowDiagramEdge[] = [
-    {
-      id: "overview-mode-bypass-align",
-      from: "align",
-      to: "align",
-      label: "/mode",
-      event: "/mode",
-      description: "Manual mode switch escape hatch (/mode)",
-      customData: { synthetic: true, exception: true, exceptionCommand: "/mode" },
-      waypoints: overviewLayout.edges?.["overview-mode-bypass-align"],
-    },
-    {
-      id: "overview-mode-bypass-spec",
-      from: "spec",
-      to: "spec",
-      label: "/mode",
-      event: "/mode",
-      description: "Manual mode switch escape hatch (/mode)",
-      customData: { synthetic: true, exception: true, exceptionCommand: "/mode" },
-      waypoints: overviewLayout.edges?.["overview-mode-bypass-spec"],
-    },
-    {
-      id: "overview-mode-bypass-vibe",
-      from: "vibe",
-      to: "vibe",
-      label: "/mode",
-      event: "/mode",
-      description: "Manual mode switch escape hatch (/mode)",
-      customData: { synthetic: true, exception: true, exceptionCommand: "/mode" },
-      waypoints: overviewLayout.edges?.["overview-mode-bypass-vibe"],
-    },
-  ];
-
-  overviewTransitions.push(...overviewToolGates, ...overviewExceptionBypasses);
 
   return {
     id: fsm.id,
