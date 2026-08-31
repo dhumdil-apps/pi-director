@@ -39,7 +39,7 @@ focused source or interactive review for behavior those checks do not cover.
 
 ## Unslop
 
-Always-on copy of `.pi/skills/unslop/SKILL.md`. Cut AI tells from user-facing writing (README voice, site copy, emails, similar prose).
+Always-on. Cut AI tells from user-facing writing (README voice, site copy, emails, similar prose).
 
 Use this only when the deliverable is human-facing prose. Skip it for code, tests, plan artifacts, AGENTS/MEMORY, checklists, tool JSON, and structured workflow output.
 

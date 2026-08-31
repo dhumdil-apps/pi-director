@@ -1,6 +1,6 @@
 ---
 name: thermo-nuclear-code-quality-review
-description: Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a thermo-nuclear code quality review, thermonuclear review, deep code quality audit, or especially harsh maintainability review.
+description: Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth, plus a Standards vs Spec check on a pinned git range. Use for a thermo-nuclear code quality review, thermonuclear review, deep code quality audit, or especially harsh maintainability review.
 disable-model-invocation: true
 ---
 
@@ -9,6 +9,17 @@ disable-model-invocation: true
 Use this skill for an unusually strict review focused on implementation quality, maintainability, abstraction quality, and codebase health.
 
 Above all, this skill should push the reviewer to be **ambitious** about code structure. Do not merely identify local cleanup opportunities. Actively search for "code judo" moves: restructurings that preserve behavior while making the implementation dramatically simpler, smaller, more direct, and more elegant.
+
+## Spec and standards axes
+
+Pin a git range first (`git diff <fixed-point>...HEAD` three-dot; confirm the ref and a non-empty diff). Then report two axes without merging them. This repo has no subagents: run both axes in this session, sequentially.
+
+- **Standards**: documented rules in `AGENTS.md`, `docs/DEVELOPMENT.md`, `docs/EXTENSIONS.md`, plus the smell list below. Repo docs win. Smells are judgement calls; skip what tooling already enforces.
+- **Spec**: the originating issue or plan. Missing, partial, extra, or wrong against that text.
+
+Smell list (what it is -> how to fix): Mysterious Name -> rename; Duplicated Code -> extract; Feature Envy -> move the method; Data Clumps -> one type; Primitive Obsession -> a small domain type; Repeated Switches -> polymorphism or one shared map; Shotgun Surgery -> gather the change; Divergent Change -> split the module; Speculative Generality -> delete until needed; Message Chains -> hide the walk; Middle Man -> call through; Refused Bequest -> composition.
+
+If the user gave no spec, say so under Spec and continue. End the axes with counts per heading, then continue with the maintainability rules below.
 
 ## Core Prompt
 

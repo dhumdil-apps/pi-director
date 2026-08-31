@@ -378,6 +378,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "ELSE IF RECONCILE_SCOPE needs User keep/defer/replace/resolve options: CALL ask for that only.",
         "ELSE IF no User answers are required: do NOT CALL ask; summarize briefly and PROCEED to ESTABLISH, which may CALL next (never wait in editor without ask or next).",
         "NEVER re-fish entry goal-scope questions already captured in envision; NEVER invent fishing questions on entry.",
+        "Frontier rounds: treat independent User decisions as one ask CALL (already batched). Highest-confidence option is the recommended answer. Dependent questions wait for a later evaluate CALL. Empty frontier (no remaining User decisions) → ESTABLISH, no fishing. Discoverable facts stay Spec — never explore in evaluate.",
         "Dependent follow-ups: CALL ask again while still in evaluate when still required after answers.",
         "APPEND every completed prompt, context, displayed option, confidence, and exact answer to User transcript.",
         "SYNTHESIZE into Goal, Align, Decisions, and Checklist after answers.",

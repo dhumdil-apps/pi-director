@@ -275,6 +275,30 @@ function weeklyPaceColor(window: RateWindow, now: Date, workingDaysPerWeek: numb
   return "accent";
 }
 
+function allocationHoursFromLabel(label: string): number | undefined {
+  const hours = label.trim().match(/^(\d+)\s*h$/i);
+  if (!hours) return undefined;
+  const n = Number(hours[1]);
+  if (!Number.isFinite(n) || n < 1) return undefined;
+  return n;
+}
+
+function hourlyPaceColor(window: RateWindow, now: Date): DailyPacing["color"] | undefined {
+  if (isWeeklyCadence(window.label) || isPastReset(window, now)) return undefined;
+  const allocationHours = allocationHoursFromLabel(window.label);
+  if (allocationHours === undefined) return undefined;
+  const duration = countdownMs(window, now);
+  if (duration === undefined || duration <= 0) return undefined;
+  const remaining = Math.min(allocationHours, Math.max(1, Math.ceil(duration / HOUR_MS)));
+  const usedPercent = Math.max(0, Math.min(100, window.usedPercent));
+  const hourAllocation = 100 / allocationHours;
+  const completedAllocation = (allocationHours - remaining) * hourAllocation;
+  const currentLimit = completedAllocation + hourAllocation;
+  if (usedPercent < completedAllocation) return "success";
+  if (usedPercent > currentLimit) return "error";
+  return "accent";
+}
+
 /**
  * Rebase total weekly utilization onto the configured daily allocations that
  * remain visible. This is cumulative budget position, not usage recorded today.
@@ -376,12 +400,12 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow, wor
     suffix: pacing?.suffix ?? `${pct}%`,
     bar: pacing?.bar ?? hoursBar?.bar ?? pct,
     barSegments: pacing?.barSegments ?? hoursBar?.barSegments ?? segmentsForWindow(resolved, now, workingDaysPerWeek),
-    color:
-      segmentId === "sub-weekly"
-        ? isPastReset(resolved, now)
-          ? "dim"
-          : (pacing?.color ?? weeklyPaceColor(resolved, now, workingDaysPerWeek) ?? getColor(pct))
-        : getColor(pct),
+    color: isPastReset(resolved, now)
+      ? "dim"
+      : (pacing?.color ??
+        weeklyPaceColor(resolved, now, workingDaysPerWeek) ??
+        hourlyPaceColor(resolved, now) ??
+        getColor(pct)),
     row: 3,
   });
 }
