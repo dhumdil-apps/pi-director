@@ -21,6 +21,7 @@ extension.
 
 - **agy** (`skills/agy/SKILL.md`) — Manual-invocation skill (`/skill:agy`) that offloads a spec or research task to the locally installed Antigravity CLI binary. Uses the current plan artifact as context, runs `agy --print --dangerously-skip-permissions`, and returns the output for synthesis. Never invoked automatically.
 - **atomic-design** (`skills/atomic-design/SKILL.md`) — Methodology and mental model for constructing, auditing, and maintaining modular UI component systems across the 5-tier hierarchy (atoms, molecules, organisms, templates, pages).
+- **thermo-nuclear-code-quality-review** (`skills/thermo-nuclear-code-quality-review/SKILL.md`) — Manual-invocation review skill for unusually strict maintainability audits, abstraction quality, 1k-line thresholds, and architectural simplification.
 - **unslop** (`skills/unslop/SKILL.md`) — Plain-speech rewriting rules and AI tell removal for user-facing writing (README, site copy, documentation).
 
 ## Supporting resources
