@@ -9,6 +9,8 @@
  * Runtime tool gates live in `workflow-machine.ts` and must stay aligned with
  * `tools.*.gate` and the transition table below.
  *
+ * v2.8.3 — Align may ask to spec a prototype or offload research/prototype to a CLI child (agy or pi --print) writing under `.pi`.
+ * v2.8.2 — Spec throwaway HTML under `.pi` (linked in the plan); Align may ask to spec a prototype when relevant.
  * v2.8.1 — omitted next opens fill-in picker in every mode; Spec/Vibe switches always kickoff; empty next still skips.
  * v2.8.0 — start/ask/decide/next are tools/procedures not guided states; secondaries CALL next (NEXT_* from establish/elaborate/examine); sessionEntry envision outside Align body; ask/decide plain-language picker rules.
  * v2.7.0 — (superseded) shared switch state next + TO_NEXT.
@@ -17,7 +19,7 @@
  * v2.6.6+ — primary homes + secondary gates; bi-body ALIGN/SPEC/VIBE; Align dual landing NEXT_ALIGN/RETURN_ALIGN.
  */
 
-export const WORKFLOW_FSM_VERSION = "2.8.1";
+export const WORKFLOW_FSM_VERSION = "2.8.3";
 
 export type FsmStateId = "envision" | "establish" | "explore" | "elaborate" | "execute" | "examine" | "evaluate";
 
@@ -175,7 +177,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
     "NEVER CALL decide or next before start writes the named artifact. Envision entry MAY CALL ask before start when no named artifact exists.",
   ],
   invariants: [
-    "ONLY VIBE MAY change files outside .pi; ALIGN and SPEC update .pi workflow state only.",
+    "ONLY VIBE MAY change files outside .pi; ALIGN and SPEC update .pi workflow state only. Spec MAY write throwaway HTML under `.pi` (never project source) and MUST link that path in the plan.",
     "ALIGN may NEVER search or read extensions/, deep docs/, or other source — Spec explore owns research; Vibe may read what implementation needs. Envision before the first scope ask: no extra file reads — use the kickoff plus harness-injected AGENTS.md already in context. After that ask and start, Align may read the session plan, then `.pi/AGENTS.md` and `.pi/MEMORY.md` as needed. NEVER list `.pi/plan/` or read sibling plans, root README.md, or package.json just to unlock start.",
     "One versioned .pi/plan/<name>.md continues across modes and handoffs.",
     "Retain Digest, Goal, Align, Decisions, Evidence, Proposal, Checklist, Work log, User transcript, and Agent transcript.",
@@ -228,7 +230,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       exitTool: "next",
       steps: [
         "Land after session entry CONTINUE (or RETURN_ALIGN / body loop).",
-        "RUN evaluate (primary): D-review ask, User clarification, RECONCILE_SCOPE — never CALL next; never explore the codebase.",
+        "RUN evaluate (primary): D-review ask, User clarification, RECONCILE_SCOPE — never CALL next; never explore the codebase. WHEN research would be a long isolated dump, or the question is logic/state-feel or what UI should look like, MAY ask whether to spec a throwaway prototype here or offload research/prototype to a CLI child (agy or pi --print); user-stated intent is enough.",
         "WHEN ready to leave Align primary work: TO_GATE establish (secondary judge).",
         "establish: confirm/summarize only — NEVER CALL ask.",
         "establish judges: RETURN to evaluate (more Align work) OR CALL next (mode switch / handoff).",
@@ -243,9 +245,9 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       secondary: "elaborate",
       exitTool: "next",
       steps: [
-        "Land on and RUN explore (primary): bounded research; decide when needed.",
+        "Land on and RUN explore (primary): bounded research; decide when needed. If prototyping in-session: write throwaway HTML under `.pi` only (logic: one file, free-play plus guided tabs; UI: radical variants), never project source; link the path in Evidence. If the plan records Align yes for a CLI child: run the subagent skill (agy or pi --print); child writes `.pi/offload/` or `.pi/proto/`; link that path, do not dump stdout.",
         "WHEN ready to propose or leave Spec: TO_GATE elaborate.",
-        "elaborate: draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT.",
+        "elaborate: draft Proposal/Checklist, RECORD_DECISION as needed, RUN CLOSE_OUT; link any `.pi` prototype path in Proposal.",
         "elaborate judges: RETURN explore OR CALL next (never CALL next from explore).",
       ],
     },
@@ -257,7 +259,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       secondary: "examine",
       exitTool: "next",
       steps: [
-        "Land on and RUN execute (primary): implement accepted scope; decide when needed.",
+        "Land on and RUN execute (primary): implement accepted scope in project files; decide when needed. Do not treat project-tree throwaways as the Spec prototype path (those live under `.pi`).",
         "WHEN ready to verify or leave Vibe: TO_GATE examine.",
         "examine: run checks, RECORD evidence, RUN CLOSE_OUT.",
         "examine judges: RETURN execute OR CALL next (never CALL next from execute).",
@@ -375,6 +377,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "NEVER explore the codebase in evaluate; if facts are missing, route to Spec (next or PWB) rather than searching source.",
         "IF kickoff/review lists specific D ids: CALL ask ONLY to accept/change/defer those Ds — do not invent new scope questions.",
         "ELSE IF the User message explicitly requests clarification: CALL ask for that request only.",
+        "ELSE IF research would be a long isolated dump, OR the open question is whether logic/state feels right or what UI should look like, AND the User has not already stated prototype or offload intent: MAY CALL ask whether to spec a throwaway prototype here or offload to a CLI child (agy vs pi --print) — not a new tool.",
         "ELSE IF RECONCILE_SCOPE needs User keep/defer/replace/resolve options: CALL ask for that only.",
         "ELSE IF no User answers are required: do NOT CALL ask; summarize briefly and PROCEED to ESTABLISH, which may CALL next (never wait in editor without ask or next).",
         "NEVER re-fish entry goal-scope questions already captured in envision; NEVER invent fishing questions on entry.",
@@ -412,7 +415,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       userMode: "spec",
       role: "primary",
       summary:
-        "Spec primary home: codebase research and fact-finding; may CALL decide; update the plan only — no project file mutations.",
+        "Spec primary home: codebase research and fact-finding; may CALL decide; plan plus optional throwaway HTML under `.pi` — no project file mutations.",
       permission: "read",
       substates: ["symbolSearch", "evidenceGathering"],
       procedure: [
@@ -421,6 +424,8 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "BROADEN only for a named unresolved reason and STOP when evidence answers it.",
         "EXCLUDE node_modules, generated, vendor, cache trees, and source maps unless explicitly targeted.",
         "RECORD findings in Evidence section; DO NOT mutate files outside .pi.",
+        "IF prototyping in-session: write throwaway HTML under `.pi` (e.g. `.pi/proto/`), never project source. Logic/FSM: one HTML file with free-play events plus guided walkthrough tabs. UI: radical variants, switchable. Trivial to open, no persistence, surface full state. LINK the path in Evidence.",
+        "IF the plan records Align yes for a CLI child: follow the local subagent skill. Run `agy --print` or `pi --print` as chosen. Instruct the child to write research to `.pi/offload/<slug>.md` or a prototype to `.pi/proto/<slug>.html`, then exit. LINK the path in Evidence. Do not paste full stdout. Not a Pi subagent tool.",
         "FOR material autonomous choices RUN RECORD_DECISION (decide) while researching when needed; stay in explore.",
         "NEVER CALL next from explore — WHEN ready to propose or route, PROCEED to ELABORATE.",
       ],
@@ -435,7 +440,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       permission: "read",
       substates: ["draftProposal", "checklistSynthesis", "closeOut"],
       procedure: [
-        "EDIT Proposal and Checklist with the recommended approach.",
+        "EDIT Proposal and Checklist with the recommended approach. LINK any Spec prototype path under `.pi` in Proposal.",
         "FOR EACH material autonomous choice RUN RECORD_DECISION(choice).",
         "RUN CLOSE_OUT.",
         "IF more research is required THEN RETURN to EXPLORE (do not CALL next with spec).",
@@ -455,7 +460,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
       substates: ["codeMutation", "recordDecision"],
       procedure: [
         "Land here after next→Vibe, ask-route→Vibe, and after examine returns for more implementation.",
-        "IMPLEMENT accepted scope in project files outside .pi.",
+        "IMPLEMENT accepted scope in project files outside .pi. Spec throwaway prototypes stay under `.pi`; fold only a validated verdict into project source.",
         "FOR EACH material autonomous choice RUN RECORD_DECISION(choice); stay in execute.",
         "UPDATE cumulative Checklist and append-only Work log throughout implementation.",
         "NEVER CALL next from execute — WHEN ready to verify or route, PROCEED to EXAMINE.",
@@ -772,7 +777,7 @@ export const WORKFLOW_FSM: WorkflowFsm = {
         "Runtime PREPENDS only Switch context when auto-starting and NEVER authors substantive direction.",
         "Recommended row with a reason shows {mode} — {reason}. Two Align rows may appear (review vs editor).",
         "next→Align idle lands establish; next→Align review lands evaluate; next→Spec lands explore; next→Vibe lands execute.",
-        "ESC dismisses the mode picker with no change. Mode pickers end with Return to editor (same as ESC), then Return → ALIGN when not already in Align (static establish, no agent start), then Show plan (## Digest only; returns to the picker). /mode lists the same trailing rows.",
+        "ESC dismisses the mode picker with no change. Mode pickers end with ✏️ Return to editor (same as ESC), then ↩ Return ❓ ALIGN when not already in Align (static establish, no agent start), then 📄 Show plan (## Digest only; returns to the picker). /mode lists the same trailing rows.",
         "/mode force picker still lists all modes including the current mode (bypass).",
         "Manual ALIGN/SPEC/VIBE commands return to the editor without auto-start.",
         "Spec/Vibe picker switches always send continueKickoff (agent prompt or default). Align establish never auto-starts; Align evaluate auto-starts only with prompt.",

@@ -6,11 +6,11 @@ extension.
 
 ## Active extensions
 
-- **Extension Preferences** — One global UI for registered extension settings (`/extension-settings`)
+- **Extension Preferences** — One global UI for registered extension settings (`/extensions`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
 - **Agent Workflow** — User-owned ALIGN / SPEC / VIBE modes, recommended native-Ask preflight, silent Spec/Vibe `decide`, Agent-interpreted artifacts and decisions, ranked routing, and same-artifact handoffs (`ask`, `decide`, `start`, `next`, `/align`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
 - **Project Memory** — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
-- **Status Bar** — Footer/status composition (Configured through `/extension-settings`)
+- **Status Bar** — Footer/status composition (Configured through `/extensions`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
 - **Progress Tracker** — Persistent above-editor prompts and per-mode timing, plus the configurable Status Bar context segment. No tool or command: it observes.
@@ -23,6 +23,8 @@ extension.
 - **codebase-design** (`skills/codebase-design/SKILL.md`) — Vocabulary for deep modules (interface, seam, adapter, leverage) used when shaping or reviewing module boundaries.
 - **code-review** (`skills/code-review/SKILL.md`) — Manual-invocation review skill for unusually strict maintainability audits, plus Standards vs Spec axes on a pinned git range.
 
+Tracked skills live under `skills/` (`package.json` `pi.skills`). Director `.pi/skills/<name>` is a relative symlink to `../../skills/<name>` for those names so project discovery matches the package tree. Local-only director skills (`cli-agents`) stay as real dirs under `.pi/skills`.
+
 ## Supporting resources
 
 - **Init prompt** (`prompts/init.md`) — Initialize or realign shared/Pi-local instruction layers and selective project memory
@@ -31,8 +33,9 @@ extension.
 ## Single-agent policy
 
 The bundle runs as one agent, not an orchestrator with children: there is no
-subagent tool and no child-process delegation, and the one agent owns user
-interaction, commits, and final acceptance. A `/handoff` (see
+Pi `subagent` tool. A User-consented CLI child (`agy` or `pi --print` via the
+local `subagent` skill) may write under `.pi`; the parent session still owns
+user interaction, commits, and final acceptance. A `/handoff` (see
 [the agent-workflow README](../extensions/agent-workflow/README.md)) does not change this — the fresh session is the same single
 agent, with the plan file on disk as the only thing carried across.
 
@@ -64,11 +67,14 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
   constant injected contract.
 - **No Pi Inspector skill (deferred / TODO).** Pi Inspector agent skills are deferred
   until Inspector is fully tested, validated, and integrated with the workflow; only the
-  display-only bridge extension is currently loaded.
+  display-only bridge extension is currently loaded. Local sibling skills `diagnosing-bugs`
+  and `tdd` live in inspector `.pi/skills` (`~/Github/.pi/projects/pi-inspector/skills/`),
+  not in this package, until that mix is ready.
 - **No general permission gate.** Align/Spec/Vibe execution boundaries are
   advisory; destructive-action and external-action consent remains conversational.
-- **No subagents.** Align, Spec, and Vibe are persisted modes for the same single
-  agent; `/handoff` remains the human-controlled session boundary.
+- **No Pi subagent tool.** Align, Spec, and Vibe are persisted modes for the same
+  single agent; `/handoff` remains the human-controlled session boundary. A CLI
+  child after Align yes is the local `subagent` skill, not a nested agent tool.
 - **No todo tool.** Pi ships none on purpose ("they confuse models"), and a
   structured list the agent must keep in sync is ceremony rather than progress.
   Mode-picker Show plan shows `## Digest` only and returns to the picker.

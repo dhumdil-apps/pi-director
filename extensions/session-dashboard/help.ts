@@ -21,7 +21,7 @@ export const HELP_COMMANDS: HelpEntry[] = [
   },
   { name: "/usage", description: "Open the token & spend dashboard — Graphs, Table, Insights." },
   { name: "/usage-refresh", description: "Refresh subscription-quota usage from the provider." },
-  { name: "/extension-settings", description: "Configure any extension's settings." },
+  { name: "/extensions", description: "Configure any extension's settings." },
   { name: "/init [full]", description: "Initialize or realign instruction layers and project memory." },
 ];
 

@@ -25,7 +25,7 @@ describe("workflow FSM graph", () => {
   });
 
   it("is v2.8 with sessionEntry and no guided next state", () => {
-    assert.equal(WORKFLOW_FSM.version, "2.8.1");
+    assert.equal(WORKFLOW_FSM.version, "2.8.3");
     assert.equal(WORKFLOW_FSM.sessionEntry.state, "envision");
     assert.ok(!("next" in WORKFLOW_FSM.states));
     assert.ok(!WORKFLOW_FSM.modeBodies.some((b) => b.states.includes("envision")));
@@ -111,6 +111,16 @@ describe("workflow FSM graph", () => {
     assert.match(prompt, /## Session entry/);
     assert.match(prompt, /exitTool=next|CALL next|secondary gates/i);
     assert.doesNotMatch(prompt, /\bTO_NEXT\b/);
+  });
+
+  it("lets Spec write throwaway HTML under .pi and Align ask when relevant", () => {
+    const prompt = formatWorkflowPrompt();
+    const runtime = formatRuntimeWorkflowPrompt();
+    assert.match(prompt, /throwaway HTML under `\.pi`/);
+    assert.match(prompt, /user-stated intent is enough/);
+    assert.match(prompt, /offload research\/prototype to a CLI child/);
+    assert.match(runtime, /throwaway HTML under `\.pi`/);
+    assert.match(runtime, /CLI child/);
   });
 
   it("uses CONTINUE envision→evaluate and documents PWB ensure-start", () => {

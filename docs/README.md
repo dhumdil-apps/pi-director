@@ -19,5 +19,5 @@ Use this page as the navigation map for the `pi-director` package and developmen
 
 - **Git Repository**: Source for extensions, prompts, themes, and documentation.
 - **`~/.pi/agent/settings.json`**: Machine-local source for selected model, theme, and package source.
-- **`~/.pi/agent/settings-extensions.json`**: Global extension preferences configured via `/extension-settings`.
+- **`~/.pi/agent/settings-extensions.json`**: Global extension preferences configured via `/extensions`.
 - **Project Files**: User-owned `.pi/MEMORY.md`, `.pi/plan/` plans, and local configuration.

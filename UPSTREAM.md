@@ -13,7 +13,7 @@ notices](#upstream-license-notices).
 
 ## Local divergence
 
-- **Extension Settings** — the `/extension-settings` overlay is framed like the
+- **Extension Settings** — the `/extensions` overlay is framed like the
   bundle's other full-screen overlays (spacer + dynamic border, closing rule),
   hides the fuzzy-search input for short lists, and drops the per-extension
   header row and label indent while only one extension is registered

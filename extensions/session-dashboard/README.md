@@ -5,7 +5,7 @@ Startup banner for interactive parent sessions. The banner and the `/help` and
 remain visible in the transcript without participating in LLM context.
 
 The dashboard includes one concise quick reference: `🧠 /init · 📊 /usage · 🧭
-/mode · ⚙️ /extension-settings · ❓ /help`. `extensions.ts` still supplies the grouped
+/mode · ⚙️ /extensions · ❓ /help`. `extensions.ts` still supplies the grouped
 metadata and descriptions for `/help`; keep it synchronized one-to-one with the
 active extension manifest.
 
@@ -81,7 +81,7 @@ chars/4 heuristic and no tokenizer ships with this bundle.
 ## User surface
 
 Automatic on interactive session start. Starts with the working directory,
-followed by shortcuts to `/init`, `/usage`, `/mode`, `/extension-settings`, and `/help`,
+followed by shortcuts to `/init`, `/usage`, `/mode`, `/extensions`, and `/help`,
 then recent usage and loaded context-file paths under `📦 Context files`; any
 project-memory freshness notice is last in the same card. `/help` opens a reference
 of the bundle's commands, shortcuts, and extensions; `/context` refreshes the

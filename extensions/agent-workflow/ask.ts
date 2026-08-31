@@ -16,6 +16,8 @@ import { duringUserWait } from "./user-wait.js";
 import { ASK_SETTLEMENT_EVENT, formatGateText, planMissingMessage, receive, snapshot } from "./workflow-machine.js";
 
 export const WRITE_CUSTOM_ANSWER = "📝 Write a custom answer...";
+export const PREVIOUS_QUESTION = "← Previous";
+export const NEXT_QUESTION = "→ Next";
 export const PROCEED_WITH_BEST_SPEC = `Proceed with best → ${MODE_LABEL.spec}`;
 export const PROCEED_WITH_BEST_VIBE = `Proceed with best → ${MODE_LABEL.vibe}`;
 const ROUTE_OPTIONS = [PROCEED_WITH_BEST_SPEC, PROCEED_WITH_BEST_VIBE] as const;
@@ -132,9 +134,9 @@ export function registerAsk(pi: ExtensionAPI): void {
         };
       }
 
-      const answers: AskAnswer[] = [];
+      const byId = new Map<string, AskAnswer>();
       if (params.questions.length === 0) {
-        const details: AskDetails = { answers, cancelled: false, unanswered: [] };
+        const details: AskDetails = { answers: [], cancelled: false, unanswered: [] };
         pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "answered" });
         return {
           content: [{ type: "text" as const, text: "No questions were supplied; Ask made no changes." }],
@@ -146,86 +148,108 @@ export function registerAsk(pi: ExtensionAPI): void {
         throw new Error("Ask requires an interactive UI.");
       }
       const checkpoint = openCheckpoint(pi, "question");
+      const orderedAnswers = () =>
+        params.questions.flatMap((question) => {
+          const answer = byId.get(question.id);
+          return answer ? [answer] : [];
+        });
       try {
-        for (const [index, question] of params.questions.entries()) {
+        const total = params.questions.length;
+        let index = 0;
+        while (index < total) {
+          const question = params.questions[index];
+          if (!question) break;
           const options = orderedOptions(question);
           const remainingQuestions = params.questions.slice(index);
           const routes = canAcceptBest(remainingQuestions) ? ROUTE_OPTIONS : [];
-          const labels = [...options.map(pickerLabel), WRITE_CUSTOM_ANSWER, ...routes];
+          const nav: string[] = [];
+          if (total > 1 && index > 0) nav.push(PREVIOUS_QUESTION);
+          if (total > 1 && index < total - 1 && byId.has(question.id)) nav.push(NEXT_QUESTION);
+          const labels = [...options.map(pickerLabel), ...nav, WRITE_CUSTOM_ANSWER, ...routes];
           const baseTitle = pickerTitle(question.prompt, question.context);
-          const title =
-            params.questions.length === 1 ? baseTitle : `${index + 1}/${params.questions.length} · ${baseTitle}`;
+          const current = byId.get(question.id);
+          const currentNote = current ? ` (current: ${current.label})` : "";
+          const title = total === 1 ? baseTitle : `${index + 1}/${total} · ${baseTitle}${currentNote}`;
 
-          let answered = false;
-          while (!answered) {
-            const choice = await duringUserWait(pi, "question", () => ctx.ui.select(title, labels));
-            if (choice === undefined) {
-              const details: AskDetails = {
-                answers: [],
-                cancelled: true,
-                unanswered: params.questions.map((item) => item.id),
-              };
-              resolveCheckpoint(pi, checkpoint.id, "cancelled");
-              pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "cancelled" });
-              return {
-                content: [{ type: "text" as const, text: resultText(details, params.questions) }],
-                details,
-              };
-            }
-
-            const route = routedMode(choice);
-            if (route) {
-              answers.push(...acceptBestAnswers(remainingQuestions));
-              const details: AskDetails = {
-                answers,
-                cancelled: false,
-                unanswered: [],
-                routedMode: route,
-              };
-              resolveCheckpoint(pi, checkpoint.id, route);
-              // The current run still carries its Align mode prompt. Defer the
-              // User-selected transition until agent_settled so the target starts
-              // a fresh run through before_agent_start with the correct marker.
-              // Carry answers on the settlement signal for the Spec/Vibe kickoff.
-              pi.appendEntry(ASK_SETTLEMENT_EVENT, {
-                outcome: "routed",
-                target: route,
-                answers: answers.map((answer) => ({
-                  id: answer.id,
-                  label: answer.label,
-                  value: answer.value,
-                  ...(answer.wasCustom ? { wasCustom: true } : {}),
-                })),
-              });
-              return {
-                content: [{ type: "text" as const, text: resultText(details, params.questions) }],
-                details,
-                terminate: true,
-              };
-            }
-
-            if (choice === WRITE_CUSTOM_ANSWER) {
-              const custom = await duringUserWait(pi, "question", () =>
-                ctx.ui.input(`Custom answer · ${question.prompt}`, "Type an answer"),
-              );
-              const trimmed = custom?.trim();
-              if (!trimmed) continue;
-              answers.push({
-                id: question.id,
-                value: trimmed,
-                label: trimmed,
-                wasCustom: true,
-                optionReferences: optionReferences(options),
-              });
-              answered = true;
-              continue;
-            }
-
-            const selected = options.find((option, optionIndex) => pickerLabel(option, optionIndex) === choice);
-            if (!selected) continue;
-            answers.push(optionAnswer(question, selected));
-            answered = true;
+          const choice = await duringUserWait(pi, "question", () => ctx.ui.select(title, labels));
+          if (choice === undefined) {
+            const details: AskDetails = {
+              answers: [],
+              cancelled: true,
+              unanswered: params.questions.map((item) => item.id),
+            };
+            resolveCheckpoint(pi, checkpoint.id, "cancelled");
+            pi.appendEntry(ASK_SETTLEMENT_EVENT, { outcome: "cancelled" });
+            return {
+              content: [{ type: "text" as const, text: resultText(details, params.questions) }],
+              details,
+            };
           }
+
+          if (choice === PREVIOUS_QUESTION) {
+            if (index > 0) index -= 1;
+            continue;
+          }
+          if (choice === NEXT_QUESTION) {
+            if (index < total - 1 && byId.has(question.id)) index += 1;
+            continue;
+          }
+
+          const route = routedMode(choice);
+          if (route) {
+            for (const answer of acceptBestAnswers(remainingQuestions)) {
+              byId.set(answer.id, answer);
+            }
+            const answers = orderedAnswers();
+            const details: AskDetails = {
+              answers,
+              cancelled: false,
+              unanswered: [],
+              routedMode: route,
+            };
+            resolveCheckpoint(pi, checkpoint.id, route);
+            // The current run still carries its Align mode prompt. Defer the
+            // User-selected transition until agent_settled so the target starts
+            // a fresh run through before_agent_start with the correct marker.
+            // Carry answers on the settlement signal for the Spec/Vibe kickoff.
+            pi.appendEntry(ASK_SETTLEMENT_EVENT, {
+              outcome: "routed",
+              target: route,
+              answers: answers.map((answer) => ({
+                id: answer.id,
+                label: answer.label,
+                value: answer.value,
+                ...(answer.wasCustom ? { wasCustom: true } : {}),
+              })),
+            });
+            return {
+              content: [{ type: "text" as const, text: resultText(details, params.questions) }],
+              details,
+              terminate: true,
+            };
+          }
+
+          if (choice === WRITE_CUSTOM_ANSWER) {
+            const custom = await duringUserWait(pi, "question", () =>
+              ctx.ui.input(`Custom answer · ${question.prompt}`, "Type an answer"),
+            );
+            const trimmed = custom?.trim();
+            if (!trimmed) continue;
+            byId.set(question.id, {
+              id: question.id,
+              value: trimmed,
+              label: trimmed,
+              wasCustom: true,
+              optionReferences: optionReferences(options),
+            });
+            index += 1;
+            continue;
+          }
+
+          const selected = options.find((option, optionIndex) => pickerLabel(option, optionIndex) === choice);
+          if (!selected) continue;
+          byId.set(question.id, optionAnswer(question, selected));
+          index += 1;
         }
       } catch (error) {
         resolveCheckpoint(pi, checkpoint.id, "failure");
@@ -233,7 +257,7 @@ export function registerAsk(pi: ExtensionAPI): void {
       }
 
       const details: AskDetails = {
-        answers,
+        answers: orderedAnswers(),
         cancelled: false,
         unanswered: [],
       };

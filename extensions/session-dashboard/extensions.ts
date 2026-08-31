@@ -69,7 +69,7 @@ export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
   {
     name: "extension-preferences",
     group: "config",
-    description: "Stores shared extension settings locally and provides `/extension-settings`.",
+    description: "Stores shared extension settings locally and provides `/extensions`.",
   },
 ];
 

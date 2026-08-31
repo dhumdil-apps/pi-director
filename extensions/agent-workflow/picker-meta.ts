@@ -1,8 +1,8 @@
 /** Trailing mode-picker rows and pure recommended-row filters. Kept free of Pi imports for unit tests. */
 
-export const RETURN_OPTION = "↩ Return to editor";
-export const RETURN_ALIGN_OPTION = "Return → ❓ ALIGN";
-export const SHOW_PLAN_OPTION = "Show plan";
+export const RETURN_OPTION = "✏️ Return to editor";
+export const RETURN_ALIGN_OPTION = "↩ Return ❓ ALIGN";
+export const SHOW_PLAN_OPTION = "📄 Show plan";
 /** Single dismiss on the Digest viewer — not a yes/no confirm. */
 export const SHOW_PLAN_DISMISS = "Return";
 

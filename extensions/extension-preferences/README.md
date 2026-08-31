@@ -5,7 +5,7 @@ configure everything registered with it.
 
 ## User surface
 
-- `/extension-settings` command — browse and change all registered settings.
+- `/extensions` command — browse and change all registered settings.
 
 ## For extension authors
 

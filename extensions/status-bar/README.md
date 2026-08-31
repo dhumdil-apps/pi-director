@@ -53,7 +53,7 @@ Bar override fields below.
 
 ## User surface
 
-Configured through `/extension-settings` (stored under `powerbar`): a
+Configured through `/extensions` (stored under `powerbar`): a
 `Working days per week` number input (default `5`, valid `1`–`7`) and unmatched
 weekly override fields `Unmatched weekly used %` and `Unmatched weekly reset`.
 The unmatched weekly override applies only when Usage Monitor has no quota

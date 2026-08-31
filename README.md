@@ -34,7 +34,7 @@ To refresh only this package after a maintainer push, run
 ### Configuration & Preferences
 
 - **Provider & Model**: Configured through Pi or in `~/.pi/agent/settings.json`.
-- **Extension Settings**: Managed via `/extension-settings` in your chat session.
+- **Extension Settings**: Managed via `/extensions` in your chat session.
 - **Project Memory**: `.pi/MEMORY.md` is scaffolded with selective orientation and quirks; a project whose `AGENTS.md` names a different file wins. Ordinary work verifies it against code, captures costly surprises in the plan, and promotes durable facts at close-out. `/init` bootstraps or audits it on demand and stamps the reviewed Git commit. Uncommitted work is ignored; relevant commits get a one-day grace period and a low-noise startup reminder.
 
 ### Verification
@@ -55,7 +55,7 @@ pi list
 - **status-bar & usage-monitor** — Real-time quota metrics in the status bar.
 - **usage-history** — Historical token/cost reporting (`/usage`).
 - **interrupt-confirmation** — Confirms interrupt keys before stopping a running agent.
-- **extension-preferences** — One global UI for registered extension settings (`/extension-settings`).
+- **extension-preferences** — One global UI for registered extension settings (`/extensions`).
 - **bundled themes** — `dark` and `github-dark`.
 
 ## Documentation

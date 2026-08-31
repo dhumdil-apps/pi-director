@@ -12,7 +12,7 @@ renders the one thing the transcript cannot show.
   cleared when Pi disposes the widget. Pi's own transient activity row stays
   hidden.
 - Attention segment — `LLM Attention Span (ctx)` is a normal configurable Status
-  Bar segment, defaulting to line 4 left. `/extension-settings` can reorder it,
+  Bar segment, defaulting to line 4 left. `/extensions` can reorder it,
   move it to any of the four left/right slots, or hide it. The segment is omitted
   while token count is unknown. After the first completed turn, it retains the
   first provider response's own `usage.totalTokens` as `📦 init …`; reading the

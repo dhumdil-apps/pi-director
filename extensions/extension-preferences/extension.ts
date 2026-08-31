@@ -1,5 +1,5 @@
 /**
- * Pi extension that provides /extension-settings command.
+ * Pi extension that provides /extensions command.
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -36,7 +36,7 @@ export default function piLibExtension(pi: ExtensionAPI) {
     registry.set(name, settings);
   });
 
-  pi.registerCommand("extension-settings", {
+  pi.registerCommand("extensions", {
     description: "Configure settings for all extensions",
     handler: async (_args, ctx) => {
       if (registry.size === 0) {

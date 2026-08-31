@@ -445,7 +445,7 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
         workingDirectory: contextInfo.workingDirectory,
         contextFiles: contextInfo.contextFiles,
         skills,
-        tip: "> 🧠 `/init` · 📊 `/usage` · 🧭 `/mode` · ⚙️ `/extension-settings` · ❓ `/help`",
+        tip: "> 🧠 `/init` · 📊 `/usage` · 🧭 `/mode` · ⚙️ `/extensions` · ❓ `/help`",
         memoryNotice: showMemoryNotice ? `> ⚠️ ${memoryStatusNotice()}` : undefined,
       });
 

@@ -300,6 +300,38 @@ function hourlyPaceColor(window: RateWindow, now: Date): DailyPacing["color"] | 
 }
 
 /**
+ * Rebase total hourly-window utilization onto remaining hour slices.
+ * First visible bar is the current hour budget; the next remaining bar is overuse.
+ */
+export function hourlyPacingForWindow(
+  window: RateWindow,
+  now = new Date(),
+  workingDaysPerWeek = DEFAULT_WORKING_DAYS_PER_WEEK,
+): DailyPacing | undefined {
+  if (isWeeklyCadence(window.label) || isPastReset(window, now)) return undefined;
+  const allocationHours = allocationHoursFromLabel(window.label);
+  if (allocationHours === undefined) return undefined;
+  if (horizonUnitLabel(window.resetDescription) !== "Hours") return undefined;
+
+  const barSegments = segmentsForWindow(window, now, workingDaysPerWeek);
+  if (barSegments < 1 || barSegments > allocationHours) return undefined;
+
+  const usedPercent = Math.max(0, Math.min(100, window.usedPercent));
+  const hourAllocation = 100 / allocationHours;
+  const completedAllocation = (allocationHours - barSegments) * hourAllocation;
+  const currentLimit = completedAllocation + hourAllocation;
+  const visibleAllocation = barSegments * hourAllocation;
+  const visibleUsage = Math.max(0, usedPercent - completedAllocation);
+
+  return {
+    bar: Math.min(100, (visibleUsage / visibleAllocation) * 100),
+    barSegments,
+    color: usedPercent < completedAllocation ? "success" : usedPercent > currentLimit ? "error" : "accent",
+    suffix: `${Math.round(100 - usedPercent)}% left`,
+  };
+}
+
+/**
  * Rebase total weekly utilization onto the configured daily allocations that
  * remain visible. This is cumulative budget position, not usage recorded today.
  */
@@ -386,9 +418,14 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow, wor
   const pct = Math.round(resolved.usedPercent);
   const label = displayWindowLabel(resolved);
   const reset = resolved.resetDescription || "";
-  const pacing = segmentId === "sub-weekly" ? dailyPacingForWindow(resolved, now, workingDaysPerWeek) : undefined;
-  // Hours horizon (both slots): remaining-hour blocks; Weeks/Days keep usage/pacing bars.
-  // Hourly only: suffix is quota left; Hours fill is used (100 − remaining), matching weekly.
+  const pacing =
+    segmentId === "sub-weekly"
+      ? dailyPacingForWindow(resolved, now, workingDaysPerWeek)
+      : segmentId === "sub-hourly"
+        ? hourlyPacingForWindow(resolved, now, workingDaysPerWeek)
+        : undefined;
+  // Hours horizon without usage pacing: remaining-hour blocks (weekly slot fallback).
+  // Hourly usage pacing fills remaining hour slices like weekly days; invert leftover time only if pacing is absent.
   const hourly = segmentId === "sub-hourly";
   const hoursBar = !pacing ? remainingHoursBar(resolved, now, workingDaysPerWeek) : undefined;
   const hourlyHoursBar =
