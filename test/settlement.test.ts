@@ -33,12 +33,12 @@ describe("settlement dispatch", () => {
     });
   });
 
-  it("keeps explicit empty next as none in every mode", () => {
+  it("treats explicit empty next as fill-in in every mode", () => {
     assert.deepEqual(dispatchSettlement({ mode: "align", nextQueued: false, nextSkip: true }), {
-      action: "none",
+      action: "open_picker",
     });
     assert.deepEqual(dispatchSettlement({ mode: "vibe", nextQueued: false, nextSkip: true }), {
-      action: "none",
+      action: "open_picker",
     });
   });
 

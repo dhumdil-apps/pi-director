@@ -8,7 +8,7 @@
 import type { ExtensionAPI, ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent";
 import type { Component, TUI } from "@earendil-works/pi-tui";
 import { renderBar, type Segment } from "./render.js";
-import { loadSettings, PLACEMENT, type PowerbarSettings, registerSettings } from "./settings.js";
+import { loadSettings, PLACEMENT, registerSettings } from "./settings.js";
 
 interface PowerbarUpdatePayload {
   id: string;
@@ -39,7 +39,6 @@ function segmentEquals(left: Segment | undefined, right: Segment): boolean {
 
 export default function createExtension(pi: ExtensionAPI): void {
   const segments: Map<string, Segment> = new Map();
-  let settings: PowerbarSettings;
   let currentCtx: { ui: { setWidget: (...args: any[]) => void }; hasUI: boolean } | undefined;
 
   registerSettings(pi);
@@ -52,7 +51,7 @@ export default function createExtension(pi: ExtensionAPI): void {
       (_tui: TUI, theme: Theme): Component & { dispose?(): void } => {
         return {
           render(width: number): string[] {
-            return renderBar(segments, settings, theme, width);
+            return renderBar(segments, loadSettings(), theme, width);
           },
           invalidate(): void {
             // No cached state to clear
@@ -107,7 +106,6 @@ export default function createExtension(pi: ExtensionAPI): void {
     // emitting when its data is momentarily unavailable, e.g. ctx.model
     // still unresolved) would keep showing the previous session's value.
     segments.clear();
-    settings = loadSettings();
     currentCtx = ctx;
     hideFooter(ctx);
     refresh();

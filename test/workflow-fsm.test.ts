@@ -25,7 +25,7 @@ describe("workflow FSM graph", () => {
   });
 
   it("is v2.8 with sessionEntry and no guided next state", () => {
-    assert.equal(WORKFLOW_FSM.version, "2.8.3");
+    assert.equal(WORKFLOW_FSM.version, "2.8.4");
     assert.equal(WORKFLOW_FSM.sessionEntry.state, "envision");
     assert.ok(!("next" in WORKFLOW_FSM.states));
     assert.ok(!WORKFLOW_FSM.modeBodies.some((b) => b.states.includes("envision")));

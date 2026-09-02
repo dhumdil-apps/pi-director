@@ -377,13 +377,6 @@ export function registerModePicker(pi: ExtensionAPI): void {
           ...(gate.kind === "error" ? { isError: true as const } : {}),
         };
       }
-      if (params.actions.length === 0) {
-        pi.appendEntry(NEXT_STEP_EVENT, { mode, actions: [], queued: false } satisfies NextStepEvent);
-        return {
-          content: [{ type: "text" as const, text: "No next actions were supplied; no picker will open." }],
-          details: { mode, actions: [], queued: false },
-        };
-      }
       const filtered = sortRecommendedActions(
         withoutRedundantAlignEstablish(crossModeActions(mode, inspected.normalized)),
       );

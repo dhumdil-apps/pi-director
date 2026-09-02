@@ -19,8 +19,7 @@ extension.
 
 ## Active skills
 
-- **atomic-design** (`skills/atomic-design/SKILL.md`) — Methodology and mental model for constructing, auditing, and maintaining modular UI component systems across the 5-tier hierarchy (atoms, molecules, organisms, templates, pages).
-- **codebase-design** (`skills/codebase-design/SKILL.md`) — Vocabulary for deep modules (interface, seam, adapter, leverage) used when shaping or reviewing module boundaries.
+- **ui-design** (`skills/ui-design/SKILL.md`) — Atomic Design for UI systems, plus a deep-module lane when that UI work hits a code seam (interface, seam, adapter, leverage).
 - **code-review** (`skills/code-review/SKILL.md`) — Manual-invocation review skill for unusually strict maintainability audits, plus Standards vs Spec axes on a pinned git range.
 
 Tracked skills live under `skills/` (`package.json` `pi.skills`). Director `.pi/skills/<name>` is a relative symlink to `../../skills/<name>` for those names so project discovery matches the package tree. Local-only director skills (`cli-agents`) stay as real dirs under `.pi/skills`.

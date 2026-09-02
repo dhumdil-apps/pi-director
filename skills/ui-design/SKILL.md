@@ -1,15 +1,37 @@
 ---
-name: atomic-design
-description: Apply Brad Frost's Atomic Design methodology to construct, audit, and maintain modular UI component systems and design systems. Use when organizing component hierarchies, conducting UI inventories, structuring templates vs pages, or establishing design system workflows.
+name: ui-design
+description: Apply Brad Frost's Atomic Design methodology to construct, audit, and maintain modular UI component systems and design systems. Use when organizing component hierarchies, conducting UI inventories, structuring templates vs pages, or establishing design system workflows. When that UI work hits a code seam (module interface, testability, where implementation lives), also use the deep-module lane in this skill.
 ---
 
-# Atomic design
+# UI design
 
-Source: Brad Frost, _Atomic Design_ (https://atomicdesign.bradfrost.com)
+Two lanes in one skill. Start in **Atomic design** for UI systems. Enter **Deep modules** only when that UI work hits a code seam.
+
+Source for lane 1: Brad Frost, _Atomic Design_ (https://atomicdesign.bradfrost.com). Lane 2 is the deep-module vocabulary (interface, seam, adapter, leverage).
+
+## When to use
+
+Load this skill for component hierarchies, UI inventories, templates vs pages, and design-system workflow.
+
+Stay in **Atomic design** for naming stages, inventories, pattern libraries, and governance.
+
+Enter **Deep modules** when the same work needs an interface vs implementation, a seam location, testability through that interface, or AI-navigable module shape. Do not enter the module lane for a pure visual inventory with no code seam.
+
+The lanes are not a mash-up. Atomic stages stay Atomic. Module terms stay module terms. Do not substitute "component" for **Module**, or "atom" for a TypeScript interface.
+
+### Lane pick
+
+| Work                                                                                         | Lane                                                |
+| -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Hierarchy, inventory, templates vs pages, pattern library, governance                        | Atomic design                                       |
+| Where a UI piece's interface lives, what callers must know, adapters, tests across that seam | Deep modules                                        |
+| Both (e.g. an organism that is also a deep module)                                           | Atomic design first, then Deep modules for the seam |
+
+---
+
+# Lane: Atomic design
 
 A methodology and mental model for designing and engineering user interfaces as deliberate, hierarchical systems. It treats interfaces as both a cohesive whole and a collection of parts simultaneously.
-
----
 
 ## The core idea
 
@@ -23,8 +45,6 @@ Atomic design gives you a mental model for building UI systems deliberately: bre
 [ Atoms ] ──> [ Molecules ] ──> [ Organisms ] ──> [ Templates ] ──> [ Pages ]
  (Tags/Tokens)    (Simple UI)      (Sections)       (Layout/Slots)   (Real Content/Edge Cases)
 ```
-
----
 
 ## The five stages
 
@@ -86,13 +106,9 @@ Specific, rendered instances of templates populated with real or representative 
     - Localization and right-to-left (RTL) text.
   - Use pages as the feedback loop: if something breaks on a page, determine whether to adjust an atom, molecule, organism, or template, rather than hacking a one-off fix on the page.
 
----
-
 ## Not a linear process
 
 The five stages are a mental model, not a checklist. Do not read them as "first atoms, then molecules, then organisms." Real work moves in all directions. You zoom into a button to fix a broken state and zoom back out to see how that change ripples through a header, a template, and a page. The goal is to hold both levels of abstraction at once, the way a painter steps back to assess the whole composition and steps forward to add a precise stroke.
-
----
 
 ## Decision matrix: where does it belong?
 
@@ -103,8 +119,6 @@ The five stages are a mental model, not a checklist. Do not read them as "first 
 | Does it form a complete, standalone section or feature block?                       | **Organism**         | Template |
 | Does it define content placement, layout skeleton, and page grid without real data? | **Template**         | Page     |
 | Is it a rendered view with actual content, testing real edge cases?                 | **Page**             | Template |
-
----
 
 ## Why it matters beyond vocabulary
 
@@ -123,8 +137,6 @@ A pattern library lets you pull any component out of the page and examine it alo
 ### Shared vocabulary
 
 When a designer calls something a "utility toolbar" and a developer calls it a "floating action area," you have a coordination problem. Atomic design forces the team to name patterns, and named patterns become the shared language that reduces meetings and misunderstandings.
-
----
 
 ## Interface inventories
 
@@ -148,8 +160,6 @@ The document you produce does two things:
 - Media containers and image types
 - Animation and transitions
 - Colors and depth/shadows
-
----
 
 ## The atomic workflow
 
@@ -176,8 +186,6 @@ Full comps still have a role: they paint a complete picture that sells a directi
 ### Build and refine iteratively
 
 As patterns become solid, every template that includes them becomes more solid automatically. The nesting doll structure means a fix to a button propagates everywhere that button is used. Fidelity builds up like subtractive sculpture, not like a factory line.
-
----
 
 ## Pattern libraries & technical architecture
 
@@ -210,8 +218,6 @@ Hardcode as little as possible. Use templating and data files to swap in realist
 ### The holy grail
 
 The ideal state is a pattern library and production environment that share the same source of truth. Change a pattern once, see it update everywhere, in the library and in the live app. If technical barriers prevent a shared code pipeline right away, start smaller: share CSS bundles, design tokens, and document patterns clearly, reducing the gap over time.
-
----
 
 ## Maintaining the system
 
@@ -252,8 +258,6 @@ Name patterns by structure, not by context or content. "Card" beats "product car
 
 A public style guide is more accountable than an internal one. It also recruits people who care about systems thinking.
 
----
-
 ## Pattern lifecycle checklist
 
 Before adding or modifying any pattern, run through:
@@ -264,10 +268,117 @@ Before adding or modifying any pattern, run through:
 4. **Is it responsive?** Test across fluid viewport widths, container queries, and varied device sizes.
 5. **Is it documented?** Include props table, edge case examples, and usage rules.
 
----
-
 ## Technology independence
 
 Atomic design is not about CSS methodology, JavaScript architecture, or any specific framework. It applies to any user interface: web apps, native mobile apps, desktop software, or embedded displays. The five stages are a mental model for thinking about interfaces as systems of parts, regardless of what technology renders them.
 
 Using a framework like Bootstrap is not the same thing. Frameworks provide someone else's system. Atomic design helps you build your own.
+
+---
+
+# Lane: Deep modules
+
+Design **deep modules**: a lot of behaviour behind a small interface, placed at a clean seam, testable through that interface. Use this language and these principles wherever the UI work is being designed or restructured as code. The aim is leverage for callers, locality for maintainers, and testability for everyone.
+
+Enter this lane from UI work when you are choosing a seam, shrinking an interface, placing an adapter, or making a component testable through that interface. Standalone backend-module design without UI is outside this skill's trigger; do not stretch the description to fire for that alone.
+
+## Glossary
+
+Use these terms exactly: don't substitute "component," "service," "API," or "boundary." Consistent language is the whole point.
+
+**Module**: anything with an interface and an implementation. Deliberately scale-agnostic: a function, class, package, or tier-spanning slice. _Avoid_: unit, component, service.
+
+**Interface**: everything a caller must know to use the module correctly: the type signature, but also invariants, ordering constraints, error modes, required configuration, and performance characteristics. _Avoid_: API, signature (too narrow, they refer only to the type-level surface).
+
+**Implementation**: what's inside a module, its body of code. Distinct from **Adapter**: a thing can be a small adapter with a large implementation (a Postgres repo) or a large adapter with a small implementation (an in-memory fake). Reach for "adapter" when the seam is the topic; "implementation" otherwise.
+
+**Depth**: leverage at the interface. The amount of behaviour a caller (or test) can exercise per unit of interface they have to learn. A module is **deep** when a large amount of behaviour sits behind a small interface, **shallow** when the interface is nearly as complex as the implementation.
+
+**Seam** (Michael Feathers): a place where you can alter behaviour without editing in that place; the location at which a module's interface lives. Where to put the seam is its own design decision, distinct from what goes behind it. _Avoid_: boundary (overloaded with DDD's bounded context).
+
+**Adapter**: a concrete thing that satisfies an interface at a seam. Describes role (what slot it fills), not substance (what's inside).
+
+**Leverage**: what callers get from depth. More capability per unit of interface they learn. One implementation pays back across N call sites and M tests.
+
+**Locality**: what maintainers get from depth. Change, bugs, knowledge, and verification concentrate in one place rather than spreading across callers. Fix once, fixed everywhere.
+
+## Deep vs shallow
+
+**Deep module** = small interface + lots of implementation:
+
+```
++---------------------+
+|   Small Interface   |  <- Few methods, simple params
++---------------------+
+|                     |
+|  Deep Implementation|  <- Complex logic hidden
+|                     |
++---------------------+
+```
+
+**Shallow module** = large interface + little implementation (avoid):
+
+```
++---------------------------------+
+|       Large Interface           |  <- Many methods, complex params
++---------------------------------+
+|  Thin Implementation            |  <- Just passes through
++---------------------------------+
+```
+
+When designing an interface, ask:
+
+- Can I reduce the number of methods?
+- Can I simplify the parameters?
+- Can I hide more complexity inside?
+
+## Principles
+
+- **Depth is a property of the interface, not the implementation.** A deep module can be internally composed of small, mockable, swappable parts; they just aren't part of the interface. A module can have **internal seams** (private to its implementation, used by its own tests) as well as the **external seam** at its interface.
+- **The deletion test.** Imagine deleting the module. If complexity vanishes, it was a pass-through. If complexity reappears across N callers, it was earning its keep.
+- **The interface is the test surface.** Callers and tests cross the same seam. If you want to test past the interface, the module is probably the wrong shape.
+- **One adapter means a hypothetical seam. Two adapters means a real one.** Don't introduce a seam unless something actually varies across it.
+
+## Designing for testability
+
+Good interfaces make testing natural:
+
+1. **Accept dependencies, don't create them.**
+
+   ```typescript
+   // Testable
+   function processOrder(order, paymentGateway) {}
+
+   // Hard to test
+   function processOrder(order) {
+     const gateway = new StripeGateway();
+   }
+   ```
+
+2. **Return results, don't produce side effects.**
+
+   ```typescript
+   // Testable
+   function calculateDiscount(cart): Discount {}
+
+   // Hard to test
+   function applyDiscount(cart): void {
+     cart.total -= discount;
+   }
+   ```
+
+3. **Small surface area.** Fewer methods = fewer tests needed. Fewer params = simpler test setup.
+
+## Relationships
+
+- A **Module** has exactly one **Interface** (the surface it presents to callers and tests).
+- **Depth** is a property of a **Module**, measured against its **Interface**.
+- A **Seam** is where a **Module**'s **Interface** lives.
+- An **Adapter** sits at a **Seam** and satisfies the **Interface**.
+- **Depth** produces **Leverage** for callers and **Locality** for maintainers.
+
+## Rejected framings
+
+- **Depth as ratio of implementation-lines to interface-lines** (Ousterhout): rewards padding the implementation. We use depth-as-leverage instead.
+- **"Interface" as the TypeScript `interface` keyword or a class's public methods**: too narrow: interface here includes every fact a caller must know.
+- **"Boundary"**: overloaded with DDD's bounded context. Say **seam** or **interface**.

@@ -38,8 +38,6 @@ interface UsageCoreState {
 const DEFAULT_SEGMENTS = 10;
 const MIN_SEGMENTS = 3;
 const MAX_SEGMENTS = 12;
-const MAX_WEEK_SEGMENTS = 4;
-const MAX_HOUR_SEGMENTS = 8;
 const WEEKDAYS_PER_WEEK = 5;
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
@@ -92,53 +90,15 @@ function countedDayMsBetween(start: Date, end: Date, includeWeekends: boolean): 
   return countedMs;
 }
 
-/**
- * Uses the displayed countdown to select weeks, days, or hours. Monthly
- * horizons use four week blocks; 1–5 configured days count Monday–Friday,
- * while 6–7 configured days include weekends when an exact reset is available.
- */
-function segmentsForCountdown(
-  resetDescription: string | undefined,
-  resetAt: string | undefined,
-  now: Date,
-  workingDaysPerWeek: number,
-): number | undefined {
-  const match = resetDescription?.trim().match(/^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?$/i);
-  // Minutes-only countdowns (e.g. `2m`) are a valid Hours horizon — do not
-  // fall through to label width (5h → 5 bars), which looks like multi-hour headroom.
-  if (!match || (!match[1] && !match[2] && !match[3])) return undefined;
-
-  const days = Number(match[1] ?? 0);
-  const hours = Number(match[2] ?? 0);
-  const minutes = Number(match[3] ?? 0);
-  const hasPartialDay = hours > 0 || minutes > 0;
-
-  // Whole days ≥ 8 only. 7d1h is still one week of headroom — the old days>=7
-  // path used ceil((7+1)/7)=2 week blocks and read like two weeks left.
-  if (days >= 8) {
-    return Math.min(MAX_WEEK_SEGMENTS, Math.ceil((days + Number(hasPartialDay)) / 7));
-  }
-  if (days > 0) {
-    const includeWeekends = workingDaysPerWeek > WEEKDAYS_PER_WEEK;
-    const countedMs = resetAt ? countedDayMsBetween(now, new Date(resetAt), includeWeekends) : undefined;
-    if (countedMs !== undefined) return Math.min(workingDaysPerWeek, Math.ceil(countedMs / DAY_MS));
-    return Math.min(workingDaysPerWeek, days + Number(hasPartialDay));
-  }
-  const hourBlocks = hours + Number(minutes > 0);
-  if (hourBlocks < 1) return undefined;
-  return Math.min(MAX_HOUR_SEGMENTS, hourBlocks);
-}
-
-/** Prefer the displayed reset countdown, falling back to the window's cadence. */
+/** Frozen slot count: window cadence, not remaining countdown. Weekly uses working days. */
 export function segmentsForWindow(
   window: RateWindow,
-  now = new Date(),
+  _now = new Date(),
   workingDaysPerWeek = DEFAULT_WORKING_DAYS_PER_WEEK,
 ): number {
   const allocationDays = parseWorkingDaysPerWeek(String(workingDaysPerWeek));
-  return (
-    segmentsForCountdown(window.resetDescription, window.resetAt, now, allocationDays) ?? segmentsForLabel(window.label)
-  );
+  if (isWeeklyCadence(window.label)) return allocationDays;
+  return segmentsForLabel(window.label);
 }
 
 function getColor(pct: number): string {
@@ -147,12 +107,7 @@ function getColor(pct: number): string {
   return "accent";
 }
 
-interface DailyPacing {
-  bar: number;
-  barSegments: number;
-  color: "success" | "accent" | "error";
-  suffix: string;
-}
+type PaceColor = "success" | "accent" | "error";
 
 function countdownMs(window: RateWindow, now: Date): number | undefined {
   if (window.resetAt) {
@@ -180,11 +135,7 @@ function isCadenceLabel(label: string): boolean {
   return /^\d+\s*[hd]$/i.test(text);
 }
 
-/**
- * Display prefix for remaining horizon, aligned with segmentsForCountdown buckets:
- * Weeks (≥8d), Days (1–7d), Hours (<1d). Used only for cadence labels.
- * 7d… stays Days so a single weekly window never reads as multi-week.
- */
+/** Display prefix: Weeks (≥8d), Days (1–7d), Hours (<1d). Cadence labels only. */
 export function horizonUnitLabel(resetDescription: string | undefined): string | undefined {
   const match = resetDescription?.trim().match(/^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?$/i);
   if (!match || (!match[1] && !match[2] && !match[3])) return undefined;
@@ -204,33 +155,6 @@ export function displayWindowLabel(window: RateWindow): string {
   const label = window.label || "";
   if (!isCadenceLabel(label)) return label;
   return horizonUnitLabel(window.resetDescription) ?? label;
-}
-
-/**
- * Under the Hours horizon, blocks track remaining time (one block per whole/partial
- * hour left). Fill is the fraction of that remaining-hour capacity still open, so
- * `2m` is one thin/empty last-hour block rather than usage-filled label-width bars.
- */
-export function remainingHoursBar(
-  window: RateWindow,
-  now = new Date(),
-  workingDaysPerWeek = DEFAULT_WORKING_DAYS_PER_WEEK,
-): { bar: number; barSegments: number } | undefined {
-  if (horizonUnitLabel(window.resetDescription) !== "Hours") return undefined;
-
-  const duration = countdownMs(window, now);
-  if (duration === undefined || duration < 0) return undefined;
-
-  const barSegments = segmentsForWindow(window, now, workingDaysPerWeek);
-  if (barSegments < 1) return undefined;
-
-  const capacityMs = barSegments * HOUR_MS;
-  if (capacityMs <= 0) return undefined;
-
-  return {
-    bar: Math.min(100, Math.max(0, (duration / capacityMs) * 100)),
-    barSegments,
-  };
 }
 
 /** Route cadence-specific windows without assuming providers return both slots. */
@@ -261,7 +185,7 @@ function isPastReset(window: RateWindow, now: Date): boolean {
   return duration !== undefined && duration <= 0;
 }
 
-function weeklyPaceColor(window: RateWindow, now: Date, workingDaysPerWeek: number): DailyPacing["color"] | undefined {
+function weeklyPaceColor(window: RateWindow, now: Date, workingDaysPerWeek: number): PaceColor | undefined {
   const allocationDays = parseWorkingDaysPerWeek(String(workingDaysPerWeek));
   if (!isWeeklyCadence(window.label) || isPastReset(window, now)) return undefined;
   const remaining = remainingAllocationDays(window, now, allocationDays);
@@ -283,7 +207,7 @@ function allocationHoursFromLabel(label: string): number | undefined {
   return n;
 }
 
-function hourlyPaceColor(window: RateWindow, now: Date): DailyPacing["color"] | undefined {
+function hourlyPaceColor(window: RateWindow, now: Date): PaceColor | undefined {
   if (isWeeklyCadence(window.label) || isPastReset(window, now)) return undefined;
   const allocationHours = allocationHoursFromLabel(window.label);
   if (allocationHours === undefined) return undefined;
@@ -297,73 +221,6 @@ function hourlyPaceColor(window: RateWindow, now: Date): DailyPacing["color"] | 
   if (usedPercent < completedAllocation) return "success";
   if (usedPercent > currentLimit) return "error";
   return "accent";
-}
-
-/**
- * Rebase total hourly-window utilization onto remaining hour slices.
- * First visible bar is the current hour budget; the next remaining bar is overuse.
- */
-export function hourlyPacingForWindow(
-  window: RateWindow,
-  now = new Date(),
-  workingDaysPerWeek = DEFAULT_WORKING_DAYS_PER_WEEK,
-): DailyPacing | undefined {
-  if (isWeeklyCadence(window.label) || isPastReset(window, now)) return undefined;
-  const allocationHours = allocationHoursFromLabel(window.label);
-  if (allocationHours === undefined) return undefined;
-  if (horizonUnitLabel(window.resetDescription) !== "Hours") return undefined;
-
-  const barSegments = segmentsForWindow(window, now, workingDaysPerWeek);
-  if (barSegments < 1 || barSegments > allocationHours) return undefined;
-
-  const usedPercent = Math.max(0, Math.min(100, window.usedPercent));
-  const hourAllocation = 100 / allocationHours;
-  const completedAllocation = (allocationHours - barSegments) * hourAllocation;
-  const currentLimit = completedAllocation + hourAllocation;
-  const visibleAllocation = barSegments * hourAllocation;
-  const visibleUsage = Math.max(0, usedPercent - completedAllocation);
-
-  return {
-    bar: Math.min(100, (visibleUsage / visibleAllocation) * 100),
-    barSegments,
-    color: usedPercent < completedAllocation ? "success" : usedPercent > currentLimit ? "error" : "accent",
-    suffix: `${Math.round(100 - usedPercent)}% left`,
-  };
-}
-
-/**
- * Rebase total weekly utilization onto the configured daily allocations that
- * remain visible. This is cumulative budget position, not usage recorded today.
- */
-export function dailyPacingForWindow(
-  window: RateWindow,
-  now = new Date(),
-  workingDaysPerWeek = DEFAULT_WORKING_DAYS_PER_WEEK,
-): DailyPacing | undefined {
-  const allocationDays = parseWorkingDaysPerWeek(String(workingDaysPerWeek));
-  const duration = countdownMs(window, now);
-  // Allow slightly over 7d (API/skew) so 7d1h weekly windows still pace as days,
-  // matching the Days horizon (Weeks only from 8d).
-  if (!isWeeklyCadence(window.label) || duration === undefined || duration <= DAY_MS || duration >= 8 * DAY_MS) {
-    return undefined;
-  }
-
-  const barSegments = segmentsForWindow(window, now, allocationDays);
-  if (barSegments < 1 || barSegments > allocationDays) return undefined;
-
-  const usedPercent = Math.max(0, Math.min(100, window.usedPercent));
-  const dailyAllocation = 100 / allocationDays;
-  const completedAllocation = (allocationDays - barSegments) * dailyAllocation;
-  const todayLimit = completedAllocation + dailyAllocation;
-  const visibleAllocation = barSegments * dailyAllocation;
-  const visibleUsage = Math.max(0, usedPercent - completedAllocation);
-
-  return {
-    bar: Math.min(100, (visibleUsage / visibleAllocation) * 100),
-    barSegments,
-    color: usedPercent < completedAllocation ? "success" : usedPercent > todayLimit ? "error" : "accent",
-    suffix: `${Math.round(100 - usedPercent)}% left`,
-  };
 }
 
 function formatReset(date: Date, now = new Date()): string {
@@ -418,21 +275,6 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow, wor
   const pct = Math.round(resolved.usedPercent);
   const label = displayWindowLabel(resolved);
   const reset = resolved.resetDescription || "";
-  const pacing =
-    segmentId === "sub-weekly"
-      ? dailyPacingForWindow(resolved, now, workingDaysPerWeek)
-      : segmentId === "sub-hourly"
-        ? hourlyPacingForWindow(resolved, now, workingDaysPerWeek)
-        : undefined;
-  // Hours horizon without usage pacing: remaining-hour blocks (weekly slot fallback).
-  // Hourly usage pacing fills remaining hour slices like weekly days; invert leftover time only if pacing is absent.
-  const hourly = segmentId === "sub-hourly";
-  const hoursBar = !pacing ? remainingHoursBar(resolved, now, workingDaysPerWeek) : undefined;
-  const hourlyHoursBar =
-    hourly && hoursBar
-      ? { bar: Math.min(100, Math.max(0, 100 - hoursBar.bar)), barSegments: hoursBar.barSegments }
-      : hoursBar;
-
   const textParts: string[] = [];
   if (label) textParts.push(label);
   if (reset) textParts.push(reset);
@@ -440,16 +282,12 @@ function emitWindow(pi: ExtensionAPI, segmentId: string, window: RateWindow, wor
   pi.events.emit("powerbar:update", {
     id: segmentId,
     text: textParts.join(" "),
-    suffix: pacing?.suffix ?? (hourly ? `${Math.round(100 - resolved.usedPercent)}% left` : `${pct}%`),
-    bar: pacing?.bar ?? hourlyHoursBar?.bar ?? pct,
-    barSegments:
-      pacing?.barSegments ?? hourlyHoursBar?.barSegments ?? segmentsForWindow(resolved, now, workingDaysPerWeek),
+    suffix: `${pct}%`,
+    bar: Math.min(100, Math.max(0, resolved.usedPercent)),
+    barSegments: segmentsForWindow(resolved, now, workingDaysPerWeek),
     color: isPastReset(resolved, now)
       ? "dim"
-      : (pacing?.color ??
-        weeklyPaceColor(resolved, now, workingDaysPerWeek) ??
-        hourlyPaceColor(resolved, now) ??
-        getColor(pct)),
+      : (weeklyPaceColor(resolved, now, workingDaysPerWeek) ?? hourlyPaceColor(resolved, now) ?? getColor(pct)),
     row: 3,
   });
 }

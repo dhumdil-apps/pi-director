@@ -154,11 +154,11 @@ describe("next action inspection", () => {
     assert.match(gateText(valid, "none"), /No plan under \.pi\/plan/);
   });
 
-  it("treats empty next as a no-op even without a plan", () => {
+  it("rejects empty next even without a plan", () => {
     const inspected = inspectNextActions([]);
     assert.equal(inspected.allTargetsValid, true);
     assert.equal(inspected.reasonsValid, true);
-    assert.deepEqual(evaluateNextGate(nextEvent([]), "none", PLAN_ERROR), { ok: true });
+    assert.match(gateText([], "none"), /at least one ranked action/);
   });
 });
 

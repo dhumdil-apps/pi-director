@@ -19,17 +19,17 @@ export interface SettlementDispatchInput<TAnswer = unknown> {
     answers?: TAnswer[];
   };
   nextQueued: boolean;
-  /** Explicit empty next (`queued: false`) — do not open a picker. */
+  /** Legacy empty next (`queued: false`); treated as omit (fill-in picker). */
   nextSkip: boolean;
 }
 
 /**
  * Priority: ask route > ask cancel (suppress picker) > next queue >
- * explicit empty next (no picker) > fill-in fallback open_picker (every mode).
+ * fill-in fallback open_picker (every mode), including legacy empty next.
  * ask_answered does not suppress next_queued.
  */
 export function dispatchSettlement<TAnswer>(input: SettlementDispatchInput<TAnswer>): SettlementDispatch<TAnswer> {
-  const { ask, nextQueued, nextSkip } = input;
+  const { ask, nextQueued } = input;
   if (ask?.outcome === "routed" && ask.target) {
     return {
       action: "route",
@@ -39,7 +39,6 @@ export function dispatchSettlement<TAnswer>(input: SettlementDispatchInput<TAnsw
   }
   if (ask?.outcome === "cancelled") return { action: "skip_picker" };
   if (nextQueued) return { action: "open_picker" };
-  if (nextSkip) return { action: "none" };
   return { action: "open_picker" };
 }
 

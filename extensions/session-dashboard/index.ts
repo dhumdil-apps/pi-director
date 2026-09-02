@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 import {
   getAgentDir,
   loadProjectContextFiles,
-  loadSkills,
   type ContextUsage,
   type ExtensionAPI,
   type SessionEntry,
@@ -155,6 +154,25 @@ export function welcomeContextInfo(
   };
 }
 
+/** Unescape XML text from host skill name tags. */
+function unescapeXml(value: string): string {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
+/** Names the host already injected as model-invocable skills. */
+export function availableSkillNames(systemPrompt: string): { name: string }[] {
+  const block = systemPrompt.match(/<available_skills>[\s\S]*?<\/available_skills>/)?.[0];
+  if (!block) return [];
+  return [...block.matchAll(/<name>([\s\S]*?)<\/name>/g)].map((match) => ({
+    name: unescapeXml(match[1] ?? "").trim(),
+  }));
+}
+
 /** Path-free name list of skills the host already loaded for this session. */
 export function welcomeSkillsMarkdown(skills: { name: string }[] | undefined): string | undefined {
   const names = [...new Set((skills ?? []).map((skill) => skill.name).filter(Boolean))].sort();
@@ -178,7 +196,7 @@ function extensionName(entry: string): string {
 function listSkills(dir: string): string[] {
   try {
     return readdirSync(dir, { withFileTypes: true })
-      .filter((e) => e.isDirectory())
+      .filter((e) => e.isDirectory() || e.isSymbolicLink())
       .map((e) => e.name)
       .filter((name) => {
         try {
@@ -191,6 +209,14 @@ function listSkills(dir: string): string[] {
   } catch {
     return [];
   }
+}
+
+/** Loaded names: package + project dirs, unioned with host-invocable prompt names. */
+export function loadedSkillNames(cwd: string, systemPrompt: string): { name: string }[] {
+  const fromPrompt = availableSkillNames(systemPrompt);
+  const fromPackage = loadBundleResources().skills.map((name) => ({ name }));
+  const fromProject = listSkills(join(cwd, ".pi", "skills")).map((name) => ({ name }));
+  return [...fromPrompt, ...fromPackage, ...fromProject];
 }
 
 function listPrompts(dir: string): string[] {
@@ -427,17 +453,9 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
 
       // The standard resolver supplies only the files Pi would load; matching
       // their content against the assembled prompt confirms what it did load.
-      const contextInfo = welcomeContextInfo(cwd, ctx.getSystemPrompt());
-      const skills = welcomeSkillsMarkdown(
-        ctx.isProjectTrusted()
-          ? loadSkills({
-              cwd,
-              agentDir: getAgentDir(),
-              skillPaths: [],
-              includeDefaults: true,
-            }).skills
-          : undefined,
-      );
+      const systemPrompt = ctx.getSystemPrompt();
+      const contextInfo = welcomeContextInfo(cwd, systemPrompt);
+      const skills = welcomeSkillsMarkdown(loadedSkillNames(cwd, systemPrompt));
 
       const showMemoryNotice = memoryStatus ? await claimProjectMemoryReminder(memoryStatus).catch(() => false) : false;
       const welcomeText = renderWelcomeText({

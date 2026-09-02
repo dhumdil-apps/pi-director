@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>pi-director (ALL) · Pi Visualizer Slop Radar</title>
+    <title>pi-director (TS) · Pi Visualizer Slop Radar</title>
     <style>
       :root {
   color-scheme: dark;
@@ -228,11 +228,11 @@
       <div class="brand-group">
         <div class="brand-badge">⚡</div>
         <div class="brand-title">
-          <h1>pi-director (ALL) · Slop Radar</h1>
+          <h1>pi-director (TS) · Slop Radar</h1>
           <p>
             <span>Pi Visualizer Architecture Map</span>
             <span class="stats-badge">86 Units</span>
-            <span class="stats-badge" style="color: #f87171;">29 Critical</span>
+            <span class="stats-badge" style="color: #f87171;">30 Critical</span>
             <span class="stats-badge" style="color: #fbbf24;">1 Warnings</span>
           </p>
         </div>
@@ -1844,10 +1844,10 @@
     <script>
       const FULL_GRAPH = {
   "id": "slop-radar-architecture",
-  "title": "pi-director (ALL)",
+  "title": "pi-director (TS)",
   "version": "v1.0.0",
   "subtitle": "Architecture Map & Slop Hotspot Visualizer",
-  "summary": "86 units scanned · 29 Critical Hotspots · 1 Warnings",
+  "summary": "86 units scanned · 30 Critical Hotspots · 1 Warnings",
   "groups": [
     {
       "id": "grp-page",
@@ -2010,8 +2010,8 @@
       "summary": "🔥 Critical Hotspot · 🏛️ God Component · extensions/agent-workflow/workflow-fsm.ts",
       "permission": "write",
       "substates": [
-        "LOC: 1057",
-        "Churn: 18c",
+        "LOC: 1062",
+        "Churn: 19c",
         "Score: 100/100",
         "Props: 19"
       ],
@@ -2024,8 +2024,8 @@
         "relPath": "extensions/agent-workflow/workflow-fsm.ts",
         "category": "frontend",
         "atomicTier": "organism",
-        "totalLoc": 1057,
-        "scriptLoc": 1020,
+        "totalLoc": 1062,
+        "scriptLoc": 1025,
         "templateLoc": 0,
         "styleLoc": 0,
         "props": [
@@ -2053,7 +2053,7 @@
         "slots": [],
         "composables": [],
         "refsCount": 0,
-        "cyclomatic": 77,
+        "cyclomatic": 79,
         "slopScore": 100,
         "status": "critical",
         "accentColor": "#ef4444",
@@ -2063,19 +2063,20 @@
             "label": "Critical Hotspot",
             "severity": "critical",
             "icon": "🔥",
-            "description": "High churn (18 commits) coupled with high cyclomatic complexity (77). Prime candidate for bugs."
+            "description": "High churn (19 commits) coupled with high cyclomatic complexity (79). Prime candidate for bugs."
           },
           {
             "type": "GOD_UNIT",
             "label": "God Component",
             "severity": "critical",
             "icon": "🏛️",
-            "description": "Massive file (1057 LOC) doing too much with 19 props/methods and 0 dependencies."
+            "description": "Massive file (1062 LOC) doing too much with 19 props/methods and 0 dependencies."
           }
         ],
         "git": {
-          "commitCount": 18,
+          "commitCount": 19,
           "recentCommits": [
+            "2026-08-31 [f115047] refactor: rename /extension-settings to /extensions and update UI labels and workflow documentation. (Martin-Peter Lakatos)",
             "2026-08-31 [d63b64e] feat(workflow): refactor skills taxonomy and enhance evaluate-phase frontier logic (Martin-Peter Lakatos)",
             "2026-08-31 [53ddcf5] feat: add atomic design and unslop methodology docs and update workflow FSM implementation (Martin-Peter Lakatos)",
             "2026-08-28 [ab8aa75] Modularize usage-history extension and refine workflow FSM transitions (Martin-Peter Lakatos)",
@@ -2171,10 +2172,10 @@
       "summary": "🔥 Critical Hotspot · extensions/agent-workflow/ask.ts",
       "permission": "write",
       "substates": [
-        "LOC: 287",
+        "LOC: 311",
         "Churn: 20c",
-        "Score: 93/100",
-        "Props: 6"
+        "Score: 94/100",
+        "Props: 8"
       ],
       "procedure": [
         "Break into smaller single-responsibility sub-modules to reduce frequent edit collisions."
@@ -2184,12 +2185,14 @@
         "relPath": "extensions/agent-workflow/ask.ts",
         "category": "frontend",
         "atomicTier": "organism",
-        "totalLoc": 287,
-        "scriptLoc": 258,
+        "totalLoc": 311,
+        "scriptLoc": 281,
         "templateLoc": 0,
         "styleLoc": 0,
         "props": [
           "WRITE_CUSTOM_ANSWER",
+          "PREVIOUS_QUESTION",
+          "NEXT_QUESTION",
           "PROCEED_WITH_BEST_SPEC",
           "PROCEED_WITH_BEST_VIBE",
           "AskAnswer",
@@ -2200,8 +2203,8 @@
         "slots": [],
         "composables": [],
         "refsCount": 0,
-        "cyclomatic": 41,
-        "slopScore": 93,
+        "cyclomatic": 54,
+        "slopScore": 94,
         "status": "critical",
         "accentColor": "#ef4444",
         "flags": [
@@ -2210,12 +2213,13 @@
             "label": "Critical Hotspot",
             "severity": "critical",
             "icon": "🔥",
-            "description": "High churn (20 commits) coupled with high cyclomatic complexity (41). Prime candidate for bugs."
+            "description": "High churn (20 commits) coupled with high cyclomatic complexity (54). Prime candidate for bugs."
           }
         ],
         "git": {
           "commitCount": 20,
           "recentCommits": [
+            "2026-08-31 [f115047] refactor: rename /extension-settings to /extensions and update UI labels and workflow documentation. (Martin-Peter Lakatos)",
             "2026-08-28 [f71c3f5] refactor: enhance workflow FSM validation, add session entry checks, and implement mode-specific transition rules (Martin-Peter Lakatos)",
             "2026-08-27 [b8e780b] feat: introduce visual theming and FSM workflow engine for agent interactions (Martin-Peter Lakatos)",
             "2026-08-26 [d0aefb0] feat(workflow): FSM v2.6.6 ask-before-start and next-gate hardening (Martin-Peter Lakatos)",
@@ -2234,14 +2238,88 @@
             "2026-08-01 [10d0ae3] chore: sync latest pi-director stack (Martin-Peter Lakatos)",
             "2026-07-30 [b2fabbe] Refine workflow alignment and progress tracking (Martin Lakatos)",
             "2026-07-29 [8b7dc4d] Improve workflow progress reporting (Martin Lakatos)",
-            "2026-07-28 [4eff65c] Name User and Agent in workflow prompt and tools (Martin Lakatos)",
-            "2026-07-27 [41f7a85] Initial Pi Director fork (Martin Lakatos)"
+            "2026-07-28 [4eff65c] Name User and Agent in workflow prompt and tools (Martin Lakatos)"
           ],
           "authors": [
             "Martin-Peter Lakatos",
             "Martin Lakatos"
           ],
-          "lastModified": "2026-08-28"
+          "lastModified": "2026-08-31"
+        },
+        "renderedChildren": [],
+        "inboundCount": 0
+      }
+    },
+    "workflow-fsm.data": {
+      "id": "workflow-fsm.data",
+      "label": "workflow-fsm.data.js",
+      "kind": "custom",
+      "x": 820,
+      "y": 1352,
+      "w": 280,
+      "h": 180,
+      "summary": "🔥 Critical Hotspot · 🏛️ God Component · extensions/agent-workflow/workflow-fsm.data.js",
+      "permission": "write",
+      "substates": [
+        "LOC: 3629",
+        "Churn: 9c",
+        "Score: 92/100"
+      ],
+      "procedure": [
+        "Break into smaller single-responsibility sub-modules to reduce frequent edit collisions.",
+        "Extract stateful logic into dedicated composables or service layers, and decompose templates."
+      ],
+      "customData": {
+        "filePath": "/Users/martin-peter.lakatos/Github/pi-director/extensions/agent-workflow/workflow-fsm.data.js",
+        "relPath": "extensions/agent-workflow/workflow-fsm.data.js",
+        "category": "frontend",
+        "atomicTier": "organism",
+        "totalLoc": 3629,
+        "scriptLoc": 3627,
+        "templateLoc": 0,
+        "styleLoc": 0,
+        "props": [],
+        "emits": [],
+        "slots": [],
+        "composables": [],
+        "refsCount": 0,
+        "cyclomatic": 167,
+        "slopScore": 92,
+        "status": "critical",
+        "accentColor": "#ef4444",
+        "flags": [
+          {
+            "type": "CRITICAL_HOTSPOT",
+            "label": "Critical Hotspot",
+            "severity": "critical",
+            "icon": "🔥",
+            "description": "High churn (9 commits) coupled with high cyclomatic complexity (167). Prime candidate for bugs."
+          },
+          {
+            "type": "GOD_UNIT",
+            "label": "God Component",
+            "severity": "critical",
+            "icon": "🏛️",
+            "description": "Massive file (3629 LOC) doing too much with 0 props/methods and 0 dependencies."
+          }
+        ],
+        "git": {
+          "commitCount": 9,
+          "recentCommits": [
+            "2026-08-31 [f115047] refactor: rename /extension-settings to /extensions and update UI labels and workflow documentation. (Martin-Peter Lakatos)",
+            "2026-08-31 [5f20eb4] refactor: improve status bar hourly pacing and standardize workflow FSM diagramming logic (Martin-Peter Lakatos)",
+            "2026-08-31 [d63b64e] feat(workflow): refactor skills taxonomy and enhance evaluate-phase frontier logic (Martin-Peter Lakatos)",
+            "2026-08-31 [53ddcf5] feat: add atomic design and unslop methodology docs and update workflow FSM implementation (Martin-Peter Lakatos)",
+            "2026-08-28 [0216e34] refactor: streamline FSM diagram visualization by filtering tool procedures by mode and removing legacy current-work tracking. (Martin-Peter Lakatos)",
+            "2026-08-28 [8d47d9f] feat: introduce split layout architecture for multi-view and full-diagram workflow visualization (Martin-Peter Lakatos)",
+            "2026-08-28 [f71c3f5] refactor: enhance workflow FSM validation, add session entry checks, and implement mode-specific transition rules (Martin-Peter Lakatos)",
+            "2026-08-27 [1100b3b] refactor: enforce FSM transition integrity by removing self-looping and loop-specific tools from the state machine (Martin-Peter Lakatos)",
+            "2026-08-27 [b8e780b] feat: introduce visual theming and FSM workflow engine for agent interactions (Martin-Peter Lakatos)"
+          ],
+          "authors": [
+            "Martin-Peter Lakatos"
+          ],
+          "lastModified": "2026-08-31"
         },
         "renderedChildren": [],
         "inboundCount": 0
@@ -2252,7 +2330,7 @@
       "label": "task.ts",
       "kind": "custom",
       "x": 820,
-      "y": 1352,
+      "y": 1564,
       "w": 280,
       "h": 180,
       "summary": "🔥 Critical Hotspot · extensions/agent-workflow/task.ts",
@@ -2353,7 +2431,7 @@
       "label": "render.ts",
       "kind": "custom",
       "x": 820,
-      "y": 1564,
+      "y": 1776,
       "w": 280,
       "h": 180,
       "summary": "🔥 Critical Hotspot · extensions/status-bar/src/powerbar/render.ts",
@@ -2420,80 +2498,6 @@
             "Martin-Peter Lakatos"
           ],
           "lastModified": "2026-08-10"
-        },
-        "renderedChildren": [],
-        "inboundCount": 0
-      }
-    },
-    "workflow-fsm.data": {
-      "id": "workflow-fsm.data",
-      "label": "workflow-fsm.data.js",
-      "kind": "custom",
-      "x": 820,
-      "y": 1776,
-      "w": 280,
-      "h": 180,
-      "summary": "🔥 Critical Hotspot · 🏛️ God Component · extensions/agent-workflow/workflow-fsm.data.js",
-      "permission": "write",
-      "substates": [
-        "LOC: 3620",
-        "Churn: 8c",
-        "Score: 88/100"
-      ],
-      "procedure": [
-        "Break into smaller single-responsibility sub-modules to reduce frequent edit collisions.",
-        "Extract stateful logic into dedicated composables or service layers, and decompose templates."
-      ],
-      "customData": {
-        "filePath": "/Users/martin-peter.lakatos/Github/pi-director/extensions/agent-workflow/workflow-fsm.data.js",
-        "relPath": "extensions/agent-workflow/workflow-fsm.data.js",
-        "category": "frontend",
-        "atomicTier": "organism",
-        "totalLoc": 3620,
-        "scriptLoc": 3618,
-        "templateLoc": 0,
-        "styleLoc": 0,
-        "props": [],
-        "emits": [],
-        "slots": [],
-        "composables": [],
-        "refsCount": 0,
-        "cyclomatic": 161,
-        "slopScore": 88,
-        "status": "critical",
-        "accentColor": "#ef4444",
-        "flags": [
-          {
-            "type": "CRITICAL_HOTSPOT",
-            "label": "Critical Hotspot",
-            "severity": "critical",
-            "icon": "🔥",
-            "description": "High churn (8 commits) coupled with high cyclomatic complexity (161). Prime candidate for bugs."
-          },
-          {
-            "type": "GOD_UNIT",
-            "label": "God Component",
-            "severity": "critical",
-            "icon": "🏛️",
-            "description": "Massive file (3620 LOC) doing too much with 0 props/methods and 0 dependencies."
-          }
-        ],
-        "git": {
-          "commitCount": 8,
-          "recentCommits": [
-            "2026-08-31 [5f20eb4] refactor: improve status bar hourly pacing and standardize workflow FSM diagramming logic (Martin-Peter Lakatos)",
-            "2026-08-31 [d63b64e] feat(workflow): refactor skills taxonomy and enhance evaluate-phase frontier logic (Martin-Peter Lakatos)",
-            "2026-08-31 [53ddcf5] feat: add atomic design and unslop methodology docs and update workflow FSM implementation (Martin-Peter Lakatos)",
-            "2026-08-28 [0216e34] refactor: streamline FSM diagram visualization by filtering tool procedures by mode and removing legacy current-work tracking. (Martin-Peter Lakatos)",
-            "2026-08-28 [8d47d9f] feat: introduce split layout architecture for multi-view and full-diagram workflow visualization (Martin-Peter Lakatos)",
-            "2026-08-28 [f71c3f5] refactor: enhance workflow FSM validation, add session entry checks, and implement mode-specific transition rules (Martin-Peter Lakatos)",
-            "2026-08-27 [1100b3b] refactor: enforce FSM transition integrity by removing self-looping and loop-specific tools from the state machine (Martin-Peter Lakatos)",
-            "2026-08-27 [b8e780b] feat: introduce visual theming and FSM workflow engine for agent interactions (Martin-Peter Lakatos)"
-          ],
-          "authors": [
-            "Martin-Peter Lakatos"
-          ],
-          "lastModified": "2026-08-31"
         },
         "renderedChildren": [],
         "inboundCount": 0
@@ -2760,12 +2764,80 @@
         "inboundCount": 0
       }
     },
+    "workflow-fsm.test": {
+      "id": "workflow-fsm.test",
+      "label": "workflow-fsm.test.ts",
+      "kind": "custom",
+      "x": 820,
+      "y": 2624,
+      "w": 280,
+      "h": 180,
+      "summary": "🔥 Critical Hotspot · test/workflow-fsm.test.ts",
+      "permission": "write",
+      "substates": [
+        "LOC: 220",
+        "Churn: 10c",
+        "Score: 84/100"
+      ],
+      "procedure": [
+        "Break into smaller single-responsibility sub-modules to reduce frequent edit collisions."
+      ],
+      "customData": {
+        "filePath": "/Users/martin-peter.lakatos/Github/pi-director/test/workflow-fsm.test.ts",
+        "relPath": "test/workflow-fsm.test.ts",
+        "category": "frontend",
+        "atomicTier": "organism",
+        "totalLoc": 220,
+        "scriptLoc": 197,
+        "templateLoc": 0,
+        "styleLoc": 0,
+        "props": [],
+        "emits": [],
+        "slots": [],
+        "composables": [],
+        "refsCount": 0,
+        "cyclomatic": 31,
+        "slopScore": 84,
+        "status": "critical",
+        "accentColor": "#ef4444",
+        "flags": [
+          {
+            "type": "CRITICAL_HOTSPOT",
+            "label": "Critical Hotspot",
+            "severity": "critical",
+            "icon": "🔥",
+            "description": "High churn (10 commits) coupled with high cyclomatic complexity (31). Prime candidate for bugs."
+          }
+        ],
+        "git": {
+          "commitCount": 10,
+          "recentCommits": [
+            "2026-08-31 [f115047] refactor: rename /extension-settings to /extensions and update UI labels and workflow documentation. (Martin-Peter Lakatos)",
+            "2026-08-31 [5f20eb4] refactor: improve status bar hourly pacing and standardize workflow FSM diagramming logic (Martin-Peter Lakatos)",
+            "2026-08-31 [53ddcf5] feat: add atomic design and unslop methodology docs and update workflow FSM implementation (Martin-Peter Lakatos)",
+            "2026-08-28 [ab8aa75] Modularize usage-history extension and refine workflow FSM transitions (Martin-Peter Lakatos)",
+            "2026-08-28 [0216e34] refactor: streamline FSM diagram visualization by filtering tool procedures by mode and removing legacy current-work tracking. (Martin-Peter Lakatos)",
+            "2026-08-28 [f71c3f5] refactor: enhance workflow FSM validation, add session entry checks, and implement mode-specific transition rules (Martin-Peter Lakatos)",
+            "2026-08-27 [1100b3b] refactor: enforce FSM transition integrity by removing self-looping and loop-specific tools from the state machine (Martin-Peter Lakatos)",
+            "2026-08-27 [209d6ee] refactor: rename workflow-fsm.js to workflow-visualizer.js and update plan digest UI to use a single return button (Martin-Peter Lakatos)",
+            "2026-08-27 [d4158ef] feat: add Show Plan option to mode picker to display plan digest and support silent-idle fallback in align mode (Martin-Peter Lakatos)",
+            "2026-08-26 [d0aefb0] feat(workflow): FSM v2.6.6 ask-before-start and next-gate hardening (Martin-Peter Lakatos)"
+          ],
+          "authors": [
+            "Martin-Peter Lakatos"
+          ],
+          "lastModified": "2026-08-31"
+        },
+        "renderedChildren": [],
+        "inboundCount": 0
+      }
+    },
     "workflow-machine": {
       "id": "workflow-machine",
       "label": "workflow-machine.ts",
       "kind": "custom",
       "x": 820,
-      "y": 2624,
+      "y": 2836,
       "w": 280,
       "h": 180,
       "summary": "🔥 Critical Hotspot · extensions/agent-workflow/workflow-machine.ts",
@@ -2855,7 +2927,7 @@
       "label": "plan-time.ts",
       "kind": "custom",
       "x": 820,
-      "y": 2836,
+      "y": 3048,
       "w": 280,
       "h": 180,
       "summary": "🔥 Critical Hotspot · extensions/agent-workflow/plan-time.ts",
@@ -2942,7 +3014,7 @@
       "label": "context-usage.ts",
       "kind": "custom",
       "x": 820,
-      "y": 3048,
+      "y": 3260,
       "w": 280,
       "h": 180,
       "summary": "🔥 Critical Hotspot · extensions/agent-workflow/context-usage.ts",
@@ -3030,7 +3102,7 @@
       "label": "workflow-visualizer.js",
       "kind": "custom",
       "x": 820,
-      "y": 3260,
+      "y": 3472,
       "w": 280,
       "h": 180,
       "summary": "🏛️ God Component · extensions/agent-workflow/workflow-visualizer.js",
@@ -3079,73 +3151,6 @@
             "2026-08-28 [f71c3f5] refactor: enhance workflow FSM validation, add session entry checks, and implement mode-specific transition rules (Martin-Peter Lakatos)",
             "2026-08-27 [209d6ee] refactor: rename workflow-fsm.js to workflow-visualizer.js and update plan digest UI to use a single return button (Martin-Peter Lakatos)",
             "2026-08-27 [b8e780b] feat: introduce visual theming and FSM workflow engine for agent interactions (Martin-Peter Lakatos)"
-          ],
-          "authors": [
-            "Martin-Peter Lakatos"
-          ],
-          "lastModified": "2026-08-31"
-        },
-        "renderedChildren": [],
-        "inboundCount": 0
-      }
-    },
-    "workflow-fsm.test": {
-      "id": "workflow-fsm.test",
-      "label": "workflow-fsm.test.ts",
-      "kind": "custom",
-      "x": 820,
-      "y": 3684,
-      "w": 280,
-      "h": 180,
-      "summary": "🔥 Critical Hotspot · test/workflow-fsm.test.ts",
-      "permission": "write",
-      "substates": [
-        "LOC: 210",
-        "Churn: 9c",
-        "Score: 80/100"
-      ],
-      "procedure": [
-        "Break into smaller single-responsibility sub-modules to reduce frequent edit collisions."
-      ],
-      "customData": {
-        "filePath": "/Users/martin-peter.lakatos/Github/pi-director/test/workflow-fsm.test.ts",
-        "relPath": "test/workflow-fsm.test.ts",
-        "category": "frontend",
-        "atomicTier": "organism",
-        "totalLoc": 210,
-        "scriptLoc": 188,
-        "templateLoc": 0,
-        "styleLoc": 0,
-        "props": [],
-        "emits": [],
-        "slots": [],
-        "composables": [],
-        "refsCount": 0,
-        "cyclomatic": 31,
-        "slopScore": 80,
-        "status": "critical",
-        "accentColor": "#ef4444",
-        "flags": [
-          {
-            "type": "CRITICAL_HOTSPOT",
-            "label": "Critical Hotspot",
-            "severity": "critical",
-            "icon": "🔥",
-            "description": "High churn (9 commits) coupled with high cyclomatic complexity (31). Prime candidate for bugs."
-          }
-        ],
-        "git": {
-          "commitCount": 9,
-          "recentCommits": [
-            "2026-08-31 [5f20eb4] refactor: improve status bar hourly pacing and standardize workflow FSM diagramming logic (Martin-Peter Lakatos)",
-            "2026-08-31 [53ddcf5] feat: add atomic design and unslop methodology docs and update workflow FSM implementation (Martin-Peter Lakatos)",
-            "2026-08-28 [ab8aa75] Modularize usage-history extension and refine workflow FSM transitions (Martin-Peter Lakatos)",
-            "2026-08-28 [0216e34] refactor: streamline FSM diagram visualization by filtering tool procedures by mode and removing legacy current-work tracking. (Martin-Peter Lakatos)",
-            "2026-08-28 [f71c3f5] refactor: enhance workflow FSM validation, add session entry checks, and implement mode-specific transition rules (Martin-Peter Lakatos)",
-            "2026-08-27 [1100b3b] refactor: enforce FSM transition integrity by removing self-looping and loop-specific tools from the state machine (Martin-Peter Lakatos)",
-            "2026-08-27 [209d6ee] refactor: rename workflow-fsm.js to workflow-visualizer.js and update plan digest UI to use a single return button (Martin-Peter Lakatos)",
-            "2026-08-27 [d4158ef] feat: add Show Plan option to mode picker to display plan digest and support silent-idle fallback in align mode (Martin-Peter Lakatos)",
-            "2026-08-26 [d0aefb0] feat(workflow): FSM v2.6.6 ask-before-start and next-gate hardening (Martin-Peter Lakatos)"
           ],
           "authors": [
             "Martin-Peter Lakatos"
@@ -3609,12 +3614,81 @@
         "inboundCount": 0
       }
     },
+    "extension": {
+      "id": "extension",
+      "label": "extension.ts",
+      "kind": "custom",
+      "x": 820,
+      "y": 6228,
+      "w": 280,
+      "h": 180,
+      "summary": "🔥 Critical Hotspot · extensions/extension-preferences/extension.ts",
+      "permission": "write",
+      "substates": [
+        "LOC: 147",
+        "Churn: 8c",
+        "Score: 66/100"
+      ],
+      "procedure": [
+        "Break into smaller single-responsibility sub-modules to reduce frequent edit collisions."
+      ],
+      "customData": {
+        "filePath": "/Users/martin-peter.lakatos/Github/pi-director/extensions/extension-preferences/extension.ts",
+        "relPath": "extensions/extension-preferences/extension.ts",
+        "category": "frontend",
+        "atomicTier": "organism",
+        "totalLoc": 147,
+        "scriptLoc": 115,
+        "templateLoc": 0,
+        "styleLoc": 0,
+        "props": [],
+        "emits": [],
+        "slots": [],
+        "composables": [],
+        "refsCount": 0,
+        "cyclomatic": 16,
+        "slopScore": 66,
+        "status": "critical",
+        "accentColor": "#ef4444",
+        "flags": [
+          {
+            "type": "CRITICAL_HOTSPOT",
+            "label": "Critical Hotspot",
+            "severity": "critical",
+            "icon": "🔥",
+            "description": "High churn (8 commits) coupled with high cyclomatic complexity (16). Prime candidate for bugs."
+          }
+        ],
+        "git": {
+          "commitCount": 8,
+          "recentCommits": [
+            "2026-08-31 [f115047] refactor: rename /extension-settings to /extensions and update UI labels and workflow documentation. (Martin-Peter Lakatos)",
+            "2026-08-10 [2da9187] refactor: standardize code formatting and improve readability across multiple provider files (Martin Lakatos)",
+            "2026-07-27 [41f7a85] Initial Pi Director fork (Martin Lakatos)",
+            "2026-07-25 [3701a99] refactor(settings): cut /extension-settings down to powerbar layout (Martin-Peter Lakatos)",
+            "2026-07-22 [9e9fa6c] feat: add status-bar extension, improve preference default value handling, add test mocks, and enable strict mode (Martin-Peter Lakatos)",
+            "2026-07-21 [2587e92] Fix gate bypasses and correctness bugs across bundle; add regression tests (Martin-Peter Lakatos)",
+            "2026-07-20 [619e2b2] rename active extensions (Martin-Peter Lakatos)",
+            "2026-07-17 [827bddd] Initial vendored Pi extension bundle (Martin-Peter Lakatos)"
+          ],
+          "authors": [
+            "Martin-Peter Lakatos",
+            "Martin Lakatos"
+          ],
+          "lastModified": "2026-08-31"
+        },
+        "renderedChildren": [
+          "RegistrationPayload"
+        ],
+        "inboundCount": 0
+      }
+    },
     "storage": {
       "id": "storage",
       "label": "storage.ts",
       "kind": "custom",
       "x": 820,
-      "y": 6228,
+      "y": 6440,
       "w": 280,
       "h": 180,
       "summary": "Healthy · extensions/extension-preferences/settings/storage.ts",
@@ -3675,7 +3749,7 @@
       "label": "parse.ts",
       "kind": "custom",
       "x": 820,
-      "y": 6440,
+      "y": 6652,
       "w": 280,
       "h": 180,
       "summary": "🏛️ God Component · extensions/usage-history/parse.ts",
@@ -3741,7 +3815,7 @@
       "label": "pipeline.ts",
       "kind": "custom",
       "x": 820,
-      "y": 6652,
+      "y": 6864,
       "w": 280,
       "h": 180,
       "summary": "🏛️ God Component · extensions/usage-history/pipeline.ts",
@@ -3808,7 +3882,7 @@
       "label": "handoff.ts",
       "kind": "custom",
       "x": 820,
-      "y": 7076,
+      "y": 7288,
       "w": 280,
       "h": 180,
       "summary": "Healthy · extensions/agent-workflow/handoff.ts",
@@ -3873,66 +3947,6 @@
           "lastModified": "2026-08-14"
         },
         "renderedChildren": [],
-        "inboundCount": 0
-      }
-    },
-    "extension": {
-      "id": "extension",
-      "label": "extension.ts",
-      "kind": "custom",
-      "x": 820,
-      "y": 7288,
-      "w": 280,
-      "h": 180,
-      "summary": "Healthy · extensions/extension-preferences/extension.ts",
-      "permission": "readonly",
-      "substates": [
-        "LOC: 147",
-        "Churn: 7c",
-        "Score: 62/100"
-      ],
-      "procedure": [
-        "Component is stable and well-bounded."
-      ],
-      "customData": {
-        "filePath": "/Users/martin-peter.lakatos/Github/pi-director/extensions/extension-preferences/extension.ts",
-        "relPath": "extensions/extension-preferences/extension.ts",
-        "category": "frontend",
-        "atomicTier": "organism",
-        "totalLoc": 147,
-        "scriptLoc": 115,
-        "templateLoc": 0,
-        "styleLoc": 0,
-        "props": [],
-        "emits": [],
-        "slots": [],
-        "composables": [],
-        "refsCount": 0,
-        "cyclomatic": 16,
-        "slopScore": 62,
-        "status": "healthy",
-        "accentColor": "#10b981",
-        "flags": [],
-        "git": {
-          "commitCount": 7,
-          "recentCommits": [
-            "2026-08-10 [2da9187] refactor: standardize code formatting and improve readability across multiple provider files (Martin Lakatos)",
-            "2026-07-27 [41f7a85] Initial Pi Director fork (Martin Lakatos)",
-            "2026-07-25 [3701a99] refactor(settings): cut /extension-settings down to powerbar layout (Martin-Peter Lakatos)",
-            "2026-07-22 [9e9fa6c] feat: add status-bar extension, improve preference default value handling, add test mocks, and enable strict mode (Martin-Peter Lakatos)",
-            "2026-07-21 [2587e92] Fix gate bypasses and correctness bugs across bundle; add regression tests (Martin-Peter Lakatos)",
-            "2026-07-20 [619e2b2] rename active extensions (Martin-Peter Lakatos)",
-            "2026-07-17 [827bddd] Initial vendored Pi extension bundle (Martin-Peter Lakatos)"
-          ],
-          "authors": [
-            "Martin Lakatos",
-            "Martin-Peter Lakatos"
-          ],
-          "lastModified": "2026-08-10"
-        },
-        "renderedChildren": [
-          "RegistrationPayload"
-        ],
         "inboundCount": 0
       }
     },
@@ -4414,6 +4428,7 @@
         "git": {
           "commitCount": 20,
           "recentCommits": [
+            "2026-08-31 [f115047] refactor: rename /extension-settings to /extensions and update UI labels and workflow documentation. (Martin-Peter Lakatos)",
             "2026-08-10 [2da9187] refactor: standardize code formatting and improve readability across multiple provider files (Martin Lakatos)",
             "2026-08-10 [809fe0e] feat: add questionnaire tool for user alignment questions (Martin Lakatos)",
             "2026-08-01 [10d0ae3] chore: sync latest pi-director stack (Martin-Peter Lakatos)",
@@ -4432,14 +4447,13 @@
             "2026-07-22 [a8f4c8f] refactor: simplify agent workflow instructions and remove session evidence integration (Martin-Peter Lakatos)",
             "2026-07-22 [3e8c4a2] feat(session-dashboard,agent-workflow): treat MEMORY.md as temporary workaround state and render line-count debt badge (Martin-Peter Lakatos)",
             "2026-07-22 [9c48225] feat(dashboard, workflow, safety): simplify welcome banner, safelist trusted paths, refine question formatting and task naming (Martin-Peter Lakatos)",
-            "2026-07-21 [a13be18] session-dashboard: add /help command, referenced from the banner (Martin-Peter Lakatos)",
-            "2026-07-21 [f7f270a] session-dashboard: compact deck, styled tail, distinct chart labels (Martin-Peter Lakatos)"
+            "2026-07-21 [a13be18] session-dashboard: add /help command, referenced from the banner (Martin-Peter Lakatos)"
           ],
           "authors": [
-            "Martin Lakatos",
-            "Martin-Peter Lakatos"
+            "Martin-Peter Lakatos",
+            "Martin Lakatos"
           ],
-          "lastModified": "2026-08-10"
+          "lastModified": "2026-08-31"
         },
         "renderedChildren": [],
         "inboundCount": 0
@@ -5028,7 +5042,7 @@
       "permission": "readonly",
       "substates": [
         "LOC: 67",
-        "Churn: 12c",
+        "Churn: 13c",
         "Score: 50/100",
         "Props: 4"
       ],
@@ -5060,8 +5074,9 @@
         "accentColor": "#10b981",
         "flags": [],
         "git": {
-          "commitCount": 12,
+          "commitCount": 13,
           "recentCommits": [
+            "2026-08-31 [f115047] refactor: rename /extension-settings to /extensions and update UI labels and workflow documentation. (Martin-Peter Lakatos)",
             "2026-08-27 [d4158ef] feat: add Show Plan option to mode picker to display plan digest and support silent-idle fallback in align mode (Martin-Peter Lakatos)",
             "2026-08-17 [4852782] feat: implement content build script, add MIT license, and update command documentation and help menu. (Martin-Peter Lakatos)",
             "2026-08-10 [2da9187] refactor: standardize code formatting and improve readability across multiple provider files (Martin Lakatos)",
@@ -5079,7 +5094,7 @@
             "Martin-Peter Lakatos",
             "Martin Lakatos"
           ],
-          "lastModified": "2026-08-27"
+          "lastModified": "2026-08-31"
         },
         "renderedChildren": [],
         "inboundCount": 0
@@ -5572,12 +5587,75 @@
         "inboundCount": 0
       }
     },
+    "picker-meta": {
+      "id": "picker-meta",
+      "label": "picker-meta.ts",
+      "kind": "custom",
+      "x": 820,
+      "y": 14920,
+      "w": 280,
+      "h": 180,
+      "summary": "Healthy · extensions/agent-workflow/picker-meta.ts",
+      "permission": "readonly",
+      "substates": [
+        "LOC: 23",
+        "Churn: 4c",
+        "Score: 24/100",
+        "Props: 7"
+      ],
+      "procedure": [
+        "Component is stable and well-bounded."
+      ],
+      "customData": {
+        "filePath": "/Users/martin-peter.lakatos/Github/pi-director/extensions/agent-workflow/picker-meta.ts",
+        "relPath": "extensions/agent-workflow/picker-meta.ts",
+        "category": "frontend",
+        "atomicTier": "organism",
+        "totalLoc": 23,
+        "scriptLoc": 18,
+        "templateLoc": 0,
+        "styleLoc": 0,
+        "props": [
+          "RETURN_OPTION",
+          "RETURN_ALIGN_OPTION",
+          "SHOW_PLAN_OPTION",
+          "SHOW_PLAN_DISMISS",
+          "metaPickerLabels",
+          "isRedundantAlignEstablish",
+          "withoutRedundantAlignEstablish"
+        ],
+        "emits": [],
+        "slots": [],
+        "composables": [],
+        "refsCount": 0,
+        "cyclomatic": 5,
+        "slopScore": 24,
+        "status": "healthy",
+        "accentColor": "#10b981",
+        "flags": [],
+        "git": {
+          "commitCount": 4,
+          "recentCommits": [
+            "2026-08-31 [f115047] refactor: rename /extension-settings to /extensions and update UI labels and workflow documentation. (Martin-Peter Lakatos)",
+            "2026-08-27 [209d6ee] refactor: rename workflow-fsm.js to workflow-visualizer.js and update plan digest UI to use a single return button (Martin-Peter Lakatos)",
+            "2026-08-27 [d4158ef] feat: add Show Plan option to mode picker to display plan digest and support silent-idle fallback in align mode (Martin-Peter Lakatos)",
+            "2026-08-26 [d0aefb0] feat(workflow): FSM v2.6.6 ask-before-start and next-gate hardening (Martin-Peter Lakatos)"
+          ],
+          "authors": [
+            "Martin-Peter Lakatos"
+          ],
+          "lastModified": "2026-08-31"
+        },
+        "renderedChildren": [],
+        "inboundCount": 0
+      }
+    },
     "question-labels": {
       "id": "question-labels",
       "label": "question-labels.ts",
       "kind": "custom",
       "x": 820,
-      "y": 14920,
+      "y": 15132,
       "w": 280,
       "h": 180,
       "summary": "Healthy · extensions/agent-workflow/question-labels.ts",
@@ -5639,7 +5717,7 @@
       "label": "dependencies.ts",
       "kind": "custom",
       "x": 820,
-      "y": 15344,
+      "y": 15556,
       "w": 280,
       "h": 180,
       "summary": "Healthy · extensions/usage-monitor/src/dependencies.ts",
@@ -5697,7 +5775,7 @@
       "label": "errors.ts",
       "kind": "custom",
       "x": 820,
-      "y": 15556,
+      "y": 15768,
       "w": 280,
       "h": 180,
       "summary": "Healthy · extensions/usage-monitor/src/errors.ts",
@@ -5755,68 +5833,6 @@
         "renderedChildren": [
           "UsageErrorCode"
         ],
-        "inboundCount": 0
-      }
-    },
-    "picker-meta": {
-      "id": "picker-meta",
-      "label": "picker-meta.ts",
-      "kind": "custom",
-      "x": 820,
-      "y": 15768,
-      "w": 280,
-      "h": 180,
-      "summary": "Healthy · extensions/agent-workflow/picker-meta.ts",
-      "permission": "readonly",
-      "substates": [
-        "LOC: 23",
-        "Churn: 3c",
-        "Score: 21/100",
-        "Props: 7"
-      ],
-      "procedure": [
-        "Component is stable and well-bounded."
-      ],
-      "customData": {
-        "filePath": "/Users/martin-peter.lakatos/Github/pi-director/extensions/agent-workflow/picker-meta.ts",
-        "relPath": "extensions/agent-workflow/picker-meta.ts",
-        "category": "frontend",
-        "atomicTier": "organism",
-        "totalLoc": 23,
-        "scriptLoc": 18,
-        "templateLoc": 0,
-        "styleLoc": 0,
-        "props": [
-          "RETURN_OPTION",
-          "RETURN_ALIGN_OPTION",
-          "SHOW_PLAN_OPTION",
-          "SHOW_PLAN_DISMISS",
-          "metaPickerLabels",
-          "isRedundantAlignEstablish",
-          "withoutRedundantAlignEstablish"
-        ],
-        "emits": [],
-        "slots": [],
-        "composables": [],
-        "refsCount": 0,
-        "cyclomatic": 5,
-        "slopScore": 21,
-        "status": "healthy",
-        "accentColor": "#10b981",
-        "flags": [],
-        "git": {
-          "commitCount": 3,
-          "recentCommits": [
-            "2026-08-27 [209d6ee] refactor: rename workflow-fsm.js to workflow-visualizer.js and update plan digest UI to use a single return button (Martin-Peter Lakatos)",
-            "2026-08-27 [d4158ef] feat: add Show Plan option to mode picker to display plan digest and support silent-idle fallback in align mode (Martin-Peter Lakatos)",
-            "2026-08-26 [d0aefb0] feat(workflow): FSM v2.6.6 ask-before-start and next-gate hardening (Martin-Peter Lakatos)"
-          ],
-          "authors": [
-            "Martin-Peter Lakatos"
-          ],
-          "lastModified": "2026-08-27"
-        },
-        "renderedChildren": [],
         "inboundCount": 0
       }
     },
@@ -6366,8 +6382,8 @@
       "permission": "write",
       "substates": [
         "LOC: 1584",
-        "Churn: 8c",
-        "Score: 88/100",
+        "Churn: 9c",
+        "Score: 92/100",
         "Hooks: 1"
       ],
       "procedure": [
@@ -6391,7 +6407,7 @@
         ],
         "refsCount": 0,
         "cyclomatic": 874,
-        "slopScore": 88,
+        "slopScore": 92,
         "status": "critical",
         "accentColor": "#ef4444",
         "flags": [
@@ -6400,7 +6416,7 @@
             "label": "Critical Hotspot",
             "severity": "critical",
             "icon": "🔥",
-            "description": "High churn (8 commits) coupled with high cyclomatic complexity (874). Prime candidate for bugs."
+            "description": "High churn (9 commits) coupled with high cyclomatic complexity (874). Prime candidate for bugs."
           },
           {
             "type": "GOD_UNIT",
@@ -6411,8 +6427,9 @@
           }
         ],
         "git": {
-          "commitCount": 8,
+          "commitCount": 9,
           "recentCommits": [
+            "2026-08-31 [f115047] refactor: rename /extension-settings to /extensions and update UI labels and workflow documentation. (Martin-Peter Lakatos)",
             "2026-08-28 [0216e34] refactor: streamline FSM diagram visualization by filtering tool procedures by mode and removing legacy current-work tracking. (Martin-Peter Lakatos)",
             "2026-08-28 [8d47d9f] feat: introduce split layout architecture for multi-view and full-diagram workflow visualization (Martin-Peter Lakatos)",
             "2026-08-28 [99c05ff] refactor: simplify workflow layout schema and update UI theme tokens (Martin-Peter Lakatos)",
@@ -6425,7 +6442,7 @@
           "authors": [
             "Martin-Peter Lakatos"
           ],
-          "lastModified": "2026-08-28"
+          "lastModified": "2026-08-31"
         },
         "renderedChildren": [],
         "inboundCount": 0

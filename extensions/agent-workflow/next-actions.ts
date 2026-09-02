@@ -90,7 +90,13 @@ export type NextGateEvent = {
 export type NextGateResult = { ok: true } | { ok: false; kind: "error"; message: string };
 
 export function evaluateNextGate(event: NextGateEvent, artifact: "none" | "named", planError: string): NextGateResult {
-  if (!event.hasActions) return { ok: true };
+  if (!event.hasActions) {
+    return {
+      ok: false,
+      kind: "error",
+      message: "next needs at least one ranked action (other mode or handoff).",
+    };
+  }
   if (!event.allTargetsValid) {
     return { ok: false, kind: "error", message: "every action needs a valid target." };
   }

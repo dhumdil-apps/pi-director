@@ -1,9 +1,8 @@
 /**
  * Settings for the powerbar via pi-extension-settings.
  *
- * Configurable behavior is limited to weekly subscription pacing and an
- * unmatched-provider weekly override. Layout and visuals are locked (see the
- * constants below) — line pickers and Line gap existed and are gone.
+ * Configurable: weekly pacing, unmatched weekly override, and density
+ * (compact / auto / full). Visuals stay locked; line pickers are gone.
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -20,6 +19,11 @@ export const BAR_WIDTH = 10;
 export const PLACEMENT = "belowEditor" as const;
 /** Hard limit on rendered lines. */
 export const MAX_LINES = 4;
+
+export const DENSITY_SETTING_ID = "density";
+export const DENSITY_VALUES = ["compact", "auto", "full"] as const;
+export type PowerbarDensity = (typeof DENSITY_VALUES)[number];
+export const DEFAULT_DENSITY: PowerbarDensity = "full";
 
 export const WORKING_DAYS_SETTING_ID = "working-days-per-week";
 export const UNMATCHED_WEEKLY_USED_PERCENT_SETTING_ID = "unmatched-weekly-used-percent";
@@ -38,22 +42,41 @@ export interface PowerbarLine {
 }
 
 export interface PowerbarSettings {
-  /** Always MAX_LINES entries, index 0 = line 1. */
+  /** Index 0 = line 1. Compact/auto use fewer than MAX_LINES. */
   lines: PowerbarLine[];
   /** Insert one blank row between each rendered line. */
   lineGap: boolean;
 }
 
-/** Frozen live layout. Change this constant to move segments; leftover picker keys are ignored. */
+/** Frozen full layout. Change this constant to move full-mode segments; leftover picker keys are ignored. */
 export const FIXED_SETTINGS: PowerbarSettings = {
   lines: [
-    { left: ["git-branch"], right: ["provider"] },
-    { left: ["cost", "agent-stats", "tokens"], right: ["model"] },
-    { left: ["attention-span"], right: ["sub-hourly", "sub-weekly"] },
+    { left: ["git-branch"], right: ["provider", "model"] },
+    { left: ["cost", "agent-stats", "tokens"], right: ["sub-weekly"] },
+    { left: ["attention-span"], right: ["sub-hourly"] },
     { left: ["session-name"], right: ["cpu", "ram", "disk", "net"] },
   ],
   lineGap: true,
 };
+
+const COMPACT_SETTINGS: PowerbarSettings = {
+  lines: [{ left: ["cost", "agent-stats", "tokens"], right: ["model", "provider"] }],
+  lineGap: false,
+};
+
+const AUTO_SETTINGS: PowerbarSettings = {
+  lines: [
+    { left: ["cost", "agent-stats", "tokens"], right: ["model", "provider"] },
+    { left: ["attention-span"], right: ["sub-weekly", "sub-hourly"] },
+  ],
+  lineGap: true,
+};
+
+export function parseDensity(value: string | undefined): PowerbarDensity {
+  const text = value?.trim();
+  if (text === "compact" || text === "auto" || text === "full") return text;
+  return DEFAULT_DENSITY;
+}
 
 /** Normalize free-form settings input before it reaches pacing arithmetic. */
 export function parseWorkingDaysPerWeek(value: string | undefined): number {
@@ -127,6 +150,14 @@ export function loadUnmatchedWeeklyOverride(): UnmatchedWeeklyOverride | undefin
 export function registerSettings(pi: ExtensionAPI): void {
   const definitions: SettingDefinition[] = [
     {
+      id: DENSITY_SETTING_ID,
+      label: "Status bar density",
+      description:
+        "compact: one line (cost, stats, tokens | model, provider). auto: that plus attention-span and usage with a gap. full: four lines; model sits with provider, weekly on line 2, hourly on line 3.",
+      defaultValue: DEFAULT_DENSITY,
+      values: [...DENSITY_VALUES],
+    },
+    {
       id: WORKING_DAYS_SETTING_ID,
       label: "Working days per week",
       description: "Days used to pace weekly subscription bars. Enter an integer from 1 to 7; 6–7 include weekends.",
@@ -155,5 +186,8 @@ export function registerSettings(pi: ExtensionAPI): void {
 }
 
 export function loadSettings(): PowerbarSettings {
+  const density = parseDensity(getSetting(EXTENSION_NAME, DENSITY_SETTING_ID, DEFAULT_DENSITY));
+  if (density === "compact") return COMPACT_SETTINGS;
+  if (density === "auto") return AUTO_SETTINGS;
   return FIXED_SETTINGS;
 }

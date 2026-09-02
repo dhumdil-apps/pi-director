@@ -2,9 +2,9 @@
 
 Persistent powerline-style status bar with left/right segments updated via
 events. The core (`src/powerbar/`) listens for `powerbar:update` events,
-maintains a segment store, and renders four fixed lines with independent
-left/right alignment. Producer sub-extensions each emit one or more
-segments:
+maintains a segment store, and renders independently aligned left/right lines.
+Density (`compact` / `auto` / `full`) chooses how many lines and which
+segments. Producer sub-extensions each emit one or more segments:
 
 - **`src/powerbar-session/`** — `session-name` (pretty `8 Aug 16:53` plus remaining ticket/slug; current clock before `start`)
 - **`src/powerbar-git/`** — `git-branch` (branch, tracked diff statistics, + dirty marker)
@@ -53,9 +53,12 @@ Bar override fields below.
 
 ## User surface
 
-Configured through `/extensions` (stored under `powerbar`): a
+Configured through `/extensions` (stored under `powerbar`): `Status bar density`
+cycles `compact`, `auto`, and `full` (default `full`), a
 `Working days per week` number input (default `5`, valid `1`–`7`) and unmatched
 weekly override fields `Unmatched weekly used %` and `Unmatched weekly reset`.
+Density is read on each paint, so cycling it in `/extensions` applies without a
+new session.
 The unmatched weekly override applies only when Usage Monitor has no quota
 provider; both fields must parse (`0`–`100`, optionally with `%`, and ISO-8601)
 or weekly is omitted (or the pair shows one `n/a` if hourly is also missing).
@@ -64,17 +67,23 @@ Prefer a local wall clock without zone (`2026-08-21T18:57` or date-only
 local clock time or remaining headroom is overstated by the UTC offset. Natural
 grok.com dates are rejected. Known providers keep last-good data or the hide /
 single-`n/a` rule and never read those fields.
-Layout is fixed in `FIXED_SETTINGS` (`extensions/status-bar/src/powerbar/settings.ts`):
+Layouts live in `extensions/status-bar/src/powerbar/settings.ts`. Full is
+`FIXED_SETTINGS` (four lines, blank row between them):
 
-- Line 1 — `git-branch` left, `provider` right
-- Line 2 — `cost,agent-stats,tokens` left, `model` right
-- Line 3 — `attention-span` left, `sub-hourly,sub-weekly` right
+- Line 1 — `git-branch` left, `provider,model` right
+- Line 2 — `cost,agent-stats,tokens` left, `sub-weekly` right
+- Line 3 — `attention-span` left, `sub-hourly` right
 - Line 4 — `session-name` left, `cpu,ram,disk,net` right
+
+Compact is one line with no gap: `cost,agent-stats,tokens` left,
+`model,provider` right.
+Auto is two lines with a blank row between them: the compact line, then
+`attention-span` left and `sub-weekly,sub-hourly` right.
 
 The `Git Branch` segment includes its branch, tracked
 working-tree statistics (`N files · +A −R`), and dirty marker.
 
-One blank row appears between every rendered Status Bar row. A line left empty
+In full, one blank row appears between every rendered Status Bar row. A line left empty
 between two used lines still renders as an intentional blank line; trailing
 empty lines take no space. Leftover `line1-left` … `line4-right` and `line-gap`
 keys in `settings-extensions.json` are ignored.
