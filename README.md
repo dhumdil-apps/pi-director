@@ -1,5 +1,8 @@
 # Pi Director
 
+> [!CAUTION]
+> **DEPRECATED / ARCHIVED:** `pi-director` has been superseded by the zero-daemon, harness-agnostic cognitive planning skill at [`.agents/skills/director/SKILL.md`](file:///Users/martin-peter.lakatos/Github/.agents/skills/director/SKILL.md) and the universal session workflow stub in `AGENTS.md`. No daemons, extensions, or background runtimes are required.
+
 > π Measure twice, cut once.
 
 A [Pi](https://pi.dev) package that directs deliberate coding sessions through
