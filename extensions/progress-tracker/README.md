@@ -10,9 +10,9 @@ renders the one thing the transcript cannot show.
   or idle timing. The marker swaps for a braille spinner while the agent works.
   The spinner advances every 120 ms only during active work and is cleared when
   Pi disposes the widget. Pi's own transient activity row stays hidden.
-- Attention segment — `LLM Attention Span (ctx)` is a normal configurable Status
-  Bar segment, defaulting to line 4 left. `/extensions` can reorder it,
-  move it to any of the four left/right slots, or hide it. The segment is omitted
+- Attention segment — `LLM Attention Span (ctx)` is a Status Bar segment. Full
+  puts it on line 3 left, auto on line 2 left, compact on the single line after
+  cost/stats as numbers only (no bar). The segment is omitted
   while token count is unknown. After the first completed turn, it retains the
   first provider response's own `usage.totalTokens` as `📦 init …`; reading the
   response directly avoids a post-tool context snapshot that already includes

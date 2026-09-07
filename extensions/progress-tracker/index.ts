@@ -18,7 +18,14 @@ import type {
   TurnEndEvent,
 } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
-import { contextIndicatorText } from "./context-usage.js";
+import { getSetting } from "../extension-preferences/index.js";
+import {
+  DEFAULT_DENSITY,
+  DENSITY_SETTING_ID,
+  EXTENSION_NAME as POWERBAR_EXTENSION_NAME,
+  parseDensity,
+} from "../status-bar/src/powerbar/settings.js";
+import { contextCompactText, contextIndicatorText } from "./context-usage.js";
 import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
 
 /** Latest provider response on the active branch, used after reloads and handoffs. */
@@ -38,7 +45,7 @@ export default function (pi: ExtensionAPI) {
   pi.events.emit?.("powerbar:register-segment", {
     id: "attention-span",
     label: "LLM Attention Span",
-    row: 4,
+    row: 3,
   });
 
   let currentCtx: ExtensionContext | undefined;
@@ -75,10 +82,14 @@ export default function (pi: ExtensionAPI) {
     if (usage && usage.tokens != null && usage.contextWindow > 0) {
       const capturedUsage = usage;
       const capturedExtras = { lastUsage, firstTurnTokens };
+      const density = parseDensity(getSetting(POWERBAR_EXTENSION_NAME, DENSITY_SETTING_ID, DEFAULT_DENSITY));
       pi.events.emit?.("powerbar:update", {
         id: "attention-span",
-        row: 4,
-        render: (theme: Theme) => contextIndicatorText(capturedUsage, theme, capturedExtras),
+        row: 3,
+        render: (theme: Theme) =>
+          density === "compact"
+            ? contextCompactText(capturedUsage, theme)
+            : contextIndicatorText(capturedUsage, theme, capturedExtras),
       });
     } else {
       pi.events.emit?.("powerbar:update", {

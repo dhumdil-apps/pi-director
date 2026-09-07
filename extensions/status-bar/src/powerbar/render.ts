@@ -181,7 +181,7 @@ function renderAlignedLine(
  *
  * A line that ends up empty still takes a row when a later line has content, so
  * leaving one blank is how a deliberate gap is configured. Trailing empty lines
- * are dropped instead — an unused line 4 must not eat a row.
+ * are dropped instead — an unused last line must not eat a row.
  */
 export function renderBar(
   segments: Map<string, Segment>,

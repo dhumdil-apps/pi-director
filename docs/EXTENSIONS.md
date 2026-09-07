@@ -47,13 +47,12 @@ Layout and visual style are fixed in code — line pickers, Line gap, separator,
 bar style, bar width, and placement were configurable, and were either unused
 or actively misleading.
 
-The frozen rows are `git-branch` / `provider` on line 1, `cost,agent-stats,tokens`
-/ `model` on line 2, Progress Tracker's `attention-span` / `sub-hourly,sub-weekly`
-on line 3, and `session-name` / `cpu,ram,disk,net` on line 4, with one blank row
-between each rendered line. A line left empty between two used lines remains an
-intentional blank line; trailing empty lines take no space. `session-name` shows
-`8 Aug 16:53` plus the remaining slug after a named session; before a name exists it
-snapshots the current local clock so the slot is never empty.
+Full is three rows with a blank row between them: `git-branch` / `model,provider`;
+`cost,agent-stats,tokens` / `sub-weekly,sub-hourly`; `attention-span` /
+`cpu,ram,disk,net`. Auto is two rows (no git, no OS). Compact is one row with
+numbers-only context. A line left empty between two used lines remains an
+intentional blank line; trailing empty lines take no space. Git and OS stats
+appear only in full.
 
 Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 

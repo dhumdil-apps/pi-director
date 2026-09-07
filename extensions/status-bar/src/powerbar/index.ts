@@ -5,10 +5,10 @@
  * maintains a segment store, and renders a powerline-style widget.
  */
 
-import type { ExtensionAPI, ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import type { Component, TUI } from "@earendil-works/pi-tui";
 import { renderBar, type Segment } from "./render.js";
-import { loadSettings, PLACEMENT, registerSettings } from "./settings.js";
+import { loadSettings, registerSettings } from "./settings.js";
 
 interface PowerbarUpdatePayload {
   id: string;
@@ -39,27 +39,27 @@ function segmentEquals(left: Segment | undefined, right: Segment): boolean {
 
 export default function createExtension(pi: ExtensionAPI): void {
   const segments: Map<string, Segment> = new Map();
-  let currentCtx: { ui: { setWidget: (...args: any[]) => void }; hasUI: boolean } | undefined;
+  let currentCtx:
+    { ui: { setWidget: (...args: any[]) => void; setFooter: (...args: any[]) => void }; hasUI: boolean } | undefined;
 
   registerSettings(pi);
 
   function refresh(): void {
     if (!currentCtx?.hasUI) return;
 
-    currentCtx.ui.setWidget(
-      "powerbar",
-      (_tui: TUI, theme: Theme): Component & { dispose?(): void } => {
-        return {
-          render(width: number): string[] {
-            return renderBar(segments, loadSettings(), theme, width);
-          },
-          invalidate(): void {
-            // No cached state to clear
-          },
-        };
-      },
-      { placement: PLACEMENT },
-    );
+    // Paint in the footer dock. A below-editor widget plus an empty footer still
+    // costs one row: Pi's footer VStack slot has minSize 1.
+    currentCtx.ui.setWidget("powerbar", undefined);
+    currentCtx.ui.setFooter((_tui: TUI, theme: Theme): Component & { dispose?(): void } => {
+      return {
+        render(width: number): string[] {
+          return renderBar(segments, loadSettings(), theme, width);
+        },
+        invalidate(): void {
+          // No cached state to clear
+        },
+      };
+    });
   }
 
   // Listen for segment updates from any extension
@@ -90,16 +90,6 @@ export default function createExtension(pi: ExtensionAPI): void {
     refresh();
   });
 
-  function hideFooter(ctx: { ui: ExtensionUIContext; hasUI: boolean }): void {
-    if (!ctx.hasUI) return;
-    ctx.ui.setFooter((_tui, _theme, _footerData) => ({
-      render(): string[] {
-        return [];
-      },
-      invalidate(): void {},
-    }));
-  }
-
   pi.on("session_start", async (_event, ctx) => {
     // A new session starts with no state: without this, a segment whose
     // producer doesn't proactively re-emit on every session_start (or skips
@@ -107,13 +97,13 @@ export default function createExtension(pi: ExtensionAPI): void {
     // still unresolved) would keep showing the previous session's value.
     segments.clear();
     currentCtx = ctx;
-    hideFooter(ctx);
     refresh();
   });
 
   pi.on("session_shutdown", async (_event, ctx) => {
     if (ctx.hasUI) {
       ctx.ui.setWidget("powerbar", undefined);
+      ctx.ui.setFooter(undefined);
     }
     currentCtx = undefined;
   });

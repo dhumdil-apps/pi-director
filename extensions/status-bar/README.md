@@ -6,7 +6,6 @@ maintains a segment store, and renders independently aligned left/right lines.
 Density (`compact` / `auto` / `full`) chooses how many lines and which
 segments. Producer sub-extensions each emit one or more segments:
 
-- **`src/powerbar-session/`** — `session-name` (pretty `8 Aug 16:53` plus remaining ticket/slug; current clock before `start`)
 - **`src/powerbar-git/`** — `git-branch` (branch, tracked diff statistics, + dirty marker)
 - **`src/powerbar-model/`** — `model` (name + thinking level)
 - **`src/powerbar-provider/`** — `provider`
@@ -18,7 +17,7 @@ segments. Producer sub-extensions each emit one or more segments:
 Any extension may register a transient segment via powerbar events: it renders
 only while active and does not need a configured slot. Workflow mode and phase
 remain in Progress Tracker's persistent above-editor indicator; its context
-usage is the line-3 `attention-span` Status Bar segment. A configured segment id
+usage is the `attention-span` Status Bar segment. A configured segment id
 that no longer exists simply renders nothing.
 
 All Status Bar progress bars use the theme accent normally, changing to warning
@@ -68,17 +67,19 @@ local clock time or remaining headroom is overstated by the UTC offset. Natural
 grok.com dates are rejected. Known providers keep last-good data or the hide /
 single-`n/a` rule and never read those fields.
 Layouts live in `extensions/status-bar/src/powerbar/settings.ts`. Full is
-`FIXED_SETTINGS` (four lines, blank row between them):
+`FIXED_SETTINGS` (three lines, blank row between them):
 
-- Line 1 — `git-branch` left, `provider,model` right
-- Line 2 — `cost,agent-stats,tokens` left, `sub-weekly` right
-- Line 3 — `attention-span` left, `sub-hourly` right
-- Line 4 — `session-name` left, `cpu,ram,disk,net` right
+- Line 1 — `git-branch` left, `model,provider` right
+- Line 2 — `cost,agent-stats,tokens` left, `sub-weekly,sub-hourly` right
+- Line 3 — `attention-span` left, `cpu,ram,disk,net` right
 
-Compact is one line with no gap: `cost,agent-stats,tokens` left,
-`model,provider` right.
-Auto is two lines with a blank row between them: the compact line, then
-`attention-span` left and `sub-weekly,sub-hourly` right.
+Git and OS stats appear only in full.
+
+Compact is one line with no gap: `cost,agent-stats,tokens,attention-span` left
+(`attention-span` is numbers only), `model,provider` right.
+Auto is two lines with a blank row between them: `cost,agent-stats,tokens` left
+and `model,provider` right, then `attention-span` left and
+`sub-weekly,sub-hourly` right.
 
 The `Git Branch` segment includes its branch, tracked
 working-tree statistics (`N files · +A −R`), and dirty marker.
@@ -86,22 +87,17 @@ working-tree statistics (`N files · +A −R`), and dirty marker.
 In full, one blank row appears between every rendered Status Bar row. A line left empty
 between two used lines still renders as an intentional blank line; trailing
 empty lines take no space. Leftover `line1-left` … `line4-right` and `line-gap`
-keys in `settings-extensions.json` are ignored.
+keys in `settings-extensions.json` are ignored. `session-name` is unused.
 
 Everything else is fixed rather than configurable, because the visual knobs were
-either inert or wrong: separator `·`, blocks-style bars, placement below the
-editor, and a 10-block default width for any bar that doesn't declare its own.
+either inert or wrong: separator `·`, blocks-style bars, and a 10-block default
+width for any bar that doesn't declare its own. The bar paints in Pi's footer
+dock so the dock's minSize row is the last status line, not a blank.
 The message-count segment renders `💬 … · 👤 … · 🤖 … · 🛠️ …`, and OS
 metrics use uppercase `CPU`, `RAM`, `SSD`, and `NET` labels. The token segment is omitted while both counts are 0 and otherwise keeps
 input/output counts dim. Progress Tracker's `attention-span` omits `0 /` and
 shows only the context window until used tokens are non-zero. The cost segment is accent below $5, warning
 from $5, and error from $10.
-
-Agent Workflow owns task naming through `start`: naming the plan sets the
-session to a timestamped task slug with an optional ticket ID. This producer
-parses that stamp into `8 Aug 16:53`, appends the remaining slug, and
-follows session-name changes and resumes. Before `start` it snapshots the
-current local clock so line 4 left is never empty.
 
 ## Origin
 

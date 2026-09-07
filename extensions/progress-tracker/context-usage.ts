@@ -76,6 +76,15 @@ function initialTokensText(tokens: number, theme: Theme): string {
  * first-turn aggregate — joined with the powerbar's separator. Undefined when
  * even the bar is unknown.
  */
+/** Compact density: token numbers only. No bar, no emoji, no cache/init extras. */
+export function contextCompactText(usage: ContextUsage | undefined, theme: Theme): string | undefined {
+  const color = contextSeverity(usage);
+  if (!color || !usage || usage.tokens == null) return undefined;
+  const windowText = formatTokens(usage.contextWindow);
+  const readout = usage.tokens === 0 ? windowText : `${formatTokens(usage.tokens)} / ${windowText}`;
+  return theme.fg(color, readout);
+}
+
 export function contextIndicatorText(
   usage: ContextUsage | undefined,
   theme: Theme,

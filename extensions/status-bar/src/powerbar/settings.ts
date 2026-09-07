@@ -15,10 +15,8 @@ export const EXTENSION_NAME = "powerbar";
 export const SEPARATOR = " · ";
 /** Bar width for segments that don't declare their own `barSegments`. */
 export const BAR_WIDTH = 10;
-/** The powerbar always renders below the editor. */
-export const PLACEMENT = "belowEditor" as const;
 /** Hard limit on rendered lines. */
-export const MAX_LINES = 4;
+export const MAX_LINES = 3;
 
 export const DENSITY_SETTING_ID = "density";
 export const DENSITY_VALUES = ["compact", "auto", "full"] as const;
@@ -34,7 +32,7 @@ const MAX_WORKING_DAYS_PER_WEEK = 7;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?$/;
 
-export type LineNumber = 1 | 2 | 3 | 4;
+export type LineNumber = 1 | 2 | 3;
 
 export interface PowerbarLine {
   left: string[];
@@ -51,16 +49,15 @@ export interface PowerbarSettings {
 /** Frozen full layout. Change this constant to move full-mode segments; leftover picker keys are ignored. */
 export const FIXED_SETTINGS: PowerbarSettings = {
   lines: [
-    { left: ["git-branch"], right: ["provider", "model"] },
-    { left: ["cost", "agent-stats", "tokens"], right: ["sub-weekly"] },
-    { left: ["attention-span"], right: ["sub-hourly"] },
-    { left: ["session-name"], right: ["cpu", "ram", "disk", "net"] },
+    { left: ["git-branch"], right: ["model", "provider"] },
+    { left: ["cost", "agent-stats", "tokens"], right: ["sub-weekly", "sub-hourly"] },
+    { left: ["attention-span"], right: ["cpu", "ram", "disk", "net"] },
   ],
   lineGap: true,
 };
 
 const COMPACT_SETTINGS: PowerbarSettings = {
-  lines: [{ left: ["cost", "agent-stats", "tokens"], right: ["model", "provider"] }],
+  lines: [{ left: ["cost", "agent-stats", "tokens", "attention-span"], right: ["model", "provider"] }],
   lineGap: false,
 };
 
@@ -153,7 +150,7 @@ export function registerSettings(pi: ExtensionAPI): void {
       id: DENSITY_SETTING_ID,
       label: "Status bar density",
       description:
-        "compact: one line (cost, stats, tokens | model, provider). auto: that plus attention-span and usage with a gap. full: four lines; model sits with provider, weekly on line 2, hourly on line 3.",
+        "compact: one line (cost, stats, tokens, ctx numbers | model, provider). auto: cost line plus ctx and usage with a gap. full: three lines; git and OS only here.",
       defaultValue: DEFAULT_DENSITY,
       values: [...DENSITY_VALUES],
     },
