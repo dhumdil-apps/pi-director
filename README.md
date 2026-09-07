@@ -1,13 +1,11 @@
 # Pi Director
 
-> [!CAUTION]
-> **DEPRECATED / ARCHIVED:** `pi-director` has been superseded by the zero-daemon, harness-agnostic cognitive planning skill at [`.agents/skills/director/SKILL.md`](file:///Users/martin-peter.lakatos/Github/.agents/skills/director/SKILL.md) and the universal session workflow stub in `AGENTS.md`. No daemons, extensions, or background runtimes are required.
-
 > π Measure twice, cut once.
 
-A [Pi](https://pi.dev) package that directs deliberate coding sessions through
-three modes the human owns — Align to clarify, Spec to research and propose, Vibe to
-execute — with durable memory, instant same-artifact handoffs, and visible status.
+A [Pi](https://pi.dev) package that keeps a strong CLI: status bar, usage,
+session dashboard, and a progress widget. Session lifecycle is not in this
+runtime. Align, Spec, and Vibe live in workspace `AGENTS.md` and every agent
+follows that text.
 
 ## Quick Start
 
@@ -50,13 +48,12 @@ pi list
 
 ## Included Features
 
-- **agent-workflow** — User-owned ALIGN / SPEC / VIBE modes with four mechanism-only tools (`ask`, `decide`, `start`, `next`), Agent-interpreted task artifacts, explicit ranked routing, reviewable Spec/Vibe decisions, and verified fresh-session handoffs. See [the agent-workflow README](extensions/agent-workflow/README.md).
-- **project-memory** — Low-noise startup check for the hidden `memory-review` commit cursor. It ignores uncommitted work, gives relevant commits a one-day grace period, and suppresses repeated reminders until both `HEAD` changes and 24 hours pass; cooldown state stays outside the repository.
-- **progress-tracker** — Above-editor per-mode Align/Spec/Vibe timing, plus the configurable Status Bar context segment. No tool, no command: it observes.
-- **pi-inspector-bridge** — Reports Director mode and session context back to a discoverable Pi Inspector over its display-only channel.
-- **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
 - **status-bar & usage-monitor** — Real-time quota metrics in the status bar.
 - **usage-history** — Historical token/cost reporting (`/usage`).
+- **session-dashboard** — Interactive welcome banner, spend visualization chart, and context indicators (`/help`, `/context`).
+- **progress-tracker** — Above-editor activity and context widget, plus the configurable Status Bar context segment. No tool, no command: it observes.
+- **project-memory** — Low-noise startup check for the hidden `memory-review` commit cursor. It ignores uncommitted work, gives relevant commits a one-day grace period, and suppresses repeated reminders until both `HEAD` changes and 24 hours pass; cooldown state stays outside the repository.
+- **pi-inspector-bridge** — Reports session context back to a discoverable Pi Inspector over its display-only channel.
 - **interrupt-confirmation** — Confirms interrupt keys before stopping a running agent.
 - **extension-preferences** — One global UI for registered extension settings (`/extensions`).
 - **bundled themes** — `dark` and `github-dark`.
@@ -64,8 +61,7 @@ pi list
 ## Documentation
 
 - [Extension and resource catalog](docs/EXTENSIONS.md)
-- [The working flow](extensions/agent-workflow/README.md)
-- [Commands and tools](docs/COMMANDS.md)
+- [Commands](docs/COMMANDS.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Vendored upstream inventory](UPSTREAM.md)
 

@@ -26,8 +26,8 @@ git diff --check
 ```
 
 `npm run verify` runs the same sequence. The Node built-in test runner covers
-FSM graph integrity, `next` tool gates, and Align settlement dispatch; use
-focused source or interactive review for behavior those checks do not cover.
+Progress Tracker duration formatting; use focused source or interactive
+review for Status Bar and dashboard behavior.
 
 ## Safety and Git
 

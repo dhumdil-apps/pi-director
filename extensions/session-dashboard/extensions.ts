@@ -40,15 +40,10 @@ export const EXTENSION_PRESENTATIONS: readonly ExtensionPresentation[] = [
     description: "Reads local session records to render historical token and spend data with `/usage`.",
   },
   {
-    name: "agent-workflow",
-    group: "workflow",
-    description: "Guides one workflow loop per task, with plan persistence, close-out, and durable project memory.",
-  },
-  {
     name: "project-memory",
     group: "workflow",
     description:
-      "Checks project-memory review provenance at startup and suggests the manual `/init` audit when needed.",
+      "Resolves project memory and inspects review provenance. `/init` remains the manual audit.",
   },
   {
     name: "progress-tracker",

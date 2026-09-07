@@ -20,7 +20,7 @@
  */
 
 import type { SessionEntry } from "@earendil-works/pi-coding-agent";
-import { formatTokens } from "../agent-workflow/context-usage.js";
+import { formatTokens } from "../progress-tracker/context-usage.js";
 
 /** Chars-per-token heuristic, matching the host's own conservative estimate. */
 const CHARS_PER_TOKEN = 4;

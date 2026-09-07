@@ -4,17 +4,10 @@ Startup banner for interactive parent sessions. The banner and the `/help` and
 `/context` cards are persisted as custom entries with entry renderers, so they
 remain visible in the transcript without participating in LLM context.
 
-The dashboard includes one concise quick reference: `🧠 /init · 📊 /usage · 🧭
-/mode · ⚙️ /extensions · ❓ /help`. `extensions.ts` still supplies the grouped
+The dashboard includes one concise quick reference: `📊 /usage · ⚙️
+/extensions · ❓ /help`. `extensions.ts` still supplies the grouped
 metadata and descriptions for `/help`; keep it synchronized one-to-one with the
 active extension manifest.
-
-When the low-noise project-memory cadence allows a reminder, the dashboard
-places its concise `/init` prompt last, after the context-file list. Uncommitted
-work is ignored; relevant committed work gets a one-day grace period, and the
-same stale `HEAD` is not repeated. This check and usage collection start
-concurrently, then render once as one ordered card; a cold usage cache can
-therefore keep the loading widget visible longer.
 
 A "Last 30 Days · Per bucket cost · by model" usage chart follows when usage is
 available: a non-interactive braille line chart built from `usage-history`'s
@@ -41,7 +34,7 @@ extension with its complete description.
 The help document is built by `help.ts` from the same
 `EXTENSION_PRESENTATIONS` manifest and rendered in the banner's themed box.
 
-The dashboard does not duplicate the Progress Tracker mode ribbon.
+The dashboard does not duplicate the Progress Tracker work/wait timer.
 
 ## Context breakdown
 
@@ -83,9 +76,8 @@ chars/4 heuristic and no tokenizer ships with this bundle.
 ## User surface
 
 Automatic on interactive session start. Starts with the working directory,
-followed by shortcuts to `/init`, `/usage`, `/mode`, `/extensions`, and `/help`,
-then recent usage and loaded context-file paths under `📦 Context files`; any
-project-memory freshness notice is last in the same card. `/help` opens a reference
+followed by shortcuts to `/usage`, `/extensions`, and `/help`,
+then recent usage and loaded context-file paths under `📦 Context files`. `/help` opens a reference
 of the bundle's commands, shortcuts, and extensions; `/context` refreshes the
 detailed breakdown on demand.
 

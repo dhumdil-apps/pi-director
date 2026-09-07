@@ -1,7 +1,5 @@
-# Workflow contract formatting is load-bearing: keep one instruction per line.
-extensions/agent-workflow/workflow-steps.md
-
-# Generated / bundled visualizer assets
-extensions/agent-workflow/tuto-ui.iife.js
-extensions/agent-workflow/workflow-fsm.data.js
-extensions/agent-workflow/theme.css
+# Local runtime and generated artifacts
+.pi
+dist
+setup.zip
+slop-radar.html

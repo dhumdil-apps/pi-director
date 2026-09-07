@@ -24,7 +24,6 @@ import { renderHelp } from "./help.js";
 import { collectUsageData } from "../usage-history/data.js";
 import { buildGraphModel, type GraphModel, renderChart, TOTAL_SERIES_KEY } from "../usage-history/graph.js";
 import { COLOR_RESET, formatAxisCost, seriesColor } from "../usage-history/index.js";
-import { claimProjectMemoryReminder, inspectProjectMemory, memoryStatusNotice } from "../project-memory/index.js";
 import { USAGE_CHART_END, USAGE_CHART_START, renderWelcomeText } from "./welcome.js";
 
 const BUNDLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -186,7 +185,7 @@ interface BundleResources {
   prompts: string[];
 }
 
-/** Name an extension entry like "./extensions/agent-workflow/index.ts" → "agent-workflow". */
+/** Name an extension entry like "./extensions/status-bar/index.ts" → "status-bar". */
 function extensionName(entry: string): string {
   const parts = entry.split("/").filter((p) => p && p !== ".");
   const idx = parts.indexOf("extensions");
@@ -245,12 +244,6 @@ function loadBundleResources(): BundleResources {
 
 interface DashboardEntryData {
   content: string;
-}
-
-interface AgentStatusUpdate {
-  working?: boolean;
-  mode?: string;
-  contextUsed?: number;
 }
 
 /** Read display-only card content from a context-free custom entry. */
@@ -403,19 +396,6 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
     },
   });
 
-  // Progress Tracker can emit several settled-state refreshes. Only the working
-  // edge closes a run, so one execution close-out produces one context-free hint.
-  let wasWorking = false;
-  pi.events?.on?.("agent-status:update", (value: unknown) => {
-    const status = value as AgentStatusUpdate;
-    if (status.working === false && wasWorking && status.mode === "vibe" && (status.contextUsed ?? 0) > 10_000) {
-      pi.appendEntry("session-dashboard-context-reminder", {
-        content: `Context is ${Math.round(status.contextUsed! / 1_000)}k. Run \`/context\` to decide whether large contributors are justified.`,
-      } satisfies DashboardEntryData);
-    }
-    wasWorking = status.working === true;
-  });
-
   pi.on("session_start", async (_event, ctx) => {
     // Purely decorative banner: in headless/print mode it would land after the
     // prompt and trigger a spurious extra turn, so interactive sessions only.
@@ -423,13 +403,7 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
     ctx.ui.setWidget("session-dashboard-loading", ["Preparing session dashboard…"]);
     try {
       const cwd = ctx.cwd;
-      // The chart and memory inspection are independent. Start both at once, then
-      // render one complete card so a warning cannot race the dashboard into the
-      // transcript. Usage can still take longer on a cold cache.
-      const [usage, memoryStatus] = await Promise.all([
-        collectUsageData().catch(() => null),
-        inspectProjectMemory(cwd).catch(() => undefined),
-      ]);
+      const usage = await collectUsageData().catch(() => null);
 
       let usageChart: string | undefined;
       if (usage) {
@@ -457,14 +431,12 @@ export default function sessionDashboardExtension(pi: ExtensionAPI): void {
       const contextInfo = welcomeContextInfo(cwd, systemPrompt);
       const skills = welcomeSkillsMarkdown(loadedSkillNames(cwd, systemPrompt));
 
-      const showMemoryNotice = memoryStatus ? await claimProjectMemoryReminder(memoryStatus).catch(() => false) : false;
       const welcomeText = renderWelcomeText({
         usageChart,
         workingDirectory: contextInfo.workingDirectory,
         contextFiles: contextInfo.contextFiles,
         skills,
-        tip: "> 🧠 `/init` · 📊 `/usage` · 🧭 `/mode` · ⚙️ `/extensions` · ❓ `/help`",
-        memoryNotice: showMemoryNotice ? `> ⚠️ ${memoryStatusNotice()}` : undefined,
+        tip: "> 📊 `/usage` · ⚙️ `/extensions` · ❓ `/help`",
       });
 
       // Custom entries persist and render in the transcript without entering

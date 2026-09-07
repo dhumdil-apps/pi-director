@@ -1,28 +1,27 @@
 # Extension and resource catalog
 
 The load order is defined by the `pi` section of `package.json`. Order matters
-when extensions append system prompts or consume events emitted by another
-extension.
+when extensions consume events emitted by another extension.
 
 ## Active extensions
 
 - **Extension Preferences** — One global UI for registered extension settings (`/extensions`)
 - **Interrupt Confirmation** — Confirms interrupt keys before stopping a running agent (native prompt)
-- **Agent Workflow** — User-owned ALIGN / SPEC / VIBE modes, recommended native-Ask preflight, silent Spec/Vibe `decide`, Agent-interpreted artifacts and decisions, ranked routing, and same-artifact handoffs (`ask`, `decide`, `start`, `next`, `/align`, `/spec`, `/vibe`, `/mode`, `/handoff`; see [the agent-workflow README](../extensions/agent-workflow/README.md))
-- **Project Memory** — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
+- **Project Memory — Low-noise freshness inspection API for the manual `/init` knowledge pass (reminder cooldown state lives in the agent cache, never the repository)
 - **Status Bar** — Footer/status composition (Configured through `/extensions`)
 - **Usage Monitor** — Live provider quota data for Status Bar
 - **Usage History** — Historical token/cost reporting (`/usage`)
-- **Progress Tracker** — Persistent above-editor prompts and per-mode timing, plus the configurable Status Bar context segment. No tool or command: it observes.
-- **Pi Inspector Bridge** — Reports display-only Director mode and session status whenever a local Inspector is discoverable
+- **Progress Tracker** — Persistent above-editor work/wait timer, plus the configurable Status Bar context segment. No tool or command: it observes.
+- **Pi Inspector Bridge** — Reports display-only session status whenever a local Inspector is discoverable
 - **Session Dashboard** — Pi-glyph welcome, project-memory freshness notice, 30-day per-model spend chart, initial context-source snapshot, and host-loaded skill names
 
 ## Active skills
 
 - **ui-design** (`skills/ui-design/SKILL.md`) — Atomic Design for UI systems, plus a deep-module lane when that UI work hits a code seam (interface, seam, adapter, leverage).
 - **code-review** (`skills/code-review/SKILL.md`) — Manual-invocation review skill for unusually strict maintainability audits, plus Standards vs Spec axes on a pinned git range.
+- **cli-agents** (`skills/cli-agents/SKILL.md`) — User-picked CLI child offload (`agy`, `pi --print`, `claude`, or `codex`). Writes under `.pi`; the parent session stays the owner.
 
-Tracked skills live under `skills/` (`package.json` `pi.skills`). Director `.pi/skills/<name>` is a relative symlink to `../../skills/<name>` for those names so project discovery matches the package tree. Local-only director skills (`cli-agents`) stay as real dirs under `.pi/skills`.
+Tracked skills live under `skills/` (`package.json` `pi.skills`). Director `.pi/skills/<name>` is a relative symlink to `../../skills/<name>` so project discovery matches the package tree.
 
 ## Supporting resources
 
@@ -32,11 +31,9 @@ Tracked skills live under `skills/` (`package.json` `pi.skills`). Director `.pi/
 ## Single-agent policy
 
 The bundle runs as one agent, not an orchestrator with children: there is no
-Pi `subagent` tool. A User-consented CLI child (`agy` or `pi --print` via the
-local `subagent` skill) may write under `.pi`; the parent session still owns
-user interaction, commits, and final acceptance. A `/handoff` (see
-[the agent-workflow README](../extensions/agent-workflow/README.md)) does not change this — the fresh session is the same single
-agent, with the plan file on disk as the only thing carried across.
+Pi `subagent` tool. A User-consented CLI child (`agy`, `pi --print`, `claude`, or `codex` via
+`cli-agents`) may write under `.pi`; the parent session still owns
+user interaction, commits, and final acceptance.
 
 ## Extension Preferences registry
 
@@ -55,31 +52,23 @@ The frozen rows are `git-branch` / `provider` on line 1, `cost,agent-stats,token
 on line 3, and `session-name` / `cpu,ram,disk,net` on line 4, with one blank row
 between each rendered line. A line left empty between two used lines remains an
 intentional blank line; trailing empty lines take no space. `session-name` shows
-`8 Aug 16:53` plus the remaining slug after `start`; before a plan exists it
+`8 Aug 16:53` plus the remaining slug after a named session; before a name exists it
 snapshots the current local clock so the slot is never empty.
 
 Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 
 ## Deliberately absent
 
-- **No workflow skill.** The Align/Spec/Vibe workflow and its close-out step remain a
-  constant injected contract.
+- **No workflow skill and no FSM.** Align / Spec / Vibe live in workspace `AGENTS.md`. This package does not inject a second booklet or register `ask` / `decide` / `start` / `next`.
 - **No Pi Inspector skill (deferred / TODO).** Pi Inspector agent skills are deferred
-  until Inspector is fully tested, validated, and integrated with the workflow; only the
+  until Inspector is fully tested and validated; only the
   display-only bridge extension is currently loaded. Local sibling skills `diagnosing-bugs`
   and `tdd` live in inspector `.pi/skills` (`~/Github/.pi/projects/pi-inspector/skills/`),
   not in this package, until that mix is ready.
-- **No general permission gate.** Align/Spec/Vibe execution boundaries are
-  advisory; destructive-action and external-action consent remains conversational.
-- **No Pi subagent tool.** Align, Spec, and Vibe are persisted modes for the same
-  single agent; `/handoff` remains the human-controlled session boundary. A CLI
-  child after Align yes is the local `subagent` skill, not a nested agent tool.
+- **No general permission gate.** Destructive-action and external-action consent remains conversational.
+- **No Pi subagent tool.** A CLI child after Align yes is the local `subagent` skill, not a nested agent tool.
 - **No todo tool.** Pi ships none on purpose ("they confuse models"), and a
   structured list the agent must keep in sync is ceremony rather than progress.
-  Mode-picker Show plan shows `## Digest` only and returns to the picker.
-- **No derived loop position in the prompt.** The large injected contract stays
-  constant and cacheable. Only a tiny per-turn mode message varies; per-mode
-  timing is display-only, and picker latency is not tracked at all.
 
 [UPSTREAM.md](../UPSTREAM.md) records what was vendored, what was removed and
 when, plus versions and licenses.

@@ -306,13 +306,9 @@ export async function claimProjectMemoryReminder(
   return true;
 }
 
-export function memoryStatusNotice(): string {
-  return "Project memory may be stale. Run /init to refresh it.";
-}
-
 /**
- * Freshness inspection remains a package extension for its reusable API, while
- * Session Dashboard owns the single visible startup card.
+ * Freshness inspection remains a package extension for its reusable API.
+ * Startup banners no longer surface a stale-memory warning.
  */
 export default function createExtension(_pi: ExtensionAPI): void {
   void _pi;

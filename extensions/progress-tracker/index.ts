@@ -18,24 +18,7 @@ import type {
   TurnEndEvent,
 } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantUsage } from "@earendil-works/pi-coding-agent";
-import { readFile } from "node:fs/promises";
-import {
-  MODE_EVENT,
-  resolveWorkflowMode,
-  normalizeWorkflowMode,
-  type ModeEvent,
-  type WorkflowMode,
-} from "../agent-workflow/mode.js";
-import {
-  addModeTime,
-  EMPTY_PLAN_TIME,
-  readPlanTime,
-  updatePlanTime,
-  type PlanTime,
-} from "../agent-workflow/plan-time.js";
-import { isCurrentPlanFormat, planPath } from "../agent-workflow/task.js";
-import { contextIndicatorText } from "../agent-workflow/context-usage.js";
-import { USER_WAIT_EVENT, type UserWaitEvent } from "../agent-workflow/user-wait.js";
+import { contextIndicatorText } from "./context-usage.js";
 import { clearPhaseIndicator, updatePhaseIndicator } from "./ui/activity-indicator.js";
 
 /** Latest provider response on the active branch, used after reloads and handoffs. */
@@ -67,38 +50,10 @@ export default function (pi: ExtensionAPI) {
   // The first provider response's reported aggregate usage. Read it from the
   // response itself: live context can already include tool results for the next request.
   let firstTurnTokens: number | undefined;
-  // Display only. Live transitions update immediately; persisted custom entries
-  // reconstruct the current mode across handoffs and reloads.
-  let mode: WorkflowMode | undefined;
   // Run timing. The widget re-creates its factory every refresh, so the start
   // stamp has to live here or the counter would restart at each turn boundary.
   let runStartedAt: number | undefined;
-  let planTime: PlanTime | undefined;
   let cacheStartedAt: number | undefined;
-  let waitingForUser = false;
-
-  // Close the current interval before changing mode. Undefined is the initial
-  // Align state: the display can still ask for a goal while timing is precise.
-  const accrueUntil = (now: number) => {
-    if (runStartedAt == null) return;
-    planTime = addModeTime(planTime ?? EMPTY_PLAN_TIME, mode ?? "align", Math.max(0, now - runStartedAt));
-    runStartedAt = now;
-  };
-
-  const syncModeFromBranch = (ctx: ExtensionContext): void => {
-    const next = resolveWorkflowMode(ctx.sessionManager.getBranch());
-    if (next === mode) return;
-    accrueUntil(Date.now());
-    mode = next;
-  };
-
-  pi.events.on?.(MODE_EVENT, (payload: unknown) => {
-    const next = normalizeWorkflowMode((payload as ModeEvent | undefined)?.mode);
-    if (!next) return;
-    accrueUntil(Date.now());
-    mode = next;
-    refreshStatus();
-  });
 
   const refreshStatus = () => {
     if (!currentCtx) return;
@@ -113,11 +68,8 @@ export default function (pi: ExtensionAPI) {
     } catch {
       lastUsage = undefined;
     }
-    const indicatorWorking = working && !waitingForUser;
-    updatePhaseIndicator(currentCtx, indicatorWorking, {
-      mode,
+    updatePhaseIndicator(currentCtx, working, {
       runStartedAt,
-      planTime,
       cacheStartedAt,
     });
     if (usage && usage.tokens != null && usage.contextWindow > 0) {
@@ -137,7 +89,6 @@ export default function (pi: ExtensionAPI) {
     const prompt = lastUsage ? lastUsage.input + lastUsage.cacheRead + lastUsage.cacheWrite : 0;
     pi.events.emit?.("agent-status:update", {
       working,
-      mode,
       sessionName: pi.getSessionName?.(),
       contextUsed: usage?.tokens ?? undefined,
       contextMax: usage?.contextWindow ?? undefined,
@@ -148,40 +99,16 @@ export default function (pi: ExtensionAPI) {
     });
   };
 
-  const persistTiming = async (ctx: ExtensionContext) => {
-    // Resolve every session-bound value before the file write yields. The
-    // write may outlive this session, so its continuation must use plain data.
-    const name = pi.getSessionName?.();
-    const time = planTime;
-    if (!name || time == null) return;
-    const path = planPath(ctx.cwd, name);
-    const contents = await readFile(path, "utf8").catch(() => "");
-    if (!isCurrentPlanFormat(contents)) return;
-    await updatePlanTime(path, name, time).catch(() => {});
-  };
-
   const adopt = async (ctx: ExtensionContext) => {
     const generation = lifecycleGeneration;
     currentCtx = ctx;
     working = !ctx.isIdle();
-    waitingForUser = false;
-    // Extensions re-instantiate on newSession(), so reconstruct display state
-    // and cache age from the active branch rather than trust the empty closure.
+    // Extensions re-instantiate on newSession(), so reconstruct cache age from
+    // the active branch rather than trust the empty closure.
     try {
-      const branch = ctx.sessionManager.getBranch();
-      mode = resolveWorkflowMode(branch);
-      cacheStartedAt = latestAssistantTimestamp(branch);
+      cacheStartedAt = latestAssistantTimestamp(ctx.sessionManager.getBranch());
     } catch {
       // A branch that cannot be read is not worth a missing indicator.
-    }
-    // A marker-free legacy plan stays visually unchanged until its first new run.
-    // Existing persisted totals resume across reloads and handoffs.
-    const name = pi.getSessionName?.();
-    const path = name ? planPath(ctx.cwd, name) : undefined;
-    if (path && runStartedAt == null) {
-      const persisted = await readPlanTime(path);
-      if (generation !== lifecycleGeneration || currentCtx !== ctx) return;
-      if (persisted !== undefined && runStartedAt == null) planTime = persisted;
     }
     if (generation !== lifecycleGeneration || currentCtx !== ctx) return;
     refreshStatus();
@@ -189,11 +116,8 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("session_start", async (_event, ctx) => {
     firstTurnTokens = undefined;
-    mode = undefined;
     runStartedAt = undefined;
-    planTime = undefined;
     cacheStartedAt = undefined;
-    waitingForUser = false;
     await adopt(ctx);
   });
   pi.on("session_tree", async (_event, ctx) => {
@@ -209,27 +133,16 @@ export default function (pi: ExtensionAPI) {
   pi.on("agent_start", async (_event, ctx) => {
     const generation = lifecycleGeneration;
     currentCtx = ctx;
-    // Re-read persisted state at the run boundary in case the mode event was
-    // emitted before this extension observed it or a session tree was replaced.
-    syncModeFromBranch(ctx);
     working = true;
-    planTime ??= EMPTY_PLAN_TIME;
     runStartedAt ??= Date.now();
     if (generation !== lifecycleGeneration || currentCtx !== ctx) return;
     refreshStatus();
   });
 
   pi.on("agent_settled", async (_event, ctx) => {
-    const generation = lifecycleGeneration;
     currentCtx = ctx;
     working = false;
-    const settledAt = Date.now();
-    accrueUntil(settledAt);
     runStartedAt = undefined;
-    waitingForUser = false;
-    // Best-effort persistence: an unavailable plan must not break turn settlement.
-    await persistTiming(ctx);
-    if (generation !== lifecycleGeneration || currentCtx !== ctx) return;
     refreshStatus();
   });
 
@@ -252,23 +165,6 @@ export default function (pi: ExtensionAPI) {
     if (firstTurnTokens == null && event.message.role === "assistant") {
       const tokens = event.message.usage.totalTokens;
       if (typeof tokens === "number" && Number.isFinite(tokens) && tokens >= 0) firstTurnTokens = tokens;
-    }
-    refreshStatus();
-  });
-
-  pi.events.on?.(USER_WAIT_EVENT, (payload: unknown) => {
-    const next = payload as UserWaitEvent | undefined;
-    if (typeof next?.waiting !== "boolean" || next.waiting === waitingForUser) return;
-    const now = Date.now();
-    if (next.waiting) {
-      if (working && runStartedAt != null) {
-        accrueUntil(now);
-        runStartedAt = undefined;
-      }
-      waitingForUser = true;
-    } else {
-      waitingForUser = false;
-      if (working) runStartedAt = now;
     }
     refreshStatus();
   });

@@ -1,14 +1,12 @@
 /**
  * The activity indicator — a persistent row above the editor showing whether a
- * run is in flight and which workflow mode is active.
+ * run is in flight and how long work or idle cache age has been running.
  *
  * It replaces pi's transient working row, so it owns setWorkingVisible.
  */
 
-import type { ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
-import { addModeTime, formatDuration, type PlanTime } from "../../agent-workflow/plan-time.js";
-import { MODE_LABEL, type WorkflowMode } from "../../agent-workflow/mode.js";
 
 const PHASE_WIDGET_ID = "workflow-phase";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -18,24 +16,31 @@ const CACHE_WARNING_IDLE_MS = 60_000;
 const CACHE_ERROR_IDLE_MS = 5 * 60_000;
 const IDLE_MARKER = "›";
 
+/** Coarse duration for the work/cache timer (`5s`, `1m 23s`, `1h 04m`). */
+export function formatDuration(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const seconds = total % 60;
+  const minutes = Math.floor(total / 60) % 60;
+  const hours = Math.floor(total / 3600);
+  if (hours > 0) return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+  if (minutes > 0) return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+  return `${seconds}s`;
+}
+
 export interface IndicatorExtras {
-  /** Which block the Agent is bound to, and which timing bucket is accruing. */
-  mode?: WorkflowMode;
   /**
    * When the in-flight run started, as epoch ms. Held by the extension rather
    * than the widget: pi re-creates the factory on every turn boundary, so a
    * closure-local start would restart the counter mid-run.
    */
   runStartedAt?: number;
-  /** Settled Align/Spec/Vibe Agent work. */
-  planTime?: PlanTime;
   /** When the latest provider response completed, as epoch ms, for cache age. */
   cacheStartedAt?: number;
   /** Injectable clock, so the live counter is testable. */
   now?: () => number;
 }
 
-/** Active shows time in this mode; idle shows age of the provider's prompt cache. */
+/** Active shows time in this run; idle shows age of the provider's prompt cache. */
 function durationMs(working: boolean, extras: IndicatorExtras | undefined, now: number): number | undefined {
   if (!working) {
     return extras?.cacheStartedAt == null ? undefined : Math.max(0, now - extras.cacheStartedAt);
@@ -50,47 +55,7 @@ function timerColor(working: boolean, elapsedMs: number): "accent" | "dim" | "wa
   return "accent";
 }
 
-/** Accumulated per-mode accounting stays visible while idle. */
-function modeBuckets(working: boolean, extras: IndicatorExtras | undefined, now: number, theme: Theme): string {
-  if (extras?.planTime == null) return "";
-  const currentMode = extras.mode ?? "align";
-  // Buckets are Agent work only: an open picker or question is the User's time,
-  // and the leading cache-age readout already shows that idle risk.
-  const time =
-    working && extras.runStartedAt != null
-      ? addModeTime(extras.planTime, currentMode, Math.max(0, now - extras.runStartedAt))
-      : extras.planTime;
-  const separator = theme.fg("dim", " · ");
-  const align = theme.fg(
-    currentMode === "align" ? "warning" : "dim",
-    `${MODE_LABEL.align} ${formatDuration(time.alignMs)}`,
-  );
-  const spec = theme.fg(
-    currentMode === "spec" ? "warning" : "dim",
-    `${MODE_LABEL.spec} ${formatDuration(time.specMs)}`,
-  );
-  const vibe = theme.fg(
-    currentMode === "vibe" ? "warning" : "dim",
-    `${MODE_LABEL.vibe} ${formatDuration(time.vibeMs)}`,
-  );
-  return `${separator}${align}${separator}${spec}${separator}${vibe}`;
-}
-
-// The prompts describe the next useful User decision without a separate mode
-// badge; the timing buckets keep the Align/Spec/Vibe order visible.
-const MODE_PROMPTS: Record<WorkflowMode, string> = {
-  align: "What’s your goal?",
-  spec: "Reviewing the plan",
-  vibe: "What’s up next?",
-};
-
-/** Dim while aligning, warning once executing. */
-function modeText(mode: WorkflowMode | undefined, theme: Theme): string {
-  const resolved: WorkflowMode = mode ?? "align";
-  return theme.fg(resolved === "vibe" ? "warning" : "dim", MODE_PROMPTS[resolved]);
-}
-
-/** Replace pi's transient working row with a persistent workflow indicator. */
+/** Replace pi's transient working row with a persistent work/wait indicator. */
 export function updatePhaseIndicator(ctx: ExtensionContext, working: boolean, extras?: IndicatorExtras): void {
   ctx.ui.setWorkingVisible(false);
   ctx.ui.setWidget(
@@ -137,10 +102,9 @@ export function updatePhaseIndicator(ctx: ExtensionContext, working: boolean, ex
                   timerColor(working, elapsed),
                   ` ${!working && elapsed >= CACHE_ERROR_IDLE_MS ? "5m+" : formatDuration(elapsed)}`,
                 );
-          const buckets = modeBuckets(working, extras, now, theme);
           const status = working
-            ? `${theme.fg("accent", marker)}${timer}${buckets}`
-            : `${theme.fg("accent", `${marker} `)}${modeText(extras?.mode, theme)}${timer}${buckets}`;
+            ? `${theme.fg("accent", marker)}${timer}`
+            : `${theme.fg("accent", `${marker}`)}${timer}`;
 
           return [truncateToWidth(status, width)];
         },

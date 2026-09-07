@@ -13,8 +13,6 @@ export interface WelcomeParts {
   skills?: string;
   /** Short de-emphasised hint, plain markdown. */
   tip?: string;
-  /** Project-memory freshness warning, preformatted as a markdown quote. */
-  memoryNotice?: string;
 }
 
 /** Assemble the interactive welcome message from its (already-styled) pieces. */
@@ -25,7 +23,6 @@ export function renderWelcomeText({
   contextFiles,
   skills,
   tip,
-  memoryNotice,
 }: WelcomeParts): string {
   const sections: string[] = [];
   if (workingDirectory) sections.push(workingDirectory);
@@ -34,6 +31,5 @@ export function renderWelcomeText({
   if (contextFiles) sections.push(contextFiles);
   if (skills) sections.push(skills);
   if (welcome) sections.push(welcome);
-  if (memoryNotice) sections.push(memoryNotice);
   return sections.join("\n\n").trim();
 }

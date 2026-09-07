@@ -31,9 +31,8 @@ dogfood a change from inside another project. `-ne` disables extension discovery
 to avoid collision warnings.
 
 Do **not** `pi install <local path>` while the published package is installed:
-both copies register the same Agent Workflow tools, so the managed extensions fail to load with a
-tool-conflict error on every start. `-ne -np --no-themes -e` is
-the conflict-free way to run unpublished code.
+both copies load the same extensions, so the managed copy can collide with the
+working tree. `-ne -np --no-themes -e` is the conflict-free way to run unpublished code.
 
 ## Verification
 
@@ -43,13 +42,11 @@ Run the retained automated checks before committing:
 npm run verify
 ```
 
-`verify` runs formatting, TypeScript, and whitespace checks.
+`verify` runs formatting, TypeScript, tests, and whitespace checks.
 Use `npm run format` to apply the repository style. `npm run typecheck` checks every vendored TypeScript extension and must exit zero.
 
-After Agent Workflow FSM changes, also run `npm run build:content` (Node strip-types). That refreshes `dist/workflow-fsm.json`, prompt/Mermaid exports, multi-diagram `WORKFLOW_FLOW_GRAPH` and `WORKFLOW_FULL_GRAPH` (v2.8: session entry envision, mode bodies, secondaries CALL `next`; `start`/`ask`/`decide`/`next` are procedure chips not guided states; via `workflow-flow-diagrams.ts`), and embeds them into `workflow-fsm.data.js` / `workflow-fsm.html`. Open that file (`file://`) for the tuto-ui visualizer: Multi diagrams (Overview + Align/Spec/Vibe + call-site procedure chips) or **Full FSM** toggle, Move/Edit layout (`S` snapshot, `Shift+S` FSM patch). Ask/decide picker rows show `A. label — description` with context under the prompt. Rebuild canvas from `~/Github/tuto-ui` with `pnpm build` when the IIFE changes.
-
-Interactive review still belongs to visual or lifecycle changes: Status Bar
-rendering, the above-editor indicator, the mode picker, session dashboard, and the workflow FSM HTML visualizer.
+Interactive review still belongs to visual changes: Status Bar rendering, the
+above-editor indicator, and the session dashboard.
 
 ## After publishing
 
@@ -83,4 +80,4 @@ Treat an upstream update as a merge, not a blind overwrite:
 5. Run the retained automated checks and review the component interactively when relevant.
 6. Update its snapshot in `UPSTREAM.md`.
 
-High-risk local behavior to preserve includes settle-before-route mode injection, evidence-preserving plan presentation, plan-backed project-memory promotion at close-out, and `/init` remaining the only writer of review provenance.
+High-risk local behavior to preserve: `/init` remaining the only writer of review provenance.

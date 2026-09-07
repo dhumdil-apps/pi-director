@@ -6,13 +6,12 @@ Use this page as the navigation map for the `pi-director` package and developmen
 
 - **[Install & Setup](../README.md#quick-start)** — Installation, setup, & verification
 - **[Extension & Resource Catalog](EXTENSIONS.md)** — Catalog of extensions, prompts, & themes
-- **[Commands & Tools](COMMANDS.md)** — Quick reference for commands & tools
+- **[Commands](COMMANDS.md)** — Quick reference for commands
 - **[Troubleshooting](TROUBLESHOOTING.md)** — Troubleshooting & diagnostic steps
 
 ## Maintainer & Developer Guides
 
 - **[Development & Maintenance](DEVELOPMENT.md)** — Local development, verification, & release
-- **[Agent Workflow Diagrams](AGENT-WORKFLOW-DIAGRAMS.md)** — Progressive visual map (Map → Modes → Machinery → Full picture) of the Agent Workflow contract
 - **[Upstream Inventory](../UPSTREAM.md)** — Upstream snapshots & license notices
 
 ## Source-of-Truth Boundaries
