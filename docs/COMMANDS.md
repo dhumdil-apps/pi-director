@@ -1,7 +1,7 @@
 # Commands
 
 This is the short operational reference. Session workflow (Align / Spec / Vibe)
-is in workspace `AGENTS.md`, not in this runtime.
+is in `setup/AGENTS.md`, linked into the workspace as `AGENTS.md`.
 
 ## Everyday commands
 

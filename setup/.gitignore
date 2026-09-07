@@ -1,0 +1,12 @@
+# Knowledge-root whitelist. Child project repos stay untracked.
+# Everything is ignored by default; only the agent layer and launchers are tracked.
+/*
+!/.gitignore
+!/AGENTS.md
+!/.agents/
+!/.agents/**
+!/run/
+!/run/**
+
+# macOS
+.DS_Store

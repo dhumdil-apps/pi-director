@@ -1,5 +1,4 @@
 # Local runtime and generated artifacts
 .pi
 dist
-setup.zip
 slop-radar.html

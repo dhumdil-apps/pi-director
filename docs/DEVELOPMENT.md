@@ -59,6 +59,10 @@ pi update --extension https://github.com/dhumdil-apps/pi-director && pi list
 `--extension <url>` updates only this package. Consumers refreshing every
 installed extension package can keep using `pi update --extensions`.
 
+Kernel files live in `setup/`. Other machines update them with
+`git -C pi-director pull`. Run `scripts/apply-kit.sh` only when the workspace
+links are missing. `/init` audits project memory. It does not apply the kit.
+
 ## Change checklist
 
 1. Identify the owning repository, run `git status --short`, inspect relevant diffs, and classify matching continuation versus separate completed or unfinished work before planning changes.

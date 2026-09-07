@@ -59,7 +59,7 @@ Core Pi model/thinking configuration lives in `~/.pi/agent/settings.json`.
 
 ## Deliberately absent
 
-- **No workflow skill and no FSM.** Align / Spec / Vibe live in workspace `AGENTS.md`. This package does not inject a second booklet or register `ask` / `decide` / `start` / `next`.
+- **No workflow skill and no FSM.** Align / Spec / Vibe live in `setup/AGENTS.md`. This package does not inject a second booklet or register `ask` / `decide` / `start` / `next`.
 - **No Pi Inspector skill (deferred / TODO).** Pi Inspector agent skills are deferred
   until Inspector is fully tested and validated; only the
   display-only bridge extension is currently loaded. Local sibling skills `diagnosing-bugs`

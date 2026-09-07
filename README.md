@@ -4,8 +4,8 @@
 
 A [Pi](https://pi.dev) package that keeps a strong CLI: status bar, usage,
 session dashboard, and a progress widget. Session lifecycle is not in this
-runtime. Align, Spec, and Vibe live in workspace `AGENTS.md` and every agent
-follows that text.
+runtime. Align, Spec, and Vibe live in the portable kernel at `setup/AGENTS.md`.
+A multi-repo workspace keeps this clone as a sibling and links that file.
 
 ## Quick Start
 
@@ -31,6 +31,25 @@ pi update --extensions
 
 To refresh only this package after a maintainer push, run
 `pi update --extension https://github.com/dhumdil-apps/pi-director`.
+
+That updates Pi extensions under `~/.pi/agent/git/`. It does not refresh the
+workspace kernel.
+
+### Workspace kernel
+
+Author Align / Spec / Vibe in `setup/AGENTS.md`. Consumer workspaces clone this
+repository as `pi-director` next to their other repos, then attach:
+
+```bash
+./pi-director/scripts/apply-kit.sh .
+```
+
+The script links `AGENTS.md`, `.agents/AGENTS.md`, and `.agents/templates` into
+`setup/`. It seeds missing MEMORY, WORKSPACE, gitignore, and `run/` stubs. It
+never overwrites live MEMORY, WORKSPACE, plans, projects, or skills.
+
+After the first apply, `git -C pi-director pull` is the kernel update. New
+machine: clone this repo as a sibling, run apply-kit, paste `setup/SETUP.md`.
 
 ### Configuration & Preferences
 

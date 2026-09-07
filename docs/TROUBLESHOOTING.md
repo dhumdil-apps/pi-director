@@ -19,6 +19,13 @@ Dogfood with `-e ~/dev/pi-director`. `--no-themes` still loads themes from that
 2. Run `pi list`.
 3. Run `pi update --extensions`, then restart Pi.
 
+## Workspace AGENTS.md is stale after a director push
+
+`pi update --extension` refreshes Pi extensions, not the workspace kernel.
+The kernel is `pi-director/setup/AGENTS.md`, linked from the workspace root.
+Pull the sibling clone (`git -C pi-director pull`). If `AGENTS.md` is a regular
+file instead of a symlink, run `./pi-director/scripts/apply-kit.sh .`.
+
 ## The agent edits before we agreed on a direction
 
 Align and Spec are advisory. The runtime does not block project edits. If the
